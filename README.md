@@ -12,12 +12,15 @@ environment.
 
 The following must be installed and in the `PATH`:
 
-- java
-- docker
+- python 3.7+
+- virtualenv
+- git
 
 ## Build
 
-    ./gradlew build
+    virtualenv .venv
+    ./.venv/bin/activate
+    pip install -e .
 
 ## Test
 
@@ -31,7 +34,7 @@ The following must be installed and in the `PATH`:
 
 ## Install
 
-    ./gradlew devInstall
+    pip install -e .
 
 ## Usage
 
