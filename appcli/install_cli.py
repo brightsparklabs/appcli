@@ -103,6 +103,7 @@ class InstallCli:
         if os.path.exists(self.app_home) and overwrite_install_dir:
             logger.info('Overwriting extant installation ...')
         else:
+            # make the application home folder, and shift the 'current' and 'previous' symlinks
             os.makedirs(self.app_home)
             current_symlink = f'{self.app_root_dir}/current'
             if os.path.exists(current_symlink) or os.path.islink(current_symlink):
