@@ -5,5 +5,3 @@ from typing import NamedTuple
 
 class Configuration(NamedTuple):
     app_name: str
-    app_root_dir: str
-    host_root_dir: str = "/"

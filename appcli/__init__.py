@@ -16,6 +16,7 @@ import subprocess
 import sys
 from typing import NamedTuple
 from models import Configuration
+from install_cli import InstallCli
 
 # vendor libraries
 import click
@@ -74,8 +75,13 @@ def create_cli(configuration: Configuration):
         command = 'docker-compose down'.split()
         result = subprocess.run(command)
 
+    @cli.command(help='Installs the system')
+    @click.option('--overwrite', is_flag=True)
+    def install():
+        installer = InstallCli(configuration)
+        installer.install(overwrite)
+
     def run():
         cli(prog_name=configuration.app_name)
 
-    #installer = InstallCli(configuration)
     return run

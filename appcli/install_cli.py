@@ -36,6 +36,7 @@ class InstallCli:
     # ------------------------------------------------------------------------------
     # CONSTANTS
     # ------------------------------------------------------------------------------
+
     # directory containing this script
     BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
