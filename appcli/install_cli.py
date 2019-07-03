@@ -21,7 +21,7 @@ import sys
 import click
 import coloredlogs
 from jinja2 import Template
-from models import Configuration
+from .models import Configuration
 
 # ------------------------------------------------------------------------------
 # LOGGING

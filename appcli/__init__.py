@@ -15,8 +15,8 @@ import os
 import subprocess
 import sys
 from typing import NamedTuple
-from models import Configuration
-from install_cli import InstallCli
+from .models import Configuration
+from .install_cli import InstallCli
 
 # vendor libraries
 import click
