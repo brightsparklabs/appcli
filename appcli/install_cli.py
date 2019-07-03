@@ -119,7 +119,7 @@ class InstallCli:
         template_file = f'{self.BASE_DIR}/templates/{self.app_name}.j2'
         with open(template_file) as f:
             template = Template(f.read())
-        output_text = template.render(f'{self.app_name}_version'=self.app_version)
+        output_text = template.render({f'{self.app_name}_version': f'{self.app_version}'})
         with open(launcher_file, 'w') as f:
             f.write(output_text)
         os.chmod(launcher_file, 0o775)
