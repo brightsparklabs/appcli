@@ -59,7 +59,7 @@ def create_cli(configuration: Configuration):
             logger.error('Could not determine version from environment variable [APP_VERSION]. This release is corrupt.')
             sys.exit(1)
 
-        logger.info(f'Running {configuration.app_name} version [{version}]')
+        logger.info(f'Running {configuration.app_name} [v{version}]')
 
         if ctx.invoked_subcommand is None:
             click.echo(ctx.get_help())
@@ -77,7 +77,7 @@ def create_cli(configuration: Configuration):
 
     @cli.command(help='Installs the system')
     @click.option('--overwrite', is_flag=True)
-    def install():
+    def install(overwrite):
         installer = InstallCli(configuration)
         installer.install(overwrite)
 

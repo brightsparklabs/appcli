@@ -70,7 +70,7 @@ class InstallCli:
 
     # NOTE: Hide the command as end users should not run it manually
     def install(self, overwrite):
-        logger.info(f'Installing application v{self.app_version}')
+        logger.info(f'Installing application [v{self.app_version}]')
 
         self.__check_prequisites(overwrite)
         self.__setup_application_home(overwrite)
