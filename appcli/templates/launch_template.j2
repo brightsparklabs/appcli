@@ -15,14 +15,14 @@
 # directory containing this script
 readonly BASE_DIR=$(cd "$(dirname $0)" && pwd)
 
-# application home directory on the physical host
+# {{ app_name.lower() }} home directory on the physical host
 readonly {{ app_name.upper() }}_EXT_{{ app_name.upper() }}_HOME=${BASE_DIR}
 export {{ app_name.upper() }}_EXT_{{ app_name.upper() }}_HOME
 
-# application version
+# {{ app_name.lower() }} version
 readonly {{ app_name.upper() }}_VERSION={{ app_version }}
 
-# application root directory on the physical host
+# {{ app_name.lower() }} root directory on the physical host
 readonly {{ app_name.upper() }}_EXT_{{ app_name.upper() }}_ROOT=$(cd "${BASE_DIR}/.." && pwd)
 export {{ app_name.upper() }}_EXT_{{ app_name.upper() }}_ROOT
 
