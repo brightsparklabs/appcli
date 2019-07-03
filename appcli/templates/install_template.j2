@@ -64,10 +64,6 @@ function main()
 
         # mount the data dir
         _env="${_env} --volume ${{ "{" + app_name.upper() }}_EXT_DATA_DIR}:${{ "{" + app_name.upper() }}_EXT_DATA_DIR}"
-
-        # mount the compose file
-        _env="${_env} --volume ${{ "{" + app_name.upper() }}_EXT_{{ app_name.upper() }}_HOME}/custom/conf/docker-compose.yml:/app/main/compose/docker-compose.yml"
-        _env="${_env} --volume ${{ "{" + app_name.upper() }}_EXT_{{ app_name.upper() }}_HOME}/custom/conf/docker-compose.override.yml:/app/main/compose/docker-compose.override.yml"
     fi
 
     # launch container
@@ -81,7 +77,6 @@ function main()
         --volume /var/run/docker.sock:/var/run/docker.sock \
         --volume "${{ "{" + app_name.upper() }}_EXT_{{ app_name.upper() }}_ROOT}":"${{ "{" + app_name.upper() }}_EXT_{{ app_name.upper() }}_ROOT}" \
         --env {{ app_name.upper() }}_EXT_{{ app_name.upper() }}_HOME \
-        --env USER_REPO_DIR \
         brightsparklabs/{{ app_name.lower() }}:{{app_version}} $@
 }
 
