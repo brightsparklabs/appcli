@@ -18,8 +18,8 @@ The following must be installed and in the `PATH`:
 
 ## Build
 
-    virtualenv .venv
-    ./.venv/bin/activate
+    python3.7 -m venv .venv
+    . .venv/bin/activate
     pip install -e .
 
 ## Test
