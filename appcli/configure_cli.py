@@ -163,16 +163,16 @@ class ConfigureCli:
     # PRIVATE METHODS
     # ------------------------------------------------------------------------------
 
+    def __configure_all_settings(self, configuration):
+        settings_group: ConfigSettingsGroup
+        for settings_group in self.cli_configuration.config_cli.settings_groups:
+            self.__configure_settings(configuration, settings_group)
+
     def __configure_settings(self, configuration, settings_group: ConfigSettingsGroup):
         self.__print_header(f'Configure {settings_group.title} settings')
         self.__print_current_settings(settings_group.settings, configuration)
         if self.__confirm(f'Modify {settings_group.title} settings?'):
             self.__prompt_and_update_configuration(settings_group.settings, configuration)
-
-    def __configure_all_settings(self, configuration):
-        settings_group: ConfigSettingsGroup
-        for settings_group in self.cli_configuration.config_cli.settings_groups:
-            self.__configure_settings(configuration, settings_group)
 
 
     def __prequisites_met(self):
