@@ -15,8 +15,9 @@ import os
 import subprocess
 import sys
 from typing import NamedTuple
-from .models import Configuration
+from .configure_cli import ConfigureCli
 from .install_cli import InstallCli
+from .models import *
 
 # vendor libraries
 import click
@@ -81,6 +82,9 @@ def create_cli(configuration: Configuration):
     def install(overwrite):
         installer = InstallCli(configuration)
         installer.install(overwrite)
+
+    configure_command = ConfigureCli(configuration)
+    cli.add_command(configure_command.configure, "configure")
 
     def run():
         cli(prog_name=configuration.app_name)
