@@ -75,7 +75,8 @@ def create_cli(configuration: Configuration):
         command = 'docker-compose down'.split()
         result = subprocess.run(command)
 
-    @cli.command(help='Installs the system')
+    # NOTE: Hide the command as end users should not run it manually
+    @click.command(hidden=True, help='Installs the system')
     @click.option('--overwrite', is_flag=True)
     def install(overwrite):
         installer = InstallCli(configuration)

@@ -68,7 +68,6 @@ class InstallCli:
     # PUBLIC METHODS
     # ------------------------------------------------------------------------------
 
-    # NOTE: Hide the command as end users should not run it manually
     def install(self, overwrite):
         logger.info(f'Installing application [v{self.app_version}]')
 
