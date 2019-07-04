@@ -15,6 +15,8 @@ import os
 import subprocess
 import sys
 from typing import NamedTuple
+from .models import Configuration
+from .install_cli import InstallCli
 
 # vendor libraries
 import click
@@ -34,16 +36,6 @@ coloredlogs.install(logger=logger, fmt=FORMAT)
 
 # directory containing this script
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
-
-# ------------------------------------------------------------------------------
-# CLASSES
-# ------------------------------------------------------------------------------
-
-class Configuration(NamedTuple):
-    app_name: str
-    mandatory_environment_variables: list
-    app_root_dir: str
-    host_root_dir: str = "/"
 
 # ------------------------------------------------------------------------------
 # PUBLIC METHODS
@@ -67,7 +59,7 @@ def create_cli(configuration: Configuration):
             logger.error('Could not determine version from environment variable [APP_VERSION]. This release is corrupt.')
             sys.exit(1)
 
-        logger.info(f'Running {configuration.app_name} version [{version}]')
+        logger.info(f'Running {configuration.app_name} [v{version}]')
 
         if ctx.invoked_subcommand is None:
             click.echo(ctx.get_help())
@@ -83,8 +75,14 @@ def create_cli(configuration: Configuration):
         command = 'docker-compose down'.split()
         result = subprocess.run(command)
 
+    # NOTE: Hide the command as end users should not run it manually
+    @click.command(hidden=True, help='Installs the system')
+    @click.option('--overwrite', is_flag=True)
+    def install(overwrite):
+        installer = InstallCli(configuration)
+        installer.install(overwrite)
+
     def run():
         cli(prog_name=configuration.app_name)
 
-    #installer = InstallerCli(configuration)
     return run
