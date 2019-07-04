@@ -117,7 +117,7 @@ class InstallCli:
         # create launcher
         launcher_file = f'{self.app_home}/{self.app_name}'
         logger.info(f'Creating launcher [{launcher_file}] ...')
-        template_file = f'{self.BASE_DIR}/templates/launch_template.j2'
+        template_file = f'{self.BASE_DIR}/templates/launcher.j2'
         with open(template_file) as f:
             template = Template(f.read())
         template_params = {
