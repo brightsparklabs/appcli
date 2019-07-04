@@ -43,7 +43,8 @@ class ConfigurationManager:
         """
         self.configuration_file = Path(configuration_file)
         data = self.configuration_file.read_text(encoding='utf-8')
-        self.configuration = YAML().load(data)
+        self.yaml = YAML()
+        self.configuration = self.yaml.load(data)
 
     def get(self, path):
         """Gets a value from the configuration.
@@ -82,8 +83,9 @@ class ConfigurationManager:
 
     def save(self):
         """Saves the configuration"""
-        logger.info(f'Saving configuration to [{INSILICO_CONFIG_FILE}] ...')
-        with open(INSILICO_CONFIG_FILE, 'w') as config_file:
+        full_path = self.configuration_file.absolute().as_posix()
+        logger.info(f'Saving configuration to [{full_path}] ...')
+        with open(full_path, 'w') as config_file:
             self.yaml.dump(self.configuration, config_file)
 
     def dump(self, stream=sys.stdout):
