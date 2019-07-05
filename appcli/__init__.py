@@ -15,12 +15,15 @@ import os
 import subprocess
 import sys
 from typing import NamedTuple
-from .models import Configuration
-from .install_cli import InstallCli
 
 # vendor libraries
 import click
 import coloredlogs
+
+# internal libraries
+from .models import Configuration
+from .install_cli import InstallCli
+from .main_cli import MainCli
 
 # ------------------------------------------------------------------------------
 # LOGGING
@@ -44,8 +47,12 @@ BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 def create_cli(configuration: Configuration):
 
     @click.group(invoke_without_command=True, help='Manages the system')
+    @click.option('--debug', '-d', help='Enables debug level logging', is_flag=True)
     @click.pass_context
-    def cli(ctx):
+    def cli(ctx, debug):
+        if debug:
+            logger.setLevel(logging.DEBUG)
+
         if ctx.obj is None:
             ctx.obj = configuration
 
@@ -65,16 +72,6 @@ def create_cli(configuration: Configuration):
             click.echo(ctx.get_help())
             pass
 
-    @cli.command(help='Starts the system')
-    def start():
-        command = 'docker-compose up -d'.split()
-        result = subprocess.run(command)
-
-    @cli.command(help='Stops the system')
-    def stop():
-        command = 'docker-compose down'.split()
-        result = subprocess.run(command)
-
     # NOTE: Hide the command as end users should not run it manually
     @click.command(hidden=True, help='Installs the system')
     @click.option('--overwrite', is_flag=True)
@@ -85,4 +82,7 @@ def create_cli(configuration: Configuration):
     def run():
         cli(prog_name=configuration.app_name)
 
+    main_commands = MainCli(configuration).commands
+    for command in main_commands:
+        cli.add_command(command)
     return run
