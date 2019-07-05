@@ -3,6 +3,7 @@
 
 from types import LambdaType
 from typing import NamedTuple, List
+from pathlib import Path
 
 class ConfigSetting(NamedTuple):
     path: str
@@ -18,4 +19,5 @@ class ConfigCli(NamedTuple):
 
 class Configuration(NamedTuple):
     app_name: str
+    docker_compose_file: Path
     config_cli: ConfigCli
