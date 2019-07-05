@@ -15,32 +15,29 @@ www.brightsparklabs.com
 """
 
 # standard library
-import logging
 import os
 import sys
 
 # vendor libraries
 import click
-import coloredlogs
 from jinja2 import Template
+
+# internal libraries
+from .logger import logger
 from .models import Configuration
 
 # ------------------------------------------------------------------------------
-# LOGGING
+# CONSTANTS
 # ------------------------------------------------------------------------------
 
-FORMAT = '%(asctime)s %(levelname)s: %(message)s'
-logger = logging.getLogger(__name__)
-coloredlogs.install(logger=logger, fmt=FORMAT)
+# directory containing this script
+BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+
+# ------------------------------------------------------------------------------
+# CLASSES
+# ------------------------------------------------------------------------------
 
 class InstallCli:
-
-    # ------------------------------------------------------------------------------
-    # CONSTANTS
-    # ------------------------------------------------------------------------------
-
-    # directory containing this script
-    BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
     # ------------------------------------------------------------------------------
     # CONSTRUCTOR
@@ -80,7 +77,7 @@ class InstallCli:
     # ------------------------------------------------------------------------------
 
     def __install(self, overwrite):
-        logger.info(f'Installing application [v{self.app_version}]')
+        logger.info(f'Installing application [v{self.app_version}] ...')
         self.__check_prequisites(overwrite)
         self.__setup_application_home(overwrite)
 

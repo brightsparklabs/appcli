@@ -10,25 +10,17 @@ www.brightsparklabs.com
 """
 
 # standard libraries
-import logging
 import os
 import subprocess
 import sys
 from typing import NamedTuple
-from .models import Configuration
-from .install_cli import InstallCli
 
 # vendor libraries
 import click
-import coloredlogs
 
-# ------------------------------------------------------------------------------
-# LOGGING
-# ------------------------------------------------------------------------------
-
-FORMAT = '%(asctime)s %(levelname)s: %(message)s'
-logger = logging.getLogger(__name__)
-coloredlogs.install(logger=logger, fmt=FORMAT)
+# internal libraries
+from .logger import logger
+from .models import Configuration
 
 # ------------------------------------------------------------------------------
 # CLASSES

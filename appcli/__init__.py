@@ -10,7 +10,6 @@ www.brightsparklabs.com
 """
 
 # standard libraries
-import logging
 import os
 import subprocess
 import sys
@@ -18,20 +17,12 @@ from typing import NamedTuple
 
 # vendor libraries
 import click
-import coloredlogs
 
 # internal libraries
+from .logger import logger, enable_debug_logging
 from .models import Configuration
 from .install_cli import InstallCli
 from .main_cli import MainCli
-
-# ------------------------------------------------------------------------------
-# LOGGING
-# ------------------------------------------------------------------------------
-
-FORMAT = '%(asctime)s %(levelname)s: %(message)s'
-logger = logging.getLogger(__name__)
-coloredlogs.install(logger=logger, fmt=FORMAT)
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
@@ -51,7 +42,7 @@ def create_cli(configuration: Configuration):
     @click.pass_context
     def cli(ctx, debug):
         if debug:
-            logger.setLevel(logging.DEBUG)
+            enable_debug_logging()
 
         if ctx.obj is None:
             ctx.obj = configuration
