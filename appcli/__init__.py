@@ -72,17 +72,14 @@ def create_cli(configuration: Configuration):
             click.echo(ctx.get_help())
             pass
 
-    # NOTE: Hide the command as end users should not run it manually
-    @click.command(hidden=True, help='Installs the system')
-    @click.option('--overwrite', is_flag=True)
-    def install(overwrite):
-        installer = InstallCli(configuration)
-        installer.install(overwrite)
-
     def run():
         cli(prog_name=configuration.app_name)
+
+    install_command = InstallCli(configuration).command
+    cli.add_command(install_command)
 
     main_commands = MainCli(configuration).commands
     for command in main_commands:
         cli.add_command(command)
+
     return run

@@ -41,13 +41,13 @@ class MainCli:
     # --------------------------------------------------------------------------
 
     def __init__(self, configuration: Configuration):
-
         docker_compose_file = configuration.docker_compose_file
         docker_compose_command = ['docker-compose', '--file', docker_compose_file]
 
         @click.command(help='Starts the system')
         @click.pass_context
         def start(ctx):
+            logger.info(f'Starting {configuration.app_name} ...')
             command = docker_compose_command + ['up', '-d']
             logger.debug(f'Running [{command}]')
             result = subprocess.run(command)
@@ -55,9 +55,10 @@ class MainCli:
         @click.command(help='Stops the system')
         @click.pass_context
         def stop(ctx):
-            command = docker_compose_command + ['down', '-d']
+            logger.info(f'Stopping {configuration.app_name} ...')
+            command = docker_compose_command + ['down']
             logger.debug(f'Running [{command}]')
             result = subprocess.run(command)
 
-        # expose commands
+        # expose the cli commands
         self.commands = [start, stop]
