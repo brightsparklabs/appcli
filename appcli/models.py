@@ -23,3 +23,4 @@ class Configuration(NamedTuple):
     ops_dir: Path
     apply_configuration_settings_callback: FunctionType
     config_cli: ConfigCli
+    pre_configuration_callback: FunctionType = lambda *a, **k: None

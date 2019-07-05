@@ -52,8 +52,8 @@ class ConfigureCli:
         self.cli_configuration: Configuration = configuration
 
         self.app_name = self.cli_configuration.app_name
-        env_app_home = f'{self.app_name.upper()}_EXT_{self.app_name.upper()}_HOME'
-        env_host_root = f'{self.app_name.upper()}_EXT_HOST_ROOT'
+        env_app_home = f'{self.app_name}_EXT_{self.app_name}_HOME'.upper()
+        env_host_root = f'{self.app_name}_EXT_HOST_ROOT'.upper()
 
         # environment variables which must be defined
         self.mandatory_env_variables=[
@@ -76,17 +76,19 @@ class ConfigureCli:
         # application configuration file
         self.configuration_file = f'{self.app_home}/conf/{self.app_name}.yaml'
 
+        # the output generated configuration directory
+        self.generated_config_dir = f'{self.app_home}/.generated/conf'
+
         # file to store record of configuration run
-        self.configuration_record_file = f'{self.app_home}/.configured'
+        self.configuration_record_file = f'{self.generated_config_dir}/configure-metadata'
 
         # ------------------------------------------------------------------------------
         # CLI METHODS
         # ------------------------------------------------------------------------------
 
         @click.group(invoke_without_command=True, help='Configures the application')
-        @click.option('--force', is_flag=True, default=False, help='Force reconfiguration. Any changes to flow file will be lost')
         @click.pass_context
-        def configure(ctx, force):
+        def configure(ctx):
             if not ctx.invoked_subcommand is None:
                 # subcommand provided, do not enter interactive mode
                 return
@@ -97,14 +99,16 @@ class ConfigureCli:
                 logger.error('Prerequisite checks failed')
                 sys.exit(1)
 
-            if force:
-                self.__force_reconfigure()
+            self.__print_header('Running pre-configuration steps')
+            self.cli_configuration.pre_configuration_callback()
 
+            self.__print_header('Populating the configuration directory')
             self.__populate_conf_dir()
 
-            app_config_manager: ConfigurationManager = ConfigurationManager(self.configuration_file)
+            app_config_manager = ConfigurationManager(self.configuration_file)
             self.__configure_all_settings(app_config_manager)
 
+            self.__print_header('Running configuration settings callback')
             self.cli_configuration.apply_configuration_settings_callback(app_config_manager)
 
             self.__save_configuration(app_config_manager)
@@ -172,22 +176,6 @@ class ConfigureCli:
 
         return result
 
-    def __force_reconfigure(self):
-        self.__print_header(f'Force reconfiguration')
-
-        flow_file = f'{self.app_home}/nifi-flow/flow.xml.gz'
-        if not os.path.isfile(flow_file):
-            logger.warning(f'No flow file found at [{flow_file}]. No need to force.')
-            return
-
-        if not self.__confirm('This will delete the current flow. Do you wish to continue?'):
-            sys.exit(1)
-
-        logger.info('Removing flow file ...')
-        os.remove(flow_file)
-        # clear last configured so that profile can be changed
-        self.__clear_successful_configuration_record()
-
     def __populate_conf_dir(self):
         logger.info('Populating [conf] directory ...')
         conf_dir = f'{self.app_home}/conf'
@@ -243,15 +231,14 @@ class ConfigureCli:
     def __generate_configuration_files(self, configuration):
         self.__print_header(f'Generating configuration files')
 
-        output_dir = f'{self.app_home}/.conf/generated'
-        os.makedirs(output_dir, exist_ok=True)
+        os.makedirs(self.generated_config_dir, exist_ok=True)
 
         template_dir = f'{self.app_ops_dir}/template'
         for root, dirs, files in os.walk(template_dir):
             for filename in files:
                 source = os.path.join(root, filename)
                 # strip off template_dir prefix
-                target = output_dir + source[len(template_dir):]
+                target = self.generated_config_dir + source[len(template_dir):]
                 target_dir = os.path.dirname(target)
                 os.makedirs(target_dir, exist_ok=True)
 
