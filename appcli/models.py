@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # # -*- coding: utf-8 -*-
 
-from types import LambdaType
+from types import LambdaType, FunctionType
 from typing import NamedTuple, List
 from pathlib import Path
 
@@ -20,4 +20,6 @@ class ConfigCli(NamedTuple):
 class Configuration(NamedTuple):
     app_name: str
     docker_compose_file: Path
+    ops_dir: Path
+    apply_configuration_settings_callback: FunctionType
     config_cli: ConfigCli

@@ -21,6 +21,7 @@ import tarfile
 from datetime import datetime, timezone
 from functools import reduce
 from pathlib import Path
+from typing import List
 
 # vendor libraries
 import click
@@ -31,7 +32,7 @@ from ruamel.yaml import YAML
 
 # our library
 from .configuration_manager import ConfigurationManager
-from .models import *
+from .models import Configuration, ConfigSettingsGroup, ConfigSetting
 
 # ------------------------------------------------------------------------------
 # LOGGING
@@ -54,8 +55,8 @@ class ConfigureCli:
         self.cli_configuration: Configuration = configuration
 
         self.app_name = self.cli_configuration.app_name
-        env_app_home = f'{self.app_name}_EXT_{self.app_name}_HOME'
-        env_host_root = f'{self.app_name}_EXT_HOST_ROOT'
+        env_app_home = f'{self.app_name.upper()}_EXT_{self.app_name.upper()}_HOME'
+        env_host_root = f'{self.app_name.upper()}_EXT_HOST_ROOT'
 
         # environment variables which must be defined
         self.mandatory_env_variables=[
@@ -64,7 +65,7 @@ class ConfigureCli:
         ]
 
         # the application directory
-        self.INSILICO_OPS_DIR = os.path.realpath(f'{BASE_DIR}/../main')
+        self.app_ops_dir = os.path.realpath(self.cli_configuration.ops_dir.as_posix())
 
         # application home ('current') directory
         self.app_home = os.environ.get(env_app_home)
@@ -76,7 +77,7 @@ class ConfigureCli:
         self.host_root_dir = os.environ.get(env_host_root)
 
         # application configuration file
-        self.configuration_file = f'{self.app_home}/custom/conf/{self.app_name}.yaml'
+        self.configuration_file = f'{self.app_home}/conf/{self.app_name}.yaml'
 
         # file to store record of configuration run
         self.configuration_record_file = f'{self.app_home}/.configured'
@@ -105,39 +106,36 @@ class ConfigureCli:
 
             self.__populate_conf_dir()
 
-            app_configuration = self.__load_configuration()
-            self.__configure_all_settings(app_configuration)
+            app_config_manager: ConfigurationManager = ConfigurationManager(self.configuration_file)
+            self.__configure_all_settings(app_config_manager)
+
+            self.cli_configuration.apply_configuration_settings_callback(app_config_manager)
 
             print("Finished configuring things. Exiting cleanly.")
             sys.exit(0)
 
-            self.__configure_ldap(app_configuration)
-            self.__configure_nifi(app_configuration)
-            self.__configure_system_dirs(app_configuration)
-            self.__configure_certificates(app_configuration)
-            self.__save_configuration(app_configuration)
-
+            self.__save_configuration(app_config_manager)
             self.__clear_successful_configuration_record()
-            #__copy_flow_file(app_configuration)
-            self.__generate_environment_file(app_configuration)
-            self.__generate_configuration_files(app_configuration)
+            self.__generate_environment_file(app_config_manager)
+            self.__generate_configuration_files(app_config_manager)
             self.__set_successful_configuration_record()
 
-        @configure.command(help='Reads a setting from the Insilico configuration')
+
+        @configure.command(help='Reads a setting from the configuration')
         @click.argument('setting')
         def get(setting):
-            configuration = self.__load_configuration()
+            configuration = ConfigurationManager(self.configuration_file)
             print(configuration.get(setting))
 
-        @configure.command(help='Saves a setting to the Insilico configuration')
+        @configure.command(help='Saves a setting to the configuration')
         @click.argument('setting')
         @click.argument('value')
         def set(setting, value):
-            configuration = self.__load_configuration()
+            configuration = ConfigurationManager(self.configuration_file)
             configuration.set(setting, value)
             configuration.save()
 
-        @configure.command(help='Applies the settings from the Insilico configuration')
+        @configure.command(help='Applies the settings from the configuration')
         @click.option('--file', type=Path,
             help='Applies the settings from the suppplied configuration file. NOTE: This will replace the extant configuration file.')
         def apply(file):
@@ -154,28 +152,16 @@ class ConfigureCli:
             shutil.copy2(source, target)
 
             self.__clear_successful_configuration_record()
-            configuration = self.__load_configuration()
+            configuration = ConfigurationManager(self.configuration_file)
             self.__generate_environment_file(configuration)
             self.__generate_configuration_files(configuration)
             self.__set_successful_configuration_record()
 
-        self.configure_command = configure
+        self.command = configure
 
     # ------------------------------------------------------------------------------
     # PRIVATE METHODS
     # ------------------------------------------------------------------------------
-
-    def __configure_all_settings(self, configuration):
-        settings_group: ConfigSettingsGroup
-        for settings_group in self.cli_configuration.config_cli.settings_groups:
-            self.__configure_settings(configuration, settings_group)
-
-    def __configure_settings(self, configuration, settings_group: ConfigSettingsGroup):
-        self.__print_header(f'Configure {settings_group.title} settings')
-        self.__print_current_settings(settings_group.settings, configuration)
-        if self.__confirm(f'Modify {settings_group.title} settings?'):
-            self.__prompt_and_update_configuration(settings_group.settings, configuration)
-
 
     def __prequisites_met(self):
         logger.info('Checking prerequisites ...')
@@ -194,32 +180,10 @@ class ConfigureCli:
 
         return result
 
-    def __populate_conf_dir(self):
-        logger.info('Populating [conf] directory ...')
-        custom_dir = f'{self.app_home}/custom'
-        conf_dir = f'{custom_dir}/conf'
-        os.makedirs(conf_dir, exist_ok=True)
-
-        previous_custom_dir = f'{self.app_home}/../previous/custom'
-
-        # ensure insilico.yaml exists
-        relative_name = 'conf/insilico.yaml'
-        target = self.configuration_file
-        if not os.path.exists(target):
-            previous_version = f'{previous_custom_dir}/{relative_name}'
-            # prefer files from previous version if they exist
-            source = previous_version if os.path.exists(previous_version) else f'{self.INSILICO_OPS_DIR}/{relative_name}'
-            logger.info('Copying insilico.yaml from [%s]', source)
-            shutil.copy2(source, target)
-
-    def __load_configuration(self):
-        logger.info(f'Reading configuration from [{self.configuration_file}]...')
-        return ConfigurationManager(self.configuration_file)
-
     def __force_reconfigure(self):
         self.__print_header(f'Force reconfiguration')
 
-        flow_file = f'{self.app_home}/custom/nifi-flow/flow.xml.gz'
+        flow_file = f'{self.app_home}/nifi-flow/flow.xml.gz'
         if not os.path.isfile(flow_file):
             logger.warning(f'No flow file found at [{flow_file}]. No need to force.')
             return
@@ -232,320 +196,33 @@ class ConfigureCli:
         # clear last configured so that profile can be changed
         self.__clear_successful_configuration_record()
 
-    def __configure_ldap(self, configuration):
-        self.__print_header(f'Configure LDAP settings')
-        settings = [
-            {
-                'path': 'insilico.external.ldap.url',
-                'message': 'URL of the LDAP server'
-            },
-            {
-                'path': 'insilico.external.ldap.managerDN',
-                'message': 'Distinguished Name (DN) for binding to LDAP'
-            },
-            {
-                'path': 'insilico.external.ldap.managerPassword',
-                'message': 'Password for binding to LDAP'
-            },
-        ]
-        self.__print_current_settings(settings, configuration)
-        if self.__confirm('Modify LDAP settings?'):
-            self.__prompt_and_update_configuration(settings, configuration)
+    def __populate_conf_dir(self):
+        logger.info('Populating [conf] directory ...')
+        conf_dir = f'{self.app_home}/conf'
+        os.makedirs(conf_dir, exist_ok=True)
 
-        self.__print_header(f'Configure LDAP user/group syncing settings')
-        settings = [
-            {
-                'path': 'insilico.external.ldap.userGroupSyncing.userSearchBase',
-                'message': 'User Search Base'
-            },
-            {
-                'path': 'insilico.external.ldap.userGroupSyncing.userObjectClass',
-                'message': 'User Object Class'
-            },
-            {
-                'path': 'insilico.external.ldap.userGroupSyncing.userSearchScope',
-                'message': 'User Search Scope'
-            },
-            {
-                'path': 'insilico.external.ldap.userGroupSyncing.userSearchFilter',
-                'message': 'User Search Filter'
-            },
-            {
-                'path': 'insilico.external.ldap.userGroupSyncing.userIdentityAttribute',
-                'message': 'User Identity Attribute'
-            },
-            {
-                'path': 'insilico.external.ldap.userGroupSyncing.userGroupNameAttribute',
-                'message': 'User Group Name Attribute'
-            },
-            {
-                'path': 'insilico.external.ldap.userGroupSyncing.userGroupNameAttributeReferencedGroupAttribute',
-                'message': 'User Group Name Attribute - Referenced Group Attribute'
-            },
-            {
-                'path': 'insilico.external.ldap.userGroupSyncing.groupSearchBase',
-                'message': 'Group Search Base'
-            },
-            {
-                'path': 'insilico.external.ldap.userGroupSyncing.groupObjectClass',
-                'message': 'Group Object Class'
-            },
-            {
-                'path': 'insilico.external.ldap.userGroupSyncing.groupSearchScope',
-                'message': 'Group Search Scope'
-            },
-            {
-                'path': 'insilico.external.ldap.userGroupSyncing.groupSearchFilter',
-                'message': 'Group Search Filter'
-            },
-            {
-                'path': 'insilico.external.ldap.userGroupSyncing.groupNameAttribute',
-                'message': 'Group Name Attribute'
-            },
-            {
-                'path': 'insilico.external.ldap.userGroupSyncing.groupMemberAttribute',
-                'message': 'Group Member Attribute'
-            },
-            {
-                'path': 'insilico.external.ldap.userGroupSyncing.groupMemberAttributeReferencedUserAttribute',
-                'message': 'Group Member Attribute - Referenced User Attribute'
-            },
+        previous_dir = f'{self.app_home}/../previous'
 
-        ]
-        self.__print_current_settings(settings, configuration)
-        if self.__confirm('Modify LDAP user/group syncing settings?'):
-            self.__prompt_and_update_configuration(settings, configuration)
+        # ensure application.yaml exists
+        relative_name = f'conf/{self.app_name}.yaml'
+        target = self.configuration_file
+        if not os.path.exists(target):
+            previous_version = f'{previous_dir}/{relative_name}'
+            # prefer files from previous version if they exist
+            source = previous_version if os.path.exists(previous_version) else f'{self.app_ops_dir}/{relative_name}'
+            logger.info('Copying application .yaml from [%s]', source)
+            shutil.copy2(source, target)
 
-    def __configure_nifi(self, configuration):
-        self.__print_header(f'Configure NiFi settings')
-        settings = [
-            {
-                'path': 'insilico.nifi.url',
-                'message': 'Comma separated list of URLs used to access NiFi web ui'
-            },
-            {
-                'path': 'insilico.external.ldap.login.userSearchBase',
-                'message': 'Base DN for searching for users'
-            },
-            {
-                'path': 'insilico.external.ldap.login.userSearchFilter',
-                'message': 'Filter for searching through users'
-            },
-            {
-                'path': 'insilico.role.nifi.admin.username',
-                'message': 'LDAP username for the NiFi administrator user'
-            },
-            {
-                'path': 'insilico.role.nifi.admin.password',
-                'message': 'LDAP password for the NiFi administrator user'
-            },
-        ]
-        self.__print_current_settings(settings, configuration)
-        if self.__confirm('Modify NiFi settings?'):
-            self.__prompt_and_update_configuration(settings, configuration)
+    def __configure_all_settings(self, config_manager: ConfigurationManager):
+        settings_group: ConfigSettingsGroup
+        for settings_group in self.cli_configuration.config_cli.settings_groups:
+            self.__configure_settings(config_manager, settings_group)
 
-    def __configure_system_dirs(self, configuration):
-        self.__print_header(f'Configure system directories')
-
-        # we are prepared to create the default 'insilico/common' directory but if the user wants 'common' to be
-        # outside our 'insilico' directories, then they must have created the directory first
-        host_data_dir = f'{self.app_root}/common'
-        logger.info(f'Creating system data directory [{host_data_dir}] ...')
-
-        data_dir = f'{self.host_root_dir}/{host_data_dir}'
-        os.makedirs(data_dir, exist_ok=True)
-
-        settings = [
-            {
-                'path': 'insilico.directories.dataDir',
-                'message': 'Directory to store all system data',
-                'validate': lambda _, x: os.path.isdir(f'{self.host_root_dir}/{x}')
-            },
-        ]
-
-        self.__print_current_settings(settings, configuration)
-        if self.__confirm('Modify system data directory location?'):
-            self.__prompt_and_update_configuration(settings, configuration)
-
-        host_data_dir = f'{configuration.get("insilico.directories.dataDir")}'
-        logger.info(f'Ensuring required sub-directories exist under [{host_data_dir}]')
-
-        data_dir = f'{self.host_root_dir}/{host_data_dir}'
-        os.makedirs(data_dir, exist_ok=True)
-        subdirs = [
-            'data/input',
-            'data/output',
-            'data/error',
-            'data/nifi',
-            'data/elasticsearch'
-        ]
-        self.__make_dirs(data_dir, subdirs)
-
-        # Update configuration's input & databaseDir values so the paths are still relative to 'common',
-        # but allow users to set data-heavy dirs (input, database) outside of this default.
-        input_dir = f'{configuration.get("insilico.directories.dataDir")}/data/input'
-        configuration.set('insilico.directories.inputDir', input_dir)
-        database_dir = f'{configuration.get("insilico.directories.dataDir")}/data/elasticsearch'
-        configuration.set('insilico.directories.databaseDir', database_dir)
-
-        settings = [
-            {
-                'path': 'insilico.directories.inputDir',
-                'message': 'Directory to detect and ingest input files',
-                'validate': lambda _, x: os.path.isdir(f'{self.host_root_dir}/{x}')
-            },
-        ]
-
-        self.__print_current_settings(settings, configuration)
-        if self.__confirm('Modify system input directory location?'):
-            self.__prompt_and_update_configuration(settings, configuration)
-
-        settings = [
-            {
-                'path': 'insilico.directories.databaseDir',
-                'message': 'Directory to store Database files',
-                'validate': lambda _, x: os.path.isdir(f'{self.host_root_dir}/{x}')
-            }
-        ]
-
-        self.__print_current_settings(settings, configuration)
-        if self.__confirm('Modify system database directory location?'):
-            self.__prompt_and_update_configuration(settings, configuration)
-
-        output_dir = f'{configuration.get("insilico.directories.dataDir")}/data/output'
-        configuration.set('insilico.directories.outputDir.localPath', output_dir)
-
-        settings = [
-            {
-                'path': 'insilico.directories.outputDir.localPath',
-                'message': 'Local directory to store output files',
-                'validate': lambda _, x: os.path.isdir(f'{self.host_root_dir}/{x}')
-            },
-            {
-                'path': 'insilico.directories.outputDir.externalPath',
-                'message': 'External directory mounted to corresponding local directory'
-                # no validation as this path is outside our system and we cannot validate it exists/is a
-                # directory
-            }
-        ]
-
-        self.__print_current_settings(settings, configuration)
-        if self.__confirm('Modify system output directory location?'):
-            self.__prompt_and_update_configuration(settings, configuration)
-
-        # TODO: INS-378 determine if all these files need to live in data dir
-
-        database_dir = f'{self.host_root_dir}/{configuration.get("insilico.directories.databaseDir")}'
-        logger.info('Extracting sample database ...')
-        with tarfile.open(f'{self.INSILICO_OPS_DIR}/data/elasticsearch/sample-db.tar.gz') as t:
-            t.extractall(f'{database_dir}/')
-
-        logger.info('Copying volume files ...')
-        files = [
-            'elasticsearch.yml',
-            'jvm.options',
-        ]
-        self.__copy_files(files, f'{self.INSILICO_OPS_DIR}/data/elasticsearch', f'{database_dir}')
-        self.__copy_files(['data/kibana/kibana.yml'], f'{self.INSILICO_OPS_DIR}', f'{data_dir}')
-
-        logger.info('Copying NiFi configuration ...')
-        files = [
-            'users.xml',
-            'authorizations.xml',
-        ]
-        self.__copy_files(files, f'{self.INSILICO_OPS_DIR}/template/insilico-nifi', f'{data_dir}/nifi')
-        self.__copy_files(['nifi/scripts/CustomFieldValueMappingScript.groovy'], f'{self.INSILICO_OPS_DIR}', f'{data_dir}')
-
-        # TODO: INS-378 we have two flow.xml files in insilico-ops for some reason
-        flow_dir = f'{data_dir}/nifi/flow_configuration'
-        target_flow_file = f'{flow_dir}/flow.xml.gz'
-        if not os.path.exists(target_flow_file):
-            os.makedirs(flow_dir, exist_ok=True)
-            with gzip.open(target_flow_file, 'wb') as file_out:
-                with open(f'{self.INSILICO_OPS_DIR}/nifi/flow.xml', 'rb') as file_in:
-                    shutil.copyfileobj(file_in, file_out)
-
-    def __make_dirs(self, parent, children):
-        for child in children:
-            os.makedirs(f'{parent}/{child}', exist_ok=True)
-
-    def __copy_files(self, files, source_dir, target_dir):
-        for file in files:
-            source = f'{source_dir}/{file}'
-            target = f'{target_dir}/{file}'
-            if os.path.exists(target):
-                logger.warning(f'Skipping existing file [{target}]')
-            else:
-                logger.info(f'Copying to [{target}] ...')
-                if os.path.isdir(source):
-                    shutil.copytree(source, target)
-                else:
-                    parent_dir = os.path.dirname(target)
-                    os.makedirs(parent_dir, exist_ok=True)
-                    shutil.copy2(source, target)
-
-    def __configure_certificates(self, configuration):
-        self.__print_header(f'Configure certificates')
-
-        certificate_dir = f'{configuration.get("insilico.directories.dataDir")}/certificate'
-        host_certificate_dir = f'{self.host_root_dir}/{certificate_dir}'
-        os.makedirs(host_certificate_dir, exist_ok=True)
-
-        if not os.path.isfile(f'{host_certificate_dir}/server-key.pem'):
-            logger.info(f'Generating default certificates in [{certificate_dir}/] ...')
-            command = ['openssl',
-                'req',
-                '-x509',
-                '-days', '3650',
-                '-nodes',
-                '-newkey', 'rsa:2048',
-                '-keyout', f'{host_certificate_dir}/server-key.pem',
-                '-out', f'{host_certificate_dir}/server-cert.pem',
-                '-subj', '/C=AU/ST=ACT/L=Canberra/O=brightSPARK Labs/OU=insilico/CN=*.insilico.local'
-            ]
-            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if not result.returncode == 0:
-                logger.error('Could not generate default certificates')
-                logger.error(result.stderr)
-                sys.exit(1)
-
-        if not self.__confirm('Configure custom certificates?'):
-            return
-
-        for target in ['server-key.pem', 'server-cert.pem']:
-            answer = inquirer.prompt([
-                inquirer.Text(
-                    'file',
-                    f'Path to custom [{target}]',
-                    validate=lambda _, x: os.path.isfile(f'{self.host_root_dir}/{x}')
-                )
-            ])
-            source = f'{self.host_root_dir}/{answer["file"]}'
-            logger.info(f'Copying certificate to [{certificate_dir}/{target}]')
-            shutil.copy2(source, f'{host_certificate_dir}/{target}')
-
-    def __copy_flow_file(self, configuration):
-        self.__print_header(f'Configure flow files')
-        profile = configuration.get(PROFILE_SETTING_PATH)
-        logger.info(f'Setting up [{profile}] flow ...')
-
-        target_dir = f'{self.app_home}/custom/nifi-flow'
-        if not os.path.isdir(target_dir):
-            os.makedirs(target_dir, exist_ok=True)
-        target = f'{target_dir}/flow.xml.gz'
-        if os.path.exists(target):
-            logger.warning(f'Leaving existing flow file in place at [{target}]')
-            return
-
-        source = f'{self.INSILICO_OPS_DIR}/conf/nifi-flow/{profile}/flow.xml'
-        if not os.path.exists(source):
-            logger.error(f'Could not find source flow file at [{source}]')
-            raise EnvironmentError
-
-        logger.info(f'Copying flow to [{target}]')
-        with gzip.open(target, 'wb') as file_out:
-            with open(source, 'rb') as file_in:
-                shutil.copyfileobj(file_in, file_out)
+    def __configure_settings(self, config_manager: ConfigurationManager, settings_group: ConfigSettingsGroup):
+        self.__print_header(f'Configure {settings_group.title} settings')
+        self.__print_current_settings(settings_group.settings, config_manager)
+        if self.__confirm(f'Modify {settings_group.title} settings?'):
+            self.__prompt_and_update_configuration(settings_group.settings, config_manager)
 
     def __save_configuration(self, configuration):
         self.__print_header(f'Saving configuration')
@@ -563,10 +240,10 @@ class ConfigureCli:
 
     def __generate_environment_file(self, configuration):
         self.__print_header(f'Generating environment file')
-        target_file = f'{self.app_home}/insilico-host.env'
+        target_file = f'{self.app_home}/{self.app_name}-host.env'
         logger.info(f'Writing environment to [{target_file}]')
         self.__generate_from_template(
-            f'{BASE_DIR}/templates/insilico-host.env.j2',
+            f'{BASE_DIR}/templates/{self.app_name}-host.env.j2',
             target_file,
             configuration.get_as_dict()
         )
@@ -577,7 +254,7 @@ class ConfigureCli:
         output_dir = f'{self.app_home}/.conf/generated'
         os.makedirs(output_dir, exist_ok=True)
 
-        template_dir = f'{self.INSILICO_OPS_DIR}/template'
+        template_dir = f'{self.app_ops_dir}/template'
         for root, dirs, files in os.walk(template_dir):
             for filename in files:
                 source = os.path.join(root, filename)
@@ -606,10 +283,11 @@ class ConfigureCli:
         ])
         return answer['result']
 
-    def __print_current_settings(self, settings, configuration):
+    def __print_current_settings(self, settings: List[ConfigSetting], config_manager: ConfigurationManager):
         logger.info('Current Settings:')
+        setting: ConfigSetting
         for setting in settings:
-            logger.info('  {0:<45} = {1}'.format(setting['message'], configuration.get(setting['path'])))
+            logger.info('  {0:<45} = {1}'.format(getattr(setting, 'message'), config_manager.get(getattr(setting, 'path'))))
         print('')
 
     def __prompt_and_update_configuration(self, settings, configuration):

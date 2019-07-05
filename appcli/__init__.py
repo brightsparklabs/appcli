@@ -22,10 +22,11 @@ import click
 import coloredlogs
 
 # internal libraries
-from .models import Configuration
+from .configuration_manager import ConfigurationManager
 from .configure_cli import ConfigureCli
 from .install_cli import InstallCli
 from .main_cli import MainCli
+from .models import Configuration
 
 # ------------------------------------------------------------------------------
 # LOGGING
@@ -88,7 +89,7 @@ def create_cli(configuration: Configuration):
     for command in main_commands:
         cli.add_command(command)
 
-    configure_command = ConfigureCli(configuration).configure_command
+    configure_command = ConfigureCli(configuration).command
     cli.add_command(configure_command)
 
     return run
