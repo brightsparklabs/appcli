@@ -46,9 +46,6 @@ coloredlogs.install(logger=logger, fmt=FORMAT)
 # CONSTANTS
 # ------------------------------------------------------------------------------
 
-# directory containing this script
-BASE_DIR = os.path.dirname(os.path.realpath(__file__))
-
 class ConfigureCli:
 
     def __init__(self, configuration: Configuration):
@@ -95,7 +92,6 @@ class ConfigureCli:
                 return
 
             self.__print_header('Configuring the application')
-            logger.info('Running in %s', BASE_DIR)
 
             if not self.__prequisites_met():
                 logger.error('Prerequisite checks failed')
@@ -111,15 +107,11 @@ class ConfigureCli:
 
             self.cli_configuration.apply_configuration_settings_callback(app_config_manager)
 
-            print("Finished configuring things. Exiting cleanly.")
-            sys.exit(0)
-
             self.__save_configuration(app_config_manager)
             self.__clear_successful_configuration_record()
             self.__generate_environment_file(app_config_manager)
             self.__generate_configuration_files(app_config_manager)
             self.__set_successful_configuration_record()
-
 
         @configure.command(help='Reads a setting from the configuration')
         @click.argument('setting')
@@ -243,7 +235,7 @@ class ConfigureCli:
         target_file = f'{self.app_home}/{self.app_name}-host.env'
         logger.info(f'Writing environment to [{target_file}]')
         self.__generate_from_template(
-            f'{BASE_DIR}/templates/{self.app_name}-host.env.j2',
+            f'{self.app_ops_dir}/../configure/templates/{self.app_name}-host.env.j2',
             target_file,
             configuration.get_as_dict()
         )
