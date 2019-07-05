@@ -81,83 +81,85 @@ class ConfigureCli:
         # file to store record of configuration run
         self.configuration_record_file = f'{self.app_home}/.configured'
 
-    # ------------------------------------------------------------------------------
-    # CLI METHODS
-    # ------------------------------------------------------------------------------
+        # ------------------------------------------------------------------------------
+        # CLI METHODS
+        # ------------------------------------------------------------------------------
 
-    @click.group(invoke_without_command=True, help='Configures the application')
-    @click.option('--force', is_flag=True, default=False, help='Force reconfiguration. Any changes to flow file will be lost')
-    @click.pass_context
-    def configure(self, ctx, force):
-        if not ctx.invoked_subcommand is None:
-            # subcommand provided, do not enter interactive mode
-            return
+        @click.group(invoke_without_command=True, help='Configures the application')
+        @click.option('--force', is_flag=True, default=False, help='Force reconfiguration. Any changes to flow file will be lost')
+        @click.pass_context
+        def configure(ctx, force):
+            if not ctx.invoked_subcommand is None:
+                # subcommand provided, do not enter interactive mode
+                return
 
-        self.__print_header('Configuring the application')
-        logger.info('Running in %s', BASE_DIR)
+            self.__print_header('Configuring the application')
+            logger.info('Running in %s', BASE_DIR)
 
-        if not self.__prequisites_met():
-            logger.error('Prerequisite checks failed')
-            sys.exit(1)
+            if not self.__prequisites_met():
+                logger.error('Prerequisite checks failed')
+                sys.exit(1)
 
-        if force:
-            self.__force_reconfigure()
+            if force:
+                self.__force_reconfigure()
 
-        self.__populate_conf_dir()
+            self.__populate_conf_dir()
 
-        app_configuration = self.__load_configuration()
-        self.__configure_all_settings(app_configuration)
+            app_configuration = self.__load_configuration()
+            self.__configure_all_settings(app_configuration)
 
-        print("Finished configuring things. Exiting cleanly.")
-        sys.exit(0)
+            print("Finished configuring things. Exiting cleanly.")
+            sys.exit(0)
 
-        self.__configure_ldap(app_configuration)
-        self.__configure_nifi(app_configuration)
-        self.__configure_system_dirs(app_configuration)
-        self.__configure_certificates(app_configuration)
-        self.__save_configuration(app_configuration)
+            self.__configure_ldap(app_configuration)
+            self.__configure_nifi(app_configuration)
+            self.__configure_system_dirs(app_configuration)
+            self.__configure_certificates(app_configuration)
+            self.__save_configuration(app_configuration)
 
-        self.__clear_successful_configuration_record()
-        #__copy_flow_file(app_configuration)
-        self.__generate_environment_file(app_configuration)
-        self.__generate_configuration_files(app_configuration)
-        self.__set_successful_configuration_record()
+            self.__clear_successful_configuration_record()
+            #__copy_flow_file(app_configuration)
+            self.__generate_environment_file(app_configuration)
+            self.__generate_configuration_files(app_configuration)
+            self.__set_successful_configuration_record()
 
-    @configure.command(help='Reads a setting from the Insilico configuration')
-    @click.argument('setting')
-    def get(self, setting):
-        configuration = self.__load_configuration()
-        print(configuration.get(setting))
+        @configure.command(help='Reads a setting from the Insilico configuration')
+        @click.argument('setting')
+        def get(setting):
+            configuration = self.__load_configuration()
+            print(configuration.get(setting))
 
-    @configure.command(help='Saves a setting to the Insilico configuration')
-    @click.argument('setting')
-    @click.argument('value')
-    def set(self, setting, value):
-        configuration = self.__load_configuration()
-        configuration.set(setting, value)
-        configuration.save()
+        @configure.command(help='Saves a setting to the Insilico configuration')
+        @click.argument('setting')
+        @click.argument('value')
+        def set(setting, value):
+            configuration = self.__load_configuration()
+            configuration.set(setting, value)
+            configuration.save()
 
-    @configure.command(help='Applies the settings from the Insilico configuration')
-    @click.option('--file', type=Path,
-        help='Applies the settings from the suppplied configuration file. NOTE: This will replace the extant configuration file.')
-    def apply(self, file):
-        # NOTE: currently we just overwrite the extant file
-        # in future we will want to do something smarter like a merge
-        source = Path(f'{self.host_root_dir}/{file}')
-        if not source.is_file():
-            logger.error('Cannot access [%s]', file)
-            sys.exit(1)
+        @configure.command(help='Applies the settings from the Insilico configuration')
+        @click.option('--file', type=Path,
+            help='Applies the settings from the suppplied configuration file. NOTE: This will replace the extant configuration file.')
+        def apply(file):
+            # NOTE: currently we just overwrite the extant file
+            # in future we will want to do something smarter like a merge
+            source = Path(f'{self.host_root_dir}/{file}')
+            if not source.is_file():
+                logger.error('Cannot access [%s]', file)
+                sys.exit(1)
 
-        target = Path(self.configuration_file)
-        target.parent.mkdir(parents=True, exist_ok=True)
-        logger.info('Copying [%s] to [%s]', source, target)
-        shutil.copy2(source, target)
+            target = Path(self.configuration_file)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            logger.info('Copying [%s] to [%s]', source, target)
+            shutil.copy2(source, target)
 
-        self.__clear_successful_configuration_record()
-        configuration = self.__load_configuration()
-        self.__generate_environment_file(configuration)
-        self.__generate_configuration_files(configuration)
-        self.__set_successful_configuration_record()
+            self.__clear_successful_configuration_record()
+            configuration = self.__load_configuration()
+            self.__generate_environment_file(configuration)
+            self.__generate_configuration_files(configuration)
+            self.__set_successful_configuration_record()
+
+        self.configure_command = configure
 
     # ------------------------------------------------------------------------------
     # PRIVATE METHODS

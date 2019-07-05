@@ -15,8 +15,6 @@ import os
 import subprocess
 import sys
 from typing import NamedTuple
-from .configure_cli import ConfigureCli
-from .install_cli import InstallCli
 from .models import *
 
 # vendor libraries
@@ -25,6 +23,7 @@ import coloredlogs
 
 # internal libraries
 from .models import Configuration
+from .configure_cli import ConfigureCli
 from .install_cli import InstallCli
 from .main_cli import MainCli
 
@@ -82,13 +81,14 @@ def create_cli(configuration: Configuration):
         installer = InstallCli(configuration)
         installer.install(overwrite)
 
-    configure_command = ConfigureCli(configuration)
-    cli.add_command(configure_command.configure, "configure")
-
     def run():
         cli(prog_name=configuration.app_name)
 
     main_commands = MainCli(configuration).commands
     for command in main_commands:
         cli.add_command(command)
+
+    configure_command = ConfigureCli(configuration).configure_command
+    cli.add_command(configure_command)
+
     return run
