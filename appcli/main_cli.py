@@ -34,7 +34,11 @@ class MainCli:
 
     def __init__(self, configuration: Configuration):
         docker_compose_file = configuration.docker_compose_file
-        docker_compose_command = ['docker-compose', '--file', docker_compose_file]
+        docker_compose_command = [
+            'docker-compose',
+            '--project-name', configuration.app_name,
+            '--file', docker_compose_file
+        ]
 
         @click.command(help='Starts the system')
         @click.pass_context
