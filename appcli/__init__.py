@@ -62,7 +62,7 @@ def create_cli(configuration: Configuration):
     # CREATE_CLI: NESTED METHODS
     # --------------------------------------------------------------------------
 
-    @click.group(invoke_without_command=True, help='Manages the system')
+    @click.group(cls=ArgsGroup, invoke_without_command=True, help='Manages the system')
     @click.option('--debug', help='Enables debug level logging', is_flag=True)
     @click.option('--configuration-dir', '-c', help='Directory to read configuration files from', required=True)
     @click.option('--data-dir', '-d', help='Directory to store data to', required=True)
@@ -73,14 +73,11 @@ def create_cli(configuration: Configuration):
             coloredlogs.install(logger=logger, fmt=FORMAT, level=logging.DEBUG)
             logger.debug("Enabled debug logging")
 
-        if ctx.obj is None:
-            ctx.obj = {
-                "appcli_configuration": configuration,
-                "configuration_dir": configuration_dir,
-                "data_dir": data_dir
-            }
-        else:
-            logger.info("ctx was not defind")
+        ctx.obj.update({
+            "appcli_configuration": configuration,
+            "configuration_dir": configuration_dir,
+            "data_dir": data_dir
+        })
 
         version = os.environ.get('APP_VERSION')
         if version is None:
@@ -142,6 +139,8 @@ def create_cli(configuration: Configuration):
             ''')
         if ctx.invoked_subcommand is not None:
             command.append(ctx.invoked_subcommand)
+        if ctx.obj['subcommand_args'] is not None:
+            command.extend(ctx.obj['subcommand_args'])
         logger.info("Relaunching with environment ...")
         logger.debug(f'Running [{" ".join(command)}]')
         result = subprocess.run(command)
@@ -171,3 +170,12 @@ def create_cli(configuration: Configuration):
 #    cli.add_command(configure_command)
 
     return run
+
+# allow exposing subcommand arguments
+# see: https://stackoverflow.com/a/44079245/3602961
+class ArgsGroup(click.Group):
+    def invoke(self, ctx):
+        ctx.obj = {
+            "subcommand_args": tuple(ctx.args)
+        }
+        super(ArgsGroup, self).invoke(ctx)
