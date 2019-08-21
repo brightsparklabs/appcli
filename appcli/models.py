@@ -19,6 +19,7 @@ class ConfigCli(NamedTuple):
 
 class Configuration(NamedTuple):
     app_name: str
+    docker_image: str
     docker_compose_file: Path
     ops_dir: Path
     apply_configuration_settings_callback: FunctionType
