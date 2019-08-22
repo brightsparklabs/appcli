@@ -61,15 +61,15 @@ class MainCli:
         def logs(ctx, args):
             __run_and_exit(ctx, ('logs', '-f') + args)
 
-        def __get_compose_file_path(ctx):
-            return str(ctx.obj['configuration_dir'].joinpath('.generated/conf/cli/docker-compose.yml'))
-
         def __run_and_exit(ctx, subcommand):
             command = docker_compose_command + [__get_compose_file_path(ctx)]
             command.extend(subcommand)
             logger.debug(f'Running [{" ".join(command)}]')
             result = subprocess.run(command)
             sys.exit(result.returncode)
+
+        def __get_compose_file_path(ctx):
+            return str(ctx.obj['generated_configuration_dir'].joinpath('cli/docker-compose.yml'))
 
         # expose the cli commands
         self.commands = [start, stop, logs]

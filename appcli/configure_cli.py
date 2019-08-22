@@ -10,6 +10,7 @@ www.brightsparklabs.com
 """
 
 # standard library
+import json
 import gzip
 import io
 import logging
@@ -33,10 +34,20 @@ from ruamel.yaml import YAML
 # our library
 from .configuration_manager import ConfigurationManager
 from .logger import logger, enable_debug_logging
-from .models import Configuration, ConfigSettingsGroup, ConfigSetting
+from .models import CliContext, Configuration, ConfigSettingsGroup, ConfigSetting
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
+# ------------------------------------------------------------------------------
+
+TEMPLATES_DIR_NAME = 'templates'
+""" Name of the directory holding templates (relative to the configuration directory) """
+
+METADATA_FILE_NAME = '.metadata-configure.json'
+""" Name of the file holding metadata from running a configure (relative to the generated configuration directory) """
+
+# ------------------------------------------------------------------------------
+# CLASSES
 # ------------------------------------------------------------------------------
 
 
@@ -61,14 +72,7 @@ class ConfigureCli:
             f'{self.app_name}.yaml')
 
         # directory containing templates of configuration files
-        self.templates_dir = self.config_dir.joinpath('templates')
-
-        # the output generated configuration directory
-        self.generated_config_dir = self.config_dir.joinpath('.generated/conf')
-
-        # file to store record of configuration run
-        self.configuration_record_file = self.generated_config_dir.joinpath(
-            'configure-metadata')
+        self.templates_dir = self.config_dir.joinpath(TEMPLATES_DIR_NAME)
 
         # ------------------------------------------------------------------------------
         # CLI METHODS
@@ -87,19 +91,19 @@ class ConfigureCli:
                 logger.error('Prerequisite checks failed')
                 sys.exit(1)
 
-            #self.__print_header('Running pre-configuration steps')
-            #self.cli_configuration.pre_configuration_callback()
+            # self.__print_header('Running pre-configuration steps')
+            # self.cli_configuration.pre_configuration_callback()
 
             self.__print_header('Populating the configuration directory')
             self.__seed_configuration_dir()
 
-            #app_config_manager = ConfigurationManager(self.app_configuration_file)
-            #self.__configure_all_settings(app_config_manager)
+            # app_config_manager = ConfigurationManager(self.app_configuration_file)
+            # self.__configure_all_settings(app_config_manager)
 
-            #self.__print_header('Running configuration settings callback')
-            #self.cli_configuration.apply_configuration_settings_callback(app_config_manager)
+            # self.__print_header('Running configuration settings callback')
+            # self.cli_configuration.apply_configuration_settings_callback(app_config_manager)
 
-            #self.__save_configuration(app_config_manager)
+            # self.__save_configuration(app_config_manager)
 
         @configure.command(help='Reads a setting from the configuration')
         @click.argument('setting')
@@ -116,9 +120,13 @@ class ConfigureCli:
             configuration.save()
 
         @configure.command(help='Applies the settings from the configuration')
-        def apply():
+        @click.pass_context
+        def apply(ctx):
             configuration = ConfigurationManager(self.app_configuration_file)
-            self.__generate_configuration_files(configuration)
+            cli_context: CliContext = ctx.obj
+            generated_configuration_dir = cli_context.generated_configuration_dir
+            self.__generate_configuration_files(
+                configuration, generated_configuration_dir)
 
         self.command = configure
 
@@ -177,25 +185,20 @@ class ConfigureCli:
         self.__print_header(f'Saving configuration')
         configuration.save()
 
-    def __clear_successful_configuration_record(self):
-        logger.info('Clearing successful configuration record ...')
-        if os.path.exists(self.configuration_record_file):
-            os.remove(self.configuration_record_file)
-
-    def __set_successful_configuration_record(self):
-        logger.info('Saving successful configuration record ...')
-        self.configuration_record_file.write_text(datetime.utcnow().replace(
-            tzinfo=timezone.utc).isoformat())
-
-    def __generate_configuration_files(self, configuration):
+    def __generate_configuration_files(self, configuration: Configuration, generated_configuration_dir: Path):
         self.__print_header(f'Generating configuration files')
+        generated_configuration_dir.mkdir(parents=True, exist_ok=True)
 
-        self.__clear_successful_configuration_record()
-        self.generated_config_dir.mkdir(parents=True, exist_ok=True)
+        configuration_record_file = generated_configuration_dir.joinpath(
+            METADATA_FILE_NAME)
+        if os.path.exists(configuration_record_file):
+            logger.info('Clearing successful configuration record ...')
+            os.remove(configuration_record_file)
+            logger.debug(f'Confiugration record removed from [{configuration_record_file}]')
 
         for template_file in self.templates_dir.glob('**/*'):
             relative_file = template_file.relative_to(self.templates_dir)
-            target_file = self.generated_config_dir.joinpath(relative_file)
+            target_file = generated_configuration_dir.joinpath(relative_file)
 
             if template_file.is_dir():
                 logger.debug(f'Creating directory [{target_file}] ...')
@@ -214,7 +217,16 @@ class ConfigureCli:
                     f'Copying configuration file to [{target_file}] ...')
                 shutil.copy2(template_file, target_file)
 
-        self.__set_successful_configuration_record()
+        logger.info('Saving successful configuration record ...')
+        record = {
+            "configure": {
+                "apply": {
+                    "last_run": datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
+                }
+            }
+        }
+        configuration_record_file.write_text(json.dumps(record, indent=2, sort_keys=True))
+        logger.debug(f'Confiugration record written to [{configuration_record_file}]')
 
     def __print_header(self, title):
         print('\n============================================================')

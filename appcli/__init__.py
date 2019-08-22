@@ -14,8 +14,8 @@ import os
 import shlex
 import subprocess
 import sys
+from pathlib import Path
 from typing import NamedTuple
-from .models import *
 
 # vendor libraries
 import click
@@ -23,11 +23,10 @@ import click
 # internal libraries
 from .configuration_manager import ConfigurationManager
 from .configure_cli import ConfigureCli
-from .logger import logger, enable_debug_logging
-from .models import Configuration
 from .install_cli import InstallCli
+from .logger import logger, enable_debug_logging
 from .main_cli import MainCli
-from .models import Configuration
+from .models import CliContext, Configuration
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
@@ -44,6 +43,7 @@ BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 def create_cli(configuration: Configuration):
     APP_NAME_UPPERCASE = configuration.app_name.upper()
     ENV_VAR_CONFIG_DIR = f'{APP_NAME_UPPERCASE}_CONFIG_DIR'
+    ENV_VAR_GENERATED_CONFIG_DIR = f'{APP_NAME_UPPERCASE}_GENERATED_CONFIG_DIR'
     ENV_VAR_DATA_DIR = f'{APP_NAME_UPPERCASE}_DATA_DIR'
 
     # --------------------------------------------------------------------------
@@ -60,11 +60,13 @@ def create_cli(configuration: Configuration):
             logger.info("Enabling debug logging")
             enable_debug_logging()
 
-        ctx.obj.update({
-            "appcli_configuration": configuration,
-            "configuration_dir": configuration_dir,
-            "data_dir": data_dir
-        })
+        ctx.obj = CliContext(
+            configuration_dir=configuration_dir,
+            generated_configuration_dir=configuration_dir.joinpath(
+                '.generated/conf'),
+            data_dir=data_dir,
+            subcommand_args=ctx.obj
+        )
 
         version = os.environ.get('APP_VERSION')
         if version is None:
@@ -76,9 +78,10 @@ def create_cli(configuration: Configuration):
         relaunch_if_required(ctx)
         check_environment()
 
-        logger.info(f'{APP_NAME_UPPERCASE} v{version} CLI running with:')
-        logger.info(f'    {ENV_VAR_CONFIG_DIR}: [{configuration_dir}]')
-        logger.info(f'    {ENV_VAR_DATA_DIR}:   [{data_dir}]')
+        logger.info(f'''{APP_NAME_UPPERCASE} v{version} CLI running with:
+    {ENV_VAR_CONFIG_DIR}:           [{ctx.obj.configuration_dir}]
+    {ENV_VAR_GENERATED_CONFIG_DIR}: [{ctx.obj.generated_configuration_dir}]
+    {ENV_VAR_DATA_DIR}:             [{ctx.obj.data_dir}]''')
 
         if ctx.invoked_subcommand is None:
             click.echo(ctx.get_help())
@@ -93,7 +96,8 @@ def create_cli(configuration: Configuration):
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
         {configuration.docker_image} \
-            --configuration-dir <dir> COMMAND'
+            --configuration-dir <dir> \
+            --data-dir <dir> COMMAND'
 '''
             logger.error(error_msg)
             sys.exit(1)
@@ -105,13 +109,17 @@ def create_cli(configuration: Configuration):
             return
 
         # launched by user, not by appcli => need to launch via appcli
-        configuration_dir = ctx.obj['configuration_dir']
-        data_dir = ctx.obj['data_dir']
+        cli_context: CliContext = ctx.ob
+        configuration_dir = cli_context.configuration_dir
+        generated_configuration_dir = cli_context.generated_configuration_dir
+        data_dir = cli_context.data_dir
         command = shlex.split(f'''docker run
                         --volume /var/run/docker.sock:/var/run/docker.sock
                         --env APPCLI_MANAGED=Y
                         --env {ENV_VAR_CONFIG_DIR}='{configuration_dir}'
                         --volume '{configuration_dir}:{configuration_dir}'
+                        --env {ENV_VAR_GENERATED_CONFIG_DIR}='{generated_configuration_dir}'
+                        --volume '{generated_configuration_dir}:{generated_configuration_dir}'
                         --env {ENV_VAR_DATA_DIR}='{data_dir}'
                         --volume '{data_dir}:{data_dir}'
                         {configuration.docker_image}
@@ -120,8 +128,8 @@ def create_cli(configuration: Configuration):
             ''')
         if ctx.invoked_subcommand is not None:
             command.append(ctx.invoked_subcommand)
-        if ctx.obj['subcommand_args'] is not None:
-            command.extend(ctx.obj['subcommand_args'])
+        if cli_context.subcommand_args is not None:
+            command.extend(cli_context.subcommand_args)
         logger.info("Relaunching with environment ...")
         logger.debug(f'Running [{" ".join(command)}]')
         result = subprocess.run(command)
@@ -163,7 +171,5 @@ def create_cli(configuration: Configuration):
 
 class ArgsGroup(click.Group):
     def invoke(self, ctx):
-        ctx.obj = {
-            "subcommand_args": tuple(ctx.args)
-        }
+        ctx.obj = tuple(ctx.args)
         super(ArgsGroup, self).invoke(ctx)

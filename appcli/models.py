@@ -21,7 +21,12 @@ class Configuration(NamedTuple):
     app_name: str
     docker_image: str
     seed_dir: Path
-    #ops_dir: Path
     #apply_configuration_settings_callback: FunctionType
     #config_cli: ConfigCli
     #pre_configuration_callback: FunctionType = lambda *a, **k: None
+
+class CliContext(NamedTuple):
+    configuration_dir: Path
+    generated_configuration_dir: Path
+    data_dir: Path
+    subcommand_args: tuple
