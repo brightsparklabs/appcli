@@ -77,8 +77,8 @@ def create_cli(configuration: Configuration):
         check_environment()
 
         logger.info(f'{APP_NAME_UPPERCASE} v{version} CLI running with:')
-        logger.info(f'    CONFIG_DIR: [{configuration_dir}]')
-        logger.info(f'    DATA_DIR:   [{data_dir}]')
+        logger.info(f'    {ENV_VAR_CONFIG_DIR}: [{configuration_dir}]')
+        logger.info(f'    {ENV_VAR_DATA_DIR}:   [{data_dir}]')
 
         if ctx.invoked_subcommand is None:
             click.echo(ctx.get_help())
