@@ -41,14 +41,6 @@ BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 # ------------------------------------------------------------------------------
 
 def create_cli(configuration: Configuration):
-
-    @click.group(invoke_without_command=True, help='Manages the system')
-    @click.option('--debug', '-d', help='Enables debug level logging', is_flag=True)
-    @click.pass_context
-    def cli(ctx, debug):
-        if debug:
-            enable_debug_logging()
-
     APP_NAME_UPPERCASE = configuration.app_name.upper()
     ENV_VAR_CONFIG_DIR = f'{APP_NAME_UPPERCASE}_CONFIG_DIR'
     ENV_VAR_DATA_DIR = f'{APP_NAME_UPPERCASE}_DATA_DIR'
@@ -65,8 +57,7 @@ def create_cli(configuration: Configuration):
     def cli(ctx, debug, configuration_dir, data_dir):
         if debug:
             logger.info("Enabling debug logging")
-            coloredlogs.install(logger=logger, fmt=FORMAT, level=logging.DEBUG)
-            logger.debug("Enabled debug logging")
+            enable_debug_logging()
 
         ctx.obj.update({
             "appcli_configuration": configuration,
@@ -164,8 +155,8 @@ def create_cli(configuration: Configuration):
     for command in main_commands:
         cli.add_command(command)
 
-#    configure_command = ConfigureCli(configuration).command
-#    cli.add_command(configure_command)
+    configure_command = ConfigureCli(configuration).command
+    cli.add_command(configure_command)
 
     return run
 

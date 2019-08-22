@@ -32,15 +32,8 @@ from ruamel.yaml import YAML
 
 # our library
 from .configuration_manager import ConfigurationManager
+from .logger import logger, enable_debug_logging
 from .models import Configuration, ConfigSettingsGroup, ConfigSetting
-
-# ------------------------------------------------------------------------------
-# LOGGING
-# ------------------------------------------------------------------------------
-
-FORMAT = '%(asctime)s %(levelname)s: %(message)s'
-logger = logging.getLogger(__name__)
-coloredlogs.install(logger=logger, fmt=FORMAT)
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
@@ -52,32 +45,24 @@ class ConfigureCli:
         self.cli_configuration: Configuration = configuration
 
         self.app_name = self.cli_configuration.app_name
-        env_app_home = f'{self.app_name}_EXT_{self.app_name}_HOME'.upper()
-        env_host_root = f'{self.app_name}_EXT_HOST_ROOT'.upper()
 
-        # environment variables which must be defined
-        self.mandatory_env_variables=[
-            env_app_home,
-            env_host_root
-        ]
+        env_config_dir = f'{self.app_name}_CONFIG_DIR'.upper()
+        self.config_dir = Path(os.environ.get(env_config_dir))
+        env_data_dir = f'{self.app_name}_DATA_DIR'.upper()
+        self.data_dir = Path(os.environ.get(env_data_dir))
 
-        # the application directory
-        self.app_ops_dir = os.path.realpath(self.cli_configuration.ops_dir.as_posix())
+        self.mandatory_env_variables = (
+            env_config_dir,
+            env_data_dir
+        )
+        # application configuration file used to populate templates
+        self.app_configuration_file = f'{self.config_dir}/{self.app_name}.yaml'
 
-        # application home ('current') directory
-        self.app_home = os.environ.get(env_app_home)
-
-        # application root directory
-        self.app_root = os.path.realpath(f'{self.app_home}/..')
-
-        # physical hosts root directory
-        self.host_root_dir = os.environ.get(env_host_root)
-
-        # application configuration file
-        self.configuration_file = f'{self.app_home}/conf/{self.app_name}.yaml'
+        # directory containing templates of configuration files
+        self.templates_dir = f'{self.config_dir}/templates'
 
         # the output generated configuration directory
-        self.generated_config_dir = f'{self.app_home}/.generated/conf'
+        self.generated_config_dir = f'{self.config_dir}/.generated/conf'
 
         # file to store record of configuration run
         self.configuration_record_file = f'{self.generated_config_dir}/configure-metadata'
@@ -99,35 +84,35 @@ class ConfigureCli:
                 logger.error('Prerequisite checks failed')
                 sys.exit(1)
 
-            self.__print_header('Running pre-configuration steps')
-            self.cli_configuration.pre_configuration_callback()
+            #self.__print_header('Running pre-configuration steps')
+            #self.cli_configuration.pre_configuration_callback()
 
             self.__print_header('Populating the configuration directory')
-            self.__populate_conf_dir()
+            self.__seed_configuration_dir()
 
-            app_config_manager = ConfigurationManager(self.configuration_file)
-            self.__configure_all_settings(app_config_manager)
+            #app_config_manager = ConfigurationManager(self.app_configuration_file)
+            #self.__configure_all_settings(app_config_manager)
 
-            self.__print_header('Running configuration settings callback')
-            self.cli_configuration.apply_configuration_settings_callback(app_config_manager)
+            #self.__print_header('Running configuration settings callback')
+            #self.cli_configuration.apply_configuration_settings_callback(app_config_manager)
 
-            self.__save_configuration(app_config_manager)
-            self.__clear_successful_configuration_record()
-            self.__generate_environment_file(app_config_manager)
-            self.__generate_configuration_files(app_config_manager)
-            self.__set_successful_configuration_record()
+            #self.__save_configuration(app_config_manager)
+            #self.__clear_successful_configuration_record()
+            #self.__generate_environment_file(app_config_manager)
+            #self.__generate_configuration_files(app_config_manager)
+            #self.__set_successful_configuration_record()
 
         @configure.command(help='Reads a setting from the configuration')
         @click.argument('setting')
         def get(setting):
-            configuration = ConfigurationManager(self.configuration_file)
+            configuration = ConfigurationManager(self.app_configuration_file)
             print(configuration.get(setting))
 
         @configure.command(help='Saves a setting to the configuration')
         @click.argument('setting')
         @click.argument('value')
         def set(setting, value):
-            configuration = ConfigurationManager(self.configuration_file)
+            configuration = ConfigurationManager(self.app_configuration_file)
             configuration.set(setting, value)
             configuration.save()
 
@@ -142,13 +127,13 @@ class ConfigureCli:
                 logger.error('Cannot access [%s]', file)
                 sys.exit(1)
 
-            target = Path(self.configuration_file)
+            target = Path(self.app_configuration_file)
             target.parent.mkdir(parents=True, exist_ok=True)
             logger.info('Copying [%s] to [%s]', source, target)
             shutil.copy2(source, target)
 
             self.__clear_successful_configuration_record()
-            configuration = ConfigurationManager(self.configuration_file)
+            configuration = ConfigurationManager(self.app_configuration_file)
             self.__generate_environment_file(configuration)
             self.__generate_configuration_files(configuration)
             self.__set_successful_configuration_record()
@@ -169,29 +154,28 @@ class ConfigureCli:
                 logger.error('Mandatory environment variable is not defined [%s]', env_variable)
                 result = False
 
-        for dir in [self.app_home, self.host_root_dir]:
-            if dir and not os.path.isdir(dir):
-                logger.error('Mandatory directory does not exist [%s]', dir)
-                result = False
-
         return result
 
-    def __populate_conf_dir(self):
-        logger.info('Populating [conf] directory ...')
-        conf_dir = f'{self.app_home}/conf'
-        os.makedirs(conf_dir, exist_ok=True)
+    def __seed_configuration_dir(self):
+        logger.info('Seeding configuration directory ...')
+        self.config_dir.mkdir(parents=True, exist_ok=True)
 
-        previous_dir = f'{self.app_home}/../previous'
+        seed_dir = self.cli_configuration.seed_dir
+        if not seed_dir.is_dir():
+            logger.error(f'Seed directory [{seed_dir}] is not valid. Release is corrupt.')
+            sys.exit(1)
 
-        # ensure application.yaml exists
-        relative_name = f'conf/{self.app_name}.yaml'
-        target = self.configuration_file
-        if not os.path.exists(target):
-            previous_version = f'{previous_dir}/{relative_name}'
-            # prefer files from previous version if they exist
-            source = previous_version if os.path.exists(previous_version) else f'{self.app_ops_dir}/{relative_name}'
-            logger.info('Copying application .yaml from [%s]', source)
-            shutil.copy2(source, target)
+        for source_file in seed_dir.iterdir():
+            logger.info(source_file)
+            relative_file = source_file.relative_to(seed_dir)
+            target_file = self.config_dir.joinpath(relative_file)
+
+            if source_file.is_dir():
+                logger.debug(f'Creating directory [{target_file}] ...')
+                target_file.mkdir(parents=True, exist_ok=True)
+            else:
+                logger.debug(f'Copying seed file to [{target_file}] ...')
+                shutil.copy2(source_file, target_file)
 
     def __configure_all_settings(self, config_manager: ConfigurationManager):
         settings_group: ConfigSettingsGroup
@@ -231,7 +215,7 @@ class ConfigureCli:
     def __generate_configuration_files(self, configuration):
         self.__print_header(f'Generating configuration files')
 
-        os.makedirs(self.generated_config_dir, exist_ok=True)
+        self.generated_config_dir.mkdir(parent=True, exist_ok=True)
 
         template_dir = f'{self.app_ops_dir}/template'
         for root, dirs, files in os.walk(template_dir):
