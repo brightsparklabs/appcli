@@ -2,10 +2,12 @@
 # # -*- coding: utf-8 -*-
 
 """
-Application Installer
+The install command available when running the CLI.
 
-This script makes hard assumptions about the location of files. It MUST be
-run within a container.
+Responsible for installing the application to the host system.
+
+NOTE: This script makes hard assumptions about the location of files. It MUST
+      be run within a container.
 ________________________________________________________________________________
 
 Created by brightSPARK Labs
@@ -13,32 +15,29 @@ www.brightsparklabs.com
 """
 
 # standard library
-import logging
 import os
 import sys
 
 # vendor libraries
 import click
-import coloredlogs
 from jinja2 import Template
+
+# internal libraries
+from .logger import logger
 from .models import Configuration
 
 # ------------------------------------------------------------------------------
-# LOGGING
+# CONSTANTS
 # ------------------------------------------------------------------------------
 
-FORMAT = '%(asctime)s %(levelname)s: %(message)s'
-logger = logging.getLogger(__name__)
-coloredlogs.install(logger=logger, fmt=FORMAT)
+# directory containing this script
+BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+
+# ------------------------------------------------------------------------------
+# CLASSES
+# ------------------------------------------------------------------------------
 
 class InstallCli:
-
-    # ------------------------------------------------------------------------------
-    # CONSTANTS
-    # ------------------------------------------------------------------------------
-
-    # directory containing this script
-    BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
     # ------------------------------------------------------------------------------
     # CONSTRUCTOR
@@ -64,19 +63,23 @@ class InstallCli:
         # directory to install this version into
         self.app_home = f'{self.app_root_dir}/{self.app_version}'
 
-    # ------------------------------------------------------------------------------
-    # PUBLIC METHODS
-    # ------------------------------------------------------------------------------
+        # NOTE: Hide the cli command as end users should not run it manually
+        @click.command(hidden=True, help='Installs the system')
+        @click.option('--overwrite', is_flag=True)
+        def install(overwrite):
+            self.__install(overwrite)
 
-    def install(self, overwrite):
-        logger.info(f'Installing application [v{self.app_version}]')
-
-        self.__check_prequisites(overwrite)
-        self.__setup_application_home(overwrite)
+        # expose the cli command
+        self.command = install
 
     # ------------------------------------------------------------------------------
     # PRIVATE METHODS
     # ------------------------------------------------------------------------------
+
+    def __install(self, overwrite):
+        logger.info(f'Installing application [v{self.app_version}] ...')
+        self.__check_prequisites(overwrite)
+        self.__setup_application_home(overwrite)
 
     def __check_prequisites(self, overwrite_install_dir):
         logger.info('Checking prerequisites ...')

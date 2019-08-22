@@ -10,7 +10,6 @@ www.brightsparklabs.com
 """
 
 # standard libraries
-import logging
 import os
 import shlex
 import subprocess
@@ -20,22 +19,15 @@ from .models import *
 
 # vendor libraries
 import click
-import coloredlogs
 
 # internal libraries
 from .configuration_manager import ConfigurationManager
 from .configure_cli import ConfigureCli
+from .logger import logger, enable_debug_logging
+from .models import Configuration
 from .install_cli import InstallCli
 from .main_cli import MainCli
 from .models import Configuration
-
-# ------------------------------------------------------------------------------
-# LOGGING
-# ------------------------------------------------------------------------------
-
-FORMAT = '%(asctime)s %(levelname)s: %(message)s'
-logger = logging.getLogger(__name__)
-coloredlogs.install(logger=logger, fmt=FORMAT)
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
@@ -50,9 +42,12 @@ BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 def create_cli(configuration: Configuration):
 
-    # --------------------------------------------------------------------------
-    # CREATE_CLI: CONSTANTS
-    # --------------------------------------------------------------------------
+    @click.group(invoke_without_command=True, help='Manages the system')
+    @click.option('--debug', '-d', help='Enables debug level logging', is_flag=True)
+    @click.pass_context
+    def cli(ctx, debug):
+        if debug:
+            enable_debug_logging()
 
     APP_NAME_UPPERCASE = configuration.app_name.upper()
     ENV_VAR_CONFIG_DIR = f'{APP_NAME_UPPERCASE}_CONFIG_DIR'
@@ -161,6 +156,9 @@ def create_cli(configuration: Configuration):
     # --------------------------------------------------------------------------
     # CREATE_CLI: LOGIC
     # --------------------------------------------------------------------------
+
+    install_command = InstallCli(configuration).command
+    cli.add_command(install_command)
 
     main_commands = MainCli(configuration).commands
     for command in main_commands:
