@@ -32,15 +32,15 @@ class Configuration(NamedTuple):
     docker_image: str
     """ The docker image used to run the CLI. """
 
-    app_configuration_file: Path
+    seed_app_configuration_file: Path
     """
-    Path to a YAML file containing variables which are applied to the
+    Path to a seed YAML file containing variables which are applied to the
     templates to generate the final configuration files.
     """
 
-    templates_dir: Path
+    seed_templates_dir: Path
     """
-    Directory containing jinja2 templates used to generate the final
+    Seed directory containing jinja2 templates used to generate the final
     configuration files.
     """
 
@@ -57,11 +57,23 @@ class CliContext(NamedTuple):
     configuration_dir: Path
     """ Directory to read configuration files from """
 
-    generated_configuration_dir: Path
-    """ Directory to store the generated configuration files to """
-
     data_dir: Path
     """ Directory to store data to """
 
     subcommand_args: tuple
     """ Arguments passed to CLI subcommand """
+
+    generated_configuration_dir: Path
+    """ Directory to store the generated configuration files to """
+
+    app_configuration_file: Path
+    """
+    Path to a YAML file containing variables which are applied to the
+    templates to generate the final configuration files.
+    """
+
+    templates_dir: Path
+    """
+    Directory containing jinja2 templates used to generate the final
+    configuration files.
+    """

@@ -62,11 +62,15 @@ def create_cli(configuration: Configuration):
 
         ctx.obj = CliContext(
             configuration_dir=configuration_dir,
+            data_dir=data_dir,
+            subcommand_args=ctx.obj,
             generated_configuration_dir=configuration_dir.joinpath(
                 '.generated/conf'),
-            data_dir=data_dir,
-            subcommand_args=ctx.obj
+            app_configuration_file=configuration_dir.joinpath(
+                f'{configuration.app_name}.yaml'),
+            templates_dir=configuration_dir.joinpath('templates')
         )
+        print(ctx.obj)
 
         version = os.environ.get('APP_VERSION')
         if version is None:

@@ -40,9 +40,6 @@ from .models import CliContext, Configuration, ConfigSettingsGroup, ConfigSettin
 # CONSTANTS
 # ------------------------------------------------------------------------------
 
-TEMPLATES_DIR_NAME = 'templates'
-""" Name of the directory holding templates (relative to the configuration directory) """
-
 METADATA_FILE_NAME = '.metadata-configure.json'
 """ Name of the file holding metadata from running a configure (relative to the generated configuration directory) """
 
@@ -59,20 +56,11 @@ class ConfigureCli:
         self.app_name = self.cli_configuration.app_name
 
         env_config_dir = f'{self.app_name}_CONFIG_DIR'.upper()
-        self.config_dir = Path(os.environ.get(env_config_dir))
         env_data_dir = f'{self.app_name}_DATA_DIR'.upper()
-        self.data_dir = Path(os.environ.get(env_data_dir))
         self.mandatory_env_variables = (
             env_config_dir,
             env_data_dir
         )
-
-        # application configuration file used to populate templates
-        self.app_configuration_file = self.config_dir.joinpath(
-            f'{self.app_name}.yaml')
-
-        # directory containing templates of configuration files
-        self.templates_dir = self.config_dir.joinpath(TEMPLATES_DIR_NAME)
 
         # ------------------------------------------------------------------------------
         # CLI METHODS
@@ -91,13 +79,16 @@ class ConfigureCli:
                 logger.error('Prerequisite checks failed')
                 sys.exit(1)
 
+            cli_context: CliContext = ctx.obj
+
             # self.__print_header('Running pre-configuration steps')
             # self.cli_configuration.pre_configuration_callback()
 
             self.__print_header('Populating the configuration directory')
-            self.__seed_configuration_dir()
+            self.__seed_configuration_dir(cli_context)
 
-            # app_config_manager = ConfigurationManager(self.app_configuration_file)
+            # app_configuration_file = cli_context.app_configuration_file
+            # app_config_manager = ConfigurationManager(app_configuration_file)
             # self.__configure_all_settings(app_config_manager)
 
             # self.__print_header('Running configuration settings callback')
@@ -107,26 +98,32 @@ class ConfigureCli:
 
         @configure.command(help='Reads a setting from the configuration')
         @click.argument('setting')
-        def get(setting):
-            configuration = ConfigurationManager(self.app_configuration_file)
+        @click.pass_context
+        def get(ctx, setting):
+            cli_context: CliContext = ctx.obj
+            configuration = ConfigurationManager(
+                cli_context.app_configuration_file)
             print(configuration.get(setting))
 
         @configure.command(help='Saves a setting to the configuration')
         @click.argument('setting')
         @click.argument('value')
-        def set(setting, value):
-            configuration = ConfigurationManager(self.app_configuration_file)
+        @click.pass_context
+        def set(ctx, setting, value):
+            cli_context: CliContext = ctx.obj
+            configuration = ConfigurationManager(
+                cli_context.app_configuration_file)
             configuration.set(setting, value)
             configuration.save()
 
         @configure.command(help='Applies the settings from the configuration')
         @click.pass_context
         def apply(ctx):
-            configuration = ConfigurationManager(self.app_configuration_file)
             cli_context: CliContext = ctx.obj
+            configuration = ConfigurationManager(
+                cli_context.app_configuration_file)
             generated_configuration_dir = cli_context.generated_configuration_dir
-            self.__generate_configuration_files(
-                configuration, generated_configuration_dir)
+            self.__generate_configuration_files(configuration, cli_context)
 
         self.command = configure
 
@@ -147,32 +144,34 @@ class ConfigureCli:
 
         return result
 
-    def __seed_configuration_dir(self):
+    def __seed_configuration_dir(self, cli_context: CliContext):
         logger.info('Seeding configuration directory ...')
 
         logger.info('Copying app configuration file ...')
-        app_configuration_file = self.cli_configuration.app_configuration_file
-        if not app_configuration_file.is_file():
+        seed_app_configuration_file = self.cli_configuration.seed_app_configuration_file
+        if not seed_app_configuration_file.is_file():
             logger.error(
-                f'Seed file [{app_configuration_file}] is not valid. Release is corrupt.')
+                f'Seed file [{seed_app_configuration_file}] is not valid. Release is corrupt.')
             sys.exit(1)
+        target_app_configuration_file = cli_context.app_configuration_file
         logger.debug(
-            f'Copying app configuration file to [{self.app_configuration_file}] ...')
-        self.app_configuration_file.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(app_configuration_file, self.app_configuration_file)
+            f'Copying app configuration file to [{target_app_configuration_file}] ...')
+        target_app_configuration_file.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(seed_app_configuration_file,
+                     target_app_configuration_file)
 
         logger.info('Copying templates ...')
-        templates_dir = self.config_dir.joinpath(TEMPLATES_DIR_NAME)
+        templates_dir = cli_context.templates_dir
         templates_dir.mkdir(parents=True, exist_ok=True)
-        seed_dir = self.cli_configuration.templates_dir
-        if not seed_dir.is_dir():
+        seed_templates_dir = self.cli_configuration.seed_templates_dir
+        if not seed_templates_dir.is_dir():
             logger.error(
-                f'Seed templates directory [{seed_dir}] is not valid. Release is corrupt.')
+                f'Seed templates directory [{seed_templates_dir}] is not valid. Release is corrupt.')
             sys.exit(1)
 
-        for source_file in seed_dir.glob('**/*'):
+        for source_file in seed_templates_dir.glob('**/*'):
             logger.info(source_file)
-            relative_file = source_file.relative_to(seed_dir)
+            relative_file = source_file.relative_to(seed_templates_dir)
             target_file = templates_dir.joinpath(relative_file)
 
             if source_file.is_dir():
@@ -198,8 +197,9 @@ class ConfigureCli:
         self.__print_header(f'Saving configuration')
         configuration.save()
 
-    def __generate_configuration_files(self, configuration: Configuration, generated_configuration_dir: Path):
+    def __generate_configuration_files(self, configuration: Configuration, cli_context: CliContext):
         self.__print_header(f'Generating configuration files')
+        generated_configuration_dir = cli_context.generated_configuration_dir
         generated_configuration_dir.mkdir(parents=True, exist_ok=True)
 
         configuration_record_file = generated_configuration_dir.joinpath(
@@ -210,8 +210,9 @@ class ConfigureCli:
             logger.debug(
                 f'Configuration record removed from [{configuration_record_file}]')
 
-        for template_file in self.templates_dir.glob('**/*'):
-            relative_file = template_file.relative_to(self.templates_dir)
+        for template_file in cli_context.templates_dir.glob('**/*'):
+            relative_file = template_file.relative_to(
+                cli_context.templates_dir)
             target_file = generated_configuration_dir.joinpath(relative_file)
 
             if template_file.is_dir():
