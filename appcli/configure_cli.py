@@ -81,7 +81,7 @@ class ConfigureCli:
                 # subcommand provided, do not enter interactive mode
                 return
 
-            self.__print_header('Configuring the application')
+            self.__print_header(f'Configuring {self.app_name}')
 
             if not self.__prequisites_met():
                 logger.error('Prerequisite checks failed')
