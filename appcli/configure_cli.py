@@ -149,18 +149,31 @@ class ConfigureCli:
 
     def __seed_configuration_dir(self):
         logger.info('Seeding configuration directory ...')
-        self.config_dir.mkdir(parents=True, exist_ok=True)
 
-        seed_dir = self.cli_configuration.seed_dir
+        logger.info('Copying app configuration file ...')
+        app_configuration_file = self.cli_configuration.app_configuration_file
+        if not app_configuration_file.is_file():
+            logger.error(
+                f'Seed file [{app_configuration_file}] is not valid. Release is corrupt.')
+            sys.exit(1)
+        logger.debug(
+            f'Copying app configuration file to [{self.app_configuration_file}] ...')
+        self.app_configuration_file.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(app_configuration_file, self.app_configuration_file)
+
+        logger.info('Copying templates ...')
+        templates_dir = self.config_dir.joinpath(TEMPLATES_DIR_NAME)
+        templates_dir.mkdir(parents=True, exist_ok=True)
+        seed_dir = self.cli_configuration.templates_dir
         if not seed_dir.is_dir():
             logger.error(
-                f'Seed directory [{seed_dir}] is not valid. Release is corrupt.')
+                f'Seed templates directory [{seed_dir}] is not valid. Release is corrupt.')
             sys.exit(1)
 
         for source_file in seed_dir.glob('**/*'):
             logger.info(source_file)
             relative_file = source_file.relative_to(seed_dir)
-            target_file = self.config_dir.joinpath(relative_file)
+            target_file = templates_dir.joinpath(relative_file)
 
             if source_file.is_dir():
                 logger.debug(f'Creating directory [{target_file}] ...')
@@ -194,7 +207,8 @@ class ConfigureCli:
         if os.path.exists(configuration_record_file):
             logger.info('Clearing successful configuration record ...')
             os.remove(configuration_record_file)
-            logger.debug(f'Confiugration record removed from [{configuration_record_file}]')
+            logger.debug(
+                f'Configuration record removed from [{configuration_record_file}]')
 
         for template_file in self.templates_dir.glob('**/*'):
             relative_file = template_file.relative_to(self.templates_dir)
@@ -225,8 +239,10 @@ class ConfigureCli:
                 }
             }
         }
-        configuration_record_file.write_text(json.dumps(record, indent=2, sort_keys=True))
-        logger.debug(f'Confiugration record written to [{configuration_record_file}]')
+        configuration_record_file.write_text(
+            json.dumps(record, indent=2, sort_keys=True))
+        logger.debug(
+            f'Confiugration record written to [{configuration_record_file}]')
 
     def __print_header(self, title):
         print('\n============================================================')
