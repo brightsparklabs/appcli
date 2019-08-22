@@ -81,13 +81,6 @@ def create_cli(configuration: Configuration):
         if ctx.invoked_subcommand is None:
             click.echo(ctx.get_help())
 
-    # NOTE: Hide the command as end users should not run it manually
-    @cli.command(hidden=True, help='Installs the system')
-    @click.option('--overwrite', is_flag=True)
-    def install(overwrite):
-        installer = InstallCli(configuration)
-        installer.install(overwrite)
-
     def run():
         cli(prog_name=configuration.app_name)
 
