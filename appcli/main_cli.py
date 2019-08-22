@@ -26,6 +26,7 @@ from .models import Configuration
 # CLASSES
 # ------------------------------------------------------------------------------
 
+
 class MainCli:
 
     # --------------------------------------------------------------------------
@@ -33,18 +34,21 @@ class MainCli:
     # --------------------------------------------------------------------------
 
     def __init__(self, configuration: Configuration):
-        docker_compose_file = configuration.docker_compose_file
         docker_compose_command = [
             'docker-compose',
             '--project-name', configuration.app_name,
-            '--file', docker_compose_file
+            '--file'
         ]
 
         @click.command(help='Starts the system')
         @click.pass_context
         def start(ctx):
             logger.info(f'Starting {configuration.app_name} ...')
-            command = docker_compose_command + ['up', '-d']
+            command = docker_compose_command + [
+                __get_compose_file_path(ctx),
+                'up',
+                '-d'
+            ]
             logger.debug(f'Running [{command}]')
             result = subprocess.run(command)
 
@@ -52,9 +56,15 @@ class MainCli:
         @click.pass_context
         def stop(ctx):
             logger.info(f'Stopping {configuration.app_name} ...')
-            command = docker_compose_command + ['down']
+            command = docker_compose_command + [
+                __get_compose_file_path(ctx),
+                'down'
+            ]
             logger.debug(f'Running [{command}]')
             result = subprocess.run(command)
+
+        def __get_compose_file_path(ctx):
+            return str(ctx.obj['configuration_dir'].joinpath('.generated/conf/cli/docker-compose.yml'))
 
         # expose the cli commands
         self.commands = [start, stop]

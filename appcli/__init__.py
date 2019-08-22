@@ -40,6 +40,7 @@ BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 # PUBLIC METHODS
 # ------------------------------------------------------------------------------
 
+
 def create_cli(configuration: Configuration):
     APP_NAME_UPPERCASE = configuration.app_name.upper()
     ENV_VAR_CONFIG_DIR = f'{APP_NAME_UPPERCASE}_CONFIG_DIR'
@@ -51,8 +52,8 @@ def create_cli(configuration: Configuration):
 
     @click.group(cls=ArgsGroup, invoke_without_command=True, help='Manages the system')
     @click.option('--debug', help='Enables debug level logging', is_flag=True)
-    @click.option('--configuration-dir', '-c', help='Directory to read configuration files from', required=True)
-    @click.option('--data-dir', '-d', help='Directory to store data to', required=True)
+    @click.option('--configuration-dir', '-c', help='Directory to read configuration files from', required=True, type=Path)
+    @click.option('--data-dir', '-d', help='Directory to store data to', required=True, type=Path)
     @click.pass_context
     def cli(ctx, debug, configuration_dir, data_dir):
         if debug:
@@ -67,7 +68,8 @@ def create_cli(configuration: Configuration):
 
         version = os.environ.get('APP_VERSION')
         if version is None:
-            logger.error('Could not determine version from environment variable [APP_VERSION]. This release is corrupt.')
+            logger.error(
+                'Could not determine version from environment variable [APP_VERSION]. This release is corrupt.')
             sys.exit(1)
 
         check_docker_socket()
@@ -86,7 +88,7 @@ def create_cli(configuration: Configuration):
 
     def check_docker_socket():
         if not os.path.exists('/var/run/docker.sock'):
-            error_msg=f'''Please relaunch using:
+            error_msg = f'''Please relaunch using:
 
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
@@ -131,10 +133,12 @@ def create_cli(configuration: Configuration):
         for env_variable in mandatory_variables:
             value = os.environ.get(env_variable)
             if value == None:
-                logger.error(f'Mandatory environment variable is not defined [{env_variable}]')
+                logger.error(
+                    f'Mandatory environment variable is not defined [{env_variable}]')
                 result = False
         if result == False:
-            logger.error("Cannot run without all mandatory environment variables defined")
+            logger.error(
+                "Cannot run without all mandatory environment variables defined")
             sys.exit(1)
 
     # --------------------------------------------------------------------------
@@ -155,6 +159,8 @@ def create_cli(configuration: Configuration):
 
 # allow exposing subcommand arguments
 # see: https://stackoverflow.com/a/44079245/3602961
+
+
 class ArgsGroup(click.Group):
     def invoke(self, ctx):
         ctx.obj = {

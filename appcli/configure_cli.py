@@ -51,11 +51,11 @@ class ConfigureCli:
         self.config_dir = Path(os.environ.get(env_config_dir))
         env_data_dir = f'{self.app_name}_DATA_DIR'.upper()
         self.data_dir = Path(os.environ.get(env_data_dir))
-
         self.mandatory_env_variables = (
             env_config_dir,
             env_data_dir
         )
+
         # application configuration file used to populate templates
         self.app_configuration_file = self.config_dir.joinpath(
             f'{self.app_name}.yaml')
