@@ -40,31 +40,36 @@ class MainCli:
             '--file'
         ]
 
-        @click.command(help='Starts the system')
+        @click.command(help='Starts the system',
+                       context_settings=dict(ignore_unknown_options=True))
         @click.pass_context
-        def start(ctx):
+        @click.argument('args', nargs=-1, type=click.UNPROCESSED)
+        def start(ctx, args):
             logger.info(f'Starting {configuration.app_name} ...')
-            command = docker_compose_command + [
-                __get_compose_file_path(ctx),
-                'up',
-                '-d'
-            ]
-            logger.debug(f'Running [{command}]')
-            result = subprocess.run(command)
+            __run_and_exit(ctx, ('up', '-d') + args)
 
         @click.command(help='Stops the system')
         @click.pass_context
         def stop(ctx):
             logger.info(f'Stopping {configuration.app_name} ...')
-            command = docker_compose_command + [
-                __get_compose_file_path(ctx),
-                'down'
-            ]
-            logger.debug(f'Running [{command}]')
-            result = subprocess.run(command)
+            __run_and_exit(ctx, ['down'])
+
+        @click.command(help='Streams the system logs',
+                       context_settings=dict(ignore_unknown_options=True))
+        @click.pass_context
+        @click.argument('args', nargs=-1, type=click.UNPROCESSED)
+        def logs(ctx, args):
+            __run_and_exit(ctx, ('logs', '-f') + args)
 
         def __get_compose_file_path(ctx):
             return str(ctx.obj['configuration_dir'].joinpath('.generated/conf/cli/docker-compose.yml'))
 
+        def __run_and_exit(ctx, subcommand):
+            command = docker_compose_command + [__get_compose_file_path(ctx)]
+            command.extend(subcommand)
+            logger.debug(f'Running [{" ".join(command)}]')
+            result = subprocess.run(command)
+            sys.exit(result.returncode)
+
         # expose the cli commands
-        self.commands = [start, stop]
+        self.commands = [start, stop, logs]
