@@ -27,7 +27,7 @@ from typing import List
 import click
 import coloredlogs
 import inquirer
-from jinja2 import Template
+from jinja2 import Template, StrictUndefined
 from ruamel.yaml import YAML
 
 # our library
@@ -184,9 +184,8 @@ class ConfigureCli:
 
     def __set_successful_configuration_record(self):
         logger.info('Saving successful configuration record ...')
-        with open(self.configuration_record_file, 'w') as output_file:
-            output_file.write(datetime.utcnow().replace(
-                tzinfo=timezone.utc).isoformat())
+        self.configuration_record_file.write_text(datetime.utcnow().replace(
+            tzinfo=timezone.utc).isoformat())
 
     def __generate_configuration_files(self, configuration):
         self.__print_header(f'Generating configuration files')
@@ -256,13 +255,12 @@ class ConfigureCli:
             path = setting['path']
             configuration.set(path, answers[path])
 
-    def __generate_from_template(self, template_file, target_file, configuration):
-        with open(template_file) as f:
-            template = Template(f.read())
+    def __generate_from_template(self, template_file: Path, target_file: Path, configuration: Configuration):
+        template = Template(template_file.read_text(),
+                            undefined=StrictUndefined)
         try:
             output_text = template.render(configuration)
-            with open(target_file, 'w') as f:
-                f.write(output_text)
+            target_file.write_text(output_text)
         except Exception as e:
             logger.error(
                 f'Could not generate file from template. The configuration file is likely missing a setting: {e}')
