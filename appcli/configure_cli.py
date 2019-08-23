@@ -66,7 +66,7 @@ class ConfigureCli:
         # CLI METHODS
         # ------------------------------------------------------------------------------
 
-        @click.group(invoke_without_command=True, help='Configures the application')
+        @click.group(invoke_without_command=True, help='Configures the application.')
         @click.pass_context
         def configure(ctx):
             if not ctx.invoked_subcommand is None:
@@ -96,7 +96,7 @@ class ConfigureCli:
 
             # self.__save_configuration(app_config_manager)
 
-        @configure.command(help='Reads a setting from the configuration')
+        @configure.command(help='Reads a setting from the configuration.')
         @click.argument('setting')
         @click.pass_context
         def get(ctx, setting):
@@ -105,7 +105,7 @@ class ConfigureCli:
                 cli_context.app_configuration_file)
             print(configuration.get(setting))
 
-        @configure.command(help='Saves a setting to the configuration')
+        @configure.command(help='Saves a setting to the configuration.')
         @click.argument('setting')
         @click.argument('value')
         @click.pass_context
@@ -116,13 +116,12 @@ class ConfigureCli:
             configuration.set(setting, value)
             configuration.save()
 
-        @configure.command(help='Applies the settings from the configuration')
+        @configure.command(help='Applies the settings from the configuration.')
         @click.pass_context
         def apply(ctx):
             cli_context: CliContext = ctx.obj
             configuration = ConfigurationManager(
                 cli_context.app_configuration_file)
-            generated_configuration_dir = cli_context.generated_configuration_dir
             self.__generate_configuration_files(configuration, cli_context)
 
         self.command = configure

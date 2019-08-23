@@ -77,3 +77,6 @@ class CliContext(NamedTuple):
     Directory containing jinja2 templates used to generate the final
     configuration files.
     """
+
+    debug: bool
+    """ Whether to print debug logs """

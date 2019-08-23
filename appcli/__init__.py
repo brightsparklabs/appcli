@@ -41,7 +41,8 @@ BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 def create_cli(configuration: Configuration):
-    APP_NAME_UPPERCASE = configuration.app_name.upper()
+    APP_NAME = configuration.app_name
+    APP_NAME_UPPERCASE = APP_NAME.upper()
     ENV_VAR_CONFIG_DIR = f'{APP_NAME_UPPERCASE}_CONFIG_DIR'
     ENV_VAR_GENERATED_CONFIG_DIR = f'{APP_NAME_UPPERCASE}_GENERATED_CONFIG_DIR'
     ENV_VAR_DATA_DIR = f'{APP_NAME_UPPERCASE}_DATA_DIR'
@@ -50,10 +51,10 @@ def create_cli(configuration: Configuration):
     # CREATE_CLI: NESTED METHODS
     # --------------------------------------------------------------------------
 
-    @click.group(cls=ArgsGroup, invoke_without_command=True, help='Manages the system')
-    @click.option('--debug', help='Enables debug level logging', is_flag=True)
-    @click.option('--configuration-dir', '-c', help='Directory to read configuration files from', required=True, type=Path)
-    @click.option('--data-dir', '-d', help='Directory to store data to', required=True, type=Path)
+    @click.group(cls=ArgsGroup, invoke_without_command=True, help=f'CLI for managing {APP_NAME}.')
+    @click.option('--debug', help='Enables debug level logging.', is_flag=True)
+    @click.option('--configuration-dir', '-c', help='Directory to read configuration files from.', required=True, type=Path)
+    @click.option('--data-dir', '-d', help='Directory to store data to.', required=True, type=Path)
     @click.pass_context
     def cli(ctx, debug, configuration_dir, data_dir):
         if debug:
@@ -67,10 +68,10 @@ def create_cli(configuration: Configuration):
             generated_configuration_dir=configuration_dir.joinpath(
                 '.generated/conf'),
             app_configuration_file=configuration_dir.joinpath(
-                f'{configuration.app_name}.yaml'),
-            templates_dir=configuration_dir.joinpath('templates')
+                f'{APP_NAME}.yaml'),
+            templates_dir=configuration_dir.joinpath('templates'),
+            debug=debug
         )
-        print(ctx.obj)
 
         version = os.environ.get('APP_VERSION')
         if version is None:
@@ -97,10 +98,11 @@ def create_cli(configuration: Configuration):
         if not os.path.exists('/var/run/docker.sock'):
             error_msg = f'''Please relaunch using:
 
-    docker run \
-        -v /var/run/docker.sock:/var/run/docker.sock \
-        {configuration.docker_image} \
-            --configuration-dir <dir> \
+    docker run \\
+        --rm
+        --volume /var/run/docker.sock:/var/run/docker.sock \\
+        {configuration.docker_image} \\
+            --configuration-dir <dir> \\
             --data-dir <dir> COMMAND'
 '''
             logger.error(error_msg)
@@ -113,11 +115,12 @@ def create_cli(configuration: Configuration):
             return
 
         # launched by user, not by appcli => need to launch via appcli
-        cli_context: CliContext = ctx.ob
+        cli_context: CliContext = ctx.obj
         configuration_dir = cli_context.configuration_dir
         generated_configuration_dir = cli_context.generated_configuration_dir
         data_dir = cli_context.data_dir
         command = shlex.split(f'''docker run
+                        --rm
                         --volume /var/run/docker.sock:/var/run/docker.sock
                         --env APPCLI_MANAGED=Y
                         --env {ENV_VAR_CONFIG_DIR}='{configuration_dir}'
@@ -130,11 +133,13 @@ def create_cli(configuration: Configuration):
                             --configuration-dir '{configuration_dir}'
                             --data-dir '{data_dir}'
             ''')
+        if cli_context.debug:
+            command.append('--debug')
         if ctx.invoked_subcommand is not None:
             command.append(ctx.invoked_subcommand)
         if cli_context.subcommand_args is not None:
             command.extend(cli_context.subcommand_args)
-        logger.info("Relaunching with environment ...")
+        logger.info("Relaunching with initialised environment ...")
         logger.debug(f'Running [{" ".join(command)}]')
         result = subprocess.run(command)
         sys.exit(result.returncode)

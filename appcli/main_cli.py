@@ -20,7 +20,7 @@ import click
 
 # internal libraries
 from .logger import logger
-from .models import Configuration
+from .models import CliContext, Configuration
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -40,26 +40,26 @@ class MainCli:
             '--file'
         ]
 
-        @click.command(help='Starts the system',
+        @click.command(help='Starts the system.\n\nOptionally specify CONTAINER to start only specific containers.',
                        context_settings=dict(ignore_unknown_options=True))
         @click.pass_context
-        @click.argument('args', nargs=-1, type=click.UNPROCESSED)
-        def start(ctx, args):
+        @click.argument('container', nargs=-1, type=click.UNPROCESSED)
+        def start(ctx, container):
             logger.info(f'Starting {configuration.app_name} ...')
-            __run_and_exit(ctx, ('up', '-d') + args)
+            __run_and_exit(ctx, ('up', '-d') + container)
 
-        @click.command(help='Stops the system')
+        @click.command(help='Stops the system.')
         @click.pass_context
         def stop(ctx):
             logger.info(f'Stopping {configuration.app_name} ...')
             __run_and_exit(ctx, ['down'])
 
-        @click.command(help='Streams the system logs',
+        @click.command(help='Streams the system logs.\n\nOptionally specify CONTAINER to only stream logs from specific containers.',
                        context_settings=dict(ignore_unknown_options=True))
         @click.pass_context
-        @click.argument('args', nargs=-1, type=click.UNPROCESSED)
-        def logs(ctx, args):
-            __run_and_exit(ctx, ('logs', '-f') + args)
+        @click.argument('container', nargs=-1, type=click.UNPROCESSED)
+        def logs(ctx, container):
+            __run_and_exit(ctx, ('logs', '-f') + container)
 
         def __run_and_exit(ctx, subcommand):
             command = docker_compose_command + [__get_compose_file_path(ctx)]
@@ -69,7 +69,8 @@ class MainCli:
             sys.exit(result.returncode)
 
         def __get_compose_file_path(ctx):
-            return str(ctx.obj['generated_configuration_dir'].joinpath('cli/docker-compose.yml'))
+            cli_context: CliContext = ctx.obj
+            return str(cli_context.generated_configuration_dir.joinpath('cli/docker-compose.yml'))
 
         # expose the cli commands
         self.commands = [start, stop, logs]
