@@ -245,9 +245,9 @@ class ConfigureCli:
             f'Confiugration record written to [{configuration_record_file}]')
 
     def __print_header(self, title):
-        print('\n============================================================')
-        print(title.upper())
-        print('============================================================\n')
+        logger.info('============================================================')
+        logger.info(title.upper())
+        logger.info('============================================================')
 
     def __confirm(self, message, default=False):
         answer = inquirer.prompt([
