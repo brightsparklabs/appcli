@@ -80,19 +80,16 @@ class ConfigureCli:
                 sys.exit(1)
 
             cli_context: CliContext = ctx.obj
+            customisation = self.cli_configuration.configure_cli_customisation
 
-            # self.__print_header('Running pre-configuration steps')
-            # self.cli_configuration.pre_configuration_callback()
-
-            self.__print_header('Populating the configuration directory')
+            logger.debug('Running pre-configure hook')
+            customisation.hooks.pre_configure(cli_context)
             self.__seed_configuration_dir(cli_context)
-
             # app_configuration_file = cli_context.app_configuration_file
             # app_config_manager = ConfigurationManager(app_configuration_file)
             # self.__configure_all_settings(app_config_manager)
-
-            # self.__print_header('Running configuration settings callback')
-            # self.cli_configuration.apply_configuration_settings_callback(app_config_manager)
+            logger.debug('Running post-configure hook')
+            customisation.hooks.post_configure(cli_context)
 
             # self.__save_configuration(app_config_manager)
 
@@ -122,7 +119,13 @@ class ConfigureCli:
             cli_context: CliContext = ctx.obj
             configuration = ConfigurationManager(
                 cli_context.app_configuration_file)
+            customisation = self.cli_configuration.configure_cli_customisation
+
+            logger.debug('Running pre-apply hook')
+            customisation.hooks.pre_apply(cli_context)
             self.__generate_configuration_files(configuration, cli_context)
+            logger.debug('Running post-apply hook')
+            customisation.hooks.post_apply(cli_context)
 
         self.command = configure
 
@@ -144,7 +147,7 @@ class ConfigureCli:
         return result
 
     def __seed_configuration_dir(self, cli_context: CliContext):
-        logger.info('Seeding configuration directory ...')
+        self.__print_header('Seeding configuration directory ...')
 
         logger.info('Copying app configuration file ...')
         seed_app_configuration_file = self.cli_configuration.seed_app_configuration_file
@@ -242,12 +245,12 @@ class ConfigureCli:
         configuration_record_file.write_text(
             json.dumps(record, indent=2, sort_keys=True))
         logger.debug(
-            f'Confiugration record written to [{configuration_record_file}]')
+            f'Configuration record written to [{configuration_record_file}]')
 
     def __print_header(self, title):
-        logger.info('============================================================')
-        logger.info(title.upper())
-        logger.info('============================================================')
+        logger.info(f'''============================================================
+                          {title.upper()}
+                          ============================================================''')
 
     def __confirm(self, message, default=False):
         answer = inquirer.prompt([

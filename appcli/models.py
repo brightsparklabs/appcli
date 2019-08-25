@@ -2,51 +2,8 @@
 # # -*- coding: utf-8 -*-
 
 from types import LambdaType, FunctionType
-from typing import NamedTuple, List
+from typing import Callable, NamedTuple, List
 from pathlib import Path
-
-
-class ConfigSetting(NamedTuple):
-    path: str
-    message: str
-    validate: LambdaType = lambda _, x: True
-
-
-class ConfigSettingsGroup(NamedTuple):
-    title: str
-    settings: List[ConfigSetting]
-
-
-class ConfigCli(NamedTuple):
-    settings_groups: List[ConfigSettingsGroup]
-
-
-class Configuration(NamedTuple):
-    """
-    Configuration for building the CLI.
-    """
-
-    app_name: str
-    """ Name of the application (do not use spaces). """
-
-    docker_image: str
-    """ The docker image used to run the CLI. """
-
-    seed_app_configuration_file: Path
-    """
-    Path to a seed YAML file containing variables which are applied to the
-    templates to generate the final configuration files.
-    """
-
-    seed_templates_dir: Path
-    """
-    Seed directory containing jinja2 templates used to generate the final
-    configuration files.
-    """
-
-    #apply_configuration_settings_callback: FunctionType
-    #config_cli: ConfigCli
-    #pre_configuration_callback: FunctionType = lambda *a, **k: None
 
 
 class CliContext(NamedTuple):
@@ -80,3 +37,60 @@ class CliContext(NamedTuple):
 
     debug: bool
     """ Whether to print debug logs """
+
+
+class ConfigSetting(NamedTuple):
+    path: str
+    message: str
+    validate: LambdaType = lambda _, x: True
+
+
+class ConfigSettingsGroup(NamedTuple):
+    title: str
+    settings: List[ConfigSetting]
+
+
+class ConfigureCliConfiguration(NamedTuple):
+    class Hooks(NamedTuple):
+        pre_configure: Callable[[CliContext], None] = lambda x: None
+        """ Hook to run before running configure. """
+        post_configure: Callable[[CliContext], None] = lambda x: None
+        """ Hook to run after running configure. """
+        pre_apply: Callable[[CliContext], None] = lambda x: None
+        """ Hook to run before running appy. """
+        post_apply: Callable[[CliContext], None] = lambda x: None
+        """ Hook to run after running appy. """
+
+    hooks: Hooks = Hooks()
+    """ Hooks to run before/after stages """
+    settings_groups: List[ConfigSettingsGroup] = None
+    """ Settings for building interactive configure prompt """
+
+
+class Configuration(NamedTuple):
+    """
+    Configuration for building the CLI.
+    """
+
+    app_name: str
+    """ Name of the application (do not use spaces). """
+
+    docker_image: str
+    """ The docker image used to run the CLI. """
+
+    seed_app_configuration_file: Path
+    """
+    Path to a seed YAML file containing variables which are applied to the
+    templates to generate the final configuration files.
+    """
+
+    seed_templates_dir: Path
+    """
+    Seed directory containing jinja2 templates used to generate the final
+    configuration files.
+    """
+
+    configure_cli_customisation: ConfigureCliConfiguration
+    """
+    Configuration for the `configure` CLI command
+    """

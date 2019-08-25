@@ -26,7 +26,7 @@ from .configure_cli import ConfigureCli
 from .install_cli import InstallCli
 from .logger import logger, enable_debug_logging
 from .main_cli import MainCli
-from .models import CliContext, Configuration
+from .models import CliContext, Configuration, ConfigureCliConfiguration
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
