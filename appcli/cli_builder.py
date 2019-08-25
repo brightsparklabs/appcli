@@ -67,7 +67,7 @@ def create_cli(configuration: Configuration):
             generated_configuration_dir=configuration_dir.joinpath(
                 '.generated/conf'),
             app_configuration_file=configuration_dir.joinpath(
-                f'{APP_NAME}.yaml'),
+                f'{APP_NAME}.yml'),
             templates_dir=configuration_dir.joinpath('templates'),
             debug=debug
         )
