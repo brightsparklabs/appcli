@@ -288,7 +288,9 @@ class ConfigureCli:
 
     def __generate_from_template(self, template_file: Path, target_file: Path, configuration: Configuration):
         template = Template(template_file.read_text(),
-                            undefined=StrictUndefined)
+                            undefined=StrictUndefined,
+                            trim_blocks=True,
+                            lstrip_blocks=True)
         try:
             output_text = template.render(configuration)
             target_file.write_text(output_text)
