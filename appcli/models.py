@@ -44,7 +44,6 @@ class ConfigSetting(NamedTuple):
     message: str
     validate: LambdaType = lambda _, x: True
 
-
 class ConfigSettingsGroup(NamedTuple):
     title: str
     settings: List[ConfigSetting]
