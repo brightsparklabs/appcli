@@ -49,18 +49,17 @@ class ConfigSettingsGroup(NamedTuple):
     title: str
     settings: List[ConfigSetting]
 
+class Hooks(NamedTuple):
+    pre_configure: Callable[[CliContext], None] = lambda x: None
+    """ Hook to run before running configure. """
+    post_configure: Callable[[CliContext], None] = lambda x: None
+    """ Hook to run after running configure. """
+    pre_apply: Callable[[CliContext], None] = lambda x: None
+    """ Hook to run before running appy. """
+    post_apply: Callable[[CliContext], None] = lambda x: None
+    """ Hook to run after running appy. """
 
 class ConfigureCliConfiguration(NamedTuple):
-    class Hooks(NamedTuple):
-        pre_configure: Callable[[CliContext], None] = lambda x: None
-        """ Hook to run before running configure. """
-        post_configure: Callable[[CliContext], None] = lambda x: None
-        """ Hook to run after running configure. """
-        pre_apply: Callable[[CliContext], None] = lambda x: None
-        """ Hook to run before running appy. """
-        post_apply: Callable[[CliContext], None] = lambda x: None
-        """ Hook to run after running appy. """
-
     hooks: Hooks = Hooks()
     """ Hooks to run before/after stages """
     settings_groups: List[ConfigSettingsGroup] = None
