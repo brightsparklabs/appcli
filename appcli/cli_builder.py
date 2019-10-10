@@ -171,6 +171,9 @@ def create_cli(configuration: Configuration):
     configure_command = ConfigureCli(configuration).command
     cli.add_command(configure_command)
 
+    for command in configuration.subcommands:
+        cli.add_command(command)
+
     return run
 
 # allow exposing subcommand arguments
