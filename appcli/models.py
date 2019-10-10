@@ -93,8 +93,3 @@ class Configuration(NamedTuple):
     """
     Configuration for the `configure` CLI command
     """
-
-    subcommands: List[Callable] = []
-    """
-    Optional. Extra click commands to add to the CLI. Can be group or specific commands.
-    """
