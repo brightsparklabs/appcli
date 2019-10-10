@@ -74,10 +74,10 @@ class Cli:
     # PUBLIC METHODS
     # --------------------------------------------------------------------------
 
-    def add_subcommand(sub_command):
+    def add_subcommand(self, sub_command):
         self.subcommands.append(sub_command)
 
-    def invoke():
+    def invoke(self):
         # Add all the main commands
         cli.add_command(self.install_cli.command)
         cli.add_command(self.configure_cli.command)
@@ -100,7 +100,7 @@ class Cli:
     @click.option('--configuration-dir', '-c', help='Directory to read configuration files from.', required=True, type=Path)
     @click.option('--data-dir', '-d', help='Directory to store data to.', required=True, type=Path)
     @click.pass_context
-    def cli(ctx, debug, configuration_dir, data_dir):
+    def cli(self, ctx, debug, configuration_dir, data_dir):
         if debug:
             logger.info("Enabling debug logging")
             enable_debug_logging()
@@ -135,7 +135,7 @@ class Cli:
         if ctx.invoked_subcommand is None:
             click.echo(ctx.get_help())
 
-    def __check_docker_socket():
+    def __check_docker_socket(self):
         if not os.path.exists('/var/run/docker.sock'):
             error_msg = f'''Please relaunch using:
 
@@ -149,7 +149,7 @@ class Cli:
             logger.error(error_msg)
             sys.exit(1)
 
-    def __relaunch_if_required(ctx):
+    def __relaunch_if_required(self, ctx):
         is_appcli_managed = os.environ.get('APPCLI_MANAGED')
         if is_appcli_managed is not None:
             # launched by appcli => no need to relaunch
@@ -185,7 +185,7 @@ class Cli:
         result = subprocess.run(command)
         sys.exit(result.returncode)
 
-    def __check_environment():
+    def __check_environment(self):
         result = True
         mandatory_variables = [self.ENV_VAR_CONFIG_DIR, self.ENV_VAR_DATA_DIR]
         for env_variable in mandatory_variables:
