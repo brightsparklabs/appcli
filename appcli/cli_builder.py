@@ -38,50 +38,16 @@ BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 # PUBLIC METHODS
 # ------------------------------------------------------------------------------
 
+
 def create_cli(configuration: Configuration):
-    return Cli(configuration)
-
-def Cli:
-
-    # --------------------------------------------------------------------------
-    # CONSTRUCTOR METHODs
-    # --------------------------------------------------------------------------
-
-    def __init__(self, configuration: Configuration):
-        self.configuration = configuration
-        self.APP_NAME = configuration.app_name
-        self.APP_NAME_UPPERCASE = APP_NAME.upper()
-        self.ENV_VAR_CONFIG_DIR = f'{APP_NAME_UPPERCASE}_CONFIG_DIR'
-        self.ENV_VAR_GENERATED_CONFIG_DIR = f'{APP_NAME_UPPERCASE}_GENERATED_CONFIG_DIR'
-        self.ENV_VAR_DATA_DIR = f'{APP_NAME_UPPERCASE}_DATA_DIR'
-        self.install_cli = InstallCli(configuration)
-        self.configure_cli = ConfigureCli(configuration)
-        self.main_cli = MainCli(configuration)
-        self.subcommands = []
+    APP_NAME = configuration.app_name
+    APP_NAME_UPPERCASE = APP_NAME.upper()
+    ENV_VAR_CONFIG_DIR = f'{APP_NAME_UPPERCASE}_CONFIG_DIR'
+    ENV_VAR_GENERATED_CONFIG_DIR = f'{APP_NAME_UPPERCASE}_GENERATED_CONFIG_DIR'
+    ENV_VAR_DATA_DIR = f'{APP_NAME_UPPERCASE}_DATA_DIR'
 
     # --------------------------------------------------------------------------
-    # PUBLIC METHODS
-    # --------------------------------------------------------------------------
-
-    def add_subcommand(sub_command):
-        self.subcommands.append(sub_command)
-
-    def invoke():
-        # Add all the main commands
-        cli.add_command(self.install_cli.command)
-        cli.add_command(self.configure_cli.command)
-        for command in self.main_cli.commands:
-            cli.add_command(command)
-
-        # Add all the extra subcommands
-        for command in self.subcommands:
-            cli.add_command(command)
-
-        # Invoke the cli
-        cli(prog_name=self.configuration.app_name)
-
-    # --------------------------------------------------------------------------
-    # PRIVATE METHODS
+    # CREATE_CLI: NESTED METHODS
     # --------------------------------------------------------------------------
 
     @click.group(cls=ArgsGroup, invoke_without_command=True, help=f'CLI for managing {APP_NAME}.')
@@ -101,7 +67,7 @@ def Cli:
             generated_configuration_dir=configuration_dir.joinpath(
                 '.generated/conf'),
             app_configuration_file=configuration_dir.joinpath(
-                f'{self.APP_NAME}.yml'),
+                f'{APP_NAME}.yml'),
             templates_dir=configuration_dir.joinpath('templates'),
             debug=debug
         )
@@ -112,33 +78,36 @@ def Cli:
                 'Could not determine version from environment variable [APP_VERSION]. This release is corrupt.')
             sys.exit(1)
 
-        __check_docker_socket()
-        __relaunch_if_required(ctx)
-        __check_environment()
+        check_docker_socket()
+        relaunch_if_required(ctx)
+        check_environment()
 
-        logger.info(f'''{self.APP_NAME_UPPERCASE} v{version} CLI running with:
-    {self.ENV_VAR_CONFIG_DIR}:           [{ctx.obj.configuration_dir}]
-    {self.ENV_VAR_GENERATED_CONFIG_DIR}: [{ctx.obj.generated_configuration_dir}]
-    {self.ENV_VAR_DATA_DIR}:             [{ctx.obj.data_dir}]''')
+        logger.info(f'''{APP_NAME_UPPERCASE} v{version} CLI running with:
+    {ENV_VAR_CONFIG_DIR}:           [{ctx.obj.configuration_dir}]
+    {ENV_VAR_GENERATED_CONFIG_DIR}: [{ctx.obj.generated_configuration_dir}]
+    {ENV_VAR_DATA_DIR}:             [{ctx.obj.data_dir}]''')
 
         if ctx.invoked_subcommand is None:
             click.echo(ctx.get_help())
 
-    def __check_docker_socket():
+    def run():
+        cli(prog_name=configuration.app_name)
+
+    def check_docker_socket():
         if not os.path.exists('/var/run/docker.sock'):
             error_msg = f'''Please relaunch using:
 
     docker run \\
         --rm
         --volume /var/run/docker.sock:/var/run/docker.sock \\
-        {self.configuration.docker_image} \\
+        {configuration.docker_image} \\
             --configuration-dir <dir> \\
             --data-dir <dir> COMMAND'
 '''
             logger.error(error_msg)
             sys.exit(1)
 
-    def __relaunch_if_required(ctx):
+    def relaunch_if_required(ctx):
         is_appcli_managed = os.environ.get('APPCLI_MANAGED')
         if is_appcli_managed is not None:
             # launched by appcli => no need to relaunch
@@ -153,13 +122,13 @@ def Cli:
                         --rm
                         --volume /var/run/docker.sock:/var/run/docker.sock
                         --env APPCLI_MANAGED=Y
-                        --env {self.ENV_VAR_CONFIG_DIR}='{configuration_dir}'
+                        --env {ENV_VAR_CONFIG_DIR}='{configuration_dir}'
                         --volume '{configuration_dir}:{configuration_dir}'
-                        --env {self.ENV_VAR_GENERATED_CONFIG_DIR}='{generated_configuration_dir}'
+                        --env {ENV_VAR_GENERATED_CONFIG_DIR}='{generated_configuration_dir}'
                         --volume '{generated_configuration_dir}:{generated_configuration_dir}'
-                        --env {self.ENV_VAR_DATA_DIR}='{data_dir}'
+                        --env {ENV_VAR_DATA_DIR}='{data_dir}'
                         --volume '{data_dir}:{data_dir}'
-                        {self.configuration.docker_image}
+                        {configuration.docker_image}
                             --configuration-dir '{configuration_dir}'
                             --data-dir '{data_dir}'
             ''')
@@ -174,9 +143,9 @@ def Cli:
         result = subprocess.run(command)
         sys.exit(result.returncode)
 
-    def __check_environment():
+    def check_environment():
         result = True
-        mandatory_variables = [self.ENV_VAR_CONFIG_DIR, self.ENV_VAR_DATA_DIR]
+        mandatory_variables = [ENV_VAR_CONFIG_DIR, ENV_VAR_DATA_DIR]
         for env_variable in mandatory_variables:
             value = os.environ.get(env_variable)
             if value == None:
@@ -188,8 +157,29 @@ def Cli:
                 "Cannot run without all mandatory environment variables defined")
             sys.exit(1)
 
+    # --------------------------------------------------------------------------
+    # CREATE_CLI: LOGIC
+    # --------------------------------------------------------------------------
+
+    install_command = InstallCli(configuration).command
+    cli.add_command(install_command)
+
+    main_commands = MainCli(configuration).commands
+    for command in main_commands:
+        cli.add_command(command)
+
+    configure_command = ConfigureCli(configuration).command
+    cli.add_command(configure_command)
+
+    for command in configuration.subcommands:
+        cli.add_command(command)
+
+    return run
+
 # allow exposing subcommand arguments
 # see: https://stackoverflow.com/a/44079245/3602961
+
+
 class ArgsGroup(click.Group):
     def invoke(self, ctx):
         ctx.obj = tuple(ctx.args)
