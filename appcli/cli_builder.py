@@ -95,7 +95,7 @@ class Cli:
     # PRIVATE METHODS
     # --------------------------------------------------------------------------
 
-    @click.group(cls=ArgsGroup, invoke_without_command=True, help=f'CLI for managing {self.APP_NAME}.')
+    @click.group(cls=ArgsGroup, invoke_without_command=True, help=f'CLI for managing {APP_NAME}.')
     @click.option('--debug', help='Enables debug level logging.', is_flag=True)
     @click.option('--configuration-dir', '-c', help='Directory to read configuration files from.', required=True, type=Path)
     @click.option('--data-dir', '-d', help='Directory to store data to.', required=True, type=Path)
