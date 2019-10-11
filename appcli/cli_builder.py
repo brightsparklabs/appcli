@@ -188,9 +188,9 @@ class Cli:
                 "Cannot run without all mandatory environment variables defined")
             sys.exit(1)
 
-    # allow exposing subcommand arguments
-    # see: https://stackoverflow.com/a/44079245/3602961
-    class ArgsGroup(click.Group):
-        def invoke(self, ctx):
-            ctx.obj = tuple(ctx.args)
-            super(ArgsGroup, self).invoke(ctx)
+# allow exposing subcommand arguments
+# see: https://stackoverflow.com/a/44079245/3602961
+class ArgsGroup(click.Group):
+    def invoke(self, ctx):
+        ctx.obj = tuple(ctx.args)
+        super(ArgsGroup, self).invoke(ctx)
