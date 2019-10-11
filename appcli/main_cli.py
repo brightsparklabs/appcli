@@ -41,7 +41,7 @@ class MainCli:
             '--file'
         ]
         # expose the cli commands
-        self.commands = [start, stop, logs]
+        self.commands = [self.start, self.stop, self.logs]
 
     @click.command(help='Starts the system.\n\nOptionally specify CONTAINER to start only specific containers.',
                    context_settings=dict(ignore_unknown_options=True))

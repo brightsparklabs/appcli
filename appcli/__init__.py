@@ -10,7 +10,7 @@ www.brightsparklabs.com
 """
 
 # internal libraries
-from appcli.cli_builder import Cli
+from appcli.cli_builder import create_cli
 from appcli.models import CliContext
 from appcli.models import Configuration
 from appcli.models import ConfigureCliConfiguration

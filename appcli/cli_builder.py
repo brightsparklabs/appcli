@@ -61,10 +61,10 @@ class Cli:
     def __init__(self, configuration: Configuration):
         self.configuration = configuration
         self.APP_NAME = configuration.app_name
-        self.APP_NAME_UPPERCASE = APP_NAME.upper()
-        self.ENV_VAR_CONFIG_DIR = f'{APP_NAME_UPPERCASE}_CONFIG_DIR'
-        self.ENV_VAR_GENERATED_CONFIG_DIR = f'{APP_NAME_UPPERCASE}_GENERATED_CONFIG_DIR'
-        self.ENV_VAR_DATA_DIR = f'{APP_NAME_UPPERCASE}_DATA_DIR'
+        self.APP_NAME_UPPERCASE = self.APP_NAME.upper()
+        self.ENV_VAR_CONFIG_DIR = f'{self.APP_NAME_UPPERCASE}_CONFIG_DIR'
+        self.ENV_VAR_GENERATED_CONFIG_DIR = f'{self.APP_NAME_UPPERCASE}_GENERATED_CONFIG_DIR'
+        self.ENV_VAR_DATA_DIR = f'{self.APP_NAME_UPPERCASE}_DATA_DIR'
         self.install_cli = InstallCli(configuration)
         self.configure_cli = ConfigureCli(configuration)
         self.main_cli = MainCli(configuration)
@@ -79,17 +79,17 @@ class Cli:
 
     def invoke(self):
         # Add all the main commands
-        cli.add_command(self.install_cli.command)
-        cli.add_command(self.configure_cli.command)
+        self.cli.add_command(self.install_cli.command)
+        self.cli.add_command(self.configure_cli.command)
         for command in self.main_cli.commands:
-            cli.add_command(command)
+            self.cli.add_command(command)
 
         # Add all the extra subcommands
         for command in self.subcommands:
-            cli.add_command(command)
+            self.cli.add_command(command)
 
         # Invoke the cli
-        cli(prog_name=self.configuration.app_name)
+        self.cli(prog_name=self.configuration.app_name)
 
     # --------------------------------------------------------------------------
     # PRIVATE METHODS
