@@ -41,17 +41,6 @@ BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 def create_cli(configuration: Configuration):
     return Cli(configuration)
 
-# ------------------------------------------------------------------------------
-# PUBLIC CLASSES
-# ------------------------------------------------------------------------------
-
-# allow exposing subcommand arguments
-# see: https://stackoverflow.com/a/44079245/3602961
-class ArgsGroup(click.Group):
-    def invoke(self, ctx):
-        ctx.obj = tuple(ctx.args)
-        super(ArgsGroup, self).invoke(ctx)
-
 class Cli:
 
     # --------------------------------------------------------------------------
@@ -198,3 +187,10 @@ class Cli:
             logger.error(
                 "Cannot run without all mandatory environment variables defined")
             sys.exit(1)
+
+    # allow exposing subcommand arguments
+    # see: https://stackoverflow.com/a/44079245/3602961
+    class ArgsGroup(click.Group):
+        def invoke(self, ctx):
+            ctx.obj = tuple(ctx.args)
+            super(ArgsGroup, self).invoke(ctx)
