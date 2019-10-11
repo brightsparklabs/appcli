@@ -2,7 +2,7 @@
 # # -*- coding: utf-8 -*-
 
 from types import LambdaType, FunctionType
-from typing import Callable, NamedTuple, List
+from typing import Callable, Dict, List, NamedTuple
 from pathlib import Path
 
 
@@ -37,6 +37,9 @@ class CliContext(NamedTuple):
 
     debug: bool
     """ Whether to print debug logs """
+
+    commands: Dict
+    """ Internal commands """
 
 
 class ConfigSetting(NamedTuple):

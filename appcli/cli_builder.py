@@ -47,6 +47,14 @@ def create_cli(configuration: Configuration):
     ENV_VAR_DATA_DIR = f'{APP_NAME_UPPERCASE}_DATA_DIR'
 
     # --------------------------------------------------------------------------
+    # CREATE_CLI: LOGIC
+    # --------------------------------------------------------------------------
+
+    install_command = InstallCli(configuration).command
+    main_commands = MainCli(configuration).commands
+    configure_command = ConfigureCli(configuration).command
+
+    # --------------------------------------------------------------------------
     # CREATE_CLI: NESTED METHODS
     # --------------------------------------------------------------------------
 
@@ -69,7 +77,12 @@ def create_cli(configuration: Configuration):
             app_configuration_file=configuration_dir.joinpath(
                 f'{APP_NAME}.yml'),
             templates_dir=configuration_dir.joinpath('templates'),
-            debug=debug
+            debug=debug,
+            commands={
+                'install': install_command,
+                'configure': configure_command,
+                **main_commands
+            }
         )
 
         version = os.environ.get('APP_VERSION')
@@ -157,20 +170,10 @@ def create_cli(configuration: Configuration):
                 "Cannot run without all mandatory environment variables defined")
             sys.exit(1)
 
-    # --------------------------------------------------------------------------
-    # CREATE_CLI: LOGIC
-    # --------------------------------------------------------------------------
-
-    install_command = InstallCli(configuration).command
     cli.add_command(install_command)
-
-    main_commands = MainCli(configuration).commands
-    for command in main_commands:
-        cli.add_command(command)
-
-    configure_command = ConfigureCli(configuration).command
     cli.add_command(configure_command)
-
+    for command in main_commands.values():
+        cli.add_command(command)
     for command in configuration.subcommands:
         cli.add_command(command)
 
@@ -178,8 +181,6 @@ def create_cli(configuration: Configuration):
 
 # allow exposing subcommand arguments
 # see: https://stackoverflow.com/a/44079245/3602961
-
-
 class ArgsGroup(click.Group):
     def invoke(self, ctx):
         ctx.obj = tuple(ctx.args)
