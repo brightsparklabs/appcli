@@ -41,7 +41,7 @@ BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 def create_cli(configuration: Configuration):
     return Cli(configuration)
 
-class Cli:
+def Cli:
 
     # --------------------------------------------------------------------------
     # CONSTRUCTOR METHODs
