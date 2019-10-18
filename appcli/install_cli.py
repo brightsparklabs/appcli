@@ -70,7 +70,9 @@ class InstallCli:
             self.__install(overwrite)
 
         # expose the cli command
-        self.command = install
+        self.commands = {
+            'install': install
+        }
 
     # ------------------------------------------------------------------------------
     # PRIVATE METHODS

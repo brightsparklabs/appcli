@@ -21,11 +21,12 @@ from typing import NamedTuple
 import click
 
 # internal libraries
-from appcli.configure_cli import ConfigureCli
-from appcli.install_cli import InstallCli
-from appcli.logger import logger, enable_debug_logging
-from appcli.main_cli import MainCli
-from appcli.models import CliContext, Configuration
+from .configure_cli import ConfigureCli
+from .init_cli import InitCli
+from .install_cli import InstallCli
+from .logger import logger, enable_debug_logging
+from .main_cli import MainCli
+from .models import CliContext, Configuration
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
@@ -50,9 +51,17 @@ def create_cli(configuration: Configuration):
     # CREATE_CLI: LOGIC
     # --------------------------------------------------------------------------
 
-    install_command = InstallCli(configuration).command
+    install_commands = InstallCli(configuration).commands
     main_commands = MainCli(configuration).commands
-    configure_command = ConfigureCli(configuration).command
+    configure_commands = ConfigureCli(configuration).commands
+    init_commands = InitCli(configuration).commands
+
+    all_commands = {
+        **configure_commands,
+        **init_commands,
+        **install_commands,
+        **main_commands
+    }
 
     # --------------------------------------------------------------------------
     # CREATE_CLI: NESTED METHODS
@@ -78,11 +87,7 @@ def create_cli(configuration: Configuration):
                 f'{APP_NAME}.yml'),
             templates_dir=configuration_dir.joinpath('templates'),
             debug=debug,
-            commands={
-                'install': install_command,
-                'configure': configure_command,
-                **main_commands
-            }
+            commands=all_commands
         )
 
         version = os.environ.get('APP_VERSION')
@@ -170,10 +175,9 @@ def create_cli(configuration: Configuration):
                 "Cannot run without all mandatory environment variables defined")
             sys.exit(1)
 
-    cli.add_command(install_command)
-    cli.add_command(configure_command)
-    for command in main_commands.values():
+    for command in all_commands.values():
         cli.add_command(command)
+
     for command in configuration.subcommands:
         cli.add_command(command)
 

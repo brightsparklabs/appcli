@@ -127,7 +127,9 @@ class ConfigureCli:
             logger.debug('Running post-apply hook')
             customisation.hooks.post_apply(cli_context)
 
-        self.command = configure
+        self.commands = {
+            'configure': configure
+        }
 
     # ------------------------------------------------------------------------------
     # PRIVATE METHODS
