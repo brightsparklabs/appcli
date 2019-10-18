@@ -73,6 +73,12 @@ class ConfigureCli:
                 # subcommand provided, do not enter interactive mode
                 return
 
+            click.echo(ctx.get_help())
+
+
+        @configure.command(help='Seeds the configuration directory')
+        @click.pass_context
+        def init(ctx):
             self.__print_header(f'Configuring {self.app_name}')
 
             if not self.__prequisites_met():
