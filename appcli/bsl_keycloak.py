@@ -11,8 +11,8 @@ www.brightsparklabs.com
 
 # standard libraries
 import json
-from pprint import pprint
 
+# imported libraries
 from keycloak import KeycloakAdmin
 from keycloak.exceptions import raise_error_from_response, KeycloakGetError
 from keycloak.urls_patterns import URL_ADMIN_REALM_ROLES
@@ -21,6 +21,7 @@ class KeycloakAdminExt(KeycloakAdmin):
     """Extension to the keycloak.KeycloakAdmin class to add missing functionality."""
 
     # PR has been merged to add this function https://github.com/marcospereirampj/python-keycloak/pull/35
+    # Once a new version of the library has been published, we can remove this function
     def create_realm_role(self, payload, skip_exists=False):
         params_path = {"realm-name": self.realm_name}
         data_raw = self.connection.raw_post(URL_ADMIN_REALM_ROLES.format(**params_path),
@@ -83,7 +84,6 @@ class Keycloak:
 
         if realm_name not in self.keycloak_admins:
             # Can't log directly into a non-master realm, set the realm after logging in to the 'master' realm
-            # TODO: Add retry logic if this cannot connect
             self.keycloak_admins[realm_name] = KeycloakAdminExt(server_url=self.server_url,
                                                              username=self.admin_username,
                                                              password=self.admin_password,
