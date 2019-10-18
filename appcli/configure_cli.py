@@ -89,13 +89,13 @@ class ConfigureCli:
             customisation = self.cli_configuration.configure_cli_customisation
 
             logger.debug('Running pre-configure hook')
-            customisation.hooks.pre_configure(cli_context)
+            customisation.hooks.pre_configure_init(cli_context)
             self.__seed_configuration_dir(cli_context)
             # app_configuration_file = cli_context.app_configuration_file
             # app_config_manager = ConfigurationManager(app_configuration_file)
             # self.__configure_all_settings(app_config_manager)
             logger.debug('Running post-configure hook')
-            customisation.hooks.post_configure(cli_context)
+            customisation.hooks.post_configure_init(cli_context)
 
             # self.__save_configuration(app_config_manager)
 
@@ -128,10 +128,10 @@ class ConfigureCli:
             customisation = self.cli_configuration.configure_cli_customisation
 
             logger.debug('Running pre-apply hook')
-            customisation.hooks.pre_apply(cli_context)
+            customisation.hooks.pre_configure_apply(cli_context)
             self.__generate_configuration_files(configuration, cli_context)
             logger.debug('Running post-apply hook')
-            customisation.hooks.post_apply(cli_context)
+            customisation.hooks.post_configure_apply(cli_context)
 
         self.commands = {
             'configure': configure
