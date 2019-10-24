@@ -56,7 +56,7 @@ def create_cli(configuration: Configuration):
     configure_commands = ConfigureCli(configuration).commands
     init_commands = InitCli(configuration).commands
 
-    all_commands = {
+    default_commands = {
         **configure_commands,
         **init_commands,
         **install_commands,
@@ -87,7 +87,7 @@ def create_cli(configuration: Configuration):
                 f'{APP_NAME}.yml'),
             templates_dir=configuration_dir.joinpath('templates'),
             debug=debug,
-            commands=all_commands
+            commands=default_commands
         )
 
         version = os.environ.get('APP_VERSION')
@@ -175,10 +175,10 @@ def create_cli(configuration: Configuration):
                 "Cannot run without all mandatory environment variables defined")
             sys.exit(1)
 
-    for command in all_commands.values():
+    for command in default_commands.values():
         cli.add_command(command)
 
-    for command in configuration.subcommands:
+    for command in configuration.custom_commands:
         cli.add_command(command)
 
     return run

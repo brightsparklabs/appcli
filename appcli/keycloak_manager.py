@@ -11,11 +11,26 @@ www.brightsparklabs.com
 
 # standard libraries
 import json
+import logging
 
-# imported libraries
+# vendor libraries
 from keycloak import KeycloakAdmin
 from keycloak.exceptions import raise_error_from_response, KeycloakGetError
 from keycloak.urls_patterns import URL_ADMIN_REALM_ROLES
+import coloredlogs
+
+
+# ------------------------------------------------------------------------------
+# LOGGING
+# ------------------------------------------------------------------------------
+
+FORMAT = '%(asctime)s %(levelname)s: %(message)s'
+logger = logging.getLogger(__name__)
+coloredlogs.install(logger=logger, fmt=FORMAT)
+
+# ------------------------------------------------------------------------------
+# INTERNAL CLASSES
+# ------------------------------------------------------------------------------
 
 class KeycloakAdminExt(KeycloakAdmin):
     """Extension to the keycloak.KeycloakAdmin class to add missing functionality."""
@@ -28,7 +43,11 @@ class KeycloakAdminExt(KeycloakAdmin):
                                             data=json.dumps(payload))
         return raise_error_from_response(data_raw, KeycloakGetError, expected_code=201, skip_exists=skip_exists)
 
-class Keycloak:
+# ------------------------------------------------------------------------------
+# EXTERNAL CLASSES
+# ------------------------------------------------------------------------------
+
+class KeycloakManager:
     """Class to provide simplified access to common keycloak functionality.
 
     This class is mostly a clean BSL-type wrapper around the `python-keycloak` library which is
@@ -36,7 +55,7 @@ class Keycloak:
 
       Typical usage example:
 
-      keycloak = Keycloak("http://localhost/auth/", "admin", "password")
+      keycloak = KeycloakManager("http://localhost/auth/", "admin", "password")
       keycloak.create_realm("example-realm")
       keycloak.create_client("example-realm", "example-client", {"redirectUris" : [ "*" ]})
     """
@@ -44,7 +63,7 @@ class Keycloak:
     def __init__(self, server_url, admin_username, admin_password):
         """Main constructor.
 
-        Creates a new Keycloak object.
+        Creates a new KeycloakManager object.
 
         Args:
             server_url (string): URL to the keycloak server's auth API endpoint. e.g. "http://localhost/auth/"
@@ -52,7 +71,7 @@ class Keycloak:
             admin_password (string): The password to the administrator user.
 
         Returns:
-            The initialised Keycloak object
+            The initialised KeycloakManager object
         """
 
         self.server_url = server_url
@@ -205,7 +224,7 @@ class Keycloak:
 
     def configure_bsl_instance(self, app_name):
         self.create_realm(app_name)
-        print(f"Created realm [{app_name}]")
+        logger.info(f"Created realm [{app_name}]")
 
         client_payload = {
             "redirectUris" : [ "*" ],
@@ -225,15 +244,15 @@ class Keycloak:
         }
         self.create_client(app_name, app_name, client_payload)
         secret = self.get_client_secret(app_name, app_name)
-        print(f"Created client [{app_name}] with secret [{secret}]")
+        logger.info(f"Created client [{app_name}] with secret [{secret}]")
 
         realm_role = f"{app_name}-admin"
         self.create_realm_role(app_name, realm_role)
-        print(f"Created realm role [{realm_role}]")
+        logger.info(f"Created realm role [{realm_role}]")
 
         username = "test.user"
         self.create_user(app_name, username, "password", "Test", "User", "test.user@email.test")
-        print(f"Created user [test.user] with password [password] in realm [{app_name}]")
+        logger.info(f"Created user [test.user] with password [password] in realm [{app_name}]")
 
         self.assign_realm_role(app_name, username, realm_role)
-        print(f"Assigned realm role [{realm_role}] to user [test.user]")
+        logger.info(f"Assigned realm role [{realm_role}] to user [test.user]")

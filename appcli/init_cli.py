@@ -14,7 +14,7 @@ import click
 
 # our library
 from .models import Configuration
-from .bsl_keycloak import Keycloak
+from .keycloak_manager import KeycloakManager
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
@@ -37,7 +37,7 @@ class InitCli:
         @click.pass_context
         def init(ctx):
             if not ctx.invoked_subcommand is None:
-                # subcommand provided, do not enter interactive mode
+                # subcommand provided
                 return
 
             click.echo(ctx.get_help())
@@ -48,7 +48,7 @@ class InitCli:
         @click.option('--password', prompt="Admin password", hide_input=True)
         @click.pass_context
         def keycloak(ctx, url, username, password):
-            keycloak = Keycloak(url, username, password)
+            keycloak = KeycloakManager(url, username, password)
             keycloak.configure_bsl_instance(self.app_name)
 
         self.commands = {

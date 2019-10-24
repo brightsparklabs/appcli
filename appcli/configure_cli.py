@@ -70,7 +70,7 @@ class ConfigureCli:
         @click.pass_context
         def configure(ctx):
             if not ctx.invoked_subcommand is None:
-                # subcommand provided, do not enter interactive mode
+                # subcommand provided
                 return
 
             click.echo(ctx.get_help())
@@ -79,7 +79,7 @@ class ConfigureCli:
         @configure.command(help='Seeds the configuration directory')
         @click.pass_context
         def init(ctx):
-            self.__print_header(f'Configuring {self.app_name}')
+            self.__print_header(f'Seeding configuration directory for {self.app_name}')
 
             if not self.__prequisites_met():
                 logger.error('Prerequisite checks failed')
@@ -91,9 +91,6 @@ class ConfigureCli:
             logger.debug('Running pre-configure hook')
             customisation.hooks.pre_configure_init(cli_context)
             self.__seed_configuration_dir(cli_context)
-            # app_configuration_file = cli_context.app_configuration_file
-            # app_config_manager = ConfigurationManager(app_configuration_file)
-            # self.__configure_all_settings(app_config_manager)
             logger.debug('Running post-configure hook')
             customisation.hooks.post_configure_init(cli_context)
 

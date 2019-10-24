@@ -54,13 +54,13 @@ class ConfigSettingsGroup(NamedTuple):
 
 class Hooks(NamedTuple):
     pre_configure_init: Callable[[CliContext], None] = lambda x: None
-    """ Hook to run before running configure. """
+    """ Hook function to run before running 'configure init'. """
     post_configure_init: Callable[[CliContext], None] = lambda x: None
-    """ Hook to run after running configure. """
+    """ Hook function to run after running 'configure init'. """
     pre_configure_apply: Callable[[CliContext], None] = lambda x: None
-    """ Hook to run before running appy. """
+    """ Hook function to run before running 'configure apply'. """
     post_configure_apply: Callable[[CliContext], None] = lambda x: None
-    """ Hook to run after running appy. """
+    """ Hook function to run after running 'configure apply'. """
 
 class ConfigureCliConfiguration(NamedTuple):
     hooks: Hooks = Hooks()
@@ -97,7 +97,7 @@ class Configuration(NamedTuple):
     Configuration for the `configure` CLI command
     """
 
-    subcommands: List[Callable] = []
+    custom_commands: List[Callable] = []
     """
     Optional. Extra click commands to add to the CLI. Can be group or specific commands.
     """
