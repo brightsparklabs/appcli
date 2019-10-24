@@ -54,6 +54,7 @@ setup(
         'inquirer',
         'jinja2',
         'python-dotenv',
+        'python-keycloak',
         'ruamel-yaml'
     ]
 )

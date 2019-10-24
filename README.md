@@ -18,7 +18,7 @@ The library leverages the following environment variables:
 - `<APP_NAME>_CONFIG_DIR` - the directory containing configuration files
   consumed by the system.
 - `<APP_NAME>_DATA_DIR` - the directory containing data produced by the system.
-- `APPCLI_MANAGED` - a flag indicating that the evironment currently running
+- `APPCLI_MANAGED` - a flag indicating that the environment currently running
   was created by the `appcli` library.
 - `<APP_NAME>_GENERATED_CONFIG_DIR` - the directory containing configuration
   files generated from the templates in `<APP_NAME>_CONFIG_DIR`. This is only

@@ -70,10 +70,16 @@ class ConfigureCli:
         @click.pass_context
         def configure(ctx):
             if not ctx.invoked_subcommand is None:
-                # subcommand provided, do not enter interactive mode
+                # subcommand provided
                 return
 
-            self.__print_header(f'Configuring {self.app_name}')
+            click.echo(ctx.get_help())
+
+
+        @configure.command(help='Seeds the configuration directory')
+        @click.pass_context
+        def init(ctx):
+            self.__print_header(f'Seeding configuration directory for {self.app_name}')
 
             if not self.__prequisites_met():
                 logger.error('Prerequisite checks failed')
@@ -83,13 +89,10 @@ class ConfigureCli:
             customisation = self.cli_configuration.configure_cli_customisation
 
             logger.debug('Running pre-configure hook')
-            customisation.hooks.pre_configure(cli_context)
+            customisation.hooks.pre_configure_init(cli_context)
             self.__seed_configuration_dir(cli_context)
-            # app_configuration_file = cli_context.app_configuration_file
-            # app_config_manager = ConfigurationManager(app_configuration_file)
-            # self.__configure_all_settings(app_config_manager)
             logger.debug('Running post-configure hook')
-            customisation.hooks.post_configure(cli_context)
+            customisation.hooks.post_configure_init(cli_context)
 
             # self.__save_configuration(app_config_manager)
 
@@ -122,12 +125,14 @@ class ConfigureCli:
             customisation = self.cli_configuration.configure_cli_customisation
 
             logger.debug('Running pre-apply hook')
-            customisation.hooks.pre_apply(cli_context)
+            customisation.hooks.pre_configure_apply(cli_context)
             self.__generate_configuration_files(configuration, cli_context)
             logger.debug('Running post-apply hook')
-            customisation.hooks.post_apply(cli_context)
+            customisation.hooks.post_configure_apply(cli_context)
 
-        self.command = configure
+        self.commands = {
+            'configure': configure
+        }
 
     # ------------------------------------------------------------------------------
     # PRIVATE METHODS

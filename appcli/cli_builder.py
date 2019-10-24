@@ -21,11 +21,12 @@ from typing import NamedTuple
 import click
 
 # internal libraries
-from appcli.configure_cli import ConfigureCli
-from appcli.install_cli import InstallCli
-from appcli.logger import logger, enable_debug_logging
-from appcli.main_cli import MainCli
-from appcli.models import CliContext, Configuration
+from .configure_cli import ConfigureCli
+from .init_cli import InitCli
+from .install_cli import InstallCli
+from .logger import logger, enable_debug_logging
+from .main_cli import MainCli
+from .models import CliContext, Configuration
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
@@ -45,6 +46,22 @@ def create_cli(configuration: Configuration):
     ENV_VAR_CONFIG_DIR = f'{APP_NAME_UPPERCASE}_CONFIG_DIR'
     ENV_VAR_GENERATED_CONFIG_DIR = f'{APP_NAME_UPPERCASE}_GENERATED_CONFIG_DIR'
     ENV_VAR_DATA_DIR = f'{APP_NAME_UPPERCASE}_DATA_DIR'
+
+    # --------------------------------------------------------------------------
+    # CREATE_CLI: LOGIC
+    # --------------------------------------------------------------------------
+
+    install_commands = InstallCli(configuration).commands
+    main_commands = MainCli(configuration).commands
+    configure_commands = ConfigureCli(configuration).commands
+    init_commands = InitCli(configuration).commands
+
+    default_commands = {
+        **configure_commands,
+        **init_commands,
+        **install_commands,
+        **main_commands
+    }
 
     # --------------------------------------------------------------------------
     # CREATE_CLI: NESTED METHODS
@@ -69,7 +86,8 @@ def create_cli(configuration: Configuration):
             app_configuration_file=configuration_dir.joinpath(
                 f'{APP_NAME}.yml'),
             templates_dir=configuration_dir.joinpath('templates'),
-            debug=debug
+            debug=debug,
+            commands=default_commands
         )
 
         version = os.environ.get('APP_VERSION')
@@ -157,26 +175,16 @@ def create_cli(configuration: Configuration):
                 "Cannot run without all mandatory environment variables defined")
             sys.exit(1)
 
-    # --------------------------------------------------------------------------
-    # CREATE_CLI: LOGIC
-    # --------------------------------------------------------------------------
-
-    install_command = InstallCli(configuration).command
-    cli.add_command(install_command)
-
-    main_commands = MainCli(configuration).commands
-    for command in main_commands:
+    for command in default_commands.values():
         cli.add_command(command)
 
-    configure_command = ConfigureCli(configuration).command
-    cli.add_command(configure_command)
+    for command in configuration.custom_commands:
+        cli.add_command(command)
 
     return run
 
 # allow exposing subcommand arguments
 # see: https://stackoverflow.com/a/44079245/3602961
-
-
 class ArgsGroup(click.Group):
     def invoke(self, ctx):
         ctx.obj = tuple(ctx.args)

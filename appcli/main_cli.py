@@ -26,7 +26,6 @@ from .models import CliContext, Configuration
 # CLASSES
 # ------------------------------------------------------------------------------
 
-
 class MainCli:
 
     # --------------------------------------------------------------------------
@@ -73,4 +72,8 @@ class MainCli:
             return str(cli_context.generated_configuration_dir.joinpath('cli/docker-compose.yml'))
 
         # expose the cli commands
-        self.commands = [start, stop, logs]
+        self.commands = {
+            'start': start,
+            'stop': stop,
+            'logs': logs
+        }

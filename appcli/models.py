@@ -2,7 +2,7 @@
 # # -*- coding: utf-8 -*-
 
 from types import LambdaType, FunctionType
-from typing import Callable, NamedTuple, List
+from typing import Callable, Dict, List, NamedTuple
 from pathlib import Path
 
 
@@ -38,6 +38,9 @@ class CliContext(NamedTuple):
     debug: bool
     """ Whether to print debug logs """
 
+    commands: Dict
+    """ Internal commands """
+
 
 class ConfigSetting(NamedTuple):
     path: str
@@ -49,18 +52,17 @@ class ConfigSettingsGroup(NamedTuple):
     title: str
     settings: List[ConfigSetting]
 
+class Hooks(NamedTuple):
+    pre_configure_init: Callable[[CliContext], None] = lambda x: None
+    """ Hook function to run before running 'configure init'. """
+    post_configure_init: Callable[[CliContext], None] = lambda x: None
+    """ Hook function to run after running 'configure init'. """
+    pre_configure_apply: Callable[[CliContext], None] = lambda x: None
+    """ Hook function to run before running 'configure apply'. """
+    post_configure_apply: Callable[[CliContext], None] = lambda x: None
+    """ Hook function to run after running 'configure apply'. """
 
 class ConfigureCliConfiguration(NamedTuple):
-    class Hooks(NamedTuple):
-        pre_configure: Callable[[CliContext], None] = lambda x: None
-        """ Hook to run before running configure. """
-        post_configure: Callable[[CliContext], None] = lambda x: None
-        """ Hook to run after running configure. """
-        pre_apply: Callable[[CliContext], None] = lambda x: None
-        """ Hook to run before running appy. """
-        post_apply: Callable[[CliContext], None] = lambda x: None
-        """ Hook to run after running appy. """
-
     hooks: Hooks = Hooks()
     """ Hooks to run before/after stages """
     settings_groups: List[ConfigSettingsGroup] = None
@@ -93,4 +95,9 @@ class Configuration(NamedTuple):
     configure_cli_customisation: ConfigureCliConfiguration
     """
     Configuration for the `configure` CLI command
+    """
+
+    custom_commands: List[Callable] = []
+    """
+    Optional. Extra click commands to add to the CLI. Can be group or specific commands.
     """

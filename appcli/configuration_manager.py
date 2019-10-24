@@ -20,13 +20,8 @@ from pathlib import Path
 import coloredlogs
 from ruamel.yaml import YAML
 
-# ------------------------------------------------------------------------------
-# LOGGING
-# ------------------------------------------------------------------------------
-
-FORMAT = '%(asctime)s %(levelname)s: %(message)s'
-logger = logging.getLogger(__name__)
-coloredlogs.install(logger=logger, fmt=FORMAT)
+# internal libraries
+from .logger import logger
 
 # ------------------------------------------------------------------------------
 # INTERNAL CLASSES
