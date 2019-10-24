@@ -49,7 +49,7 @@ class InitCli:
         @click.pass_context
         def keycloak(ctx, url, username, password):
             keycloak = KeycloakManager(url, username, password)
-            keycloak.configure_bsl_instance(self.app_name)
+            keycloak.configure_default(self.app_name)
 
         self.commands = {
             'init': init

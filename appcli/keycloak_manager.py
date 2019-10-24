@@ -19,14 +19,8 @@ from keycloak.exceptions import raise_error_from_response, KeycloakGetError
 from keycloak.urls_patterns import URL_ADMIN_REALM_ROLES
 import coloredlogs
 
-
-# ------------------------------------------------------------------------------
-# LOGGING
-# ------------------------------------------------------------------------------
-
-FORMAT = '%(asctime)s %(levelname)s: %(message)s'
-logger = logging.getLogger(__name__)
-coloredlogs.install(logger=logger, fmt=FORMAT)
+# internal libraries
+from .logger import logger
 
 # ------------------------------------------------------------------------------
 # INTERNAL CLASSES
@@ -222,7 +216,18 @@ class KeycloakManager:
         roles = [role for role in all_realm_roles if role["name"] == role_name]
         kc.assign_realm_roles(user_id, None, roles)
 
-    def configure_bsl_instance(self, app_name):
+    def configure_default(self, app_name):
+        """Applies the default opinionated configuration to Keycloak
+
+        This does the following:
+         - Creates a realm named '<app_name>'
+         - For realm '<app_name>', creates a client with the name '<app_name>', which has an audience mapper to itself,
+           and redirect URIs of ["*"]
+         - For realm '<app_name>', creates a realm role '<app_name>-admin'
+         - For realm '<app_name>', creates a user 'test.user' with password 'password', and assigns the realm role
+           '<app_name>-admin'
+
+        """
         self.create_realm(app_name)
         logger.info(f"Created realm [{app_name}]")
 
