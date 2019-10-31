@@ -52,6 +52,7 @@ class ConfigSettingsGroup(NamedTuple):
     title: str
     settings: List[ConfigSetting]
 
+
 class Hooks(NamedTuple):
     pre_configure_init: Callable[[CliContext], None] = lambda x: None
     """ Hook function to run before running 'configure init'. """
@@ -61,6 +62,7 @@ class Hooks(NamedTuple):
     """ Hook function to run before running 'configure apply'. """
     post_configure_apply: Callable[[CliContext], None] = lambda x: None
     """ Hook function to run after running 'configure apply'. """
+
 
 class ConfigureCliConfiguration(NamedTuple):
     hooks: Hooks = Hooks()

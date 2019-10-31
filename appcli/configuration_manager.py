@@ -27,6 +27,7 @@ from .logger import logger
 # INTERNAL CLASSES
 # ------------------------------------------------------------------------------
 
+
 class ConfigurationManager:
     """Manages the configuration"""
 
@@ -37,7 +38,7 @@ class ConfigurationManager:
             configuration_file (str): Path to the configuration file to manage
         """
         self.configuration_file = Path(configuration_file)
-        data = self.configuration_file.read_text(encoding='utf-8')
+        data = self.configuration_file.read_text(encoding="utf-8")
         self.yaml = YAML()
         self.configuration = self.yaml.load(data)
 
@@ -48,9 +49,9 @@ class ConfigurationManager:
             path (str): Dot notation for the setting. E.g. insilico.external.database.host
         """
         try:
-            return reduce(lambda e, k: e[k], path.split('.'), self.configuration)
+            return reduce(lambda e, k: e[k], path.split("."), self.configuration)
         except:
-            return ''
+            return ""
 
     def get_as_dict(self):
         return self.configuration
@@ -62,7 +63,7 @@ class ConfigurationManager:
             path (str): Dot notation for the setting. E.g. insilico.external.database.host
             value: value for the setting
         """
-        path_elements = path.split('.')
+        path_elements = path.split(".")
         parent_path = path_elements[:-1]
 
         # ensure parent path exists
@@ -70,6 +71,7 @@ class ConfigurationManager:
             if not child in parent:
                 parent[child] = {}
             return parent[child]
+
         reduce(ensure_path, parent_path, self.configuration)
 
         # set the value
@@ -79,8 +81,8 @@ class ConfigurationManager:
     def save(self):
         """Saves the configuration"""
         full_path = self.configuration_file.absolute().as_posix()
-        logger.info(f'Saving configuration to [{full_path}] ...')
-        with open(full_path, 'w') as config_file:
+        logger.info(f"Saving configuration to [{full_path}] ...")
+        with open(full_path, "w") as config_file:
             self.yaml.dump(self.configuration, config_file)
 
     def dump(self, stream=sys.stdout):

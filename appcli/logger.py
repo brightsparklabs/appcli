@@ -19,9 +19,10 @@ import coloredlogs
 # LOGGING
 # ------------------------------------------------------------------------------
 
-LOGGER_FORMAT = '%(asctime)s %(levelname)s: %(message)s'
+LOGGER_FORMAT = "%(asctime)s %(levelname)s: %(message)s"
 logger = logging.getLogger(__name__)
 coloredlogs.install(logger=logger, fmt=LOGGER_FORMAT)
+
 
 def enable_debug_logging():
     coloredlogs.install(logger=logger, fmt=LOGGER_FORMAT, level=logging.DEBUG)
