@@ -46,13 +46,14 @@ def create_cli(configuration: Configuration):
     ENV_VAR_CONFIG_DIR = f"{APP_NAME_UPPERCASE}_CONFIG_DIR"
     ENV_VAR_GENERATED_CONFIG_DIR = f"{APP_NAME_UPPERCASE}_GENERATED_CONFIG_DIR"
     ENV_VAR_DATA_DIR = f"{APP_NAME_UPPERCASE}_DATA_DIR"
+    PROJECT_NAME = f"{APP_NAME}-{(configuration.instance_name or APP_NAME)}"
 
     # --------------------------------------------------------------------------
     # CREATE_CLI: LOGIC
     # --------------------------------------------------------------------------
 
     install_commands = InstallCli(configuration).commands
-    main_commands = MainCli(configuration).commands
+    main_commands = MainCli(configuration, PROJECT_NAME).commands
     configure_commands = ConfigureCli(configuration).commands
     init_commands = InitCli(configuration).commands
 
@@ -113,7 +114,8 @@ def create_cli(configuration: Configuration):
             f"""{APP_NAME_UPPERCASE} v{version} CLI running with:
     {ENV_VAR_CONFIG_DIR}:           [{ctx.obj.configuration_dir}]
     {ENV_VAR_GENERATED_CONFIG_DIR}: [{ctx.obj.generated_configuration_dir}]
-    {ENV_VAR_DATA_DIR}:             [{ctx.obj.data_dir}]"""
+    {ENV_VAR_DATA_DIR}:             [{ctx.obj.data_dir}]
+    Instance name: [{PROJECT_NAME}]"""
         )
 
         if ctx.invoked_subcommand is None:

@@ -103,3 +103,7 @@ class Configuration(NamedTuple):
     """
     Optional. Extra click commands to add to the CLI. Can be group or specific commands.
     """
+
+    instance_name: str = None
+    """ Optional. A unique instance name for running the docker containers. This value is supplied to docker-compose.
+    as the 'project-name'. """
