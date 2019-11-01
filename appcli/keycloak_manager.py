@@ -26,6 +26,7 @@ from .logger import logger
 # INTERNAL CLASSES
 # ------------------------------------------------------------------------------
 
+
 class KeycloakAdminExt(KeycloakAdmin):
     """Extension to the keycloak.KeycloakAdmin class to add missing functionality."""
 
@@ -33,13 +34,18 @@ class KeycloakAdminExt(KeycloakAdmin):
     # Once a new version of the library has been published, we can remove this function
     def create_realm_role(self, payload, skip_exists=False):
         params_path = {"realm-name": self.realm_name}
-        data_raw = self.connection.raw_post(URL_ADMIN_REALM_ROLES.format(**params_path),
-                                            data=json.dumps(payload))
-        return raise_error_from_response(data_raw, KeycloakGetError, expected_code=201, skip_exists=skip_exists)
+        data_raw = self.connection.raw_post(
+            URL_ADMIN_REALM_ROLES.format(**params_path), data=json.dumps(payload)
+        )
+        return raise_error_from_response(
+            data_raw, KeycloakGetError, expected_code=201, skip_exists=skip_exists
+        )
+
 
 # ------------------------------------------------------------------------------
 # EXTERNAL CLASSES
 # ------------------------------------------------------------------------------
+
 
 class KeycloakManager:
     """Class to provide simplified access to common keycloak functionality.
@@ -97,11 +103,13 @@ class KeycloakManager:
 
         if realm_name not in self.keycloak_admins:
             # Can't log directly into a non-master realm, set the realm after logging in to the 'master' realm
-            self.keycloak_admins[realm_name] = KeycloakAdminExt(server_url=self.server_url,
-                                                             username=self.admin_username,
-                                                             password=self.admin_password,
-                                                             realm_name="master",
-                                                             verify=True)
+            self.keycloak_admins[realm_name] = KeycloakAdminExt(
+                server_url=self.server_url,
+                username=self.admin_username,
+                password=self.admin_password,
+                realm_name="master",
+                verify=True,
+            )
             self.keycloak_admins[realm_name].realm_name = realm_name
         return self.keycloak_admins[realm_name]
 
@@ -114,11 +122,7 @@ class KeycloakManager:
                 setting additional properties on the newly-created object.
         """
 
-        payload = {
-            "realm": realm_name,
-            "enabled": "true",
-            **custom_payload
-        }
+        payload = {"realm": realm_name, "enabled": "true", **custom_payload}
         kc = self.__get_keycloak_admin()
         kc.create_realm(payload=payload, skip_exists=False)
 
@@ -132,11 +136,7 @@ class KeycloakManager:
                 setting additional properties on the newly-created object.
         """
 
-        payload = {
-            "clientId" : client_name,
-            "enabled" : "true",
-            **custom_payload
-        }
+        payload = {"clientId": client_name, "enabled": "true", **custom_payload}
         kc = self.__get_keycloak_admin(realm_name)
         kc.create_client(payload=payload, skip_exists=False)
         client_id = kc.get_client_id(client_name)
@@ -164,14 +164,20 @@ class KeycloakManager:
                 setting additional properties on the newly-created object.
         """
 
-        payload = {
-            "name" : role_name,
-            **custom_payload
-        }
+        payload = {"name": role_name, **custom_payload}
         kc = self.__get_keycloak_admin(realm_name)
         kc.create_realm_role(payload=payload)
 
-    def create_user(self, realm_name, username, password, first_name, last_name, email, custom_payload={}):
+    def create_user(
+        self,
+        realm_name,
+        username,
+        password,
+        first_name,
+        last_name,
+        email,
+        custom_payload={},
+    ):
         """Create a user in a given realm.
 
         Args:
@@ -186,13 +192,13 @@ class KeycloakManager:
         """
 
         payload = {
-            "username" : username,
-            "firstName" : first_name,
-            "lastName" : last_name,
-            "email" : email,
-            "emailVerified" : "true",
-            "enabled" : "true",
-            **custom_payload
+            "username": username,
+            "firstName": first_name,
+            "lastName": last_name,
+            "email": email,
+            "emailVerified": "true",
+            "enabled": "true",
+            **custom_payload,
         }
         kc = self.__get_keycloak_admin(realm_name)
         kc.create_user(payload=payload)
@@ -232,20 +238,20 @@ class KeycloakManager:
         logger.info(f"Created realm [{app_name}]")
 
         client_payload = {
-            "redirectUris" : [ "*" ],
-            "protocolMappers" : [
+            "redirectUris": ["*"],
+            "protocolMappers": [
                 {
-                    "name" : f"{app_name}-audience",
-                    "protocol" : "openid-connect",
-                    "protocolMapper" : "oidc-audience-mapper",
-                    "consentRequired" : "false",
-                    "config" : {
-                        "included.client.audience" : app_name,
-                        "id.token.claim" : "false",
-                        "access.token.claim" : "true"
-                    }
+                    "name": f"{app_name}-audience",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-audience-mapper",
+                    "consentRequired": "false",
+                    "config": {
+                        "included.client.audience": app_name,
+                        "id.token.claim": "false",
+                        "access.token.claim": "true",
+                    },
                 }
-            ]
+            ],
         }
         self.create_client(app_name, app_name, client_payload)
         secret = self.get_client_secret(app_name, app_name)
@@ -256,8 +262,12 @@ class KeycloakManager:
         logger.info(f"Created realm role [{realm_role}]")
 
         username = "test.user"
-        self.create_user(app_name, username, "password", "Test", "User", "test.user@email.test")
-        logger.info(f"Created user [test.user] with password [password] in realm [{app_name}]")
+        self.create_user(
+            app_name, username, "password", "Test", "User", "test.user@email.test"
+        )
+        logger.info(
+            f"Created user [test.user] with password [password] in realm [{app_name}]"
+        )
 
         self.assign_realm_role(app_name, username, realm_role)
         logger.info(f"Assigned realm role [{realm_role}] to user [test.user]")
