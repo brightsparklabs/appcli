@@ -47,8 +47,9 @@ def create_cli(configuration: Configuration):
     ENV_VAR_GENERATED_CONFIG_DIR = f"{APP_NAME_UPPERCASE}_GENERATED_CONFIG_DIR"
     ENV_VAR_DATA_DIR = f"{APP_NAME_UPPERCASE}_DATA_DIR"
 
-    INSTANCE_NAME = os.environ.get("INSTANCE_NAME", "default")
-    PROJECT_NAME = f"{APP_NAME}-{INSTANCE_NAME}"
+    APP_ENV_VAR = f"{APP_NAME_UPPERCASE}_ENV"
+    APP_ENV = os.environ.get(APP_ENV_VAR, "default")
+    PROJECT_NAME = f"{APP_NAME}-{APP_ENV}"
 
     # --------------------------------------------------------------------------
     # CREATE_CLI: LOGIC
@@ -117,7 +118,7 @@ def create_cli(configuration: Configuration):
     {ENV_VAR_CONFIG_DIR}:           [{ctx.obj.configuration_dir}]
     {ENV_VAR_GENERATED_CONFIG_DIR}: [{ctx.obj.generated_configuration_dir}]
     {ENV_VAR_DATA_DIR}:             [{ctx.obj.data_dir}]
-    Instance name: [{INSTANCE_NAME}]"""
+    {APP_ENV_VAR}:                  [{APP_ENV}]"""
         )
 
         if ctx.invoked_subcommand is None:
