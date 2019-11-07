@@ -39,7 +39,6 @@ BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 # PUBLIC METHODS
 # ------------------------------------------------------------------------------
 
-
 def create_cli(configuration: Configuration):
     APP_NAME = configuration.app_name
     APP_NAME_UPPERCASE = APP_NAME.upper()
@@ -47,12 +46,16 @@ def create_cli(configuration: Configuration):
     ENV_VAR_GENERATED_CONFIG_DIR = f"{APP_NAME_UPPERCASE}_GENERATED_CONFIG_DIR"
     ENV_VAR_DATA_DIR = f"{APP_NAME_UPPERCASE}_DATA_DIR"
 
+    ENV_VAR_ENVIRONMENT = f"{APP_NAME_UPPERCASE}_ENVIRONMENT"
+    APP_ENVIRONMENT = os.environ.get(ENV_VAR_ENVIRONMENT, "default")
+    PROJECT_NAME = f"{APP_NAME}-{APP_ENVIRONMENT}"
+
     # --------------------------------------------------------------------------
     # CREATE_CLI: LOGIC
     # --------------------------------------------------------------------------
 
     install_commands = InstallCli(configuration).commands
-    main_commands = MainCli(configuration).commands
+    main_commands = MainCli(configuration, PROJECT_NAME).commands
     configure_commands = ConfigureCli(configuration).commands
     init_commands = InitCli(configuration).commands
 
@@ -113,7 +116,8 @@ def create_cli(configuration: Configuration):
             f"""{APP_NAME_UPPERCASE} v{version} CLI running with:
     {ENV_VAR_CONFIG_DIR}:           [{ctx.obj.configuration_dir}]
     {ENV_VAR_GENERATED_CONFIG_DIR}: [{ctx.obj.generated_configuration_dir}]
-    {ENV_VAR_DATA_DIR}:             [{ctx.obj.data_dir}]"""
+    {ENV_VAR_DATA_DIR}:             [{ctx.obj.data_dir}]
+    {ENV_VAR_ENVIRONMENT}:          [{APP_ENVIRONMENT}]"""
         )
 
         if ctx.invoked_subcommand is None:
@@ -179,12 +183,13 @@ def create_cli(configuration: Configuration):
         mandatory_variables = [ENV_VAR_CONFIG_DIR, ENV_VAR_DATA_DIR]
         for env_variable in mandatory_variables:
             value = os.environ.get(env_variable)
-            if value == None:
+            if value is None:
                 logger.error(
-                    f"Mandatory environment variable is not defined [{env_variable}]"
+                    f"Mandatory environment variable is not defined [{%s}]",
+                    env_variable
                 )
                 result = False
-        if result == False:
+        if not result:
             logger.error(
                 "Cannot run without all mandatory environment variables defined"
             )

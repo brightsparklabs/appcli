@@ -33,11 +33,11 @@ class MainCli:
     # CONSTRUCTOR
     # --------------------------------------------------------------------------
 
-    def __init__(self, configuration: Configuration):
+    def __init__(self, configuration: Configuration, project_name: str):
         docker_compose_command = [
             "docker-compose",
             "--project-name",
-            configuration.app_name,
+            project_name,
             "--file",
         ]
 
