@@ -61,4 +61,3 @@ setup(
         "ruamel-yaml",
     ],
 )
-
