@@ -3,7 +3,7 @@
 A library for adding CLI interfaces to applications in the brightSPARK Labs
 style.
 
-# Overview
+## Overview
 
 This library can be leveraged to add a standardised CLI capability to
 applications to handle system lifecycle events (start, stop, configure, etc).
@@ -23,8 +23,11 @@ The library leverages the following environment variables:
 - `<APP_NAME>_GENERATED_CONFIG_DIR` - the directory containing configuration
   files generated from the templates in `<APP_NAME>_CONFIG_DIR`. This is only
   set in environments which have the `APPCLI_MANAGED` flag.
+- `<APP_NAME>_ENVIRONMENT` - the 'environment' of the application to be run. For
+  example `production` or `staging`. This allows multiple instances of the same
+  project to run on the same docker daemon. If undefined, this defaults to 'default'.
 
-# Usage
+## Usage
 
 - Add the library to your python CLI application:
 
@@ -123,7 +126,7 @@ The library leverages the following environment variables:
                 --configuration-dir "${MYAPP_CONFIG_DIR}" \
                 --data-dir "${MYAPP_DATA_DIR}"
 
-# Usage while developing your CLI application
+## Usage while developing your CLI application
 
 While developing, it may be preferable to run your python script directly
 rather than having to rebuild a container each time you update it.
@@ -145,12 +148,12 @@ rather than having to rebuild a container each time you update it.
           --configuration-dir "${MYAPP_CONFIG_DIR}" \
           --data-dir "${MYAPP_DATA_DIR}"
 
-# Development
+## Development
 
 This section details how to build/test/run/debug the system in a development
 environment.
 
-## Prerequisites
+### Prerequisites
 
 The following must be installed and in the `PATH`:
 
@@ -158,25 +161,25 @@ The following must be installed and in the `PATH`:
 - virtualenv
 - git
 
-## Build
+### Build
 
     python3.7 -m venv .venv
     . .venv/bin/activate
     pip install -e .
 
-## Install
+### Install
 
     pip install -e .
 
-# Contributing
+## Contributing
 
-When committing code, first run the python code formatter 'black' with default settings. https://pypi.org/project/black/
+When committing code, first run the python code formatter 'black' with default settings. <https://pypi.org/project/black/>
 
 Install with `pip install black`. This can be run through VSCode or via the CLI. See the documentation for details.
 
 This will ensure that PR diffs are minimal and focussed on the code change rather than stylistic coding decisions.
 
-# Licenses
+## Licenses
 
 Refer to the `LICENSE` file for details.
 
