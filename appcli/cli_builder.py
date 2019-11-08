@@ -39,6 +39,7 @@ BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 # PUBLIC METHODS
 # ------------------------------------------------------------------------------
 
+
 def create_cli(configuration: Configuration):
     APP_NAME = configuration.app_name
     APP_NAME_UPPERCASE = APP_NAME.upper()
@@ -185,8 +186,7 @@ def create_cli(configuration: Configuration):
             value = os.environ.get(env_variable)
             if value is None:
                 logger.error(
-                    f"Mandatory environment variable is not defined [{%s}]",
-                    env_variable
+                    f"Mandatory environment variable is not defined [{env_variable}]"
                 )
                 result = False
         if not result:
