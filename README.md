@@ -173,11 +173,13 @@ The following must be installed and in the `PATH`:
 
 ## Contributing
 
-When committing code, first run the python code formatter 'black' with default settings. <https://pypi.org/project/black/>
+When committing code, first run the python code formatter
+[black](https://pypi.org/project/black/) with default settings. This will
+ensure that PR diffs are minimal and focussed on the code change rather than
+stylistic coding decisions.
 
-Install with `pip install black`. This can be run through VSCode or via the CLI. See the documentation for details.
-
-This will ensure that PR diffs are minimal and focussed on the code change rather than stylistic coding decisions.
+Install with `pip install black`. This can be run through VSCode or via the
+CLI. See the documentation for details.
 
 ## Licenses
 
