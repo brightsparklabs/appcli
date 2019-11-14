@@ -59,5 +59,6 @@ setup(
         "python-dotenv",
         "python-keycloak",
         "ruamel-yaml",
+        "tabulate",
     ],
 )

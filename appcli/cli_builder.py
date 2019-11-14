@@ -16,6 +16,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import NamedTuple
+from tabulate import tabulate
 
 # vendor libraries
 import click
@@ -113,12 +114,20 @@ def create_cli(configuration: Configuration):
         relaunch_if_required(ctx)
         check_environment()
 
+        # Table of data to print
+        table = [
+            [f"{ENV_VAR_CONFIG_DIR}", f"{ctx.obj.configuration_dir}"],
+            [
+                f"{ENV_VAR_GENERATED_CONFIG_DIR}",
+                f"{ctx.obj.generated_configuration_dir}",
+            ],
+            [f"{ENV_VAR_DATA_DIR}", f"{ctx.obj.data_dir}"],
+            ["Environment", f"{environment}"],
+        ]
+
+        # Print out the configuration values as an aligned table
         logger.info(
-            f"""{APP_NAME_UPPERCASE} v{APP_VERSION} CLI running with:
-    {ENV_VAR_CONFIG_DIR}:           [{ctx.obj.configuration_dir}]
-    {ENV_VAR_GENERATED_CONFIG_DIR}: [{ctx.obj.generated_configuration_dir}]
-    {ENV_VAR_DATA_DIR}:             [{ctx.obj.data_dir}]
-    Environment:          [{environment}]"""
+            f"{APP_NAME_UPPERCASE} v{APP_VERSION} CLI running with:\n{tabulate(table)}"
         )
 
         if ctx.invoked_subcommand is None:
