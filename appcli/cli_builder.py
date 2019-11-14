@@ -47,6 +47,8 @@ def create_cli(configuration: Configuration):
     ENV_VAR_GENERATED_CONFIG_DIR = f"{APP_NAME_UPPERCASE}_GENERATED_CONFIG_DIR"
     ENV_VAR_DATA_DIR = f"{APP_NAME_UPPERCASE}_DATA_DIR"
 
+    APP_VERSION = os.environ.get("APP_VERSION", "latest")
+
     ENV_VAR_ENVIRONMENT = f"{APP_NAME_UPPERCASE}_ENVIRONMENT"
     APP_ENVIRONMENT = os.environ.get(ENV_VAR_ENVIRONMENT, "default")
     PROJECT_NAME = f"{APP_NAME}-{APP_ENVIRONMENT}"
@@ -102,19 +104,12 @@ def create_cli(configuration: Configuration):
             commands=default_commands,
         )
 
-        version = os.environ.get("APP_VERSION")
-        if version is None:
-            logger.error(
-                "Could not determine version from environment variable [APP_VERSION]. This release is corrupt."
-            )
-            sys.exit(1)
-
         check_docker_socket()
         relaunch_if_required(ctx)
         check_environment()
 
         logger.info(
-            f"""{APP_NAME_UPPERCASE} v{version} CLI running with:
+            f"""{APP_NAME_UPPERCASE} v{APP_VERSION} CLI running with:
     {ENV_VAR_CONFIG_DIR}:           [{ctx.obj.configuration_dir}]
     {ENV_VAR_GENERATED_CONFIG_DIR}: [{ctx.obj.generated_configuration_dir}]
     {ENV_VAR_DATA_DIR}:             [{ctx.obj.data_dir}]
@@ -134,7 +129,7 @@ def create_cli(configuration: Configuration):
     docker run \\
         --rm
         --volume /var/run/docker.sock:/var/run/docker.sock \\
-        {configuration.docker_image} \\
+        {configuration.docker_image}:{APP_VERSION} \\
             --configuration-dir <dir> \\
             --data-dir <dir> COMMAND'
 """
@@ -157,13 +152,14 @@ def create_cli(configuration: Configuration):
                         --rm
                         --volume /var/run/docker.sock:/var/run/docker.sock
                         --env APPCLI_MANAGED=Y
+                        --env {ENV_VAR_ENVIRONMENT}='{APP_ENVIRONMENT}'
                         --env {ENV_VAR_CONFIG_DIR}='{configuration_dir}'
                         --volume '{configuration_dir}:{configuration_dir}'
                         --env {ENV_VAR_GENERATED_CONFIG_DIR}='{generated_configuration_dir}'
                         --volume '{generated_configuration_dir}:{generated_configuration_dir}'
                         --env {ENV_VAR_DATA_DIR}='{data_dir}'
                         --volume '{data_dir}:{data_dir}'
-                        {configuration.docker_image}
+                        {configuration.docker_image}:{APP_VERSION}
                             --configuration-dir '{configuration_dir}'
                             --data-dir '{data_dir}'
             """
