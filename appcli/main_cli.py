@@ -70,9 +70,12 @@ class MainCli:
             ]
             command = docker_compose_command + [__get_compose_file_path(ctx)]
             command.extend(subcommand)
-            logger.debug(f'Running [{" ".join(command)}]')
+
+            # Add the 'COMPOSE_PROJECT_NAME' to the environment variables, so that j2 templating can pick up this variable
             my_env = os.environ
             my_env["COMPOSE_PROJECT_NAME"] = PROJECT_NAME
+
+            logger.debug(f'Running [{" ".join(command)}]')
             result = subprocess.run(command, env=my_env)
             sys.exit(result.returncode)
 

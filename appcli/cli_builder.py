@@ -114,7 +114,7 @@ def create_cli(configuration: Configuration):
         relaunch_if_required(ctx)
         check_environment()
 
-        # Table of data to print
+        # Table of configuration variables to print
         table = [
             [f"{ENV_VAR_CONFIG_DIR}", f"{ctx.obj.configuration_dir}"],
             [
