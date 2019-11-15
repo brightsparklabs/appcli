@@ -17,6 +17,9 @@ class CliContext(NamedTuple):
     data_dir: Path
     """ Directory to store data to """
 
+    environment: str
+    """ Environment to run """
+
     subcommand_args: tuple
     """ Arguments passed to CLI subcommand """
 
