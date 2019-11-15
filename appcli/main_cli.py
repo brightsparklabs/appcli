@@ -60,6 +60,8 @@ class MainCli:
             __run_and_exit(ctx, ("logs", "-f") + container)
 
         def __run_and_exit(ctx, subcommand):
+            # The project-name of the docker-compose command is composed of project name and environment
+            # so that multiple environments can run on a single machine without container naming conflicts
             cli_context: CliContext = ctx.obj
             PROJECT_NAME = f"{configuration.app_name}-{cli_context.environment}"
             docker_compose_command = [
@@ -70,13 +72,8 @@ class MainCli:
             ]
             command = docker_compose_command + [__get_compose_file_path(ctx)]
             command.extend(subcommand)
-
-            # Add the 'COMPOSE_PROJECT_NAME' to the environment variables, so that j2 templating can pick up this variable
-            my_env = os.environ
-            my_env["COMPOSE_PROJECT_NAME"] = PROJECT_NAME
-
             logger.debug(f'Running [{" ".join(command)}]')
-            result = subprocess.run(command, env=my_env)
+            result = subprocess.run(command)
             sys.exit(result.returncode)
 
         def __get_compose_file_path(ctx):

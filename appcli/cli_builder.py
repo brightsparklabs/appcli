@@ -47,6 +47,7 @@ def create_cli(configuration: Configuration):
     ENV_VAR_CONFIG_DIR = f"{APP_NAME_UPPERCASE}_CONFIG_DIR"
     ENV_VAR_GENERATED_CONFIG_DIR = f"{APP_NAME_UPPERCASE}_GENERATED_CONFIG_DIR"
     ENV_VAR_DATA_DIR = f"{APP_NAME_UPPERCASE}_DATA_DIR"
+    ENV_VAR_ENVIRONMENT = f"{APP_NAME_UPPERCASE}_ENVIRONMENT"
 
     APP_VERSION = os.environ.get("APP_VERSION", "latest")
 
@@ -122,7 +123,7 @@ def create_cli(configuration: Configuration):
                 f"{ctx.obj.generated_configuration_dir}",
             ],
             [f"{ENV_VAR_DATA_DIR}", f"{ctx.obj.data_dir}"],
-            ["Environment", f"{environment}"],
+            [f"{ENV_VAR_ENVIRONMENT}", f"{ctx.obj.environment}"],
         ]
 
         # Print out the configuration values as an aligned table
@@ -174,6 +175,7 @@ def create_cli(configuration: Configuration):
                         --volume '{generated_configuration_dir}:{generated_configuration_dir}'
                         --env {ENV_VAR_DATA_DIR}='{data_dir}'
                         --volume '{data_dir}:{data_dir}'
+                        --env {ENV_VAR_ENVIRONMENT}='{environment}'
                         {configuration.docker_image}:{APP_VERSION}
                             --configuration-dir '{configuration_dir}'
                             --data-dir '{data_dir}'
