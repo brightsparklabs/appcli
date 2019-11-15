@@ -47,8 +47,6 @@ class LauncherCli:
                 f"""
 #!/bin/bash
 
-mkdir -p "${{TELPASS_CONFIG_DIR:-{cli_context.configuration_dir}}}" "${{TELPASS_DATA_DIR:-{cli_context.data_dir}}}"
-
 docker run \\
     --rm \\
     --volume /var/run/docker.sock:/var/run/docker.sock \\
