@@ -33,14 +33,7 @@ class MainCli:
     # CONSTRUCTOR
     # --------------------------------------------------------------------------
 
-    def __init__(self, configuration: Configuration, project_name: str):
-        docker_compose_command = [
-            "docker-compose",
-            "--project-name",
-            project_name,
-            "--file",
-        ]
-
+    def __init__(self, configuration: Configuration):
         @click.command(
             help="Starts the system.\n\nOptionally specify CONTAINER to start only specific containers.",
             context_settings=dict(ignore_unknown_options=True),
@@ -67,6 +60,16 @@ class MainCli:
             __run_and_exit(ctx, ("logs", "-f") + container)
 
         def __run_and_exit(ctx, subcommand):
+            # The project-name of the docker-compose command is composed of project name and environment
+            # so that multiple environments can run on a single machine without container naming conflicts
+            cli_context: CliContext = ctx.obj
+            PROJECT_NAME = f"{configuration.app_name}-{cli_context.environment}"
+            docker_compose_command = [
+                "docker-compose",
+                "--project-name",
+                PROJECT_NAME,
+                "--file",
+            ]
             command = docker_compose_command + [__get_compose_file_path(ctx)]
             command.extend(subcommand)
             logger.debug(f'Running [{" ".join(command)}]')

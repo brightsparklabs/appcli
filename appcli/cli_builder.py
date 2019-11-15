@@ -16,6 +16,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import NamedTuple
+from tabulate import tabulate
 
 # vendor libraries
 import click
@@ -46,17 +47,16 @@ def create_cli(configuration: Configuration):
     ENV_VAR_CONFIG_DIR = f"{APP_NAME_UPPERCASE}_CONFIG_DIR"
     ENV_VAR_GENERATED_CONFIG_DIR = f"{APP_NAME_UPPERCASE}_GENERATED_CONFIG_DIR"
     ENV_VAR_DATA_DIR = f"{APP_NAME_UPPERCASE}_DATA_DIR"
-
     ENV_VAR_ENVIRONMENT = f"{APP_NAME_UPPERCASE}_ENVIRONMENT"
-    APP_ENVIRONMENT = os.environ.get(ENV_VAR_ENVIRONMENT, "default")
-    PROJECT_NAME = f"{APP_NAME}-{APP_ENVIRONMENT}"
+
+    APP_VERSION = os.environ.get("APP_VERSION", "latest")
 
     # --------------------------------------------------------------------------
     # CREATE_CLI: LOGIC
     # --------------------------------------------------------------------------
 
     install_commands = InstallCli(configuration).commands
-    main_commands = MainCli(configuration, PROJECT_NAME).commands
+    main_commands = MainCli(configuration).commands
     configure_commands = ConfigureCli(configuration).commands
     init_commands = InitCli(configuration).commands
 
@@ -85,8 +85,16 @@ def create_cli(configuration: Configuration):
     @click.option(
         "--data-dir", "-d", help="Directory to store data to.", required=True, type=Path
     )
+    @click.option(
+        "--environment",
+        "-e",
+        help="Environment to run, defaults to 'production'",
+        required=False,
+        type=str,
+        default="production",
+    )
     @click.pass_context
-    def cli(ctx, debug, configuration_dir, data_dir):
+    def cli(ctx, debug, configuration_dir, data_dir, environment):
         if debug:
             logger.info("Enabling debug logging")
             enable_debug_logging()
@@ -94,6 +102,7 @@ def create_cli(configuration: Configuration):
         ctx.obj = CliContext(
             configuration_dir=configuration_dir,
             data_dir=data_dir,
+            environment=environment,
             subcommand_args=ctx.obj,
             generated_configuration_dir=configuration_dir.joinpath(".generated/conf"),
             app_configuration_file=configuration_dir.joinpath(f"{APP_NAME}.yml"),
@@ -102,23 +111,24 @@ def create_cli(configuration: Configuration):
             commands=default_commands,
         )
 
-        version = os.environ.get("APP_VERSION")
-        if version is None:
-            logger.error(
-                "Could not determine version from environment variable [APP_VERSION]. This release is corrupt."
-            )
-            sys.exit(1)
-
         check_docker_socket()
         relaunch_if_required(ctx)
         check_environment()
 
+        # Table of configuration variables to print
+        table = [
+            [f"{ENV_VAR_CONFIG_DIR}", f"{ctx.obj.configuration_dir}"],
+            [
+                f"{ENV_VAR_GENERATED_CONFIG_DIR}",
+                f"{ctx.obj.generated_configuration_dir}",
+            ],
+            [f"{ENV_VAR_DATA_DIR}", f"{ctx.obj.data_dir}"],
+            [f"{ENV_VAR_ENVIRONMENT}", f"{ctx.obj.environment}"],
+        ]
+
+        # Print out the configuration values as an aligned table
         logger.info(
-            f"""{APP_NAME_UPPERCASE} v{version} CLI running with:
-    {ENV_VAR_CONFIG_DIR}:           [{ctx.obj.configuration_dir}]
-    {ENV_VAR_GENERATED_CONFIG_DIR}: [{ctx.obj.generated_configuration_dir}]
-    {ENV_VAR_DATA_DIR}:             [{ctx.obj.data_dir}]
-    {ENV_VAR_ENVIRONMENT}:          [{APP_ENVIRONMENT}]"""
+            f"{APP_NAME_UPPERCASE} v{APP_VERSION} CLI running with:\n{tabulate(table)}"
         )
 
         if ctx.invoked_subcommand is None:
@@ -134,9 +144,10 @@ def create_cli(configuration: Configuration):
     docker run \\
         --rm
         --volume /var/run/docker.sock:/var/run/docker.sock \\
-        {configuration.docker_image} \\
+        {configuration.docker_image}:{APP_VERSION} \\
             --configuration-dir <dir> \\
             --data-dir <dir> COMMAND'
+            --environment <str>
 """
             logger.error(error_msg)
             sys.exit(1)
@@ -152,6 +163,7 @@ def create_cli(configuration: Configuration):
         configuration_dir = cli_context.configuration_dir
         generated_configuration_dir = cli_context.generated_configuration_dir
         data_dir = cli_context.data_dir
+        environment = cli_context.environment
         command = shlex.split(
             f"""docker run
                         --rm
@@ -163,9 +175,11 @@ def create_cli(configuration: Configuration):
                         --volume '{generated_configuration_dir}:{generated_configuration_dir}'
                         --env {ENV_VAR_DATA_DIR}='{data_dir}'
                         --volume '{data_dir}:{data_dir}'
-                        {configuration.docker_image}
+                        --env {ENV_VAR_ENVIRONMENT}='{environment}'
+                        {configuration.docker_image}:{APP_VERSION}
                             --configuration-dir '{configuration_dir}'
                             --data-dir '{data_dir}'
+                            --environment '{environment}'
             """
         )
         if cli_context.debug:
