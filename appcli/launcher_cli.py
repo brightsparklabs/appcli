@@ -41,6 +41,7 @@ class LauncherCli:
 
             cli_context: CliContext = ctx.obj
             APP_VERSION = os.environ.get("APP_VERSION")
+            APP_NAME_UPPERCASE = configuration.app_name.upper()
 
             # Variables are defaulted in the script so that they can be overridden if desired
             print(
@@ -51,9 +52,9 @@ docker run \\
     --rm \\
     --volume /var/run/docker.sock:/var/run/docker.sock \\
     {self.configuration.docker_image}:{APP_VERSION} \\
-        --configuration-dir "${{TELPASS_CONFIG_DIR:-{cli_context.configuration_dir}}}" \\
-        --data-dir "${{TELPASS_DATA_DIR:-{cli_context.data_dir}}}" \\
-        --environment "${{TELPASS_ENVIRONMENT:-{cli_context.environment}}}" \\
+        --configuration-dir "${{{APP_NAME_UPPERCASE}_CONFIG_DIR:-{cli_context.configuration_dir}}}" \\
+        --data-dir "${{{APP_NAME_UPPERCASE}_DATA_DIR:-{cli_context.data_dir}}}" \\
+        --environment "${{{APP_NAME_UPPERCASE}_ENVIRONMENT:-{cli_context.environment}}}" \\
         $@
             """
             )
