@@ -25,6 +25,7 @@ import click
 from .configure_cli import ConfigureCli
 from .init_cli import InitCli
 from .install_cli import InstallCli
+from .launcher_cli import LauncherCli
 from .logger import logger, enable_debug_logging
 from .main_cli import MainCli
 from .models import CliContext, Configuration
@@ -55,15 +56,17 @@ def create_cli(configuration: Configuration):
     # CREATE_CLI: LOGIC
     # --------------------------------------------------------------------------
 
-    install_commands = InstallCli(configuration).commands
-    main_commands = MainCli(configuration).commands
     configure_commands = ConfigureCli(configuration).commands
     init_commands = InitCli(configuration).commands
+    install_commands = InstallCli(configuration).commands
+    launcher_commands = LauncherCli(configuration).commands
+    main_commands = MainCli(configuration).commands
 
     default_commands = {
         **configure_commands,
         **init_commands,
         **install_commands,
+        **launcher_commands,
         **main_commands,
     }
 
