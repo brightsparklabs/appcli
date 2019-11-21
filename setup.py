@@ -60,5 +60,6 @@ setup(
         "python-keycloak",
         "ruamel-yaml",
         "tabulate",
+        "GitPython",
     ],
 )

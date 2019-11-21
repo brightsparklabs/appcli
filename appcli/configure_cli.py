@@ -23,6 +23,7 @@ from datetime import datetime, timezone
 from functools import reduce
 from pathlib import Path
 from typing import List
+import git
 
 # vendor libraries
 import click
@@ -40,8 +41,25 @@ from .models import CliContext, Configuration, ConfigSettingsGroup, ConfigSettin
 # CONSTANTS
 # ------------------------------------------------------------------------------
 
-METADATA_FILE_NAME = ".metadata-configure.json"
+METADATA_FILE_NAME = "metadata-configure.json"
 """ Name of the file holding metadata from running a configure (relative to the generated configuration directory) """
+
+
+# ------------------------------------------------------------------------------
+# PRIVATE CLASSES
+# ------------------------------------------------------------------------------
+
+
+class ConfigRepo:
+    def __init__(self, repo_path: str):
+        self.repo: git.Repo = git.Repo.init(repo_path)
+        self.actor: git.Actor = git.Actor(f"cli_managed", "")
+
+    def commit_changes(self, message):
+        self.repo.index.add(".gitignore")
+        self.repo.index.add("*")
+        self.repo.index.commit(message, author=self.actor)
+
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -76,20 +94,30 @@ class ConfigureCli:
         def init(ctx):
             self.__print_header(f"Seeding configuration directory for {self.app_name}")
 
-            if not self.__prequisites_met():
+            cli_context: CliContext = ctx.obj
+
+            if not self.__init_prequisites_met(cli_context):
                 logger.error("Prerequisite checks failed")
                 sys.exit(1)
 
-            cli_context: CliContext = ctx.obj
             customisation = self.cli_configuration.configure_cli_customisation
 
             logger.debug("Running pre-configure hook")
             customisation.hooks.pre_configure_init(cli_context)
+
+            # Seed the configuration directory, and put it under source control
+            logger.debug("Seeding configuration and initialising version control")
             self.__seed_configuration_dir(cli_context)
+            self.__init_conf_source_control(cli_context)
+
+            # Generate the configuration files, and put those under source control
+            logger.debug("Generating configuration and initialising version control")
+            configuration = ConfigurationManager(cli_context.app_configuration_file)
+            self.__generate_configuration_files(configuration, cli_context)
+            self.__init_generated_conf_source_control(cli_context)
+
             logger.debug("Running post-configure hook")
             customisation.hooks.post_configure_init(cli_context)
-
-            # self.__save_configuration(app_config_manager)
 
         @configure.command(help="Reads a setting from the configuration.")
         @click.argument("setting")
@@ -128,7 +156,7 @@ class ConfigureCli:
     # PRIVATE METHODS
     # ------------------------------------------------------------------------------
 
-    def __prequisites_met(self):
+    def __init_prequisites_met(self, cli_context: CliContext):
         logger.info("Checking prerequisites ...")
         result = True
 
@@ -139,6 +167,11 @@ class ConfigureCli:
                     f"Mandatory environment variable is not defined [{env_variable}]"
                 )
                 result = False
+
+        conf_dir = cli_context.configuration_dir
+        if Path(conf_dir).exists():
+            logger.error(f"Configuration directory already exists at [{conf_dir}]")
+            result = False
 
         return result
 
@@ -180,6 +213,34 @@ class ConfigureCli:
             else:
                 logger.debug(f"Copying seed file to [{target_file}] ...")
                 shutil.copy2(source_file, target_file)
+
+    def __init_conf_source_control(self, cli_context: CliContext):
+
+        repo_path = cli_context.configuration_dir
+
+        # Write out a .gitignore to ignore .generated/
+        ignore_file = open(repo_path.joinpath(".gitignore"), "w+")
+        ignore_file.write(".generated/\n")
+        ignore_file.close()
+
+        # Initialise the repo and author for commits
+        repo: ConfigRepo = ConfigRepo(repo_path)
+
+        # Add appropriate files to the index and make the initial commit
+        repo.commit_changes("init")
+
+    def __init_generated_conf_source_control(self, cli_context: CliContext):
+
+        repo_path = cli_context.generated_configuration_dir
+
+        # Write out a .gitignore
+        repo_path.joinpath(".gitignore").touch()
+
+        # Initialise the repo and author for commits
+        repo: ConfigRepo = ConfigRepo(repo_path)
+
+        # Add appropriate files to the index and make the initial commit
+        repo.commit_changes("init")
 
     def __configure_all_settings(self, config_manager: ConfigurationManager):
         settings_group: ConfigSettingsGroup

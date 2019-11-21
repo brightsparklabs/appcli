@@ -104,7 +104,7 @@ def create_cli(configuration: Configuration):
             data_dir=data_dir,
             environment=environment,
             subcommand_args=ctx.obj,
-            generated_configuration_dir=configuration_dir.joinpath(".generated/conf"),
+            generated_configuration_dir=configuration_dir.joinpath(".generated"),
             app_configuration_file=configuration_dir.joinpath(f"{APP_NAME}.yml"),
             templates_dir=configuration_dir.joinpath("templates"),
             debug=debug,
