@@ -13,5 +13,4 @@ www.brightsparklabs.com
 from appcli.cli_builder import create_cli
 from appcli.models import CliContext
 from appcli.models import Configuration
-from appcli.models import ConfigureCliConfiguration
 from appcli.models import Hooks

@@ -61,4 +61,3 @@ docker run \\
 
         # expose the cli command
         self.commands = {"launcher": launcher}
-

@@ -1,30 +1,28 @@
 #!/usr/bin/env python3
 # # -*- coding: utf-8 -*-
 
-from types import LambdaType, FunctionType
+from subprocess import CompletedProcess
 from typing import Callable, Dict, List, NamedTuple
 from pathlib import Path
 
 
 class CliContext(NamedTuple):
-    """
-    Shared context from a run of the CLI.
-    """
+    """ Shared context from a run of the CLI. """
 
     configuration_dir: Path
-    """ Directory to read configuration files from """
+    """ Directory to read configuration files from. """
 
     data_dir: Path
-    """ Directory to store data to """
+    """ Directory to store data to. """
 
     environment: str
-    """ Environment to run """
+    """ Environment to run. """
 
     subcommand_args: tuple
-    """ Arguments passed to CLI subcommand """
+    """ Arguments passed to CLI subcommand. """
 
     generated_configuration_dir: Path
-    """ Directory to store the generated configuration files to """
+    """ Directory to store the generated configuration files to. """
 
     app_configuration_file: Path
     """
@@ -39,45 +37,35 @@ class CliContext(NamedTuple):
     """
 
     debug: bool
-    """ Whether to print debug logs """
+    """ Whether to print debug logs. """
 
     commands: Dict
-    """ Internal commands """
-
-
-class ConfigSetting(NamedTuple):
-    path: str
-    message: str
-    validate: LambdaType = lambda _, x: True
-
-
-class ConfigSettingsGroup(NamedTuple):
-    title: str
-    settings: List[ConfigSetting]
+    """ Internal commands. """
 
 
 class Hooks(NamedTuple):
-    pre_configure_init: Callable[[CliContext], None] = lambda x: None
-    """ Hook function to run before running 'configure init'. """
-    post_configure_init: Callable[[CliContext], None] = lambda x: None
-    """ Hook function to run after running 'configure init'. """
-    pre_configure_apply: Callable[[CliContext], None] = lambda x: None
-    """ Hook function to run before running 'configure apply'. """
-    post_configure_apply: Callable[[CliContext], None] = lambda x: None
-    """ Hook function to run after running 'configure apply'. """
-
-
-class ConfigureCliConfiguration(NamedTuple):
-    hooks: Hooks = Hooks()
     """ Hooks to run before/after stages """
-    settings_groups: List[ConfigSettingsGroup] = None
-    """ Settings for building interactive configure prompt """
+
+    pre_start: Callable[[CliContext], None] = lambda x: None
+    """ Optional. Hook function to run before running 'start'. """
+    post_start: Callable[[CliContext, CompletedProcess], None] = lambda x, y: None
+    """ Optional. Hook function to run after running 'start'. """
+    pre_stop: Callable[[CliContext], None] = lambda x: None
+    """ Optional. Hook function to run before running 'stop'. """
+    post_stop: Callable[[CliContext, CompletedProcess], None] = lambda x, y: None
+    """ Optional. Hook function to run after running 'stop'. """
+    pre_configure_init: Callable[[CliContext], None] = lambda x: None
+    """ Optional. Hook function to run before running 'configure init'. """
+    post_configure_init: Callable[[CliContext], None] = lambda x: None
+    """ Optional. Hook function to run after running 'configure init'. """
+    pre_configure_apply: Callable[[CliContext], None] = lambda x: None
+    """ Optional. Hook function to run before running 'configure apply'. """
+    post_configure_apply: Callable[[CliContext], None] = lambda x: None
+    """ Optional. Hook function to run after running 'configure apply'. """
 
 
 class Configuration(NamedTuple):
-    """
-    Configuration for building the CLI.
-    """
+    """ Configuration for building the CLI. """
 
     app_name: str
     """ Name of the application (do not use spaces). """
@@ -97,10 +85,8 @@ class Configuration(NamedTuple):
     configuration files.
     """
 
-    configure_cli_customisation: ConfigureCliConfiguration
-    """
-    Configuration for the `configure` CLI command
-    """
+    hooks: Hooks = Hooks()
+    """ Optional. Hooks to run before/after stages. """
 
     custom_commands: List[Callable] = []
     """

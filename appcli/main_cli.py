@@ -10,10 +10,8 @@ www.brightsparklabs.com
 """
 
 # standard libraries
-import os
 import subprocess
 import sys
-from typing import NamedTuple
 
 # vendor libraries
 import click
@@ -34,6 +32,8 @@ class MainCli:
     # --------------------------------------------------------------------------
 
     def __init__(self, configuration: Configuration):
+        self.cli_configuration: Configuration = configuration
+
         @click.command(
             help="Starts the system.\n\nOptionally specify CONTAINER to start only specific containers.",
             context_settings=dict(ignore_unknown_options=True),
@@ -41,14 +41,36 @@ class MainCli:
         @click.pass_context
         @click.argument("container", nargs=-1, type=click.UNPROCESSED)
         def start(ctx, container):
-            logger.info(f"Starting {configuration.app_name} ...")
-            __run_and_exit(ctx, ("up", "-d") + container)
+            cli_context: CliContext = ctx.obj
+            hooks = self.cli_configuration.hooks
+
+            logger.debug("Running pre-start hook")
+            hooks.pre_start(cli_context)
+
+            logger.info("Starting %s ...", configuration.app_name)
+            result = __exec_command(ctx, ("up", "-d") + container)
+
+            logger.debug("Running post-start hook")
+            hooks.post_start(cli_context, result)
+
+            sys.exit(result.returncode)
 
         @click.command(help="Stops the system.")
         @click.pass_context
         def stop(ctx):
-            logger.info(f"Stopping {configuration.app_name} ...")
-            __run_and_exit(ctx, ["down"])
+            cli_context: CliContext = ctx.obj
+            hooks = self.cli_configuration.hooks
+
+            logger.debug("Running pre-stop hook")
+            hooks.pre_stop(cli_context)
+
+            logger.info("Stopping %s ...", configuration.app_name)
+            result = __exec_command(ctx, ["down"])
+
+            logger.debug("Running post-stop hook")
+            hooks.post_stop(cli_context, result)
+
+            sys.exit(result.returncode)
 
         @click.command(
             help="Streams the system logs.\n\nOptionally specify CONTAINER to only stream logs from specific containers.",
@@ -57,9 +79,10 @@ class MainCli:
         @click.pass_context
         @click.argument("container", nargs=-1, type=click.UNPROCESSED)
         def logs(ctx, container):
-            __run_and_exit(ctx, ("logs", "-f") + container)
+            result = __exec_command(ctx, ("logs", "-f") + container)
+            sys.exit(result.returncode)
 
-        def __run_and_exit(ctx, subcommand):
+        def __exec_command(ctx, subcommand):
             # The project-name of the docker-compose command is composed of project name and environment
             # so that multiple environments can run on a single machine without container naming conflicts
             cli_context: CliContext = ctx.obj
@@ -72,9 +95,9 @@ class MainCli:
             ]
             command = docker_compose_command + [__get_compose_file_path(ctx)]
             command.extend(subcommand)
-            logger.debug(f'Running [{" ".join(command)}]')
+            logger.debug("Running [%s]", " ".join(command))
             result = subprocess.run(command)
-            sys.exit(result.returncode)
+            return result
 
         def __get_compose_file_path(ctx):
             cli_context: CliContext = ctx.obj
