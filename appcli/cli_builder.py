@@ -23,6 +23,7 @@ import click
 
 # local libraries
 from appcli.configure_cli import ConfigureCli
+from appcli.encrypt_cli import EncryptCli
 from appcli.init_cli import InitCli
 from appcli.install_cli import InstallCli
 from appcli.launcher_cli import LauncherCli
@@ -56,19 +57,17 @@ def create_cli(configuration: Configuration):
     # CREATE_CLI: LOGIC
     # --------------------------------------------------------------------------
 
-    configure_commands = ConfigureCli(configuration).commands
-    init_commands = InitCli(configuration).commands
-    install_commands = InstallCli(configuration).commands
-    launcher_commands = LauncherCli(configuration).commands
-    main_commands = MainCli(configuration).commands
-
-    default_commands = {
-        **configure_commands,
-        **init_commands,
-        **install_commands,
-        **launcher_commands,
-        **main_commands,
-    }
+    default_commands = {}
+    for cli_class in (
+        ConfigureCli,
+        EncryptCli,
+        InitCli,
+        InstallCli,
+        LauncherCli,
+        MainCli,
+    ):
+        commands = cli_class(configuration).commands
+        default_commands.update(**commands)
 
     # --------------------------------------------------------------------------
     # CREATE_CLI: NESTED METHODS

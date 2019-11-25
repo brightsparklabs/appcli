@@ -57,6 +57,7 @@ setup(
         "jinja2",
         "python-dotenv",
         "python-keycloak",
+        "pycryptodome",
         "ruamel-yaml",
         "tabulate",
     ],
