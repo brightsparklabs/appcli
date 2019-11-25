@@ -163,9 +163,10 @@ The following must be installed and in the `PATH`:
 
 ### Build
 
-    python3.7 -m venv .venv
+    python -m venv .venv
     . .venv/bin/activate
-    pip install -e .
+    # install dev dependencies for unit testing
+    pip install -e '.[dev]'
 
 ### Install
 

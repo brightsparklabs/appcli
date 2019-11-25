@@ -61,4 +61,5 @@ setup(
         "ruamel-yaml",
         "tabulate",
     ],
+    extras_require={"dev": ["pytest",]},
 )
