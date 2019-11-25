@@ -16,9 +16,9 @@ import sys
 # vendor libraries
 import click
 
-# internal libraries
-from .logger import logger
-from .models import CliContext, Configuration
+# local libraries
+from appcli.logger import logger
+from appcli.models import CliContext, Configuration
 
 # ------------------------------------------------------------------------------
 # CLASSES

@@ -17,8 +17,8 @@ import os
 # vendor libraries
 import click
 
-# internal libraries
-from .models import CliContext, Configuration
+# local libraries
+from appcli.models import CliContext, Configuration
 
 # ------------------------------------------------------------------------------
 # CLASSES

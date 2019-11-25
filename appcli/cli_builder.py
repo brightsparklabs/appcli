@@ -21,14 +21,14 @@ from tabulate import tabulate
 # vendor libraries
 import click
 
-# internal libraries
-from .configure_cli import ConfigureCli
-from .init_cli import InitCli
-from .install_cli import InstallCli
-from .launcher_cli import LauncherCli
-from .logger import logger, enable_debug_logging
-from .main_cli import MainCli
-from .models import CliContext, Configuration
+# local libraries
+from appcli.configure_cli import ConfigureCli
+from appcli.init_cli import InitCli
+from appcli.install_cli import InstallCli
+from appcli.launcher_cli import LauncherCli
+from appcli.logger import logger, enable_debug_logging
+from appcli.main_cli import MainCli
+from appcli.models import CliContext, Configuration
 
 # ------------------------------------------------------------------------------
 # CONSTANTS

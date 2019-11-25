@@ -21,10 +21,10 @@ from pathlib import Path
 import click
 from jinja2 import Template, StrictUndefined
 
-# our library
-from .configuration_manager import ConfigurationManager
-from .logger import logger
-from .models import CliContext, Configuration
+# local libraries
+from appcli.configuration_manager import ConfigurationManager
+from appcli.logger import logger
+from appcli.models import CliContext, Configuration
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
