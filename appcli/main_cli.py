@@ -92,18 +92,27 @@ class MainCli:
                 "--project-name",
                 PROJECT_NAME,
                 "--file",
+                __get_compose_file_path(ctx),
             ]
-            command = docker_compose_command + [__get_compose_file_path(ctx)]
-            command.extend(subcommand)
-            logger.debug("Running [%s]", " ".join(command))
-            result = subprocess.run(command)
+            for path in self.cli_configuration.docker_compose_override_files:
+                override_path = str(
+                    cli_context.generated_configuration_dir.joinpath(path)
+                )
+                docker_compose_command = docker_compose_command + [
+                    "--file",
+                    override_path,
+                ]
+
+            docker_compose_command.extend(subcommand)
+            logger.debug("Running [%s]", " ".join(docker_compose_command))
+            result = subprocess.run(docker_compose_command)
             return result
 
         def __get_compose_file_path(ctx):
             cli_context: CliContext = ctx.obj
             return str(
                 cli_context.generated_configuration_dir.joinpath(
-                    "cli/docker-compose.yml"
+                    self.cli_configuration.docker_compose_file
                 )
             )
 
