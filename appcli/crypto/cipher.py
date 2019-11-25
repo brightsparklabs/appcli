@@ -19,14 +19,6 @@ from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 
 
-def create_key() -> bytes:
-    return get_random_bytes(32)
-
-
-def create_and_save_key(key_file: Path):
-    key_file.write_bytes(create_key())
-
-
 class Cipher:
     """
     Factory for getting a Cipher.
@@ -55,7 +47,7 @@ class Cipher:
         """
         data_bytes = data.encode("utf-8")
         result = self.cipher.encrypt(data_bytes)
-        return f"enc:{self.cipherId}:{result}:"
+        return f"enc:id={self.cipherId}:{result}:end"
 
     def decrypt(self, data: str) -> str:
         """
@@ -68,11 +60,18 @@ class Cipher:
         Raises:
             Exception if provided data was not encrypted with this library, or the data was encrypted by a different type of cipher.
         """
-        prefix, id, encrypted_data, _ = data.split(":", maxsplit=4)
-        if prefix != "enc":
-            raise Exception("Attempted to decrypt non-encrypted data")
-        if id != self.cipherId:
-            raise Exception("Attempted to use wrong cipher to decrypt data")
+        prefix, metadata, encrypted_data, suffix = data.split(":", maxsplit=4)
+        if prefix != "enc" or suffix != "end":
+            raise Exception(
+                f"Encrypted data must have format [enc:<metadata>:<data>:end]. Data found was [{data}]"
+            )
+        metadata_map = {
+            k: v for k, v in (item.split("=") for item in metadata.split(","))
+        }
+        if metadata_map["id"] != self.cipherId:
+            raise Exception(
+                f"Attempted to use wrong cipher [{self.cipherId}] to decrypt data [{data}]"
+            )
         return self.cipher.decrypt(encrypted_data)
 
 

@@ -2,9 +2,9 @@
 # # -*- coding: utf-8 -*-
 
 # standard libraries
-from subprocess import CompletedProcess
-from typing import Callable, Dict, List, NamedTuple
 from pathlib import Path
+from typing import Callable, Dict, List, NamedTuple
+from subprocess import CompletedProcess
 
 
 class CliContext(NamedTuple):
@@ -15,6 +15,9 @@ class CliContext(NamedTuple):
 
     data_dir: Path
     """ Directory to store data to. """
+
+    key_file: Path
+    """ File containing key for encryption/decryption. """
 
     environment: str
     """ Environment to run. """

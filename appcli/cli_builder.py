@@ -104,6 +104,7 @@ def create_cli(configuration: Configuration):
         ctx.obj = CliContext(
             configuration_dir=configuration_dir,
             data_dir=data_dir,
+            key_file=Path(configuration_dir, "key"),
             environment=environment,
             subcommand_args=ctx.obj,
             generated_configuration_dir=configuration_dir.joinpath(".generated/conf"),
@@ -130,7 +131,10 @@ def create_cli(configuration: Configuration):
 
         # Print out the configuration values as an aligned table
         logger.info(
-            f"{APP_NAME_UPPERCASE} v{APP_VERSION} CLI running with:\n{tabulate(table)}"
+            "%s (version: %s) CLI running with:\n%s",
+            APP_NAME_UPPERCASE,
+            APP_VERSION,
+            tabulate(table),
         )
 
         if ctx.invoked_subcommand is None:

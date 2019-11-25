@@ -2,7 +2,7 @@
 # # -*- coding: utf-8 -*-
 
 """
-Unit tests for crypter.
+Unit tests for cipher.
 ________________________________________________________________________________
 
 Created by brightSPARK Labs
@@ -14,14 +14,15 @@ import pytest
 from pathlib import Path
 
 # local libraries
-import appcli.crypter as crypter
+from appcli.crypto import crypto
+from appcli.crypto.cipher import Cipher
 
 
 def test_aes_gcm(tmpdir):
     key_file = Path(tmpdir, "key")
     print(f"key_file: ${key_file}")
-    crypter.create_and_save_key(key_file)
-    cipher = crypter.Cipher(key_file)
+    crypto.create_and_save_key(key_file)
+    cipher = Cipher(key_file)
 
     plaintext = "a message to encrypt"
     ciphertext = cipher.encrypt(plaintext)

@@ -19,7 +19,8 @@ from pathlib import Path
 import click
 
 # local libraries
-import appcli.crypter as crypter
+from appcli.crypto import crypto
+from appcli.crypto.cipher import Cipher
 from appcli.logger import logger
 from appcli.models import CliContext, Configuration
 
@@ -30,9 +31,9 @@ from appcli.models import CliContext, Configuration
 
 class EncryptCli:
 
-    # ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     # CONSTRUCTOR
-    # ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
 
     def __init__(self, configuration: Configuration):
 
@@ -44,12 +45,12 @@ class EncryptCli:
         def encrypt(ctx, text: str):
 
             cli_context: CliContext = ctx.obj
-            key_file: Path = Path(cli_context.configuration_dir, "key")
+            key_file: Path = cli_context.key_file
             if not key_file.is_file():
                 logger.info("Creating encryption key at [%s]", key_file)
-                crypter.create_and_save_key(key_file)
+                crypto.create_and_save_key(key_file)
 
-            cipher = crypter.Cipher(key_file)
+            cipher = Cipher(key_file)
             result = cipher.encrypt(text)
             print(result)
 
