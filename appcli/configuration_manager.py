@@ -20,8 +20,8 @@ from pathlib import Path
 import coloredlogs
 from ruamel.yaml import YAML
 
-# internal libraries
-from .logger import logger
+# local libraries
+from appcli.logger import logger
 
 # ------------------------------------------------------------------------------
 # INTERNAL CLASSES

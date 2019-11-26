@@ -21,14 +21,15 @@ from tabulate import tabulate
 # vendor libraries
 import click
 
-# internal libraries
-from .configure_cli import ConfigureCli
-from .init_cli import InitCli
-from .install_cli import InstallCli
-from .launcher_cli import LauncherCli
-from .logger import logger, enable_debug_logging
-from .main_cli import MainCli
-from .models import CliContext, Configuration
+# local libraries
+from appcli.configure_cli import ConfigureCli
+from appcli.encrypt_cli import EncryptCli
+from appcli.init_cli import InitCli
+from appcli.install_cli import InstallCli
+from appcli.launcher_cli import LauncherCli
+from appcli.logger import logger, enable_debug_logging
+from appcli.main_cli import MainCli
+from appcli.models import CliContext, Configuration
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
@@ -56,19 +57,17 @@ def create_cli(configuration: Configuration):
     # CREATE_CLI: LOGIC
     # --------------------------------------------------------------------------
 
-    configure_commands = ConfigureCli(configuration).commands
-    init_commands = InitCli(configuration).commands
-    install_commands = InstallCli(configuration).commands
-    launcher_commands = LauncherCli(configuration).commands
-    main_commands = MainCli(configuration).commands
-
-    default_commands = {
-        **configure_commands,
-        **init_commands,
-        **install_commands,
-        **launcher_commands,
-        **main_commands,
-    }
+    default_commands = {}
+    for cli_class in (
+        ConfigureCli,
+        EncryptCli,
+        InitCli,
+        InstallCli,
+        LauncherCli,
+        MainCli,
+    ):
+        commands = cli_class(configuration).commands
+        default_commands.update(**commands)
 
     # --------------------------------------------------------------------------
     # CREATE_CLI: NESTED METHODS
@@ -105,6 +104,7 @@ def create_cli(configuration: Configuration):
         ctx.obj = CliContext(
             configuration_dir=configuration_dir,
             data_dir=data_dir,
+            key_file=Path(configuration_dir, "key"),
             environment=environment,
             subcommand_args=ctx.obj,
             generated_configuration_dir=configuration_dir.joinpath(".generated/conf"),
@@ -131,7 +131,10 @@ def create_cli(configuration: Configuration):
 
         # Print out the configuration values as an aligned table
         logger.info(
-            f"{APP_NAME_UPPERCASE} v{APP_VERSION} CLI running with:\n{tabulate(table)}"
+            "%s (version: %s) CLI running with:\n%s",
+            APP_NAME_UPPERCASE,
+            APP_VERSION,
+            tabulate(table),
         )
 
         if ctx.invoked_subcommand is None:

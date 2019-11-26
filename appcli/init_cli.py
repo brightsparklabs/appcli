@@ -12,9 +12,9 @@ www.brightsparklabs.com
 # vendor libraries
 import click
 
-# our library
-from .models import Configuration
-from .keycloak_manager import KeycloakManager
+# local libraries
+from appcli.models import Configuration
+from appcli.keycloak_manager import KeycloakManager
 
 # ------------------------------------------------------------------------------
 # CONSTANTS

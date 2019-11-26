@@ -55,9 +55,12 @@ setup(
         "click",
         "coloredlogs",
         "jinja2",
+        "pytest",
         "python-dotenv",
         "python-keycloak",
+        "pycryptodome",
         "ruamel-yaml",
         "tabulate",
     ],
+    extras_require={"dev": ["pytest",]},
 )
