@@ -109,11 +109,10 @@ class MainCli:
             "--file",
             str(self.__get_compose_file_path(ctx)),
         ]
-        for path in self.cli_configuration.docker_compose_override_files:
-            override_path = str(cli_context.generated_configuration_dir.joinpath(path))
+        for path in self.__get_compose_override_file_paths(ctx):
             docker_compose_command = docker_compose_command + [
                 "--file",
-                override_path,
+                str(path),
             ]
 
         docker_compose_command.extend(subcommand)
@@ -122,30 +121,29 @@ class MainCli:
         return result
 
     def __get_compose_file_path(self, ctx) -> Path:
-        cli_context: CliContext = ctx.obj
-        compose_file: Path = cli_context.generated_configuration_dir.joinpath(
-            self.cli_configuration.docker_compose_file
+        return __get_decrypted_generated_config_file(
+            ctx, self.cli_configuration.docker_compose_file
         )
-        return __decrypt_file(compose_file)
 
     def __get_compose_override_file_paths(self, ctx) -> List[Path]:
-        cli_context: CliContext = ctx.obj
-        decrypted_compose_overrides = []
-        for path in self.cli_configuration.docker_compose_override_files:
-            override_path = str(cli_context.generated_configuration_dir.joinpath(path))
-            docker_compose_command = docker_compose_command + [
-                "--file",
-                override_path,
-            ]
+        return [
+            self.__get_decrypted_generated_config_file(ctx, path)
+            for path in self.cli_configuration.docker_compose_override_files
+        ]
 
-    def __decrypt_file(self, ctx, encrypted_file: Path) -> Path:
+    def __get_decrypted_generated_config_file(self, ctx, relative_path: Path) -> Path:
         cli_context: CliContext = ctx.obj
+
+        full_path: Path = cli_context.generated_configuration_dir.joinpath(
+            relative_path
+        )
+
         key_file = cli_context.key_file
         if not key_file.is_file():
             logger.info("No decryption file found. Using file as is.")
-            return encrypted_file
+            return full_path
 
-        logger.info("Decrypting file [%s] using [%s].", str(encrypted_file), key_file)
+        logger.info("Decrypting file [%s] using [%s].", str(full_path), key_file)
         decrypted_file: Path = Path(NamedTemporaryFile(delete=False).name)
-        crypto.decrypt_values_in_file(encrypted_file, decrypted_file, key_file)
+        crypto.decrypt_values_in_file(full_path, decrypted_file, key_file)
         return decrypted_file
