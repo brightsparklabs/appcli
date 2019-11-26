@@ -88,7 +88,9 @@ class MainCli:
             result = self.__exec_command(ctx, ("logs", "-f") + container)
             sys.exit(result.returncode)
 
+        # NOTE: Hide the compose command as end users should not run it manually
         @click.command(
+            hidden=True,
             help="Runs a specific docker-compose command.",
             context_settings=dict(ignore_unknown_options=True),
         )
