@@ -121,7 +121,7 @@ class MainCli:
         return result
 
     def __get_compose_file_path(self, ctx) -> Path:
-        return __get_decrypted_generated_config_file(
+        return self.__get_decrypted_generated_config_file(
             ctx, self.cli_configuration.docker_compose_file
         )
 
