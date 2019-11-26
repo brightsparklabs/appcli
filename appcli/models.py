@@ -89,6 +89,15 @@ class Configuration(NamedTuple):
     configuration files.
     """
 
+    docker_compose_file: Path = "cli/docker-compose.yml"
+    """ Optional. Path to the docker-compose.yml file specifying all services """
+
+    docker_compose_override_files: List[Path] = []
+    """
+    Optional. Paths to the docker-compose.override.yml files specifying all services.
+    These are applied in the supplied list order.
+    """
+
     hooks: Hooks = Hooks()
     """ Optional. Hooks to run before/after stages. """
 

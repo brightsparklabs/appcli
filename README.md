@@ -61,8 +61,7 @@ The library leverages the following environment variables:
                 app_name='myapp',
                 docker_image='brightsparklabs/myapp',
                 seed_app_configuration_file=Path(BASE_DIR, 'resources/myapp.yml'),
-                seed_templates_dir=Path(BASE_DIR, 'resources/templates'),
-                configure_cli_customisation=appcli.ConfigureCliConfiguration()
+                seed_templates_dir=Path(BASE_DIR, 'resources/templates')
             )
             cli = appcli.create_cli(configuration)
             cli()
