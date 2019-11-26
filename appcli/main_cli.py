@@ -49,34 +49,32 @@ class MainCli:
         @click.pass_context
         @click.argument("container", nargs=-1, type=click.UNPROCESSED)
         def start(ctx, container):
-            cli_context: CliContext = ctx.obj
             hooks = self.cli_configuration.hooks
 
             logger.debug("Running pre-start hook")
-            hooks.pre_start(cli_context)
+            hooks.pre_start(ctx)
 
             logger.info("Starting %s ...", configuration.app_name)
             result = self.__exec_command(ctx, ("up", "-d") + container)
 
             logger.debug("Running post-start hook")
-            hooks.post_start(cli_context, result)
+            hooks.post_start(ctx, result)
 
             sys.exit(result.returncode)
 
         @click.command(help="Stops the system.")
         @click.pass_context
         def stop(ctx):
-            cli_context: CliContext = ctx.obj
             hooks = self.cli_configuration.hooks
 
             logger.debug("Running pre-stop hook")
-            hooks.pre_stop(cli_context)
+            hooks.pre_stop(ctx)
 
             logger.info("Stopping %s ...", configuration.app_name)
             result = self.__exec_command(ctx, ["down"])
 
             logger.debug("Running post-stop hook")
-            hooks.post_stop(cli_context, result)
+            hooks.post_stop(ctx, result)
 
             sys.exit(result.returncode)
 
@@ -90,8 +88,18 @@ class MainCli:
             result = self.__exec_command(ctx, ("logs", "-f") + container)
             sys.exit(result.returncode)
 
+        @click.command(
+            help="Runs a specific docker-compose command.",
+            context_settings=dict(ignore_unknown_options=True),
+        )
+        @click.pass_context
+        @click.argument("command", nargs=-1, type=click.UNPROCESSED)
+        def compose(ctx, command):
+            result = self.__exec_command(ctx, command)
+            sys.exit(result.returncode)
+
         # expose the cli commands
-        self.commands = {"start": start, "stop": stop, "logs": logs}
+        self.commands = {"start": start, "stop": stop, "logs": logs, "compose": compose}
 
     # --------------------------------------------------------------------------
     # PRIVATE METHODS

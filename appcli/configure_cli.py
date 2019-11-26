@@ -70,14 +70,13 @@ class ConfigureCli:
                 logger.error("Prerequisite checks failed")
                 sys.exit(1)
 
-            cli_context: CliContext = ctx.obj
             hooks = self.cli_configuration.hooks
 
             logger.debug("Running pre-configure init hook")
-            hooks.pre_configure_init(cli_context)
+            hooks.pre_configure_init(ctx)
             self.__seed_configuration_dir(cli_context)
             logger.debug("Running post-configure init hook")
-            hooks.post_configure_init(cli_context)
+            hooks.post_configure_init(ctx)
 
         @configure.command(help="Reads a setting from the configuration.")
         @click.argument("setting")
@@ -105,10 +104,10 @@ class ConfigureCli:
             hooks = self.cli_configuration.hooks
 
             logger.debug("Running pre-configure apply hook")
-            hooks.pre_configure_apply(cli_context)
+            hooks.pre_configure_apply(ctx)
             self.__generate_configuration_files(configuration, cli_context)
             logger.debug("Running post-configure apply hook")
-            hooks.post_configure_apply(cli_context)
+            hooks.post_configure_apply(ctx)
 
         self.commands = {"configure": configure}
 
