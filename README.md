@@ -171,6 +171,14 @@ The following must be installed and in the `PATH`:
 
     pip install -e .
 
+### Running unit tests
+
+We are running tests using `pytest`. To run these, ensure you have done
+`pip install -e '.[dev]'`, then at the root of the repo, run:
+
+    pytest
+
+
 ## Contributing
 
 When committing code, first run the python code formatter
