@@ -14,6 +14,7 @@ import subprocess
 import sys
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from typing import List
 
 # vendor libraries
 import click
@@ -125,13 +126,26 @@ class MainCli:
         compose_file: Path = cli_context.generated_configuration_dir.joinpath(
             self.cli_configuration.docker_compose_file
         )
+        return __decrypt_file(compose_file)
 
+    def __get_compose_override_file_paths(self, ctx) -> List[Path]:
+        cli_context: CliContext = ctx.obj
+        decrypted_compose_overrides = []
+        for path in self.cli_configuration.docker_compose_override_files:
+            override_path = str(cli_context.generated_configuration_dir.joinpath(path))
+            docker_compose_command = docker_compose_command + [
+                "--file",
+                override_path,
+            ]
+
+    def __decrypt_file(self, ctx, encrypted_file: Path) -> Path:
+        cli_context: CliContext = ctx.obj
         key_file = cli_context.key_file
         if not key_file.is_file():
-            logger.info("No decryption file found. Using docker-compose file as is.")
-            return compose_file
+            logger.info("No decryption file found. Using file as is.")
+            return encrypted_file
 
-        logger.info("Decrypting docker-compose file using [%s].", key_file)
-        decrypted_compose_file: Path = Path(NamedTemporaryFile(delete=False).name)
-        crypto.decrypt_values_in_file(compose_file, decrypted_compose_file, key_file)
-        return decrypted_compose_file
+        logger.info("Decrypting file [%s] using [%s].", str(encrypted_file), key_file)
+        decrypted_file: Path = Path(NamedTemporaryFile(delete=False).name)
+        crypto.decrypt_values_in_file(encrypted_file, decrypted_file, key_file)
+        return decrypted_file

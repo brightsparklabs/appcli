@@ -19,7 +19,7 @@ from pathlib import Path
 from Crypto.Cipher import AES
 
 
-@enum.unique
+@unique
 class CipherType(Enum):
     """
     Enum of all supported Cipher types. This maps a cipher implementation to an id.
