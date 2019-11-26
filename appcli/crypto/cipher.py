@@ -10,13 +10,23 @@ www.brightsparklabs.com
 """
 
 # standard libraries
+from enum import Enum, unique
 import json
 from base64 import b64encode, b64decode
 from pathlib import Path
 
 # vendor libraries
 from Crypto.Cipher import AES
-from Crypto.Random import get_random_bytes
+
+
+@enum.unique
+class CipherType(Enum):
+    """
+    Enum of all supported Cipher types. This maps a cipher implementation to an id.
+    The values of the enums should never change, or you may cause backwards-compatibility issues.
+    """
+
+    AES_GCM = "1"
 
 
 class Cipher:
@@ -24,16 +34,18 @@ class Cipher:
     Factory for getting a Cipher.
     """
 
-    def __init__(self, key_file: Path, cipherId="aes-gcm"):
+    def __init__(self, key_file: Path, cipherType: CipherType = CipherType.AES_GCM):
         """
         Args:
             key_file: Path. Key file to use for encryption/decryption.
-            cipherId: str. Identifier of the cipher to use.
+            cipherType: str. Identifier of the cipher to use.
         """
 
-        self.cipherId = cipherId
+        self.cipherId = cipherType.value
+        # Since there's only one CipherType to deal with, use AesGcmCipher
         # TODO: when we support more ciphers, then use a look up instead
         cipherClass = AesGcmCipher
+
         self.cipher = cipherClass(key_file)
 
     def encrypt(self, data: str) -> str:

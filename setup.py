@@ -55,6 +55,7 @@ setup(
         "click",
         "coloredlogs",
         "jinja2",
+        "pytest",
         "python-dotenv",
         "python-keycloak",
         "pycryptodome",

@@ -26,6 +26,10 @@ def create_key() -> bytes:
 
 
 def create_and_save_key(key_file: Path):
+    if key_file.exists():
+        raise FileExistsError(
+            f"Cannot create keyfile at [{key_file.absolute().as_posix()}] as a file already exists at this path."
+        )
     key_file.write_bytes(create_key())
 
 
