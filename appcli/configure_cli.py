@@ -74,7 +74,7 @@ class ConfigureCli:
 
             logger.debug("Running pre-configure init hook")
             hooks.pre_configure_init(ctx)
-            self.__seed_configuration_dir(cli_context)
+            self.__seed_configuration_dir(ctx.obj)
             logger.debug("Running post-configure init hook")
             hooks.post_configure_init(ctx)
 
