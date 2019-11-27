@@ -16,7 +16,7 @@ import shlex
 import subprocess
 import sys
 from pathlib import Path
-from typing import Iterable, NamedTuple
+from typing import Iterable
 from tabulate import tabulate
 
 # vendor libraries
@@ -284,24 +284,36 @@ def create_cli(configuration: Configuration):
         sys.exit(result.returncode)
 
     def check_environment():
+        mandatory_variables = (ENV_VAR_CONFIG_DIR, ENV_VAR_DATA_DIR)
+        check_environment_variable_defined(
+            mandatory_variables,
+            "Mandatory environment variable [%s] is not defined. [%s] should have been defined automatically by the CLI.",
+            "Cannot run without all mandatory environment variables defined",
+        )
+
+        check_environment_variable_defined(
+            configuration.mandatory_additional_env_variables,
+            "Mandatory additional environment variable [%s] not defined. Please define with:\n\t--additional-env-var %s <value>.",
+            "Cannot run without all mandatory additional environment variables defined",
+        )
+
+        check_environment_variable_defined(
+            configuration.mandatory_additional_data_dirs,
+            "Mandatory additional data directory [%s] not defined. Please define with:\n\t--additional-data-dir %s </path/to/dir>.",
+            "Cannot run without all mandatory additional data directories defined",
+        )
+
+    def check_environment_variable_defined(
+        env_variables: Iterable[str], error_message_template: str, exit_message: str
+    ):
         result = True
-        mandatory_variables = [
-            ENV_VAR_CONFIG_DIR,
-            ENV_VAR_DATA_DIR,
-        ]
-        mandatory_variables.extend(configuration.mandatory_additional_data_dirs)
-        mandatory_variables.extend(configuration.mandatory_additional_env_variables)
-        for env_variable in mandatory_variables:
+        for env_variable in env_variables:
             value = os.environ.get(env_variable)
             if value is None:
-                logger.error(
-                    "Mandatory environment variable is not defined [%s]", env_variable
-                )
+                logger.error(error_message_template, env_variable, env_variable)
                 result = False
         if not result:
-            error_and_exit(
-                "Cannot run without all mandatory environment variables defined"
-            )
+            error_and_exit(exit_message)
 
     def error_and_exit(message: str):
         logger.error(message)
