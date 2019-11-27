@@ -16,7 +16,7 @@ import shlex
 import subprocess
 import sys
 from pathlib import Path
-from typing import Iterable, Tuple, NamedTuple
+from typing import Iterable, NamedTuple
 from tabulate import tabulate
 
 # vendor libraries
@@ -104,8 +104,23 @@ def create_cli(configuration: Configuration):
         type=click.Tuple([str, Path]),
         multiple=True,
     )
+    @click.option(
+        "--additional-env-var",
+        help="Additional environment variables to define in containers. Can be specified multiple times.",
+        nargs=2,
+        type=click.Tuple([str, str]),
+        multiple=True,
+    )
     @click.pass_context
-    def cli(ctx, debug, configuration_dir, data_dir, environment, additional_data_dir):
+    def cli(
+        ctx,
+        debug,
+        configuration_dir,
+        data_dir,
+        environment,
+        additional_data_dir,
+        additional_env_var,
+    ):
         if debug:
             logger.info("Enabling debug logging")
             enable_debug_logging()
@@ -122,10 +137,12 @@ def create_cli(configuration: Configuration):
             templates_dir=configuration_dir.joinpath("templates"),
             debug=debug,
             commands=default_commands,
+            additional_env_variables=additional_env_var,
         )
 
         check_docker_socket()
-        check_additional_data_dirs(additional_data_dir)
+        check_valid_environment_variable_names([x[0] for x in additional_data_dir])
+        check_valid_environment_variable_names([x[0] for x in additional_env_var])
         relaunch_if_required(ctx)
         check_environment()
 
@@ -142,11 +159,29 @@ def create_cli(configuration: Configuration):
 
         # Print out the configuration values as an aligned table
         logger.info(
-            "%s (version: %s) CLI running with:\n%s",
+            "%s (version: %s) CLI running with:\n\n%s\n",
             APP_NAME_UPPERCASE,
             APP_VERSION,
-            tabulate(table),
+            tabulate(table, colalign=("right",)),
         )
+        if additional_data_dir:
+            logger.info(
+                "Additional data directories:\n\n%s\n",
+                tabulate(
+                    additional_data_dir,
+                    headers=["Environment Variable", "Path"],
+                    colalign=("right",),
+                ),
+            )
+        if additional_env_var:
+            logger.info(
+                "Additional environment variables:\n\n%s\n",
+                tabulate(
+                    additional_env_var,
+                    headers=["Environment Variable", "Value"],
+                    colalign=("right",),
+                ),
+            )
 
         if ctx.invoked_subcommand is None:
             click.echo(ctx.get_help())
@@ -168,11 +203,11 @@ def create_cli(configuration: Configuration):
 """
             error_and_exit(error_msg)
 
-    def check_additional_data_dirs(additional_data_dirs: Iterable[Tuple[str, Path]]):
-        for name, _ in additional_data_dirs:
-            if not re.match("^[a-zA-Z_]+$", name):
+    def check_valid_environment_variable_names(variable_names: Iterable[str]):
+        for name in variable_names:
+            if not re.match("^[a-zA-Z][a-zA-Z0-9_]*$", name):
                 error_and_exit(
-                    f"Invalid environment variable name supplied [{name}]. Names may only contain a-z, A-Z and underscores."
+                    f"Invalid environment variable name supplied [{name}]. Names may only contain alphanumeric characters and underscores."
                 )
 
     def relaunch_if_required(ctx):
@@ -201,6 +236,7 @@ def create_cli(configuration: Configuration):
                         --env {ENV_VAR_ENVIRONMENT}='{environment}'
             """
         )
+
         for name, path in cli_context.additional_data_dirs:
             command.extend(
                 shlex.split(
@@ -210,6 +246,10 @@ def create_cli(configuration: Configuration):
                     """
                 )
             )
+
+        for name, value in cli_context.additional_env_variables:
+            command.extend(shlex.split(f"--env {name}='{value}'"))
+
         command.extend(
             shlex.split(
                 f"""
@@ -250,6 +290,7 @@ def create_cli(configuration: Configuration):
             ENV_VAR_DATA_DIR,
         ]
         mandatory_variables.extend(configuration.mandatory_additional_data_dirs)
+        mandatory_variables.extend(configuration.mandatory_additional_env_variables)
         for env_variable in mandatory_variables:
             value = os.environ.get(env_variable)
             if value is None:

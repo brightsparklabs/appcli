@@ -18,6 +18,7 @@ import os
 import click
 
 # local libraries
+from appcli.logger import logger
 from appcli.models import CliContext, Configuration
 
 # ------------------------------------------------------------------------------
@@ -38,7 +39,7 @@ class LauncherCli:
         @click.command(help="Outputs an appropriate launcher bash script to stdout")
         @click.pass_context
         def launcher(ctx):
-
+            logger.info("Generating launcher script ...")
             cli_context: CliContext = ctx.obj
             APP_VERSION = os.environ.get("APP_VERSION")
             APP_NAME_UPPERCASE = configuration.app_name.upper()
@@ -59,6 +60,8 @@ docker run \\
 
             for name, path in cli_context.additional_data_dirs:
                 print(f"        --additional-data-dir {name} '{path}' \\")
+            for name, value in cli_context.additional_env_variables:
+                print(f"        --additional-env-var {name} '{value}' \\")
             print("        $@")
 
         # expose the cli command

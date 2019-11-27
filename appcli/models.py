@@ -14,10 +14,10 @@ class CliContext(NamedTuple):
     """ Directory to read configuration files from. """
 
     data_dir: Path
-    """ Directory to store data to. """
+    """ Directory to use for persistent data storage. """
 
     additional_data_dirs: Iterable[Tuple[str, Path]]
-    """ Directory to store data to. """
+    """ Additional directories to use for persistent data storage. """
 
     key_file: Path
     """ File containing key for encryption/decryption. """
@@ -48,6 +48,9 @@ class CliContext(NamedTuple):
 
     commands: Dict
     """ Internal commands. """
+
+    additional_env_variables: Iterable[Tuple[str, str]]
+    """ Additional environment variables to define in CLI container. """
 
 
 class Hooks(NamedTuple):
@@ -112,4 +115,9 @@ class Configuration(NamedTuple):
     mandatory_additional_data_dirs: FrozenSet[Tuple[str, Path]] = frozenset()
     """
     Optional. Additional data directories which must be supplied.
+    """
+
+    mandatory_additional_env_variables: FrozenSet[Tuple[str, Path]] = frozenset()
+    """
+    Optional. Additional environment variables which must be supplied.
     """
