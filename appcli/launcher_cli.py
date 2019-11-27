@@ -54,10 +54,12 @@ docker run \\
     {self.configuration.docker_image}:{APP_VERSION} \\
         --configuration-dir "${{{APP_NAME_UPPERCASE}_CONFIG_DIR:-{cli_context.configuration_dir}}}" \\
         --data-dir "${{{APP_NAME_UPPERCASE}_DATA_DIR:-{cli_context.data_dir}}}" \\
-        --environment "${{{APP_NAME_UPPERCASE}_ENVIRONMENT:-{cli_context.environment}}}" \\
-        $@
-            """
+        --environment "${{{APP_NAME_UPPERCASE}_ENVIRONMENT:-{cli_context.environment}}}" \\"""
             )
+
+            for name, path in cli_context.additional_data_dirs:
+                print(f"        --additional-data-dir {name} '{path}' \\")
+            print("        $@")
 
         # expose the cli command
         self.commands = {"launcher": launcher}
