@@ -11,11 +11,12 @@ www.brightsparklabs.com
 
 # standard libraries
 import os
+import re
 import shlex
 import subprocess
 import sys
 from pathlib import Path
-from typing import NamedTuple
+from typing import Iterable, Tuple, NamedTuple
 from tabulate import tabulate
 
 # vendor libraries
@@ -95,8 +96,16 @@ def create_cli(configuration: Configuration):
         type=str,
         default="production",
     )
+    @click.option(
+        "--additional-data-dir",
+        "-a",
+        help="Additional data directory to expose to containers. Can be specified multiple times.",
+        nargs=2,
+        type=click.Tuple([str, Path]),
+        multiple=True,
+    )
     @click.pass_context
-    def cli(ctx, debug, configuration_dir, data_dir, environment):
+    def cli(ctx, debug, configuration_dir, data_dir, environment, additional_data_dir):
         if debug:
             logger.info("Enabling debug logging")
             enable_debug_logging()
@@ -104,6 +113,7 @@ def create_cli(configuration: Configuration):
         ctx.obj = CliContext(
             configuration_dir=configuration_dir,
             data_dir=data_dir,
+            additional_data_dirs=additional_data_dir,
             key_file=Path(configuration_dir, "key"),
             environment=environment,
             subcommand_args=ctx.obj,
@@ -115,6 +125,7 @@ def create_cli(configuration: Configuration):
         )
 
         check_docker_socket()
+        check_additional_data_dirs(additional_data_dir)
         relaunch_if_required(ctx)
         check_environment()
 
@@ -155,8 +166,14 @@ def create_cli(configuration: Configuration):
             --data-dir <dir> COMMAND'
             --environment <str>
 """
-            logger.error(error_msg)
-            sys.exit(1)
+            error_and_exit(error_msg)
+
+    def check_additional_data_dirs(additional_data_dirs: Iterable[Tuple[str, Path]]):
+        for name, _ in additional_data_dirs:
+            if not re.match("^[a-zA-Z_]+$", name):
+                error_and_exit(
+                    f"Invalid environment variable name supplied [{name}]. Names may only contain a-z, A-Z and underscores."
+                )
 
     def relaunch_if_required(ctx):
         is_appcli_managed = os.environ.get("APPCLI_MANAGED")
@@ -182,18 +199,45 @@ def create_cli(configuration: Configuration):
                         --env {ENV_VAR_DATA_DIR}='{data_dir}'
                         --volume '{data_dir}:{data_dir}'
                         --env {ENV_VAR_ENVIRONMENT}='{environment}'
-                        {configuration.docker_image}:{APP_VERSION}
-                            --configuration-dir '{configuration_dir}'
-                            --data-dir '{data_dir}'
-                            --environment '{environment}'
             """
         )
+        for name, path in cli_context.additional_data_dirs:
+            command.extend(
+                shlex.split(
+                    f"""
+                        --env {name}='{path}'
+                        --volume '{path}:{path}'
+                    """
+                )
+            )
+        command.extend(
+            shlex.split(
+                f"""
+                    {configuration.docker_image}:{APP_VERSION}
+                    --configuration-dir '{configuration_dir}'
+                    --data-dir '{data_dir}'
+                    --environment '{environment}'
+                """
+            )
+        )
+        for name, path in cli_context.additional_data_dirs:
+            command.extend(shlex.split(f"--additional-data-dir {name} '{path}'"))
+
         if cli_context.debug:
             command.append("--debug")
+            # useful when debugging
+            new_env = ""
+            for i, value in enumerate(command):
+                if value == "--env" and i + 1 < len(command):
+                    new_env += f"\t{command[i+1]} \\\n"
+            logger.debug(
+                f"Relaunched environment will be initialised with:\n%s", new_env,
+            )
         if ctx.invoked_subcommand is not None:
             command.append(ctx.invoked_subcommand)
         if cli_context.subcommand_args is not None:
             command.extend(cli_context.subcommand_args)
+
         logger.info("Relaunching with initialised environment ...")
         logger.debug("Running [%s]", " ".join(command))
         result = subprocess.run(command)
@@ -201,7 +245,11 @@ def create_cli(configuration: Configuration):
 
     def check_environment():
         result = True
-        mandatory_variables = [ENV_VAR_CONFIG_DIR, ENV_VAR_DATA_DIR]
+        mandatory_variables = [
+            ENV_VAR_CONFIG_DIR,
+            ENV_VAR_DATA_DIR,
+        ]
+        mandatory_variables.extend(configuration.mandatory_additional_data_dirs)
         for env_variable in mandatory_variables:
             value = os.environ.get(env_variable)
             if value is None:
@@ -210,10 +258,13 @@ def create_cli(configuration: Configuration):
                 )
                 result = False
         if not result:
-            logger.error(
+            error_and_exit(
                 "Cannot run without all mandatory environment variables defined"
             )
-            sys.exit(1)
+
+    def error_and_exit(message: str):
+        logger.error(message)
+        sys.exit(1)
 
     for command in default_commands.values():
         cli.add_command(command)

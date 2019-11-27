@@ -3,7 +3,7 @@
 
 # standard libraries
 from pathlib import Path
-from typing import Callable, Dict, List, NamedTuple
+from typing import Callable, Dict, FrozenSet, Iterable, NamedTuple, Tuple
 from subprocess import CompletedProcess
 
 
@@ -14,6 +14,9 @@ class CliContext(NamedTuple):
     """ Directory to read configuration files from. """
 
     data_dir: Path
+    """ Directory to store data to. """
+
+    additional_data_dirs: Iterable[Tuple[str, Path]]
     """ Directory to store data to. """
 
     key_file: Path
@@ -92,7 +95,7 @@ class Configuration(NamedTuple):
     docker_compose_file: Path = "cli/docker-compose.yml"
     """ Optional. Path to the docker-compose.yml file specifying all services """
 
-    docker_compose_override_files: List[Path] = []
+    docker_compose_override_files: Iterable[Path] = []
     """
     Optional. Paths to the docker-compose.override.yml files specifying all services.
     These are applied in the supplied list order.
@@ -101,7 +104,12 @@ class Configuration(NamedTuple):
     hooks: Hooks = Hooks()
     """ Optional. Hooks to run before/after stages. """
 
-    custom_commands: List[Callable] = []
+    custom_commands: Iterable[Callable] = []
     """
     Optional. Extra click commands to add to the CLI. Can be group or specific commands.
+    """
+
+    mandatory_additional_data_dirs: FrozenSet[Tuple[str, Path]] = frozenset()
+    """
+    Optional. Additional data directories which must be supplied.
     """
