@@ -106,6 +106,7 @@ def create_cli(configuration: Configuration):
     )
     @click.option(
         "--additional-env-var",
+        "-n",
         help="Additional environment variables to define in containers. Can be specified multiple times.",
         nargs=2,
         type=click.Tuple([str, str]),

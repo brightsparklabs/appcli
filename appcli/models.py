@@ -6,6 +6,9 @@ from pathlib import Path
 from typing import Callable, Dict, FrozenSet, Iterable, NamedTuple, Tuple
 from subprocess import CompletedProcess
 
+# vendor libraries
+import click
+
 
 class CliContext(NamedTuple):
     """ Shared context from a run of the CLI. """
@@ -56,21 +59,21 @@ class CliContext(NamedTuple):
 class Hooks(NamedTuple):
     """ Hooks to run before/after stages """
 
-    pre_start: Callable[[CliContext], None] = lambda x: None
+    pre_start: Callable[[click.Context], None] = lambda x: None
     """ Optional. Hook function to run before running 'start'. """
-    post_start: Callable[[CliContext, CompletedProcess], None] = lambda x, y: None
+    post_start: Callable[[click.Context, CompletedProcess], None] = lambda x, y: None
     """ Optional. Hook function to run after running 'start'. """
-    pre_stop: Callable[[CliContext], None] = lambda x: None
+    pre_stop: Callable[[click.Context], None] = lambda x: None
     """ Optional. Hook function to run before running 'stop'. """
-    post_stop: Callable[[CliContext, CompletedProcess], None] = lambda x, y: None
+    post_stop: Callable[[click.Context, CompletedProcess], None] = lambda x, y: None
     """ Optional. Hook function to run after running 'stop'. """
-    pre_configure_init: Callable[[CliContext], None] = lambda x: None
+    pre_configure_init: Callable[[click.Context], None] = lambda x: None
     """ Optional. Hook function to run before running 'configure init'. """
-    post_configure_init: Callable[[CliContext], None] = lambda x: None
+    post_configure_init: Callable[[click.Context], None] = lambda x: None
     """ Optional. Hook function to run after running 'configure init'. """
-    pre_configure_apply: Callable[[CliContext], None] = lambda x: None
+    pre_configure_apply: Callable[[click.Context], None] = lambda x: None
     """ Optional. Hook function to run before running 'configure apply'. """
-    post_configure_apply: Callable[[CliContext], None] = lambda x: None
+    post_configure_apply: Callable[[click.Context], None] = lambda x: None
     """ Optional. Hook function to run after running 'configure apply'. """
 
 
