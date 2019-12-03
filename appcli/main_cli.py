@@ -150,7 +150,9 @@ class MainCli:
 
         key_file = cli_context.key_file
         if not key_file.is_file():
-            logger.info("No decryption file found. Using file as is.")
+            logger.info(
+                "No decryption key found. [%s] will not be decrypted.", full_path
+            )
             return full_path
 
         logger.info("Decrypting file [%s] using [%s].", str(full_path), key_file)

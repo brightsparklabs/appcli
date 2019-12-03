@@ -46,6 +46,9 @@ class CliContext(NamedTuple):
     configuration files.
     """
 
+    app_version: str
+    """ The application's version """
+
     debug: bool
     """ Whether to print debug logs. """
 

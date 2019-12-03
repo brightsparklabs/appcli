@@ -136,6 +136,7 @@ def create_cli(configuration: Configuration):
             generated_configuration_dir=configuration_dir.joinpath(".generated/conf"),
             app_configuration_file=configuration_dir.joinpath(f"{APP_NAME}.yml"),
             templates_dir=configuration_dir.joinpath("templates"),
+            app_version=APP_VERSION,
             debug=debug,
             commands=default_commands,
             additional_env_variables=additional_env_var,
@@ -263,6 +264,8 @@ def create_cli(configuration: Configuration):
         )
         for name, path in cli_context.additional_data_dirs:
             command.extend(shlex.split(f"--additional-data-dir {name} '{path}'"))
+        for name, value in cli_context.additional_env_variables:
+            command.extend(shlex.split(f"--additional-env-var {name} '{value}'"))
 
         if cli_context.debug:
             command.append("--debug")

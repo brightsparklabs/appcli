@@ -55,7 +55,7 @@ class ConfigureCli:
         @click.group(invoke_without_command=True, help="Configures the application.")
         @click.pass_context
         def configure(ctx):
-            if not ctx.invoked_subcommand is None:
+            if ctx.invoked_subcommand is not None:
                 # subcommand provided
                 return
 
