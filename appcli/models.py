@@ -13,6 +13,10 @@ import click
 class CliContext(NamedTuple):
     """ Shared context from a run of the CLI. """
 
+    # ---------------------------------
+    # data passed in when cli invoked on the command line
+    # ---------------------------------
+
     configuration_dir: Path
     """ Directory to read configuration files from. """
 
@@ -22,14 +26,24 @@ class CliContext(NamedTuple):
     additional_data_dirs: Iterable[Tuple[str, Path]]
     """ Additional directories to use for persistent data storage. """
 
-    key_file: Path
-    """ File containing key for encryption/decryption. """
+    additional_env_variables: Iterable[Tuple[str, str]]
+    """ Additional environment variables to define in CLI container. """
 
     environment: str
     """ Environment to run. """
 
     subcommand_args: tuple
     """ Arguments passed to CLI subcommand. """
+
+    debug: bool
+    """ Whether to print debug logs. """
+
+    # ---------------------------------
+    # derived data
+    # ---------------------------------
+
+    key_file: Path
+    """ File containing key for encryption/decryption. """
 
     generated_configuration_dir: Path
     """ Directory to store the generated configuration files to. """
@@ -46,17 +60,18 @@ class CliContext(NamedTuple):
     configuration files.
     """
 
+    project_name: str
+    """ Project name for launching docker containers/networks. """
+
+    # ---------------------------------
+    # cli build data
+    # ---------------------------------
+
     app_version: str
     """ The application's version """
 
-    debug: bool
-    """ Whether to print debug logs. """
-
     commands: Dict
     """ Internal commands. """
-
-    additional_env_variables: Iterable[Tuple[str, str]]
-    """ Additional environment variables to define in CLI container. """
 
 
 class Hooks(NamedTuple):

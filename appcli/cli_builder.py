@@ -130,16 +130,17 @@ def create_cli(configuration: Configuration):
             configuration_dir=configuration_dir,
             data_dir=data_dir,
             additional_data_dirs=additional_data_dir,
-            key_file=Path(configuration_dir, "key"),
+            additional_env_variables=additional_env_var,
             environment=environment,
             subcommand_args=ctx.obj,
+            debug=debug,
+            key_file=Path(configuration_dir, "key"),
             generated_configuration_dir=configuration_dir.joinpath(".generated/conf"),
             app_configuration_file=configuration_dir.joinpath(f"{APP_NAME}.yml"),
             templates_dir=configuration_dir.joinpath("templates"),
+            project_name=f"{APP_NAME}-{environment}",
             app_version=APP_VERSION,
-            debug=debug,
             commands=default_commands,
-            additional_env_variables=additional_env_var,
         )
 
         check_docker_socket()

@@ -111,11 +111,10 @@ class MainCli:
         # The project-name of the docker-compose command is composed of project name and environment
         # so that multiple environments can run on a single machine without container naming conflicts
         cli_context: CliContext = ctx.obj
-        PROJECT_NAME = f"{self.cli_configuration.app_name}-{cli_context.environment}"
         docker_compose_command = [
             "docker-compose",
             "--project-name",
-            PROJECT_NAME,
+            cli_context.project_name,
             "--file",
             str(self.__get_compose_file_path(ctx)),
         ]
