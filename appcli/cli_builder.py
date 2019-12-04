@@ -99,15 +99,15 @@ def create_cli(configuration: Configuration):
     @click.option(
         "--additional-data-dir",
         "-a",
-        help="Additional data directory to expose to containers. Can be specified multiple times.",
+        help="Additional data directory to expose to launcher container. Can be specified multiple times.",
         nargs=2,
         type=click.Tuple([str, Path]),
         multiple=True,
     )
     @click.option(
         "--additional-env-var",
-        "-n",
-        help="Additional environment variables to define in containers. Can be specified multiple times.",
+        "-v",
+        help="Additional environment variables to expose to launcher container. Can be specified multiple times.",
         nargs=2,
         type=click.Tuple([str, str]),
         multiple=True,
@@ -297,13 +297,13 @@ def create_cli(configuration: Configuration):
 
         check_environment_variable_defined(
             configuration.mandatory_additional_env_variables,
-            "Mandatory additional environment variable [%s] not defined. Please define with:\n\t--additional-env-var %s <value>.",
+            "Mandatory additional environment variable [%s] not defined. Please define with:\n\t--additional-env-var %s <value>",
             "Cannot run without all mandatory additional environment variables defined",
         )
 
         check_environment_variable_defined(
             configuration.mandatory_additional_data_dirs,
-            "Mandatory additional data directory [%s] not defined. Please define with:\n\t--additional-data-dir %s </path/to/dir>.",
+            "Mandatory additional data directory [%s] not defined. Please define with:\n\t--additional-data-dir %s </path/to/dir>",
             "Cannot run without all mandatory additional data directories defined",
         )
 
