@@ -223,16 +223,21 @@ def create_cli(configuration: Configuration):
             error_and_exit(error_msg)
 
     def check_valid_environment_variable_names(variable_names: Iterable[str]):
-        """Check that environment variables passed into appcli are valid environment variable names
+        """Check for invalid environment variable names, and exit with error if any exist.
 
         Args:
             variable_names (Iterable[str]): environment variable names to check
         """
+        errors = []
         for name in variable_names:
             if not re.match("^[a-zA-Z][a-zA-Z0-9_]*$", name):
-                error_and_exit(
-                    f"Invalid environment variable name supplied [{name}]. Names may only contain alphanumeric characters and underscores."
-                )
+                errors.append(name)
+
+        # Non-empty lists evaluate to true
+        if errors:
+            error_and_exit(
+                f"Invalid environment variable name(s) supplied [{errors}]. Names may only contain alphanumeric characters and underscores."
+            )
 
     def relaunch_if_required(ctx: click.Context):
         """Check if the appcli is being run within the context of the appcli container. If not, relaunch with appropriate
