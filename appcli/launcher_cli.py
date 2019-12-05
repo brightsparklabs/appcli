@@ -18,6 +18,7 @@ import os
 import click
 
 # local libraries
+from appcli.functions import check_valid_environment_variable_names
 from appcli.logger import logger
 from appcli.models import CliContext, Configuration
 
@@ -37,8 +38,17 @@ class LauncherCli:
         self.configuration: Configuration = configuration
 
         @click.command(help="Outputs an appropriate launcher bash script to stdout")
+        @click.option(
+            "--launcher-env-var",
+            "-e",
+            help="Environment variables to set in the launcher command output. Can be specified multiple times.",
+            nargs=2,
+            type=click.Tuple([str, str]),
+            multiple=True,
+            callback=check_valid_environment_variable_names,
+        )
         @click.pass_context
-        def launcher(ctx):
+        def launcher(ctx, launcher_env_var):
             logger.info("Generating launcher script ...")
             cli_context: CliContext = ctx.obj
             APP_VERSION = os.environ.get("APP_VERSION")
@@ -50,8 +60,17 @@ class LauncherCli:
 #!/bin/bash
 
 docker run \\
+    --name osmosis_{cli_context.environment}_launcher_$(date +%s) \\
     --rm \\
-    --volume /var/run/docker.sock:/var/run/docker.sock \\
+    --interactive \\
+    --tty \\"""
+            )
+
+            for name, value in launcher_env_var:
+                print(f"    --env {name}='{value}' \\")
+
+            print(
+                f"""    --volume /var/run/docker.sock:/var/run/docker.sock \\
     {self.configuration.docker_image}:{APP_VERSION} \\
         --configuration-dir "${{{APP_NAME_UPPERCASE}_CONFIG_DIR:-{cli_context.configuration_dir}}}" \\
         --data-dir "${{{APP_NAME_UPPERCASE}_DATA_DIR:-{cli_context.data_dir}}}" \\
