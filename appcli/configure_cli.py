@@ -207,6 +207,8 @@ class ConfigureCli:
                 logger.info("Copying configuration file to [%s] ...", target_file)
                 shutil.copy2(template_file, target_file)
 
+        self.__copy_settings_file_to_generated_dir(cli_context)
+
         logger.info("Saving successful configuration record ...")
         record = {
             "configure": {
@@ -221,6 +223,23 @@ class ConfigureCli:
             json.dumps(record, indent=2, sort_keys=True)
         )
         logger.debug("Configuration record written to [%s]", configuration_record_file)
+
+    def __copy_settings_file_to_generated_dir(self, cli_context: CliContext):
+        """Copies the current settings file to the generated directory as a record of what configuration
+        was used to generate those files.
+
+        Args:
+            cli_context (CliContext): The context of the currently-running cli
+        """
+        logger.debug(
+            "Copying applied settings file to generated configuration directory"
+        )
+        applied_configuration_file = cli_context.generated_configuration_dir.joinpath(
+            cli_context.app_configuration_file.name
+        )
+        shutil.copy2(cli_context.app_configuration_file, applied_configuration_file)
+
+        logger.debug("Applied settings written to [%s]", applied_configuration_file)
 
     def __print_header(self, title):
         logger.info(
