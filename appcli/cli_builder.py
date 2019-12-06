@@ -153,14 +153,13 @@ def create_cli(configuration: Configuration):
             commands=default_commands,
         )
 
-        relaunch_if_required(ctx)
-
         # For the 'launcher' command, no further output/checks required.
         if ctx.invoked_subcommand == "launcher":
             # Don't execute this function any further, continue to run subcommand with the current cli context
             return
 
         check_docker_socket()
+        relaunch_if_required(ctx)
         check_environment()
 
         # Table of configuration variables to print
