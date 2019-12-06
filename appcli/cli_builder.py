@@ -15,8 +15,10 @@ import re
 import shlex
 import subprocess
 import sys
+from math import floor
 from pathlib import Path
 from typing import Iterable
+from time import time
 from tabulate import tabulate
 
 # vendor libraries
@@ -25,6 +27,7 @@ import click
 # local libraries
 from appcli.configure_cli import ConfigureCli
 from appcli.encrypt_cli import EncryptCli
+from appcli.functions import check_valid_environment_variable_names, error_and_exit
 from appcli.init_cli import InitCli
 from appcli.install_cli import InstallCli
 from appcli.launcher_cli import LauncherCli
@@ -45,6 +48,11 @@ BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 def create_cli(configuration: Configuration):
+    """Build the CLI to be run
+
+    Args:
+        configuration (Configuration): the application's configuration settings
+    """
     APP_NAME = configuration.app_name
     APP_NAME_UPPERCASE = APP_NAME.upper()
     ENV_VAR_CONFIG_DIR = f"{APP_NAME_UPPERCASE}_CONFIG_DIR"
@@ -103,6 +111,7 @@ def create_cli(configuration: Configuration):
         nargs=2,
         type=click.Tuple([str, Path]),
         multiple=True,
+        callback=check_valid_environment_variable_names,
     )
     @click.option(
         "--additional-env-var",
@@ -111,6 +120,7 @@ def create_cli(configuration: Configuration):
         nargs=2,
         type=click.Tuple([str, str]),
         multiple=True,
+        callback=check_valid_environment_variable_names,
     )
     @click.pass_context
     def cli(
@@ -138,14 +148,17 @@ def create_cli(configuration: Configuration):
             generated_configuration_dir=configuration_dir.joinpath(".generated/conf"),
             app_configuration_file=configuration_dir.joinpath(f"{APP_NAME}.yml"),
             templates_dir=configuration_dir.joinpath("templates"),
-            project_name=f"{APP_NAME}-{environment}",
+            project_name=f"{APP_NAME}_{environment}",
             app_version=APP_VERSION,
             commands=default_commands,
         )
 
+        # For the 'launcher' command, no further output/checks required.
+        if ctx.invoked_subcommand == "launcher":
+            # Don't execute this function any further, continue to run subcommand with the current cli context
+            return
+
         check_docker_socket()
-        check_valid_environment_variable_names([x[0] for x in additional_data_dir])
-        check_valid_environment_variable_names([x[0] for x in additional_env_var])
         relaunch_if_required(ctx)
         check_environment()
 
@@ -190,9 +203,13 @@ def create_cli(configuration: Configuration):
             click.echo(ctx.get_help())
 
     def run():
+        """Run the entry-point click cli command
+        """
         cli(prog_name=configuration.app_name)
 
     def check_docker_socket():
+        """Check that the docker socket exists, and exit if it does not
+        """
         if not os.path.exists("/var/run/docker.sock"):
             error_msg = f"""Please relaunch using:
 
@@ -206,14 +223,13 @@ def create_cli(configuration: Configuration):
 """
             error_and_exit(error_msg)
 
-    def check_valid_environment_variable_names(variable_names: Iterable[str]):
-        for name in variable_names:
-            if not re.match("^[a-zA-Z][a-zA-Z0-9_]*$", name):
-                error_and_exit(
-                    f"Invalid environment variable name supplied [{name}]. Names may only contain alphanumeric characters and underscores."
-                )
+    def relaunch_if_required(ctx: click.Context):
+        """Check if the appcli is being run within the context of the appcli container. If not, relaunch with appropriate
+        environment variables and mounted volumes.
 
-    def relaunch_if_required(ctx):
+        Args:
+            ctx (click.Context): The current cli context
+        """
         is_appcli_managed = os.environ.get("APPCLI_MANAGED")
         if is_appcli_managed is not None:
             # launched by appcli => no need to relaunch
@@ -225,8 +241,10 @@ def create_cli(configuration: Configuration):
         generated_configuration_dir = cli_context.generated_configuration_dir
         data_dir = cli_context.data_dir
         environment = cli_context.environment
+        seconds_since_epoch = floor(time())
         command = shlex.split(
             f"""docker run
+                        --name osmosis_{cli_context.environment}_relauncher_{seconds_since_epoch}
                         --rm
                         --volume /var/run/docker.sock:/var/run/docker.sock
                         --env APPCLI_MANAGED=Y
@@ -289,6 +307,8 @@ def create_cli(configuration: Configuration):
         sys.exit(result.returncode)
 
     def check_environment():
+        """Confirm that mandatory environment variables and additional data directories are defined.
+        """
         mandatory_variables = (ENV_VAR_CONFIG_DIR, ENV_VAR_DATA_DIR)
         check_environment_variable_defined(
             mandatory_variables,
@@ -311,6 +331,16 @@ def create_cli(configuration: Configuration):
     def check_environment_variable_defined(
         env_variables: Iterable[str], error_message_template: str, exit_message: str
     ):
+        """Check if environment variables are defined
+
+        Args:
+            env_variables (Iterable[str]): the environment variables to check
+            error_message_template (str): a template for the error message
+            exit_message (str): the exit message on error
+
+        Returns:
+            [type]: [description]
+        """
         result = True
         for env_variable in env_variables:
             value = os.environ.get(env_variable)
@@ -319,10 +349,6 @@ def create_cli(configuration: Configuration):
                 result = False
         if not result:
             error_and_exit(exit_message)
-
-    def error_and_exit(message: str):
-        logger.error(message)
-        sys.exit(1)
 
     for command in default_commands.values():
         cli.add_command(command)
