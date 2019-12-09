@@ -88,20 +88,20 @@ class MainCli:
             result = self.__exec_command(ctx, ("logs", "-f") + container)
             sys.exit(result.returncode)
 
-        # NOTE: Hide the compose command as end users should not run it manually
+        # NOTE: Hide the docker command as end users should not run it manually
         @click.command(
             hidden=True,
-            help="Runs a specific docker-compose command.",
+            help="Runs a specific docker compose/swarm command.",
             context_settings=dict(ignore_unknown_options=True),
         )
         @click.pass_context
         @click.argument("command", nargs=-1, type=click.UNPROCESSED)
-        def compose(ctx, command):
+        def docker(ctx, command):
             result = self.__exec_command(ctx, command)
             sys.exit(result.returncode)
 
         # expose the cli commands
-        self.commands = {"start": start, "stop": stop, "logs": logs, "compose": compose}
+        self.commands = {"start": start, "stop": stop, "logs": logs, "docker": docker}
 
     # --------------------------------------------------------------------------
     # PRIVATE METHODS
