@@ -11,7 +11,6 @@ www.brightsparklabs.com
 
 # standard libraries
 import os
-import re
 import shlex
 import subprocess
 import sys
@@ -40,7 +39,7 @@ from appcli.models import CliContext, Configuration
 # ------------------------------------------------------------------------------
 
 # directory containing this script
-BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+BASE_DIR = Path(__file__).parent
 
 # ------------------------------------------------------------------------------
 # PUBLIC METHODS
@@ -153,6 +152,10 @@ def create_cli(configuration: Configuration):
             commands=default_commands,
         )
 
+        if ctx.invoked_subcommand is None:
+            click.echo(ctx.get_help())
+            sys.exit(1)
+
         # For the 'launcher' command, no further output/checks required.
         if ctx.invoked_subcommand == "launcher":
             # Don't execute this function any further, continue to run subcommand with the current cli context
@@ -198,9 +201,6 @@ def create_cli(configuration: Configuration):
                     colalign=("right",),
                 ),
             )
-
-        if ctx.invoked_subcommand is None:
-            click.echo(ctx.get_help())
 
     def run():
         """Run the entry-point click cli command
