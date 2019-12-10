@@ -51,7 +51,7 @@ class LauncherCli:
         def launcher(ctx, launcher_env_var):
             logger.info("Generating launcher script ...")
             cli_context: CliContext = ctx.obj
-            APP_VERSION = os.environ.get("APP_VERSION")
+            APP_VERSION = os.environ.get("APP_VERSION", "latest")
             APP_NAME_UPPERCASE = configuration.app_name.upper()
 
             # Variables are defaulted in the script so that they can be overridden if desired
