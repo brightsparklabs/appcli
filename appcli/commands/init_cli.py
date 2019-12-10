@@ -13,7 +13,7 @@ www.brightsparklabs.com
 import click
 
 # local libraries
-from appcli.models import Configuration
+from appcli.models.configuration import Configuration
 from appcli.keycloak_manager import KeycloakManager
 
 # ------------------------------------------------------------------------------

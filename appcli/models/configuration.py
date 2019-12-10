@@ -3,75 +3,14 @@
 
 # standard libraries
 from pathlib import Path
-from typing import Callable, Dict, FrozenSet, Iterable, NamedTuple, Tuple
+from typing import Callable, FrozenSet, Iterable, NamedTuple, Tuple
 from subprocess import CompletedProcess
 
 # vendor libraries
 import click
 
-
-class CliContext(NamedTuple):
-    """ Shared context from a run of the CLI. """
-
-    # ---------------------------------
-    # data passed in when cli invoked on the command line
-    # ---------------------------------
-
-    configuration_dir: Path
-    """ Directory to read configuration files from. """
-
-    data_dir: Path
-    """ Directory to use for persistent data storage. """
-
-    additional_data_dirs: Iterable[Tuple[str, Path]]
-    """ Additional directories to use for persistent data storage. """
-
-    additional_env_variables: Iterable[Tuple[str, str]]
-    """ Additional environment variables to define in CLI container. """
-
-    environment: str
-    """ Environment to run. """
-
-    subcommand_args: tuple
-    """ Arguments passed to CLI subcommand. """
-
-    debug: bool
-    """ Whether to print debug logs. """
-
-    # ---------------------------------
-    # derived data
-    # ---------------------------------
-
-    key_file: Path
-    """ File containing key for encryption/decryption. """
-
-    generated_configuration_dir: Path
-    """ Directory to store the generated configuration files to. """
-
-    app_configuration_file: Path
-    """
-    Path to a YAML file containing variables which are applied to the
-    templates to generate the final configuration files.
-    """
-
-    templates_dir: Path
-    """
-    Directory containing jinja2 templates used to generate the final
-    configuration files.
-    """
-
-    project_name: str
-    """ Project name for launching docker containers/networks. """
-
-    # ---------------------------------
-    # cli build data
-    # ---------------------------------
-
-    app_version: str
-    """ The application's version """
-
-    commands: Dict
-    """ Internal commands. """
+# local libraries
+from appcli.orchestrators import Orchestrator
 
 
 class Hooks(NamedTuple):
@@ -116,14 +55,8 @@ class Configuration(NamedTuple):
     configuration files.
     """
 
-    docker_compose_file: Path = "cli/docker-compose.yml"
-    """ Optional. Path to the docker-compose.yml file specifying all services """
-
-    docker_compose_override_files: Iterable[Path] = []
-    """
-    Optional. Paths to the docker-compose.override.yml files specifying all services.
-    These are applied in the supplied list order.
-    """
+    orchestrator: Orchestrator
+    """ Orchestrator to use to launch Docker containers. """
 
     hooks: Hooks = Hooks()
     """ Optional. Hooks to run before/after stages. """

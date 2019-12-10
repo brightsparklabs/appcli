@@ -12,7 +12,6 @@ www.brightsparklabs.com
 """
 
 # standard library
-import os
 from pathlib import Path
 
 # vendor libraries
@@ -22,7 +21,8 @@ import click
 from appcli.crypto import crypto
 from appcli.crypto.cipher import Cipher
 from appcli.logger import logger
-from appcli.models import CliContext, Configuration
+from appcli.models.cli_context import CliContext
+from appcli.models.configuration import Configuration
 
 # ------------------------------------------------------------------------------
 # CLASSES

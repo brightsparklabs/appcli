@@ -20,7 +20,8 @@ import click
 # local libraries
 from appcli.functions import check_valid_environment_variable_names
 from appcli.logger import logger
-from appcli.models import CliContext, Configuration
+from appcli.models.cli_context import CliContext
+from appcli.models.configuration import Configuration
 
 # ------------------------------------------------------------------------------
 # CLASSES

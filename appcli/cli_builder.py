@@ -32,7 +32,8 @@ from appcli.commands.launcher_cli import LauncherCli
 from appcli.commands.main_cli import MainCli
 from appcli.functions import check_valid_environment_variable_names, error_and_exit
 from appcli.logger import logger, enable_debug_logging
-from appcli.models import CliContext, Configuration
+from appcli.models.cli_context import CliContext
+from appcli.models.configuration import Configuration
 
 # ------------------------------------------------------------------------------
 # CONSTANTS

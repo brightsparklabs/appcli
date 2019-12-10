@@ -24,7 +24,7 @@ from jinja2 import Template
 
 # local libraries
 from appcli.logger import logger
-from appcli.models import Configuration
+from appcli.models.configuration import Configuration
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
