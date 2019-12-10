@@ -24,14 +24,14 @@ from tabulate import tabulate
 import click
 
 # local libraries
-from appcli.configure_cli import ConfigureCli
-from appcli.encrypt_cli import EncryptCli
+from appcli.commands.configure_cli import ConfigureCli
+from appcli.commands.encrypt_cli import EncryptCli
+from appcli.commands.init_cli import InitCli
+from appcli.commands.install_cli import InstallCli
+from appcli.commands.launcher_cli import LauncherCli
+from appcli.commands.main_cli import MainCli
 from appcli.functions import check_valid_environment_variable_names, error_and_exit
-from appcli.init_cli import InitCli
-from appcli.install_cli import InstallCli
-from appcli.launcher_cli import LauncherCli
 from appcli.logger import logger, enable_debug_logging
-from appcli.main_cli import MainCli
 from appcli.models import CliContext, Configuration
 
 # ------------------------------------------------------------------------------
