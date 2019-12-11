@@ -43,15 +43,14 @@ class MainCli:
             context_settings=dict(ignore_unknown_options=True),
         )
         @click.pass_context
-        @click.argument("container", nargs=-1, type=click.UNPROCESSED)
-        def start(ctx, container):
+        def start(ctx):
             hooks = self.cli_configuration.hooks
 
             logger.debug("Running pre-start hook")
             hooks.pre_start(ctx)
 
             logger.info("Starting %s ...", configuration.app_name)
-            result = self.orchestrator.start(ctx.obj, container)
+            result = self.orchestrator.start(ctx.obj)
 
             logger.debug("Running post-start hook")
             hooks.post_start(ctx, result)
@@ -74,32 +73,22 @@ class MainCli:
 
             sys.exit(result.returncode)
 
-        @click.command(
-            help="Streams the system logs.\n\nOptionally specify CONTAINER to only stream logs from specific containers.",
-            context_settings=dict(ignore_unknown_options=True),
-        )
-        @click.pass_context
-        @click.argument("container", nargs=-1, type=click.UNPROCESSED)
-        def logs(ctx, container):
-            result = self.orchestrator.logs(ctx.obj, container)
-            sys.exit(result.returncode)
-
-        # NOTE: Hide the docker command as end users should not run it manually
-        @click.command(
-            hidden=True,
-            help="Runs a specific docker compose/swarm command.",
-            context_settings=dict(ignore_unknown_options=True),
-        )
-        @click.pass_context
-        @click.argument("command", nargs=-1, type=click.UNPROCESSED)
-        def orchestrator_command(ctx, command):
-            result = self.orchestrator.raw_command(ctx.obj, command)
-            sys.exit(result.returncode)
-
         # expose the cli commands
         self.commands = {
             "start": start,
             "stop": stop,
-            "logs": logs,
-            "orchestrator_command": orchestrator_command,
+            "logs": self.orchestrator.get_logs_command(),
         }
+
+        # create additional group if orchestrator has custom commands
+        orchestrator_commands = self.orchestrator.get_additional_commands()
+        if len(orchestrator_commands) > 0:
+
+            @click.group(help="Orchestrator specific commands")
+            @click.pass_context
+            def orchestrator(ctx):
+                pass
+
+            for command in orchestrator_commands:
+                orchestrator.add_command(command)
+            self.commands.update({"orchestrator": orchestrator})

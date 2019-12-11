@@ -14,6 +14,10 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Iterable
 from subprocess import CompletedProcess, run
+import sys
+
+# vendor libraries
+import click
 
 # local libraries
 from appcli.crypto import crypto
@@ -58,33 +62,26 @@ class Orchestrator:
         """
         raise NotImplementedError
 
-    def logs(self, cli_context: CliContext, container: str) -> CompletedProcess:
+    def get_logs_command(self) -> click.Command:
         """
-        Streams logs for Docker containers.
+        Retuns a click command which streams logs for Docker containers.
 
         Args:
             cli_context (CliContext): Context for this CLI run.
-            container (str, optional): Name of the container to stream logs for. Defaults to all containers.
 
         Returns:
-            CompletedProcess: Result of the orchestrator command.
+            click.Command: Command for streaming logs.
         """
         raise NotImplementedError
 
-    def raw_command(
-        self, cli_context: CliContext, command: Iterable[str]
-    ) -> CompletedProcess:
+    def get_additional_commands(self) -> Iterable[click.Command]:
         """
-        Runs a raw orchestrator command.
-
-        Args:
-            cli_context (CliContext): Context for this CLI run.
-            command (str): Command to run.
+        Returns any additional commands supported by this orchestrator.
 
         Returns:
-            CompletedProcess: Result of the orchestrator command.
+            Iterable[click.Command]: Additional orchestrator specific commands.
         """
-        raise NotImplementedError
+        return ()
 
 
 class DockerComposeOrchestrator(Orchestrator):
@@ -105,16 +102,51 @@ class DockerComposeOrchestrator(Orchestrator):
         self.docker_compose_file = docker_compose_file
         self.docker_compose_override_files = docker_compose_override_files
 
-    def start(self, cli_context: CliContext, container: str) -> CompletedProcess:
-        return self.raw_command(cli_context, ("up", "-d") + container)
+    def start(self, cli_context: CliContext) -> CompletedProcess:
+        return self.__compose(cli_context, ("up", "-d"))
 
     def stop(self, cli_context: CliContext) -> CompletedProcess:
-        return self.raw_command(cli_context, ["down"])
+        return self.__compose(cli_context, ("down",))
 
-    def logs(self, cli_context: CliContext, container: str) -> CompletedProcess:
-        return self.raw_command(cli_context, ("logs", "-f") + container)
+    def get_logs_command(self):
+        @click.command(
+            help="Prints logs from all services (or the ones specified)",
+            context_settings=dict(ignore_unknown_options=True),
+        )
+        @click.pass_context
+        @click.argument("service", nargs=-1, type=click.UNPROCESSED)
+        def logs(ctx, service):
+            cli_context = ctx.obj
+            subcommand = ["logs", "--follow"]
+            subcommand.extend(service)
+            result = self.__compose(cli_context, subcommand)
+            sys.exit(result.returncode)
 
-    def raw_command(
+        return logs
+
+    def get_additional_commands(self):
+        @click.command(help="List the status of services")
+        @click.pass_context
+        def ps(ctx):
+            result = self.__compose(ctx.obj, ("ps",))
+            sys.exit(result.returncode)
+
+        @click.command(
+            help="Runs a docker compose command",
+            context_settings=dict(ignore_unknown_options=True),
+        )
+        @click.pass_context
+        @click.argument("command", nargs=-1, type=click.UNPROCESSED)
+        def compose(ctx, command):
+            result = self.__compose(ctx.obj, command)
+            sys.exit(result.returncode)
+
+        return (
+            ps,
+            compose,
+        )
+
+    def __compose(
         self, cli_context: CliContext, command: Iterable[str]
     ) -> CompletedProcess:
         docker_compose_command = [
@@ -153,39 +185,61 @@ class DockerSwarmOrchestrator(Orchestrator):
         self.docker_compose_file = docker_compose_file
         self.docker_compose_override_files = docker_compose_override_files
 
-    def start(self, cli_context: CliContext, container: str) -> CompletedProcess:
-        subcommand = ["stack", "deploy"]
-
+    def start(self, cli_context: CliContext) -> CompletedProcess:
+        subcommand = ["deploy"]
         compose_files = decrypt_files(
             cli_context, self.docker_compose_file, self.docker_compose_override_files
         )
         for compose_file in compose_files:
             subcommand.extend(("--compose-file", str(compose_file)))
 
-        subcommand.append(cli_context.project_name)
-        return self.raw_command(cli_context, subcommand)
+        return self.__docker_stack(cli_context, subcommand)
 
     def stop(self, cli_context: CliContext) -> CompletedProcess:
-        subcommand = ("stack", "rm", cli_context.project_name)
-        return self.raw_command(cli_context, subcommand)
+        return self.__docker_stack(cli_context, ("rm",))
 
-    def logs(self, cli_context: CliContext, service: str) -> CompletedProcess:
-        if service is None:
-            logger.warning("Specify the container/service to retrieve logs for")
-            return
+    def get_logs_command(self):
+        @click.command(
+            help="Prints logs from the specified service",
+            context_settings=dict(ignore_unknown_options=True),
+        )
+        @click.pass_context
+        @click.argument("service", type=str)
+        def logs(ctx, service):
+            cli_context = ctx.obj
+            command = ["docker", "service", "logs", "--follow"]
+            command.append(f"{cli_context.project_name}_{service}")
+            result = self.__exec_command(command)
+            sys.exit(result.returncode)
 
-        subcommand = ("service", "logs", "--follow", service)
-        return self.raw_command(cli_context, subcommand)
+        return logs
 
-    def raw_command(
-        self, cli_context: CliContext, command: Iterable[str]
+    def get_additional_commands(self):
+        @click.command(help="List the status of services")
+        @click.pass_context
+        def ps(ctx):
+            result = self.__docker_stack(ctx.obj, ("ps",))
+            sys.exit(result.returncode)
+
+        @click.command(help="List the defined services")
+        @click.pass_context
+        def ls(ctx):
+            result = self.__docker_stack(ctx.obj, ("services",))
+            sys.exit(result.returncode)
+
+        return (ps, ls)
+
+    def __docker_stack(
+        self, cli_context: CliContext, subcommand: Iterable[str]
     ) -> CompletedProcess:
-        docker_command = ["docker"]
-        docker_command.extend(command)
+        command = ["docker", "stack"]
+        command.extend(subcommand)
+        command.append(cli_context.project_name)
+        return self.__exec_command(command)
 
-        logger.debug("Running [%s]", " ".join(docker_command))
-        result = run(docker_command)
-        return result
+    def __exec_command(self, command: str) -> CompletedProcess:
+        logger.debug("Running [%s]", " ".join(command))
+        return run(command)
 
 
 # ------------------------------------------------------------------------------
