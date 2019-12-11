@@ -72,7 +72,7 @@ class Orchestrator:
         raise NotImplementedError
 
     def raw_command(
-        self, cli_context: CliContext, command: Iterable(str)
+        self, cli_context: CliContext, command: Iterable[str]
     ) -> CompletedProcess:
         """
         Runs a raw orchestrator command.
@@ -117,25 +117,15 @@ class DockerComposeOrchestrator(Orchestrator):
     def raw_command(
         self, cli_context: CliContext, command: Iterable[str]
     ) -> CompletedProcess:
-        compose_files = [self.docker_compose_file]
-        compose_files.extend(self.docker_compose_override_files)
-        # turn relative paths into absolute paths
-        compose_files = [
-            cli_context.generated_configuration_dir.joinpath(relative_path)
-            for relative_path in compose_files
-        ]
-
-        # decrypt files if key is available
-        key_file = cli_context.key_file
-        compose_files = [
-            decrypt_file(encrypted_file, key_file) for encrypted_file in compose_files
-        ]
-
         docker_compose_command = [
             "docker-compose",
             "--project-name",
             cli_context.project_name,
         ]
+
+        compose_files = decrypt_files(
+            cli_context, self.docker_compose_file, self.docker_compose_override_files
+        )
         for compose_file in compose_files:
             docker_compose_command.extend(("--file", str(compose_file)))
 
@@ -145,9 +135,83 @@ class DockerComposeOrchestrator(Orchestrator):
         return result
 
 
+class DockerSwarmOrchestrator(Orchestrator):
+    """
+    Uses Docker Swarm to orchestrate containers.
+    """
+
+    def __init__(
+        self, docker_compose_file: Path, docker_compose_override_files: Iterable[Path]
+    ):
+        """
+        Creates a new instance.
+
+        Args:
+            docker_compose_file (Path): Path to a `docker-compose.yml` file relative to the generated configuration directory.
+            docker_compose_override_files (Iterable[Path]): Paths to any additional docker-compose override files relative to the generated configuration directory.
+        """
+        self.docker_compose_file = docker_compose_file
+        self.docker_compose_override_files = docker_compose_override_files
+
+    def start(self, cli_context: CliContext, container: str) -> CompletedProcess:
+        subcommand = ["stack", "deploy"]
+
+        compose_files = decrypt_files(
+            cli_context, self.docker_compose_file, self.docker_compose_override_files
+        )
+        for compose_file in compose_files:
+            subcommand.extend(("--compose-file", str(compose_file)))
+
+        subcommand.append(cli_context.project_name)
+        return self.raw_command(cli_context, subcommand)
+
+    def stop(self, cli_context: CliContext) -> CompletedProcess:
+        subcommand = ("stack", "rm", cli_context.project_name)
+        return self.raw_command(cli_context, subcommand)
+
+    def logs(self, cli_context: CliContext, service: str) -> CompletedProcess:
+        if service is None:
+            logger.warning("Specify the container/service to retrieve logs for")
+            return
+
+        subcommand = ("service", "logs", "--follow", service)
+        return self.raw_command(cli_context, subcommand)
+
+    def raw_command(
+        self, cli_context: CliContext, command: Iterable[str]
+    ) -> CompletedProcess:
+        docker_command = ["docker"]
+        docker_command.extend(command)
+
+        logger.debug("Running [%s]", " ".join(docker_command))
+        result = run(docker_command)
+        return result
+
+
 # ------------------------------------------------------------------------------
 # PUBLIC METHODS
 # ------------------------------------------------------------------------------
+
+
+def decrypt_files(
+    cli_context: CliContext,
+    docker_compose_file: Path,
+    docker_compose_override_files: Iterable[Path],
+):
+    compose_files = [docker_compose_file]
+    compose_files.extend(docker_compose_override_files)
+    # turn relative paths into absolute paths
+    compose_files = [
+        cli_context.generated_configuration_dir.joinpath(relative_path)
+        for relative_path in compose_files
+    ]
+
+    # decrypt files if key is available
+    key_file = cli_context.key_file
+    decrypted_files = [
+        decrypt_file(encrypted_file, key_file) for encrypted_file in compose_files
+    ]
+    return decrypted_files
 
 
 def decrypt_file(encrypted_file: Path, key_file: Path):
