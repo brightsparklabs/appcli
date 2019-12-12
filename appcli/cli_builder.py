@@ -101,7 +101,7 @@ def create_cli(configuration: Configuration):
         "-e",
         help="Environment to run, defaults to 'production'",
         required=False,
-        type=str,
+        type=click.STRING,
         default="production",
     )
     @click.option(

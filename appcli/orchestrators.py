@@ -204,7 +204,7 @@ class DockerSwarmOrchestrator(Orchestrator):
             context_settings=dict(ignore_unknown_options=True),
         )
         @click.pass_context
-        @click.argument("service", type=str)
+        @click.argument("service", type=click.STRING)
         def logs(ctx, service):
             cli_context = ctx.obj
             command = ["docker", "service", "logs", "--follow"]

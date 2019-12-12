@@ -205,7 +205,6 @@ class ConfigureCli:
         @click.option("--force", is_flag=True)
         @click.pass_context
         def apply(ctx, force):
-            # TODO: Optionally take a git commit message from the cli as an option?
             cli_context: CliContext = ctx.obj
             configuration = ConfigurationManager(cli_context.app_configuration_file)
 
