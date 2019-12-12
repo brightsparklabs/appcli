@@ -18,7 +18,7 @@ import os
 import click
 
 # local libraries
-from appcli.functions import check_valid_environment_variable_names
+from appcli.functions import extract_valid_environment_variable_names
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
@@ -43,10 +43,9 @@ class LauncherCli:
             "--launcher-env-var",
             "-e",
             help="Environment variables to set in the launcher command output. Can be specified multiple times.",
-            nargs=2,
-            type=click.Tuple([str, str]),
+            type=str,
             multiple=True,
-            callback=check_valid_environment_variable_names,
+            callback=extract_valid_environment_variable_names,
         )
         @click.pass_context
         def launcher(ctx, launcher_env_var):
@@ -68,7 +67,7 @@ docker run \\
             )
 
             for name, value in launcher_env_var:
-                print(f"    --env {name}='{value}' \\")
+                print(f"    --env {name}=\"{value}\" \\")
 
             print(
                 f"""    --volume /var/run/docker.sock:/var/run/docker.sock \\
@@ -79,9 +78,9 @@ docker run \\
             )
 
             for name, path in cli_context.additional_data_dirs:
-                print(f"        --additional-data-dir {name} '{path}' \\")
+                print(f"        --additional-data-dir {name}=\"{path}\" \\")
             for name, value in cli_context.additional_env_variables:
-                print(f"        --additional-env-var {name} '{value}' \\")
+                print(f"        --additional-env-var {name}=\"{value}\" \\")
             print("        $@")
 
         # expose the cli command
