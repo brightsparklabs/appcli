@@ -52,7 +52,6 @@ def extract_valid_environment_variable_names(
         param (click.Option): the option parameter to validate
         values (click.Tuple): the values passed to the option, could be multiple
     """
-    
     errors = []
     output = ()
     for keyvalue in values:
@@ -67,5 +66,6 @@ def extract_valid_environment_variable_names(
             f"Invalid environment variable name(s) supplied '{errors}'. Names may only contain alphanumeric characters and underscores."
         )
 
-    # Return the extracted values
-    return output
+    # Remove duplicates (last one takes precedence) and return
+    deduplicated = {k: v for k, v in output}
+    return tuple((k, deduplicated[k]) for k in sorted(deduplicated.keys()))
