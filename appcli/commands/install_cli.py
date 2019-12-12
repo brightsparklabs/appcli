@@ -22,9 +22,9 @@ import sys
 import click
 from jinja2 import Template
 
-# internal libraries
-from .logger import logger
-from .models import Configuration
+# local libraries
+from appcli.logger import logger
+from appcli.models.configuration import Configuration
 
 # ------------------------------------------------------------------------------
 # CONSTANTS

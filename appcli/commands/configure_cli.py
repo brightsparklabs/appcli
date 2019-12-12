@@ -11,31 +11,23 @@ www.brightsparklabs.com
 
 # standard library
 import json
-import gzip
-import io
-import logging
 import os
 import shutil
-import subprocess
 import sys
-import tarfile
 from datetime import datetime, timezone
-from functools import reduce
 from pathlib import Path
 from typing import List
 import git
 
 # vendor libraries
 import click
-import coloredlogs
-import inquirer
 from jinja2 import Template, StrictUndefined
-from ruamel.yaml import YAML
 
-# our library
-from .configuration_manager import ConfigurationManager
-from .logger import logger, enable_debug_logging
-from .models import CliContext, Configuration, ConfigSettingsGroup, ConfigSetting
+# local libraries
+from appcli.configuration_manager import ConfigurationManager
+from appcli.logger import logger
+from appcli.models.cli_context import CliContext
+from appcli.models.configuration import Configuration
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
@@ -83,7 +75,7 @@ class ConfigureCli:
         @click.group(invoke_without_command=True, help="Configures the application.")
         @click.pass_context
         def configure(ctx):
-            if not ctx.invoked_subcommand is None:
+            if ctx.invoked_subcommand is not None:
                 # subcommand provided
                 return
 
@@ -100,10 +92,10 @@ class ConfigureCli:
                 logger.error("Prerequisite checks failed")
                 sys.exit(1)
 
-            customisation = self.cli_configuration.configure_cli_customisation
+            hooks = self.cli_configuration.hooks
 
-            logger.debug("Running pre-configure hook")
-            customisation.hooks.pre_configure_init(cli_context)
+            logger.debug("Running pre-configure init hook")
+            hooks.pre_configure_init(ctx)
 
             # Seed the configuration directory, and put it under source control
             logger.debug("Seeding configuration and initialising version control")
@@ -116,8 +108,8 @@ class ConfigureCli:
             self.__generate_configuration_files(configuration, cli_context)
             self.__init_generated_conf_source_control(cli_context)
 
-            logger.debug("Running post-configure hook")
-            customisation.hooks.post_configure_init(cli_context)
+            logger.debug("Running post-configure init hook")
+            hooks.post_configure_init(ctx)
 
         @configure.command(help="Reads a setting from the configuration.")
         @click.argument("setting")
@@ -142,13 +134,13 @@ class ConfigureCli:
         def apply(ctx):
             cli_context: CliContext = ctx.obj
             configuration = ConfigurationManager(cli_context.app_configuration_file)
-            customisation = self.cli_configuration.configure_cli_customisation
+            hooks = self.cli_configuration.hooks
 
-            logger.debug("Running pre-apply hook")
-            customisation.hooks.pre_configure_apply(cli_context)
+            logger.debug("Running pre-configure apply hook")
+            hooks.pre_configure_apply(ctx)
             self.__generate_configuration_files(configuration, cli_context)
-            logger.debug("Running post-apply hook")
-            customisation.hooks.post_configure_apply(cli_context)
+            logger.debug("Running post-configure apply hook")
+            hooks.post_configure_apply(ctx)
 
         self.commands = {"configure": configure}
 
@@ -162,9 +154,9 @@ class ConfigureCli:
 
         for env_variable in self.mandatory_env_variables:
             value = os.environ.get(env_variable)
-            if value == None:
+            if value is None:
                 logger.error(
-                    f"Mandatory environment variable is not defined [{env_variable}]"
+                    "Mandatory environment variable is not defined [%s]", env_variable
                 )
                 result = False
 
@@ -182,12 +174,13 @@ class ConfigureCli:
         seed_app_configuration_file = self.cli_configuration.seed_app_configuration_file
         if not seed_app_configuration_file.is_file():
             logger.error(
-                f"Seed file [{seed_app_configuration_file}] is not valid. Release is corrupt."
+                "Seed file [%s] is not valid. Release is corrupt.",
+                seed_app_configuration_file,
             )
             sys.exit(1)
         target_app_configuration_file = cli_context.app_configuration_file
         logger.debug(
-            f"Copying app configuration file to [{target_app_configuration_file}] ..."
+            "Copying app configuration file to [%s] ...", target_app_configuration_file
         )
         target_app_configuration_file.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(seed_app_configuration_file, target_app_configuration_file)
@@ -198,7 +191,8 @@ class ConfigureCli:
         seed_templates_dir = self.cli_configuration.seed_templates_dir
         if not seed_templates_dir.is_dir():
             logger.error(
-                f"Seed templates directory [{seed_templates_dir}] is not valid. Release is corrupt."
+                "Seed templates directory [%s] is not valid. Release is corrupt.",
+                seed_templates_dir,
             )
             sys.exit(1)
 
@@ -208,10 +202,10 @@ class ConfigureCli:
             target_file = templates_dir.joinpath(relative_file)
 
             if source_file.is_dir():
-                logger.debug(f"Creating directory [{target_file}] ...")
+                logger.debug("Creating directory [%s] ...", target_file)
                 target_file.mkdir(parents=True, exist_ok=True)
             else:
-                logger.debug(f"Copying seed file to [{target_file}] ...")
+                logger.debug("Copying seed file to [%s] ...", target_file)
                 shutil.copy2(source_file, target_file)
 
     def __init_conf_source_control(self, cli_context: CliContext):
@@ -283,20 +277,22 @@ class ConfigureCli:
             target_file = generated_configuration_dir.joinpath(relative_file)
 
             if template_file.is_dir():
-                logger.debug(f"Creating directory [{target_file}] ...")
+                logger.debug("Creating directory [%s] ...", target_file)
                 target_file.mkdir(parents=True, exist_ok=True)
                 continue
 
             if template_file.suffix == ".j2":
                 # parse jinja2 templates against configuration
                 target_file = target_file.with_suffix("")
-                logger.info(f"Generating configuration file [{target_file}] ...")
+                logger.info("Generating configuration file [%s] ...", target_file)
                 self.__generate_from_template(
                     template_file, target_file, configuration.get_as_dict()
                 )
             else:
-                logger.info(f"Copying configuration file to [{target_file}] ...")
+                logger.info("Copying configuration file to [%s] ...", target_file)
                 shutil.copy2(template_file, target_file)
+
+        self.__copy_settings_file_to_generated_dir(cli_context)
 
         logger.info("Saving successful configuration record ...")
         record = {
@@ -311,57 +307,32 @@ class ConfigureCli:
         configuration_record_file.write_text(
             json.dumps(record, indent=2, sort_keys=True)
         )
-        logger.debug(f"Configuration record written to [{configuration_record_file}]")
+        logger.debug("Configuration record written to [%s]", configuration_record_file)
+
+    def __copy_settings_file_to_generated_dir(self, cli_context: CliContext):
+        """Copies the current settings file to the generated directory as a record of what configuration
+        was used to generate those files.
+
+        Args:
+            cli_context (CliContext): The context of the currently-running cli
+        """
+        logger.debug(
+            "Copying applied settings file to generated configuration directory"
+        )
+        applied_configuration_file = cli_context.generated_configuration_dir.joinpath(
+            cli_context.app_configuration_file.name
+        )
+        shutil.copy2(cli_context.app_configuration_file, applied_configuration_file)
+
+        logger.debug("Applied settings written to [%s]", applied_configuration_file)
 
     def __print_header(self, title):
         logger.info(
-            f"""============================================================
-                          {title.upper()}
-                          ============================================================"""
+            """============================================================
+                          %s
+                          ============================================================""",
+            title.upper(),
         )
-
-    def __confirm(self, message, default=False):
-        answer = inquirer.prompt(
-            [inquirer.Confirm("result", message=message, default=default)]
-        )
-        return answer["result"]
-
-    def __print_current_settings(
-        self, settings: List[ConfigSetting], config_manager: ConfigurationManager
-    ):
-        logger.info("Current Settings:")
-        setting: ConfigSetting
-        for setting in settings:
-            logger.info(
-                "  {0:<45} = {1}".format(
-                    getattr(setting, "message"),
-                    config_manager.get(getattr(setting, "path")),
-                )
-            )
-        print("")
-
-    def __prompt_and_update_configuration(self, settings, configuration):
-        questions = []
-        for setting in settings:
-            path = setting["path"]
-            validate = setting.get("validate", lambda _, x: True)
-            default_value = configuration.get(path)
-            if isinstance(default_value, str):
-                # need to explicitly escape brackets
-                default_value = default_value.replace("{", "{{").replace("}", "}}")
-            questions.append(
-                inquirer.Text(
-                    path,
-                    message=setting["message"],
-                    default=default_value,
-                    validate=validate,
-                )
-            )
-
-        answers = inquirer.prompt(questions)
-        for setting in settings:
-            path = setting["path"]
-            configuration.set(path, answers[path])
 
     def __generate_from_template(
         self, template_file: Path, target_file: Path, configuration: Configuration
@@ -377,6 +348,7 @@ class ConfigureCli:
             target_file.write_text(output_text)
         except Exception as e:
             logger.error(
-                f"Could not generate file from template. The configuration file is likely missing a setting: {e}"
+                "Could not generate file from template. The configuration file is likely missing a setting: %s",
+                e,
             )
             exit(1)

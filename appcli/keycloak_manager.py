@@ -19,8 +19,8 @@ from keycloak.exceptions import raise_error_from_response, KeycloakGetError
 from keycloak.urls_patterns import URL_ADMIN_REALM_ROLES
 import coloredlogs
 
-# internal libraries
-from .logger import logger
+# local libraries
+from appcli.logger import logger
 
 # ------------------------------------------------------------------------------
 # INTERNAL CLASSES

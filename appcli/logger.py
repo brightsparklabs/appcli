@@ -21,6 +21,7 @@ import coloredlogs
 
 LOGGER_FORMAT = "%(asctime)s %(levelname)s: %(message)s"
 logger = logging.getLogger(__name__)
+logger.propagate = False
 coloredlogs.install(logger=logger, fmt=LOGGER_FORMAT)
 
 

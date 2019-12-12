@@ -9,13 +9,13 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-# always prefer setuptools over distutils
-from setuptools import setup, find_packages
-
 # to use a consistent encoding
 from codecs import open
 from os import path
 from subprocess import run, PIPE
+
+# always prefer setuptools over distutils
+from setuptools import setup, find_packages
 
 # ------------------------------------------------------------------------------
 # UTILITY FUNCTIONS
@@ -54,12 +54,13 @@ setup(
     install_requires=[
         "click",
         "coloredlogs",
-        "inquirer",
         "jinja2",
         "python-dotenv",
         "python-keycloak",
+        "pycryptodome",
         "ruamel-yaml",
         "tabulate",
         "GitPython",
     ],
+    extras_require={"dev": ["pytest",]},
 )
