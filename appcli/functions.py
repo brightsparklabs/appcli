@@ -19,6 +19,14 @@ from typing import Iterable, Any
 from appcli.logger import logger
 
 # ------------------------------------------------------------------------------
+# VARIABLES
+# ------------------------------------------------------------------------------
+
+# Regex will match a valid environment variable name (in bash), followed by '='
+# and any value
+ENV_VAR_REGEX = re.compile("^([a-zA-Z][a-zA-Z0-9_]*?)=(.*)$")
+
+# ------------------------------------------------------------------------------
 # PUBLIC METHODS
 # ------------------------------------------------------------------------------
 
@@ -33,26 +41,31 @@ def error_and_exit(message: str):
     sys.exit(1)
 
 
-def check_valid_environment_variable_names(
-    ctx: click.Context, param: click.Option, value: click.Tuple
+def extract_valid_environment_variable_names(
+    ctx: click.Context, param: click.Option, values: click.Tuple
 ):
-    """Callback for Click Options to check environment variables are named appropriately for bash
+    """Callback for Click Options to extract environment variable names and values,
+    and to check that the names are appropriate for bash
 
     Args:
         ctx (click.Context): current cli context
         param (click.Option): the option parameter to validate
-        value (click.Tuple): the values passed to the option
+        values (click.Tuple): the values passed to the option, could be multiple
     """
-    variable_names: Iterable[str] = [x[0] for x in value]
+    
     errors = []
-    for name in variable_names:
-        if not re.match("^[a-zA-Z][a-zA-Z0-9_]*$", name):
-            errors.append(name)
+    output = ()
+    for keyvalue in values:
+        match = ENV_VAR_REGEX.search(keyvalue)
+        if not match:
+            errors.append(keyvalue)
+        else:
+            output += (match.groups(),)
 
     if errors:
         error_and_exit(
             f"Invalid environment variable name(s) supplied '{errors}'. Names may only contain alphanumeric characters and underscores."
         )
 
-    # Return the validated values
-    return value
+    # Return the extracted values
+    return output
