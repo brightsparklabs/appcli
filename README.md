@@ -138,7 +138,7 @@ rather than having to rebuild a container each time you update it.
             APPCLI_MANAGED=Y \
             MYAPP_CONFIG_DIR=/tmp/myapp/config \
             MYAPP_DATA_DIR=/tmp/myapp/data \
-            MYAPP_GENERATED_CONFIG_DIR=/tmp/myapp/config/.generated/conf
+            MYAPP_GENERATED_CONFIG_DIR=/tmp/myapp/config/.generated
 
 - Run your CLI application:
 

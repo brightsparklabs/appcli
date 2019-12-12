@@ -25,6 +25,7 @@ from jinja2 import Template, StrictUndefined
 
 # local libraries
 from appcli.configuration_manager import ConfigurationManager
+from appcli.functions import error_and_exit
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
@@ -43,14 +44,37 @@ METADATA_FILE_NAME = "metadata-configure.json"
 
 
 class ConfigRepo:
-    def __init__(self, repo_path: str):
-        self.repo: git.Repo = git.Repo.init(repo_path)
+    def __init__(self, repo_path: str, ignores: List[str] = None):
+        self.repo_path = repo_path
+        self.ignores = ignores
         self.actor: git.Actor = git.Actor(f"cli_managed", "")
 
-    def commit_changes(self, message):
-        self.repo.index.add(".gitignore")
-        self.repo.index.add("*")
-        self.repo.index.commit(message, author=self.actor)
+    def init(self):
+        # TODO: Throw an error if the git repo already exists and we're re-initing
+        repo = git.Repo.init(self.repo_path)
+        if self.ignores:
+            ignore_file = open(self.repo_path.joinpath(".gitignore"), "w+")
+            for ignore in self.ignores:
+                ignore_file.write(f"{ignore}\n")
+            ignore_file.close()
+        else:
+            self.repo_path.joinpath(".gitignore").touch()
+        self._commit(repo, "init")
+
+    def commit_changes(self):
+        try:
+            repo = git.Repo(self.repo_path)
+        except:
+            error_and_exit(f"No git repo found at [{self.repo_path}]")
+
+        message = "commit message" # TODO: Set a better message - like when this commit was made? Or what changes it includes? Unsure.
+        self._commit(repo, message)
+
+    def _commit(self, repo: git.Repo, message: str):
+        repo.index.add(".gitignore")
+        repo.index.add("*")
+        repo.index.commit(message, author=self.actor)
+
 
 
 # ------------------------------------------------------------------------------
@@ -97,16 +121,14 @@ class ConfigureCli:
             logger.debug("Running pre-configure init hook")
             hooks.pre_configure_init(ctx)
 
-            # Seed the configuration directory, and put it under source control
-            logger.debug("Seeding configuration and initialising version control")
+            # Seed the configuration directory
+            logger.debug("Seeding configuration directory")
             self.__seed_configuration_dir(cli_context)
-            self.__init_conf_source_control(cli_context)
 
             # Generate the configuration files, and put those under source control
             logger.debug("Generating configuration and initialising version control")
             configuration = ConfigurationManager(cli_context.app_configuration_file)
             self.__generate_configuration_files(configuration, cli_context)
-            self.__init_generated_conf_source_control(cli_context)
 
             logger.debug("Running post-configure init hook")
             hooks.post_configure_init(ctx)
@@ -132,13 +154,18 @@ class ConfigureCli:
         @configure.command(help="Applies the settings from the configuration.")
         @click.pass_context
         def apply(ctx):
+            # TODO: Optionally take a git commit message from the cli as an option?
             cli_context: CliContext = ctx.obj
             configuration = ConfigurationManager(cli_context.app_configuration_file)
             hooks = self.cli_configuration.hooks
 
             logger.debug("Running pre-configure apply hook")
             hooks.pre_configure_apply(ctx)
+
+            # Commit the changes made to the conf repo
+            self.__get_conf_repo(cli_context).commit_changes()
             self.__generate_configuration_files(configuration, cli_context)
+
             logger.debug("Running post-configure apply hook")
             hooks.post_configure_apply(ctx)
 
@@ -160,9 +187,9 @@ class ConfigureCli:
                 )
                 result = False
 
-        conf_dir = cli_context.configuration_dir
-        if Path(conf_dir).exists():
-            logger.error(f"Configuration directory already exists at [{conf_dir}]")
+        # if the configuration file exists in the config directory, then don't allow init
+        if os.path.isfile(cli_context.app_configuration_file):
+            logger.error(f"Configuration directory already initialised at [{cli_context.configuration_dir}]")
             result = False
 
         return result
@@ -173,11 +200,8 @@ class ConfigureCli:
         logger.info("Copying app configuration file ...")
         seed_app_configuration_file = self.cli_configuration.seed_app_configuration_file
         if not seed_app_configuration_file.is_file():
-            logger.error(
-                "Seed file [%s] is not valid. Release is corrupt.",
-                seed_app_configuration_file,
-            )
-            sys.exit(1)
+            error_and_exit(f"Seed file [{seed_app_configuration_file}] is not valid. Release is corrupt.")
+
         target_app_configuration_file = cli_context.app_configuration_file
         logger.debug(
             "Copying app configuration file to [%s] ...", target_app_configuration_file
@@ -208,58 +232,21 @@ class ConfigureCli:
                 logger.debug("Copying seed file to [%s] ...", target_file)
                 shutil.copy2(source_file, target_file)
 
-    def __init_conf_source_control(self, cli_context: CliContext):
+        # After initialising the configuration directory, put it under source control
+        self.__get_conf_repo(cli_context).init()
 
-        repo_path = cli_context.configuration_dir
+    def __get_conf_repo(self, cli_context: CliContext):
+        return ConfigRepo(cli_context.configuration_dir, [".generated"])
 
-        # Write out a .gitignore to ignore .generated/
-        ignore_file = open(repo_path.joinpath(".gitignore"), "w+")
-        ignore_file.write(".generated/\n")
-        ignore_file.close()
-
-        # Initialise the repo and author for commits
-        repo: ConfigRepo = ConfigRepo(repo_path)
-
-        # Add appropriate files to the index and make the initial commit
-        repo.commit_changes("init")
-
-    def __init_generated_conf_source_control(self, cli_context: CliContext):
-
-        repo_path = cli_context.generated_configuration_dir
-
-        # Write out a .gitignore
-        repo_path.joinpath(".gitignore").touch()
-
-        # Initialise the repo and author for commits
-        repo: ConfigRepo = ConfigRepo(repo_path)
-
-        # Add appropriate files to the index and make the initial commit
-        repo.commit_changes("init")
-
-    def __configure_all_settings(self, config_manager: ConfigurationManager):
-        settings_group: ConfigSettingsGroup
-        for settings_group in self.cli_configuration.config_cli.settings_groups:
-            self.__configure_settings(config_manager, settings_group)
-
-    def __configure_settings(
-        self, config_manager: ConfigurationManager, settings_group: ConfigSettingsGroup
-    ):
-        self.__print_header(f"Configure {settings_group.title} settings")
-        self.__print_current_settings(settings_group.settings, config_manager)
-        if self.__confirm(f"Modify {settings_group.title} settings?"):
-            self.__prompt_and_update_configuration(
-                settings_group.settings, config_manager
-            )
-
-    def __save_configuration(self, configuration):
-        self.__print_header(f"Saving configuration")
-        configuration.save()
+    def __get_generated_conf_repo(self, cli_context: CliContext):
+        return ConfigRepo(cli_context.generated_configuration_dir)
 
     def __generate_configuration_files(
         self, configuration: Configuration, cli_context: CliContext
     ):
         self.__print_header(f"Generating configuration files")
         generated_configuration_dir = cli_context.generated_configuration_dir
+        shutil.rmtree(generated_configuration_dir, ignore_errors=True)
         generated_configuration_dir.mkdir(parents=True, exist_ok=True)
 
         configuration_record_file = generated_configuration_dir.joinpath(
@@ -308,6 +295,8 @@ class ConfigureCli:
             json.dumps(record, indent=2, sort_keys=True)
         )
         logger.debug("Configuration record written to [%s]", configuration_record_file)
+
+        self.__get_generated_conf_repo(cli_context).init()
 
     def __copy_settings_file_to_generated_dir(self, cli_context: CliContext):
         """Copies the current settings file to the generated directory as a record of what configuration
