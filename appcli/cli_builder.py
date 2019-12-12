@@ -98,7 +98,7 @@ def create_cli(configuration: Configuration):
     )
     @click.option(
         "--environment",
-        "-e",
+        "-t",
         help="Environment to run, defaults to 'production'",
         required=False,
         type=str,
@@ -114,7 +114,7 @@ def create_cli(configuration: Configuration):
     )
     @click.option(
         "--additional-env-var",
-        "-v",
+        "-e",
         help="Additional environment variables to expose to launcher container. Can be specified multiple times.",
         type=str,
         multiple=True,
@@ -245,6 +245,8 @@ def create_cli(configuration: Configuration):
             f"""docker run
                         --name osmosis_{cli_context.environment}_relauncher_{seconds_since_epoch}
                         --rm
+                        --interactive
+                        --tty
                         --volume /var/run/docker.sock:/var/run/docker.sock
                         --env APPCLI_MANAGED=Y
                         --env {ENV_VAR_CONFIG_DIR}='{configuration_dir}'
