@@ -281,9 +281,9 @@ def create_cli(configuration: Configuration):
             )
         )
         for name, path in cli_context.additional_data_dirs:
-            command.extend(shlex.split(f"--additional-data-dir {name} '{path}'"))
+            command.extend(shlex.split(f"--additional-data-dir {name}='{path}'"))
         for name, value in cli_context.additional_env_variables:
-            command.extend(shlex.split(f"--additional-env-var {name} '{value}'"))
+            command.extend(shlex.split(f"--additional-env-var {name}='{value}'"))
 
         if cli_context.debug:
             command.append("--debug")
