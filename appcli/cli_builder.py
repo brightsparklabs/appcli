@@ -261,29 +261,29 @@ def create_cli(configuration: Configuration):
             command.extend(
                 shlex.split(
                     f"""
-                        --env {name}='{path}'
-                        --volume '{path}:{path}'
+                        --env {name}="{path}"
+                        --volume "{path}:{path}"
                     """
                 )
             )
 
         for name, value in cli_context.additional_env_variables:
-            command.extend(shlex.split(f"--env {name}='{value}'"))
+            command.extend(shlex.split(f"--env {name}=\"{value}\""))
 
         command.extend(
             shlex.split(
                 f"""
                     {configuration.docker_image}:{APP_VERSION}
-                    --configuration-dir '{configuration_dir}'
-                    --data-dir '{data_dir}'
-                    --environment '{environment}'
+                    --configuration-dir "{configuration_dir}"
+                    --data-dir "{data_dir}"
+                    --environment "{environment}"
                 """
             )
         )
         for name, path in cli_context.additional_data_dirs:
-            command.extend(shlex.split(f"--additional-data-dir {name}='{path}'"))
+            command.extend(shlex.split(f"--additional-data-dir {name}=\"{path}\""))
         for name, value in cli_context.additional_env_variables:
-            command.extend(shlex.split(f"--additional-env-var {name}='{value}'"))
+            command.extend(shlex.split(f"--additional-env-var {name}=\"{value}\""))
 
         if cli_context.debug:
             command.append("--debug")

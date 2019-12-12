@@ -67,7 +67,7 @@ docker run \\
             )
 
             for name, value in launcher_env_var:
-                print(f"    --env {name}={value} \\")
+                print(f"    --env {name}=\"{value}\" \\")
 
             print(
                 f"""    --volume /var/run/docker.sock:/var/run/docker.sock \\
@@ -78,9 +78,9 @@ docker run \\
             )
 
             for name, path in cli_context.additional_data_dirs:
-                print(f"        --additional-data-dir {name}={path} \\")
+                print(f"        --additional-data-dir {name}=\"{path}\" \\")
             for name, value in cli_context.additional_env_variables:
-                print(f"        --additional-env-var {name}={value} \\")
+                print(f"        --additional-env-var {name}=\"{value}\" \\")
             print("        $@")
 
         # expose the cli command
