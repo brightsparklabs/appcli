@@ -80,6 +80,14 @@ class ConfigRepo:
 
         self._commit_if_dirty(repo, message)
 
+    def is_dirty(self):
+        try:
+            repo = git.Repo(self.repo_path)
+        except:
+            error_and_exit(f"No git repo found at [{self.repo_path}]")
+
+        return repo.is_dirty(untracked_files=True)
+
     def _commit_if_dirty(self, repo: git.Repo, message: str, is_init: bool = False):
         """ Add and commit all changes to the repository. Will not add a commit
         if the repository is not dirty.
@@ -194,13 +202,17 @@ class ConfigureCli:
             configuration.save()
 
         @configure.command(help="Applies the settings from the configuration.")
+        @click.option("--force", is_flag=True)
         @click.pass_context
-        def apply(ctx):
+        def apply(ctx, force):
             # TODO: Optionally take a git commit message from the cli as an option?
             cli_context: CliContext = ctx.obj
             configuration = ConfigurationManager(cli_context.app_configuration_file)
-            hooks = self.cli_configuration.hooks
 
+            # Don't allow apply if generated directory is dirty
+            self._block_on_dirty_gen_config(cli_context, force)
+
+            hooks = self.cli_configuration.hooks
             logger.debug("Running pre-configure apply hook")
             hooks.pre_configure_apply(ctx)
 
@@ -360,6 +372,16 @@ class ConfigureCli:
         shutil.copy2(cli_context.app_configuration_file, applied_configuration_file)
 
         logger.debug("Applied settings written to [%s]", applied_configuration_file)
+
+    def _block_on_dirty_gen_config(self, cli_context: CliContext, force: bool):
+        if self.__get_generated_conf_repo(cli_context).is_dirty():
+            if not force:
+                error_and_exit(
+                    f"Generated configuration repository is dirty, cannot apply. Use --force to override."
+                )
+            logger.warn(
+                "Dirty generated configuration repository will be overridden due to --force flag."
+            )
 
     def __print_header(self, title):
         logger.info(
