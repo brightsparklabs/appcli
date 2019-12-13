@@ -24,7 +24,7 @@ from jinja2 import Template, StrictUndefined
 
 # local libraries
 from appcli.configuration_manager import ConfigurationManager
-from appcli.functions import error_and_exit
+from appcli.functions import error_and_exit, get_metadata_file_directory
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
@@ -32,13 +32,6 @@ from appcli.git_repositories.git_repositories import (
     ConfigurationGitRepository,
     GeneratedConfigurationGitRepository,
 )
-
-# ------------------------------------------------------------------------------
-# CONSTANTS
-# ------------------------------------------------------------------------------
-
-METADATA_FILE_NAME = "metadata-configure.json"
-""" Name of the file holding metadata from running a configure (relative to the generated configuration directory) """
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -220,9 +213,7 @@ class ConfigureCli:
 
         generated_configuration_dir.mkdir(parents=True, exist_ok=True)
 
-        configuration_record_file = generated_configuration_dir.joinpath(
-            METADATA_FILE_NAME
-        )
+        configuration_record_file = get_metadata_file_directory(cli_context)
         if os.path.exists(configuration_record_file):
             logger.info("Clearing successful configuration record ...")
             os.remove(configuration_record_file)
