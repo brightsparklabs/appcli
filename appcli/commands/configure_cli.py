@@ -272,7 +272,7 @@ class ConfigureCli:
         """
 
         # The datetime is accurate to seconds (microseconds was overkill), and we remove
-        # colon (:) because `tar tvf` doesn't like filenames with those in them
+        # colon (:) because `tar tvf` doesn't like filenames with colons
         current_datetime = (
             datetime.now().replace(microsecond=0).isoformat().replace(":", "")
         )
@@ -288,7 +288,13 @@ class ConfigureCli:
         with tarfile.open(output_filename, "w:gz") as tar:
             tar.add(source_dir, arcname=os.path.basename(source_dir))
 
-        # Remove the existing folder
+        # Ensure the backup has been successfully created before deleting the existing generated configuration directory
+        if not os.path.exists(output_filename):
+            error_and_exit(
+                f"Current generated configuration directory backup failed. Could not write out file [{output_filename}]."
+            )
+
+        # Remove the existing directory
         shutil.rmtree(source_dir, ignore_errors=True)
         logger.info(
             f"Deleted previous generated configuration directory [{source_dir}]"
@@ -312,15 +318,17 @@ class ConfigureCli:
         logger.debug("Applied settings written to [%s]", applied_configuration_file)
 
     def _block_on_existing_dirty_generated_config(
-        self, cli_context: CliContext, force: bool
+        self, cli_context: CliContext, force: bool = False
     ):
         """Checks if the generated configuration directory exists, and whether it's dirty.
         If it does exist, and is dirty (tracked files only), then this will error and exit.
         Also provides a mechanism to override this behaviour with a force flag.
+        Need to check if the repository exists before checking for dirtiness, otherwise this
+        check will fail on an un-initialised repository.
         
         Args:
             cli_context (CliContext): the current cli context
-            force (bool): whether to pass this check forcefully
+            force (bool): whether to force pass this check and only warn instead of error and exit. Defaults to False.
         """
         repo: GeneratedConfigurationGitRepository = GeneratedConfigurationGitRepository(
             cli_context

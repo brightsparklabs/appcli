@@ -244,8 +244,6 @@ def create_cli(configuration: Configuration):
         command = shlex.split(
             f"""docker run
                         --name osmosis_{cli_context.environment}_relauncher_{seconds_since_epoch}
-                        --interactive
-                        --tty
                         --rm
                         --interactive
                         --tty
@@ -272,7 +270,7 @@ def create_cli(configuration: Configuration):
             )
 
         for name, value in cli_context.additional_env_variables:
-            command.extend(shlex.split(f"--env {name}=\"{value}\""))
+            command.extend(shlex.split(f'--env {name}="{value}"'))
 
         command.extend(
             shlex.split(
@@ -285,9 +283,9 @@ def create_cli(configuration: Configuration):
             )
         )
         for name, path in cli_context.additional_data_dirs:
-            command.extend(shlex.split(f"--additional-data-dir {name}=\"{path}\""))
+            command.extend(shlex.split(f'--additional-data-dir {name}="{path}"'))
         for name, value in cli_context.additional_env_variables:
-            command.extend(shlex.split(f"--additional-env-var {name}=\"{value}\""))
+            command.extend(shlex.split(f'--additional-env-var {name}="{value}"'))
 
         if cli_context.debug:
             command.append("--debug")
