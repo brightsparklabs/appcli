@@ -30,7 +30,7 @@ from appcli.commands.init_cli import InitCli
 from appcli.commands.install_cli import InstallCli
 from appcli.commands.launcher_cli import LauncherCli
 from appcli.commands.main_cli import MainCli
-from appcli.functions import check_valid_environment_variable_names, error_and_exit
+from appcli.functions import extract_valid_environment_variable_names, error_and_exit
 from appcli.logger import logger, enable_debug_logging
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
@@ -98,7 +98,7 @@ def create_cli(configuration: Configuration):
     )
     @click.option(
         "--environment",
-        "-e",
+        "-t",
         help="Environment to run, defaults to 'production'",
         required=False,
         type=click.STRING,
@@ -108,19 +108,17 @@ def create_cli(configuration: Configuration):
         "--additional-data-dir",
         "-a",
         help="Additional data directory to expose to launcher container. Can be specified multiple times.",
-        nargs=2,
-        type=click.Tuple([str, Path]),
+        type=str,
         multiple=True,
-        callback=check_valid_environment_variable_names,
+        callback=extract_valid_environment_variable_names,
     )
     @click.option(
         "--additional-env-var",
-        "-v",
+        "-e",
         help="Additional environment variables to expose to launcher container. Can be specified multiple times.",
-        nargs=2,
-        type=click.Tuple([str, str]),
+        type=str,
         multiple=True,
-        callback=check_valid_environment_variable_names,
+        callback=extract_valid_environment_variable_names,
     )
     @click.pass_context
     def cli(
@@ -249,6 +247,8 @@ def create_cli(configuration: Configuration):
                         --interactive
                         --tty
                         --rm
+                        --interactive
+                        --tty
                         --volume /var/run/docker.sock:/var/run/docker.sock
                         --env APPCLI_MANAGED=Y
                         --env {ENV_VAR_CONFIG_DIR}='{configuration_dir}'
@@ -265,29 +265,29 @@ def create_cli(configuration: Configuration):
             command.extend(
                 shlex.split(
                     f"""
-                        --env {name}='{path}'
-                        --volume '{path}:{path}'
+                        --env {name}="{path}"
+                        --volume "{path}:{path}"
                     """
                 )
             )
 
         for name, value in cli_context.additional_env_variables:
-            command.extend(shlex.split(f"--env {name}='{value}'"))
+            command.extend(shlex.split(f"--env {name}=\"{value}\""))
 
         command.extend(
             shlex.split(
                 f"""
                     {configuration.docker_image}:{APP_VERSION}
-                    --configuration-dir '{configuration_dir}'
-                    --data-dir '{data_dir}'
-                    --environment '{environment}'
+                    --configuration-dir "{configuration_dir}"
+                    --data-dir "{data_dir}"
+                    --environment "{environment}"
                 """
             )
         )
         for name, path in cli_context.additional_data_dirs:
-            command.extend(shlex.split(f"--additional-data-dir {name} '{path}'"))
+            command.extend(shlex.split(f"--additional-data-dir {name}=\"{path}\""))
         for name, value in cli_context.additional_env_variables:
-            command.extend(shlex.split(f"--additional-env-var {name} '{value}'"))
+            command.extend(shlex.split(f"--additional-env-var {name}=\"{value}\""))
 
         if cli_context.debug:
             command.append("--debug")

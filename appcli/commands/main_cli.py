@@ -72,6 +72,7 @@ class MainCli:
             logger.debug("Running post-start hook")
             hooks.post_start(ctx, result)
 
+            logger.info("Start command finished with code [%i]", result.returncode)
             sys.exit(result.returncode)
 
         @click.command(help="Stops the system.")
@@ -88,6 +89,7 @@ class MainCli:
             logger.debug("Running post-stop hook")
             hooks.post_stop(ctx, result)
 
+            logger.info("Stop command finished with code [%i]", result.returncode)
             sys.exit(result.returncode)
 
         # expose the cli commands
