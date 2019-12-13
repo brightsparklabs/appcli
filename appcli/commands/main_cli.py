@@ -118,6 +118,7 @@ class MainCli:
             cli_context (CliContext): the current cli context
             force (bool, optional): If False, will only warn on error. On True will error and exit on error. Defaults to False.
         """
+        logger.info("Start pre-start configuration repository checks")
 
         config_repo = ConfigurationGitRepository(cli_context)
         generated_config_repo = GeneratedConfigurationGitRepository(cli_context)
@@ -129,24 +130,30 @@ class MainCli:
 
         errors = []
         # Check if the configuration directory contains unapplied changes
+        logger.debug("Checking if config repo is dirty")
         if config_repo.is_dirty(untracked_files=True):
             errors.append(
                 "Configuration contains un-applied changes. Call 'configure apply' to apply these changes."
             )
 
         # Check if the generated configuration repository has manual modifications to tracked files
+        logger.debug("Checking if generated config repo is dirty")
         if generated_config_repo.is_dirty(untracked_files=False):
             errors.append(
                 f"Generated configuration at [{generated_config_repo.repo_path}] has been manually modified."
             )
 
         # Check if the generated configuration is against current configuration commit #
+        logger.debug(
+            "Checking generated config metadata commit # matches config repo commit #"
+        )
         metadata_file = get_metadata_file_directory(cli_context)
         if not os.path.isfile(metadata_file):
             errors.append(f"Could not find a metadata file at [{metadata_file}]")
         else:
             with open(metadata_file, "r") as f:
                 metadata = json.load(f)
+                logger.debug("Metadata from generated configuration: %s", metadata)
             generated_conf_metadata_commit_hash = metadata["configure"]["apply"][
                 "commit_hash"
             ]
@@ -193,3 +200,5 @@ class MainCli:
 
         if errors:
             error_and_exit("\n".join(errors))
+
+        logger.info("Confirmed configuration directories exist")
