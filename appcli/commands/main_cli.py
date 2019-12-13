@@ -13,6 +13,7 @@ www.brightsparklabs.com
 import json
 import os
 import sys
+from typing import List
 
 # vendor libraries
 import click
@@ -128,6 +129,55 @@ class MainCli:
             config_repo, generated_config_repo
         )
 
+        # If the configuration repository states are incorrect, can still optionally force the start.
+        self._check_configuration_repository_states(
+            cli_context, config_repo, generated_config_repo, force
+        )
+
+        logger.info("Passed pre-start configuration directory checks")
+
+    def _confirm_configuration_directories_exist(
+        self,
+        config_repo: ConfigurationGitRepository,
+        generated_config_repo: GeneratedConfigurationGitRepository,
+    ):
+        """Confirm that the configuration and generated configuration directories exist. Error and exit if either doesn't exist.
+
+        Args:
+            config_repo (ConfigurationGitRepository): the configuration repository to check
+            generated_config_repo (GeneratedConfigurationGitRepository): the generated configuration repository to check
+        """
+        errors = []
+        if not config_repo.repo_exists():
+            errors.append(
+                f"Configuration repository does not exist at [{config_repo.repo_path}]."
+            )
+        if not generated_config_repo.repo_exists():
+            errors.append(
+                f"Generated configuration repository does not exist at [{generated_config_repo.repo_path}]. You may need to run 'configure apply' to fill this repository."
+            )
+
+        if errors:
+            error_and_exit("\n".join(errors))
+
+        logger.info("Confirmed configuration directories exist")
+
+    def _check_configuration_repository_states(
+        self,
+        cli_context: CliContext,
+        config_repo: ConfigurationGitRepository,
+        generated_config_repo: GeneratedConfigurationGitRepository,
+        force: bool = False,
+    ):
+        """Check the status of the configuration repositories and return any error messages.
+
+        Args:
+            cli_context (CliContext): the current cli context
+            config_repo (ConfigurationGitRepository): the configuration repository to check
+            generated_config_repo (GeneratedConfigurationGitRepository): the generated configuration repository to check
+            force (bool): whether to force (i.e. skip) errors. True to list errors as warnings, or false to exit and error. Defaults to False.
+        """
+
         errors = []
         # Check if the configuration directory contains unapplied changes
         logger.debug("Checking if config repo is dirty")
@@ -154,13 +204,16 @@ class MainCli:
             with open(metadata_file, "r") as f:
                 metadata = json.load(f)
                 logger.debug("Metadata from generated configuration: %s", metadata)
+
             generated_conf_metadata_commit_hash = metadata["configure"]["apply"][
                 "commit_hash"
             ]
             configuration_commit_hash = config_repo.get_current_commit_hash()
             if generated_conf_metadata_commit_hash != configuration_commit_hash:
                 errors.append(
-                    f"Mismatched hashes between applied and current configuration. Configuration hash: [{configuration_commit_hash}], Applied hash: [{generated_conf_metadata_commit_hash}]"
+                    "Mismatched hashes between applied and current configuration. "
+                    + f"Configuration hash: [{configuration_commit_hash}], "
+                    + f"Applied hash: [{generated_conf_metadata_commit_hash}]"
                 )
 
         if errors:
@@ -174,31 +227,3 @@ class MainCli:
                 "Force flag '--force' applied. Overriding the following issues:\n%s",
                 message,
             )
-
-        logger.info("Passed pre-start configuration directory checks")
-
-    def _confirm_configuration_directories_exist(
-        self,
-        config_repo: ConfigurationGitRepository,
-        generated_config_repo: GeneratedConfigurationGitRepository,
-    ):
-        """Confirm that the configuration and generated configuration directories exist. Error and exit if either doesn't exist.
-        
-        Args:
-            config_repo (ConfigurationGitRepository): the configuration repository to check
-            generated_config_repo (GeneratedConfigurationGitRepository): the generated configuration repository to check
-        """
-        errors = []
-        if not config_repo.repo_exists():
-            errors.append(
-                f"Configuration repository does not exist at [{config_repo.repo_path}]."
-            )
-        if not generated_config_repo.repo_exists():
-            errors.append(
-                f"Generated configuration repository does not exist at [{generated_config_repo.repo_path}]. Run 'configure apply' to fill this repository."
-            )
-
-        if errors:
-            error_and_exit("\n".join(errors))
-
-        logger.info("Confirmed configuration directories exist")
