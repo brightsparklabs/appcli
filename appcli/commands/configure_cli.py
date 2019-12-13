@@ -43,7 +43,10 @@ METADATA_FILE_NAME = "metadata-configure.json"
 # ------------------------------------------------------------------------------
 
 
-class ConfigRepo:
+class Repository:
+    """Class which encapsulates different git repo actions for configuration repositories
+    """
+
     def __init__(self, repo_path: str, ignores: List[str] = None):
         self.repo_path = repo_path
         self.ignores = ignores
@@ -123,6 +126,16 @@ class ConfigRepo:
 
         # A repo was found at [repo_path], so error and exit.
         error_and_exit(f"Cannot initialise repo at [{repo_path}], already exists.")
+
+
+class ConfigurationRepository(Repository):
+    def __init__(self, cli_context: CliContext):
+        super().__init__(cli_context.configuration_dir, [".generated"])
+
+
+class GeneratedConfigurationRepository(Repository):
+    def __init__(self, cli_context: CliContext):
+        super().__init__(cli_context.generated_configuration_dir)
 
 
 # ------------------------------------------------------------------------------
@@ -214,7 +227,7 @@ class ConfigureCli:
             hooks.pre_configure_apply(ctx)
 
             # Commit the changes made to the conf repo
-            self.__get_conf_repo(cli_context).commit_changes()
+            ConfigurationRepository(cli_context).commit_changes()
             self.__generate_configuration_files(configuration, cli_context)
 
             logger.debug("Running post-configure apply hook")
@@ -288,13 +301,7 @@ class ConfigureCli:
                 shutil.copy2(source_file, target_file)
 
         # After initialising the configuration directory, put it under source control
-        self.__get_conf_repo(cli_context).init()
-
-    def __get_conf_repo(self, cli_context: CliContext):
-        return ConfigRepo(cli_context.configuration_dir, [".generated"])
-
-    def __get_generated_conf_repo(self, cli_context: CliContext):
-        return ConfigRepo(cli_context.generated_configuration_dir)
+        ConfigurationRepository(cli_context).init()
 
     def __generate_configuration_files(
         self, configuration: Configuration, cli_context: CliContext
@@ -351,7 +358,7 @@ class ConfigureCli:
         )
         logger.debug("Configuration record written to [%s]", configuration_record_file)
 
-        self.__get_generated_conf_repo(cli_context).init()
+        GeneratedConfigurationRepository(cli_context).init()
 
     def __copy_settings_file_to_generated_dir(self, cli_context: CliContext):
         """Copies the current settings file to the generated directory as a record of what configuration
@@ -371,13 +378,13 @@ class ConfigureCli:
         logger.debug("Applied settings written to [%s]", applied_configuration_file)
 
     def _block_on_dirty_gen_config(self, cli_context: CliContext, force: bool):
-        if self.__get_generated_conf_repo(cli_context).is_dirty():
+        if GeneratedConfigurationRepository(cli_context).is_dirty():
             if not force:
                 error_and_exit(
                     f"Generated configuration repository is dirty, cannot apply. Use --force to override."
                 )
-            logger.warn(
-                "Dirty generated configuration repository will be overridden due to --force flag."
+            logger.info(
+                "Dirty generated configuration repository overwritten due to --force flag."
             )
 
     def __print_header(self, title):
