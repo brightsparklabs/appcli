@@ -258,7 +258,10 @@ class ConfigureCli:
                 "apply": {
                     "last_run": datetime.utcnow()
                     .replace(tzinfo=timezone.utc)
-                    .isoformat()
+                    .isoformat(),
+                    "commit_hash": ConfigurationGitRepository(
+                        cli_context
+                    ).get_current_commit_hash(),
                 }
             }
         }
@@ -320,14 +323,14 @@ class ConfigureCli:
     def _block_on_existing_dirty_generated_config(
         self, cli_context: CliContext, force: bool
     ):
-    """Checks if the generated configuration directory exists, and whether it's dirty.
-    If it does exist, and is dirty (tracked files only), then this will error and exit.
-    Also provides a mechanism to override this behaviour with a force flag.
-    
-    Args:
-        cli_context (CliContext): the current cli context
-        force (bool): whether to pass this check forcefully
-    """
+        """Checks if the generated configuration directory exists, and whether it's dirty.
+        If it does exist, and is dirty (tracked files only), then this will error and exit.
+        Also provides a mechanism to override this behaviour with a force flag.
+        
+        Args:
+            cli_context (CliContext): the current cli context
+            force (bool): whether to pass this check forcefully
+        """
         repo: GeneratedConfigurationGitRepository = GeneratedConfigurationGitRepository(
             cli_context
         )

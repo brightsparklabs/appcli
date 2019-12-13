@@ -67,11 +67,7 @@ class GitRepository:
     def commit_changes(self):
         """Commit the existing changes to the git repository
         """
-        # Get the repository (or exit if it doesn't exist)
-        try:
-            repo = git.Repo(self.repo_path)
-        except:
-            error_and_exit(f"No git repo found at [{self.repo_path}]")
+        repo = self._get_repo()
 
         # If the repo isn't dirty, don't commit
         if not repo.is_dirty(untracked_files=True):
@@ -88,14 +84,8 @@ class GitRepository:
 
         # Get a list of the modified files (added/modified/deleted)
         changed_files = [diff.a_path for diff in repo.index.diff("HEAD")]
-        commit_message = (
-            input(
-                f"Changes to [{changed_files}]. Optional message describing changes: "
-            ).strip()
-            or "Committing changes."
-        )
 
-        commit_message += f"\nChanged files: {changed_files}"
+        commit_message = f"Commit via appcli.\nChanged files: {changed_files}"
         repo.index.commit(commit_message, author=self.actor)
 
     def is_dirty(self, untracked_files: bool = False):
@@ -107,10 +97,7 @@ class GitRepository:
         Returns:
             [bool]: True if repository is considered dirty, False otherwise.
         """
-        try:
-            repo = git.Repo(self.repo_path)
-        except:
-            error_and_exit(f"No git repo found at [{self.repo_path}]")
+        repo = self._get_repo()
 
         return repo.is_dirty(untracked_files=untracked_files)
 
@@ -125,6 +112,22 @@ class GitRepository:
             return True
         except:
             return False
+
+    def get_current_commit_hash(self):
+        """Get the commit hash of the current commit
+        """
+        repo = self._get_repo()
+        return repo.head.object.hexsha
+
+    def _get_repo(self):
+        """Get the repository if it exists, otherwise exit and error
+        """
+        try:
+            repo = git.Repo(self.repo_path)
+        except:
+            error_and_exit(f"No git repo found at [{self.repo_path}]")
+
+        return repo
 
 
 # ------------------------------------------------------------------------------
