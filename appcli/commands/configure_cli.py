@@ -69,16 +69,37 @@ class ConfigRepo:
             logger.debug("Touched .gitignore")
 
         # do the initial commit on the repo
-        self._commit_if_dirty(repo, "Initialising repository", is_init=True)
+        repo.index.add(".gitignore")
+        repo.index.add("*")
+        repo.index.commit("Initialising repository", author=self.actor)
         logger.info("Initialised repository at [%s].", repo.working_dir)
 
-    def commit_changes(self, message: str = "Committing changes."):
+    def commit_changes(self):
         try:
             repo = git.Repo(self.repo_path)
         except:
             error_and_exit(f"No git repo found at [{self.repo_path}]")
 
-        self._commit_if_dirty(repo, message)
+        if not repo.is_dirty(untracked_files=True):
+            logger.info(
+                "No changes found in repository [%s], no commit was made.",
+                repo.working_dir,
+            )
+            return
+
+        repo.index.add(".gitignore")
+        repo.index.add("*")
+        changed_files = [diff.a_path for diff in repo.index.diff("HEAD")]
+
+        commit_message = (
+            input(
+                f"Changes to [{changed_files}]. Optional message describing changes: "
+            ).strip()
+            or "Committing changes."
+        )
+
+        commit_message += f"\nChanged files: {changed_files}"
+        repo.index.commit(commit_message, author=self.actor)
 
     def is_dirty(self):
         try:
@@ -87,29 +108,6 @@ class ConfigRepo:
             error_and_exit(f"No git repo found at [{self.repo_path}]")
 
         return repo.is_dirty(untracked_files=True)
-
-    def _commit_if_dirty(self, repo: git.Repo, message: str, is_init: bool = False):
-        """ Add and commit all changes to the repository. Will not add a commit
-        if the repository is not dirty.
-        
-        Args:
-            repo (git.Repo): the repository to add and commit to
-            message (str): First part of the commit message
-        """
-        if repo.is_dirty(untracked_files=True):
-            repo.index.add(".gitignore")
-            repo.index.add("*")
-            commit_message = message
-            if not is_init:
-                changed_files = [diff.a_path for diff in repo.index.diff("HEAD")]
-                commit_message += f"\nChanged files: {changed_files}"
-            repo.index.commit(commit_message, author=self.actor)
-            logger.info("Committed changes to repository [%s].", repo.working_dir)
-        else:
-            logger.info(
-                "No changes found in repository [%s], no commit was made.",
-                repo.working_dir,
-            )
 
     def _confirm_git_repo_not_initialised(self, repo_path: str):
         """Test if a git repo exists at a given directory. Raise an error if it does.

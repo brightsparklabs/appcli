@@ -246,6 +246,8 @@ def create_cli(configuration: Configuration):
         command = shlex.split(
             f"""docker run
                         --name osmosis_{cli_context.environment}_relauncher_{seconds_since_epoch}
+                        --interactive
+                        --tty
                         --rm
                         --volume /var/run/docker.sock:/var/run/docker.sock
                         --env APPCLI_MANAGED=Y
