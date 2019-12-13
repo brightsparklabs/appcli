@@ -106,12 +106,19 @@ class ConfigureCli:
 
         @configure.command(help="Applies the settings from the configuration.")
         @click.option(
+            "--message",
+            "-m",
+            help="Message describing the changes being applied.",
+            default="Commit via appcli.",
+            type=click.STRING,
+        )
+        @click.option(
             "--force",
             is_flag=True,
             help="Overwrite existing generated configuration, regardless of modified status",
         )
         @click.pass_context
-        def apply(ctx, force):
+        def apply(ctx, message, force):
             cli_context: CliContext = ctx.obj
             configuration = ConfigurationManager(cli_context.app_configuration_file)
 
@@ -123,7 +130,7 @@ class ConfigureCli:
             hooks.pre_configure_apply(ctx)
 
             # Commit the changes made to the conf repo
-            ConfigurationGitRepository(cli_context).commit_changes()
+            ConfigurationGitRepository(cli_context).commit_changes(message)
             self.__generate_configuration_files(configuration, cli_context)
 
             logger.debug("Running post-configure apply hook")

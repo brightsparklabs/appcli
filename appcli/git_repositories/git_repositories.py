@@ -64,8 +64,12 @@ class GitRepository:
         repo.index.commit("Initialising repository", author=self.actor)
         logger.debug("Initialised repository at [%s].", repo.working_dir)
 
-    def commit_changes(self):
+    def commit_changes(self, message: str):
         """Commit the existing changes to the git repository
+
+        Args:
+            message (str): A message to include as part of the commit message.
+
         """
         repo = self._get_repo()
 
@@ -85,7 +89,7 @@ class GitRepository:
         # Get a list of the modified files (added/modified/deleted)
         changed_files = [diff.a_path for diff in repo.index.diff("HEAD")]
 
-        commit_message = f"Commit via appcli.\nChanged files: {changed_files}"
+        commit_message = f"{message}\nChanged files: {changed_files}"
         repo.index.commit(commit_message, author=self.actor)
 
     def is_dirty(self, untracked_files: bool = False):
