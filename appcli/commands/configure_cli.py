@@ -50,7 +50,7 @@ class ConfigRepo:
         self.actor: git.Actor = git.Actor(f"cli_managed", "")
 
     def init(self):
-        logger.info("Initialising repository at [%s]", self.repo_path)
+        logger.debug("Initialising repository at [%s]", self.repo_path)
 
         # Confirm that a repo doesn't already exist at this directory
         self._confirm_git_repo_not_initialised(self.repo_path)
@@ -72,7 +72,7 @@ class ConfigRepo:
         repo.index.add(".gitignore")
         repo.index.add("*")
         repo.index.commit("Initialising repository", author=self.actor)
-        logger.info("Initialised repository at [%s].", repo.working_dir)
+        logger.debug("Initialised repository at [%s].", repo.working_dir)
 
     def commit_changes(self):
         try:
