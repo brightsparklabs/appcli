@@ -14,10 +14,9 @@ import json
 import os
 import shutil
 import sys
+import tarfile
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List
-import git
 
 # vendor libraries
 import click
@@ -29,6 +28,10 @@ from appcli.functions import error_and_exit
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
+from appcli.git_repositories.git_repositories import (
+    ConfigurationGitRepository,
+    GeneratedConfigurationGitRepository,
+)
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
@@ -36,107 +39,6 @@ from appcli.models.configuration import Configuration
 
 METADATA_FILE_NAME = "metadata-configure.json"
 """ Name of the file holding metadata from running a configure (relative to the generated configuration directory) """
-
-
-# ------------------------------------------------------------------------------
-# PRIVATE CLASSES
-# ------------------------------------------------------------------------------
-
-
-class Repository:
-    """Class which encapsulates different git repo actions for configuration repositories
-    """
-
-    def __init__(self, repo_path: str, ignores: List[str] = None):
-        self.repo_path = repo_path
-        self.ignores = ignores
-        self.actor: git.Actor = git.Actor(f"cli_managed", "")
-
-    def init(self):
-        logger.debug("Initialising repository at [%s]", self.repo_path)
-
-        # Confirm that a repo doesn't already exist at this directory
-        self._confirm_git_repo_not_initialised(self.repo_path)
-
-        # git init, and write to the .gitignore file
-        repo = git.Repo.init(self.repo_path)
-        logger.debug("Repo initialised at [%s]", repo.working_dir)
-        if self.ignores:
-            ignore_file = open(self.repo_path.joinpath(".gitignore"), "w+")
-            for ignore in self.ignores:
-                ignore_file.write(f"{ignore}\n")
-            ignore_file.close()
-            logger.debug("Wrote out .gitignore with ignores: [%s]", self.ignores)
-        else:
-            self.repo_path.joinpath(".gitignore").touch()
-            logger.debug("Touched .gitignore")
-
-        # do the initial commit on the repo
-        repo.index.add(".gitignore")
-        repo.index.add("*")
-        repo.index.commit("Initialising repository", author=self.actor)
-        logger.debug("Initialised repository at [%s].", repo.working_dir)
-
-    def commit_changes(self):
-        try:
-            repo = git.Repo(self.repo_path)
-        except:
-            error_and_exit(f"No git repo found at [{self.repo_path}]")
-
-        if not repo.is_dirty(untracked_files=True):
-            logger.info(
-                "No changes found in repository [%s], no commit was made.",
-                repo.working_dir,
-            )
-            return
-
-        repo.index.add(".gitignore")
-        repo.index.add("*")
-        changed_files = [diff.a_path for diff in repo.index.diff("HEAD")]
-
-        commit_message = (
-            input(
-                f"Changes to [{changed_files}]. Optional message describing changes: "
-            ).strip()
-            or "Committing changes."
-        )
-
-        commit_message += f"\nChanged files: {changed_files}"
-        repo.index.commit(commit_message, author=self.actor)
-
-    def is_dirty(self):
-        try:
-            repo = git.Repo(self.repo_path)
-        except:
-            error_and_exit(f"No git repo found at [{self.repo_path}]")
-
-        return repo.is_dirty(untracked_files=True)
-
-    def _confirm_git_repo_not_initialised(self, repo_path: str):
-        """Test if a git repo exists at a given directory. Raise an error if it does.
-        
-        Args:
-            repo_path (str): path to the directory to test
-        """
-        try:
-            git.Repo(repo_path)
-        except:
-            # An error is raised - the repo does not exist, so this function succeeds
-            return
-
-        # A repo was found at [repo_path], so error and exit.
-        error_and_exit(f"Cannot initialise repo at [{repo_path}], already exists.")
-
-
-class ConfigurationRepository(Repository):
-    def __init__(self, cli_context: CliContext):
-        super().__init__(cli_context.configuration_dir, [".generated"])
-
-
-class GeneratedConfigurationRepository(Repository):
-    def __init__(self, cli_context: CliContext):
-        super().__init__(cli_context.generated_configuration_dir)
-
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -186,13 +88,10 @@ class ConfigureCli:
             logger.debug("Seeding configuration directory")
             self.__seed_configuration_dir(cli_context)
 
-            # Generate the configuration files, and put those under source control
-            logger.debug("Generating configuration and initialising version control")
-            configuration = ConfigurationManager(cli_context.app_configuration_file)
-            self.__generate_configuration_files(configuration, cli_context)
-
             logger.debug("Running post-configure init hook")
             hooks.post_configure_init(ctx)
+
+            logger.info("Finished configure init")
 
         @configure.command(help="Reads a setting from the configuration.")
         @click.argument("setting")
@@ -213,25 +112,31 @@ class ConfigureCli:
             configuration.save()
 
         @configure.command(help="Applies the settings from the configuration.")
-        @click.option("--force", is_flag=True)
+        @click.option(
+            "--force",
+            is_flag=True,
+            help="Overwrite existing generated configuration, regardless of modified status",
+        )
         @click.pass_context
         def apply(ctx, force):
             cli_context: CliContext = ctx.obj
             configuration = ConfigurationManager(cli_context.app_configuration_file)
 
             # Don't allow apply if generated directory is dirty
-            self._block_on_dirty_gen_config(cli_context, force)
+            self._block_on_existing_dirty_generated_config(cli_context, force)
 
             hooks = self.cli_configuration.hooks
             logger.debug("Running pre-configure apply hook")
             hooks.pre_configure_apply(ctx)
 
             # Commit the changes made to the conf repo
-            ConfigurationRepository(cli_context).commit_changes()
+            ConfigurationGitRepository(cli_context).commit_changes()
             self.__generate_configuration_files(configuration, cli_context)
 
             logger.debug("Running post-configure apply hook")
             hooks.post_configure_apply(ctx)
+
+            logger.info("Finished configure apply")
 
         self.commands = {"configure": configure}
 
@@ -301,14 +206,18 @@ class ConfigureCli:
                 shutil.copy2(source_file, target_file)
 
         # After initialising the configuration directory, put it under source control
-        ConfigurationRepository(cli_context).init()
+        ConfigurationGitRepository(cli_context).init()
 
     def __generate_configuration_files(
         self, configuration: Configuration, cli_context: CliContext
     ):
         self.__print_header(f"Generating configuration files")
         generated_configuration_dir = cli_context.generated_configuration_dir
-        shutil.rmtree(generated_configuration_dir, ignore_errors=True)
+
+        # If the generated configuration directory is not empty, back it up and delete
+        if os.listdir(generated_configuration_dir):
+            self._backup_and_remove_directory(generated_configuration_dir)
+
         generated_configuration_dir.mkdir(parents=True, exist_ok=True)
 
         configuration_record_file = generated_configuration_dir.joinpath(
@@ -358,7 +267,38 @@ class ConfigureCli:
         )
         logger.debug("Configuration record written to [%s]", configuration_record_file)
 
-        GeneratedConfigurationRepository(cli_context).init()
+        GeneratedConfigurationGitRepository(cli_context).init()
+
+    def _backup_and_remove_directory(self, source_dir: Path):
+        """Backs up a directory to a tar gzipped file with the current datetimestamp,
+        and deletes the existing directory
+        
+        Args:
+            source_dir (Path): Path to the directory to backup and delete
+        """
+
+        # The datetime is accurate to seconds (microseconds was overkill), and we remove
+        # colon (:) because `tar tvf` doesn't like filenames with those in them
+        current_datetime = (
+            datetime.now().replace(microsecond=0).isoformat().replace(":", "")
+        )
+        basename = os.path.basename(source_dir)
+        output_filename = os.path.join(
+            os.path.dirname(source_dir), f"{basename}.{current_datetime}.tgz"
+        )
+
+        # Create the backup
+        logger.info(
+            f"Backing up current generated configuration directory [{source_dir}] to [{output_filename}]"
+        )
+        with tarfile.open(output_filename, "w:gz") as tar:
+            tar.add(source_dir, arcname=os.path.basename(source_dir))
+
+        # Remove the existing folder
+        shutil.rmtree(source_dir, ignore_errors=True)
+        logger.info(
+            f"Deleted previous generated configuration directory [{source_dir}]"
+        )
 
     def __copy_settings_file_to_generated_dir(self, cli_context: CliContext):
         """Copies the current settings file to the generated directory as a record of what configuration
@@ -377,8 +317,23 @@ class ConfigureCli:
 
         logger.debug("Applied settings written to [%s]", applied_configuration_file)
 
-    def _block_on_dirty_gen_config(self, cli_context: CliContext, force: bool):
-        if GeneratedConfigurationRepository(cli_context).is_dirty():
+    def _block_on_existing_dirty_generated_config(
+        self, cli_context: CliContext, force: bool
+    ):
+    """Checks if the generated configuration directory exists, and whether it's dirty.
+    If it does exist, and is dirty (tracked files only), then this will error and exit.
+    Also provides a mechanism to override this behaviour with a force flag.
+    
+    Args:
+        cli_context (CliContext): the current cli context
+        force (bool): whether to pass this check forcefully
+    """
+        repo: GeneratedConfigurationGitRepository = GeneratedConfigurationGitRepository(
+            cli_context
+        )
+        # If the repository exists, and the repository is dirty (not counting untracked files), then
+        # error out with a --force override possible
+        if repo.repo_exists() and repo.is_dirty(untracked_files=False):
             if not force:
                 error_and_exit(
                     f"Generated configuration repository is dirty, cannot apply. Use --force to override."
