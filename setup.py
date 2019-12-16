@@ -54,13 +54,13 @@ setup(
     install_requires=[
         "click",
         "coloredlogs",
+        "GitPython",
         "jinja2",
         "python-dotenv",
         "python-keycloak",
         "pycryptodome",
         "ruamel-yaml",
         "tabulate",
-        "GitPython",
     ],
     extras_require={"dev": ["pytest",]},
 )

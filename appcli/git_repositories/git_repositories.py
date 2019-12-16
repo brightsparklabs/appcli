@@ -12,7 +12,7 @@ www.brightsparklabs.com
 # # standard library
 import git
 from pathlib import Path
-from typing import List
+from typing import Iterable
 
 # vendor libraries
 import click
@@ -32,7 +32,7 @@ class GitRepository:
     """Class which encapsulates different git repo actions for configuration repositories
     """
 
-    def __init__(self, repo_path: str, ignores: List[str] = None):
+    def __init__(self, repo_path: str, ignores: Iterable[str] = None):
         self.repo_path = repo_path
         self.ignores = ignores
         self.actor: git.Actor = git.Actor(f"cli_managed", "")
@@ -52,23 +52,22 @@ class GitRepository:
         repo = git.Repo.init(self.repo_path)
         logger.debug("Repo initialised at [%s]", repo.working_dir)
         if self.ignores:
-            ignore_file = open(self.repo_path.joinpath(".gitignore"), "w+")
-            for ignore in self.ignores:
-                ignore_file.write(f"{ignore}\n")
-            ignore_file.close()
-            logger.debug("Wrote out .gitignore with ignores: [%s]", self.ignores)
+            with open(self.repo_path.joinpath(".gitignore"), "w+") as ignore_file:
+                for ignore in self.ignores:
+                    ignore_file.write(f"{ignore}\n")
+            logger.debug("Created .gitignore with ignores: [%s]", self.ignores)
             repo.index.add(".gitignore")
 
         # do the initial commit on the repo
         repo.index.add("*")
-        repo.index.commit("Initialising repository", author=self.actor)
+        repo.index.commit("[autocommit] Initialised repository", author=self.actor)
         logger.debug("Initialised repository at [%s].", repo.working_dir)
 
     def commit_changes(self, message: str):
         """Commit the existing changes to the git repository
 
         Args:
-            message (str): A message to include as part of the commit message.
+            message (str): The commit message to use
 
         """
         repo = self._get_repo()
@@ -86,18 +85,14 @@ class GitRepository:
             repo.index.add(".gitignore")
         repo.index.add("*")
 
-        # Get a list of the modified files (added/modified/deleted)
-        changed_files = [diff.a_path for diff in repo.index.diff("HEAD")]
-
-        commit_message = f"{message}\nChanged files: {changed_files}"
-        repo.index.commit(commit_message, author=self.actor)
+        repo.index.commit(message, author=self.actor)
 
     def is_dirty(self, untracked_files: bool = False):
         """Tests if the repository is dirty or not. True if dirty, False if not.
-        
+
         Args:
             untracked_files (bool, optional): Whether the check includes untracked files. Defaults to False.
-        
+
         Returns:
             [bool]: True if repository is considered dirty, False otherwise.
         """
@@ -107,7 +102,7 @@ class GitRepository:
 
     def repo_exists(self):
         """Tests if the underlying repository has been initialised.
-        
+
         Returns:
             [bool]: return True if the repository has been initialised, otherwise False.
         """
@@ -147,4 +142,3 @@ class ConfigurationGitRepository(GitRepository):
 class GeneratedConfigurationGitRepository(GitRepository):
     def __init__(self, cli_context: CliContext):
         super().__init__(cli_context.generated_configuration_dir)
-

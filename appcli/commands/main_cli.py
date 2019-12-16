@@ -21,7 +21,7 @@ import click
 # local libraries
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
-from appcli.functions import error_and_exit, get_metadata_file_directory
+from appcli.functions import error_and_exit, get_generated_configuration_metadata_file
 from appcli.models.configuration import Configuration
 from appcli.git_repositories.git_repositories import (
     ConfigurationGitRepository,
@@ -47,14 +47,11 @@ class MainCli:
         # PUBLIC METHODS
         # ----------------------------------------------------------------------
 
-        @click.command(
-            help="Starts the system.\n\nOptionally specify CONTAINER to start only specific containers.",
-            context_settings=dict(ignore_unknown_options=True),
-        )
+        @click.command(help="Starts the system.")
         @click.option(
             "--force",
             is_flag=True,
-            help="Force start by ignoring configuration mis-configurations",
+            help="Force start even if generated configuration is out of date",
         )
         @click.pass_context
         def start(ctx, force):
@@ -64,7 +61,7 @@ class MainCli:
             hooks.pre_start(ctx)
 
             cli_context: CliContext = ctx.obj
-            self._pre_start_configuration_repository_checks(cli_context, force=force)
+            self.__pre_start_configuration_repository_checks(cli_context, force=force)
 
             logger.info("Starting %s ...", configuration.app_name)
             result = self.orchestrator.start(ctx.obj)
@@ -112,120 +109,82 @@ class MainCli:
                 orchestrator.add_command(command)
             self.commands.update({"orchestrator": orchestrator})
 
-    def _pre_start_configuration_repository_checks(
+    def __pre_start_configuration_repository_checks(
         self, cli_context: CliContext, force: bool = False
     ):
-        """Validate configuration repository states
-        
+        """Ensures the system is in a valid state for startup.
+
         Args:
             cli_context (CliContext): the current cli context
             force (bool, optional): If False, will only warn on error. On True will error and exit on error. Defaults to False.
         """
-        logger.info("Start pre-start configuration repository checks")
+        logger.info("Checking system configuration is valid ...")
 
         config_repo = ConfigurationGitRepository(cli_context)
         generated_config_repo = GeneratedConfigurationGitRepository(cli_context)
 
-        # If either of the configuration repos do not exist, we block start.
-        self._confirm_configuration_directories_exist(
-            config_repo, generated_config_repo
-        )
-
-        # If the configuration repository states are incorrect, can still optionally force the start.
-        self._check_configuration_repository_states(
-            cli_context, config_repo, generated_config_repo, force
-        )
-
-        logger.info("Passed pre-start configuration directory checks")
-
-    def _confirm_configuration_directories_exist(
-        self,
-        config_repo: ConfigurationGitRepository,
-        generated_config_repo: GeneratedConfigurationGitRepository,
-    ):
-        """Confirm that the configuration and generated configuration directories exist. Error and exit if either doesn't exist.
-
-        Args:
-            config_repo (ConfigurationGitRepository): the configuration repository to check
-            generated_config_repo (GeneratedConfigurationGitRepository): the generated configuration repository to check
-        """
         errors = []
         if not config_repo.repo_exists():
             errors.append(
-                f"Configuration repository does not exist at [{config_repo.repo_path}]."
+                f"Configuration repository does not exist at [{config_repo.repo_path}]. Please run `configure init`."
             )
         if not generated_config_repo.repo_exists():
             errors.append(
-                f"Generated configuration repository does not exist at [{generated_config_repo.repo_path}]. You may need to run 'configure apply' to fill this repository."
+                f"Generated configuration repository does not exist at [{generated_config_repo.repo_path}]. Please run `configure apply`."
             )
-
         if errors:
-            error_and_exit("\n".join(errors))
+            error_and_exit("Configuration invalid:\n- " + "\n- ".join(errors))
+        logger.info("Configuration directories exist")
 
-        logger.info("Confirmed configuration directories exist")
-
-    def _check_configuration_repository_states(
-        self,
-        cli_context: CliContext,
-        config_repo: ConfigurationGitRepository,
-        generated_config_repo: GeneratedConfigurationGitRepository,
-        force: bool = False,
-    ):
-        """Check the status of the configuration repositories and return any error messages.
-
-        Args:
-            cli_context (CliContext): the current cli context
-            config_repo (ConfigurationGitRepository): the configuration repository to check
-            generated_config_repo (GeneratedConfigurationGitRepository): the generated configuration repository to check
-            force (bool): whether to force (i.e. skip) errors. True to list errors as warnings, or false to exit and error. Defaults to False.
-        """
-
-        errors = []
         # Check if the configuration directory contains unapplied changes
-        logger.debug("Checking if config repo is dirty")
+        logger.debug("Checking for dirty configuration repository ...")
         if config_repo.is_dirty(untracked_files=True):
             errors.append(
-                "Configuration contains un-applied changes. Call 'configure apply' to apply these changes."
+                "Configuration contains changes which have not been applied. Please run `configure apply`."
             )
 
         # Check if the generated configuration repository has manual modifications to tracked files
-        logger.debug("Checking if generated config repo is dirty")
+        logger.debug("Checking for dirty generated configuration repository ...")
         if generated_config_repo.is_dirty(untracked_files=False):
             errors.append(
                 f"Generated configuration at [{generated_config_repo.repo_path}] has been manually modified."
             )
 
-        # Check if the generated configuration is against current configuration commit #
-        logger.debug(
-            "Checking generated config metadata commit # matches config repo commit #"
-        )
-        metadata_file = get_metadata_file_directory(cli_context)
+        # Check if the generated configuration is against current configuration commit
+        logger.debug("Checking generated configuration is up to date ...")
+        metadata_file = get_generated_configuration_metadata_file(cli_context)
         if not os.path.isfile(metadata_file):
-            errors.append(f"Could not find a metadata file at [{metadata_file}]")
+            errors.append(
+                f"Could not find a metadata file at [{metadata_file}]. Please run `configure apply`"
+            )
         else:
             with open(metadata_file, "r") as f:
                 metadata = json.load(f)
                 logger.debug("Metadata from generated configuration: %s", metadata)
 
-            generated_conf_metadata_commit_hash = metadata["configure"]["apply"][
-                "commit_hash"
-            ]
+            generated_commit_hash = metadata["generated_from_commit"]
             configuration_commit_hash = config_repo.get_current_commit_hash()
-            if generated_conf_metadata_commit_hash != configuration_commit_hash:
+            if generated_commit_hash != configuration_commit_hash:
                 errors.append(
                     "Mismatched hashes between applied and current configuration. "
                     + f"Configuration hash: [{configuration_commit_hash}], "
-                    + f"Applied hash: [{generated_conf_metadata_commit_hash}]"
+                    + f"Applied hash: [{generated_commit_hash}]. "
+                    + "Please run `configure apply`."
                 )
 
         if errors:
-            message = "\n".join(errors)
+            error_messages = "\n- ".join(errors)
             if not force:
                 error_and_exit(
-                    message
-                    + "\nOverride these warnings and continue to start by passing the '--force' flag."
+                    f"""System configuration is invalid:
+- {error_messages}
+
+Use the `--force` flag to ignore these issues.
+Otherwise please address the issues and run `start` again."""
                 )
             logger.warn(
-                "Force flag '--force' applied. Overriding the following issues:\n%s",
-                message,
+                "Force flag `--force` applied. Ignoring the following issues:\n- %s",
+                error_messages,
             )
+
+        logger.info("System configuration is valid")

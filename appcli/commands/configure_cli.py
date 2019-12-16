@@ -24,7 +24,7 @@ from jinja2 import Template, StrictUndefined
 
 # local libraries
 from appcli.configuration_manager import ConfigurationManager
-from appcli.functions import error_and_exit, get_metadata_file_directory
+from appcli.functions import error_and_exit, get_generated_configuration_metadata_file
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
@@ -84,32 +84,14 @@ class ConfigureCli:
             logger.debug("Running post-configure init hook")
             hooks.post_configure_init(ctx)
 
-            logger.info("Finished configure init")
-
-        @configure.command(help="Reads a setting from the configuration.")
-        @click.argument("setting")
-        @click.pass_context
-        def get(ctx, setting):
-            cli_context: CliContext = ctx.obj
-            configuration = ConfigurationManager(cli_context.app_configuration_file)
-            print(configuration.get(setting))
-
-        @configure.command(help="Saves a setting to the configuration.")
-        @click.argument("setting")
-        @click.argument("value")
-        @click.pass_context
-        def set(ctx, setting, value):
-            cli_context: CliContext = ctx.obj
-            configuration = ConfigurationManager(cli_context.app_configuration_file)
-            configuration.set(setting, value)
-            configuration.save()
+            logger.info("Finished initialising configuration")
 
         @configure.command(help="Applies the settings from the configuration.")
         @click.option(
             "--message",
             "-m",
             help="Message describing the changes being applied.",
-            default="Commit via appcli.",
+            default="[autocommit] due to `configure apply`",
             type=click.STRING,
         )
         @click.option(
@@ -136,7 +118,25 @@ class ConfigureCli:
             logger.debug("Running post-configure apply hook")
             hooks.post_configure_apply(ctx)
 
-            logger.info("Finished configure apply")
+            logger.info("Finished applying configuration")
+
+        @configure.command(help="Reads a setting from the configuration.")
+        @click.argument("setting")
+        @click.pass_context
+        def get(ctx, setting):
+            cli_context: CliContext = ctx.obj
+            configuration = ConfigurationManager(cli_context.app_configuration_file)
+            print(configuration.get(setting))
+
+        @configure.command(help="Saves a setting to the configuration.")
+        @click.argument("setting")
+        @click.argument("value")
+        @click.pass_context
+        def set(ctx, setting, value):
+            cli_context: CliContext = ctx.obj
+            configuration = ConfigurationManager(cli_context.app_configuration_file)
+            configuration.set(setting, value)
+            configuration.save()
 
         self.commands = {"configure": configure}
 
@@ -215,12 +215,16 @@ class ConfigureCli:
         generated_configuration_dir = cli_context.generated_configuration_dir
 
         # If the generated configuration directory is not empty, back it up and delete
-        if os.listdir(generated_configuration_dir):
+        if os.path.exists(generated_configuration_dir) and os.listdir(
+            generated_configuration_dir
+        ):
             self._backup_and_remove_directory(generated_configuration_dir)
 
         generated_configuration_dir.mkdir(parents=True, exist_ok=True)
 
-        configuration_record_file = get_metadata_file_directory(cli_context)
+        configuration_record_file = get_generated_configuration_metadata_file(
+            cli_context
+        )
         if os.path.exists(configuration_record_file):
             logger.info("Clearing successful configuration record ...")
             os.remove(configuration_record_file)
@@ -252,16 +256,10 @@ class ConfigureCli:
 
         logger.info("Saving successful configuration record ...")
         record = {
-            "configure": {
-                "apply": {
-                    "last_run": datetime.utcnow()
-                    .replace(tzinfo=timezone.utc)
-                    .isoformat(),
-                    "commit_hash": ConfigurationGitRepository(
-                        cli_context
-                    ).get_current_commit_hash(),
-                }
-            }
+            "generated_at": datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(),
+            "generated_from_commit": ConfigurationGitRepository(
+                cli_context
+            ).get_current_commit_hash(),
         }
         configuration_record_file.write_text(
             json.dumps(record, indent=2, sort_keys=True)
@@ -273,7 +271,7 @@ class ConfigureCli:
     def _backup_and_remove_directory(self, source_dir: Path):
         """Backs up a directory to a tar gzipped file with the current datetimestamp,
         and deletes the existing directory
-        
+
         Args:
             source_dir (Path): Path to the directory to backup and delete
         """
@@ -332,7 +330,7 @@ class ConfigureCli:
         Also provides a mechanism to override this behaviour with a force flag.
         Need to check if the repository exists before checking for dirtiness, otherwise this
         check will fail on an un-initialised repository.
-        
+
         Args:
             cli_context (CliContext): the current cli context
             force (bool): whether to force pass this check and only warn instead of error and exit. Defaults to False.
