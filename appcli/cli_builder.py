@@ -101,7 +101,7 @@ def create_cli(configuration: Configuration):
         "-t",
         help="Environment to run, defaults to 'production'",
         required=False,
-        type=str,
+        type=click.STRING,
         default="production",
     )
     @click.option(
@@ -143,7 +143,7 @@ def create_cli(configuration: Configuration):
             subcommand_args=ctx.obj,
             debug=debug,
             key_file=Path(configuration_dir, "key"),
-            generated_configuration_dir=configuration_dir.joinpath(".generated/conf"),
+            generated_configuration_dir=configuration_dir.joinpath(".generated"),
             app_configuration_file=configuration_dir.joinpath(f"{APP_NAME}.yml"),
             templates_dir=configuration_dir.joinpath("templates"),
             project_name=f"{APP_NAME}_{environment}",
@@ -270,7 +270,7 @@ def create_cli(configuration: Configuration):
             )
 
         for name, value in cli_context.additional_env_variables:
-            command.extend(shlex.split(f"--env {name}=\"{value}\""))
+            command.extend(shlex.split(f'--env {name}="{value}"'))
 
         command.extend(
             shlex.split(
@@ -283,9 +283,9 @@ def create_cli(configuration: Configuration):
             )
         )
         for name, path in cli_context.additional_data_dirs:
-            command.extend(shlex.split(f"--additional-data-dir {name}=\"{path}\""))
+            command.extend(shlex.split(f'--additional-data-dir {name}="{path}"'))
         for name, value in cli_context.additional_env_variables:
-            command.extend(shlex.split(f"--additional-env-var {name}=\"{value}\""))
+            command.extend(shlex.split(f'--additional-env-var {name}="{value}"'))
 
         if cli_context.debug:
             command.append("--debug")

@@ -13,10 +13,20 @@ www.brightsparklabs.com
 import click
 import re
 import sys
+from pathlib import Path
 from typing import Iterable, Any
 
 # local libraries
 from appcli.logger import logger
+from appcli.models.cli_context import CliContext
+
+
+# ------------------------------------------------------------------------------
+# CONSTANTS
+# ------------------------------------------------------------------------------
+
+METADATA_FILE_NAME = "metadata-configure-apply.json"
+""" Name of the file holding metadata from running a configure (relative to the generated configuration directory) """
 
 # ------------------------------------------------------------------------------
 # VARIABLES
@@ -39,6 +49,11 @@ def error_and_exit(message: str):
     """
     logger.error(message)
     sys.exit(1)
+
+
+def get_generated_configuration_metadata_file(cli_context: CliContext) -> Path:
+    generated_configuration_dir = cli_context.generated_configuration_dir
+    return generated_configuration_dir.joinpath(METADATA_FILE_NAME)
 
 
 def extract_valid_environment_variable_names(

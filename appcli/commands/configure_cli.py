@@ -14,6 +14,7 @@ import json
 import os
 import shutil
 import sys
+import tarfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -23,16 +24,14 @@ from jinja2 import Template, StrictUndefined
 
 # local libraries
 from appcli.configuration_manager import ConfigurationManager
+from appcli.functions import error_and_exit, get_generated_configuration_metadata_file
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
-
-# ------------------------------------------------------------------------------
-# CONSTANTS
-# ------------------------------------------------------------------------------
-
-METADATA_FILE_NAME = ".metadata-configure.json"
-""" Name of the file holding metadata from running a configure (relative to the generated configuration directory) """
+from appcli.git_repositories.git_repositories import (
+    ConfigurationGitRepository,
+    GeneratedConfigurationGitRepository,
+)
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -67,7 +66,9 @@ class ConfigureCli:
         def init(ctx):
             self.__print_header(f"Seeding configuration directory for {self.app_name}")
 
-            if not self.__prequisites_met():
+            cli_context: CliContext = ctx.obj
+
+            if not self.__init_prequisites_met(cli_context):
                 logger.error("Prerequisite checks failed")
                 sys.exit(1)
 
@@ -75,9 +76,49 @@ class ConfigureCli:
 
             logger.debug("Running pre-configure init hook")
             hooks.pre_configure_init(ctx)
-            self.__seed_configuration_dir(ctx.obj)
+
+            # Seed the configuration directory
+            logger.debug("Seeding configuration directory")
+            self.__seed_configuration_dir(cli_context)
+
             logger.debug("Running post-configure init hook")
             hooks.post_configure_init(ctx)
+
+            logger.info("Finished initialising configuration")
+
+        @configure.command(help="Applies the settings from the configuration.")
+        @click.option(
+            "--message",
+            "-m",
+            help="Message describing the changes being applied.",
+            default="[autocommit] due to `configure apply`",
+            type=click.STRING,
+        )
+        @click.option(
+            "--force",
+            is_flag=True,
+            help="Overwrite existing generated configuration, regardless of modified status",
+        )
+        @click.pass_context
+        def apply(ctx, message, force):
+            cli_context: CliContext = ctx.obj
+            configuration = ConfigurationManager(cli_context.app_configuration_file)
+
+            # Don't allow apply if generated directory is dirty
+            self._block_on_existing_dirty_generated_config(cli_context, force)
+
+            hooks = self.cli_configuration.hooks
+            logger.debug("Running pre-configure apply hook")
+            hooks.pre_configure_apply(ctx)
+
+            # Commit the changes made to the conf repo
+            ConfigurationGitRepository(cli_context).commit_changes(message)
+            self.__generate_configuration_files(configuration, cli_context)
+
+            logger.debug("Running post-configure apply hook")
+            hooks.post_configure_apply(ctx)
+
+            logger.info("Finished applying configuration")
 
         @configure.command(help="Reads a setting from the configuration.")
         @click.argument("setting")
@@ -97,26 +138,13 @@ class ConfigureCli:
             configuration.set(setting, value)
             configuration.save()
 
-        @configure.command(help="Applies the settings from the configuration.")
-        @click.pass_context
-        def apply(ctx):
-            cli_context: CliContext = ctx.obj
-            configuration = ConfigurationManager(cli_context.app_configuration_file)
-            hooks = self.cli_configuration.hooks
-
-            logger.debug("Running pre-configure apply hook")
-            hooks.pre_configure_apply(ctx)
-            self.__generate_configuration_files(configuration, cli_context)
-            logger.debug("Running post-configure apply hook")
-            hooks.post_configure_apply(ctx)
-
         self.commands = {"configure": configure}
 
     # ------------------------------------------------------------------------------
     # PRIVATE METHODS
     # ------------------------------------------------------------------------------
 
-    def __prequisites_met(self):
+    def __init_prequisites_met(self, cli_context: CliContext):
         logger.info("Checking prerequisites ...")
         result = True
 
@@ -128,6 +156,13 @@ class ConfigureCli:
                 )
                 result = False
 
+        # if the configuration file exists in the config directory, then don't allow init
+        if os.path.isfile(cli_context.app_configuration_file):
+            logger.error(
+                f"Configuration directory already initialised at [{cli_context.configuration_dir}]"
+            )
+            result = False
+
         return result
 
     def __seed_configuration_dir(self, cli_context: CliContext):
@@ -136,11 +171,10 @@ class ConfigureCli:
         logger.info("Copying app configuration file ...")
         seed_app_configuration_file = self.cli_configuration.seed_app_configuration_file
         if not seed_app_configuration_file.is_file():
-            logger.error(
-                "Seed file [%s] is not valid. Release is corrupt.",
-                seed_app_configuration_file,
+            error_and_exit(
+                f"Seed file [{seed_app_configuration_file}] is not valid. Release is corrupt."
             )
-            sys.exit(1)
+
         target_app_configuration_file = cli_context.app_configuration_file
         logger.debug(
             "Copying app configuration file to [%s] ...", target_app_configuration_file
@@ -171,15 +205,25 @@ class ConfigureCli:
                 logger.debug("Copying seed file to [%s] ...", target_file)
                 shutil.copy2(source_file, target_file)
 
+        # After initialising the configuration directory, put it under source control
+        ConfigurationGitRepository(cli_context).init()
+
     def __generate_configuration_files(
         self, configuration: Configuration, cli_context: CliContext
     ):
         self.__print_header(f"Generating configuration files")
         generated_configuration_dir = cli_context.generated_configuration_dir
+
+        # If the generated configuration directory is not empty, back it up and delete
+        if os.path.exists(generated_configuration_dir) and os.listdir(
+            generated_configuration_dir
+        ):
+            self._backup_and_remove_directory(generated_configuration_dir)
+
         generated_configuration_dir.mkdir(parents=True, exist_ok=True)
 
-        configuration_record_file = generated_configuration_dir.joinpath(
-            METADATA_FILE_NAME
+        configuration_record_file = get_generated_configuration_metadata_file(
+            cli_context
         )
         if os.path.exists(configuration_record_file):
             logger.info("Clearing successful configuration record ...")
@@ -212,18 +256,54 @@ class ConfigureCli:
 
         logger.info("Saving successful configuration record ...")
         record = {
-            "configure": {
-                "apply": {
-                    "last_run": datetime.utcnow()
-                    .replace(tzinfo=timezone.utc)
-                    .isoformat()
-                }
-            }
+            "generated_at": datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(),
+            "generated_from_commit": ConfigurationGitRepository(
+                cli_context
+            ).get_current_commit_hash(),
         }
         configuration_record_file.write_text(
             json.dumps(record, indent=2, sort_keys=True)
         )
         logger.debug("Configuration record written to [%s]", configuration_record_file)
+
+        GeneratedConfigurationGitRepository(cli_context).init()
+
+    def _backup_and_remove_directory(self, source_dir: Path):
+        """Backs up a directory to a tar gzipped file with the current datetimestamp,
+        and deletes the existing directory
+
+        Args:
+            source_dir (Path): Path to the directory to backup and delete
+        """
+
+        # The datetime is accurate to seconds (microseconds was overkill), and we remove
+        # colon (:) because `tar tvf` doesn't like filenames with colons
+        current_datetime = (
+            datetime.now().replace(microsecond=0).isoformat().replace(":", "")
+        )
+        basename = os.path.basename(source_dir)
+        output_filename = os.path.join(
+            os.path.dirname(source_dir), f"{basename}.{current_datetime}.tgz"
+        )
+
+        # Create the backup
+        logger.info(
+            f"Backing up current generated configuration directory [{source_dir}] to [{output_filename}]"
+        )
+        with tarfile.open(output_filename, "w:gz") as tar:
+            tar.add(source_dir, arcname=os.path.basename(source_dir))
+
+        # Ensure the backup has been successfully created before deleting the existing generated configuration directory
+        if not os.path.exists(output_filename):
+            error_and_exit(
+                f"Current generated configuration directory backup failed. Could not write out file [{output_filename}]."
+            )
+
+        # Remove the existing directory
+        shutil.rmtree(source_dir, ignore_errors=True)
+        logger.info(
+            f"Deleted previous generated configuration directory [{source_dir}]"
+        )
 
     def __copy_settings_file_to_generated_dir(self, cli_context: CliContext):
         """Copies the current settings file to the generated directory as a record of what configuration
@@ -241,6 +321,33 @@ class ConfigureCli:
         shutil.copy2(cli_context.app_configuration_file, applied_configuration_file)
 
         logger.debug("Applied settings written to [%s]", applied_configuration_file)
+
+    def _block_on_existing_dirty_generated_config(
+        self, cli_context: CliContext, force: bool = False
+    ):
+        """Checks if the generated configuration directory exists, and whether it's dirty.
+        If it does exist, and is dirty (tracked files only), then this will error and exit.
+        Also provides a mechanism to override this behaviour with a force flag.
+        Need to check if the repository exists before checking for dirtiness, otherwise this
+        check will fail on an un-initialised repository.
+
+        Args:
+            cli_context (CliContext): the current cli context
+            force (bool): whether to force pass this check and only warn instead of error and exit. Defaults to False.
+        """
+        repo: GeneratedConfigurationGitRepository = GeneratedConfigurationGitRepository(
+            cli_context
+        )
+        # If the repository exists, and the repository is dirty (not counting untracked files), then
+        # error out with a --force override possible
+        if repo.repo_exists() and repo.is_dirty(untracked_files=False):
+            if not force:
+                error_and_exit(
+                    f"Generated configuration repository is dirty, cannot apply. Use --force to override."
+                )
+            logger.info(
+                "Dirty generated configuration repository overwritten due to --force flag."
+            )
 
     def __print_header(self, title):
         logger.info(

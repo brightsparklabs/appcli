@@ -54,6 +54,7 @@ setup(
     install_requires=[
         "click",
         "coloredlogs",
+        "GitPython",
         "jinja2",
         "python-dotenv",
         "python-keycloak",
