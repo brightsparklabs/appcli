@@ -61,7 +61,7 @@ class ConfigureCli:
 
             click.echo(ctx.get_help())
 
-        @configure.command(help="Seeds the configuration directory")
+        @configure.command(help="Initialises the configuration directory")
         @click.pass_context
         def init(ctx):
             self.__print_header(f"Seeding configuration directory for {self.app_name}")
@@ -78,7 +78,7 @@ class ConfigureCli:
             hooks.pre_configure_init(ctx)
 
             # Seed the configuration directory
-            logger.debug("Seeding configuration directory")
+            logger.debug("Initialising configuration directory")
             self.__seed_configuration_dir(cli_context)
 
             logger.debug("Running post-configure init hook")
@@ -111,12 +111,17 @@ class ConfigureCli:
             logger.debug("Running pre-configure apply hook")
             hooks.pre_configure_apply(ctx)
 
-            # Commit the changes made to the conf repo
+            # Commit the changes made to the config repo
             ConfigurationGitRepository(cli_context).commit_changes(message)
+
+            logger.debug("Applying configuration")
             self.__generate_configuration_files(configuration, cli_context)
 
             logger.debug("Running post-configure apply hook")
             hooks.post_configure_apply(ctx)
+
+            # Put the generated config repo under version control
+            GeneratedConfigurationGitRepository(cli_context).init()
 
             logger.info("Finished applying configuration")
 
@@ -265,8 +270,6 @@ class ConfigureCli:
             json.dumps(record, indent=2, sort_keys=True)
         )
         logger.debug("Configuration record written to [%s]", configuration_record_file)
-
-        GeneratedConfigurationGitRepository(cli_context).init()
 
     def _backup_and_remove_directory(self, source_dir: Path):
         """Backs up a directory to a tar gzipped file with the current datetimestamp,

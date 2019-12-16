@@ -83,6 +83,15 @@ class Orchestrator:
         """
         return ()
 
+    def get_name(self) -> str:
+        """
+        Returns the name of this orchestrator.
+
+        Returns:
+            str: the name of this orchestrator.
+        """
+        raise NotImplementedError
+
 
 class DockerComposeOrchestrator(Orchestrator):
     """
@@ -145,6 +154,9 @@ class DockerComposeOrchestrator(Orchestrator):
             ps,
             compose,
         )
+
+    def get_name(self):
+        return "compose"
 
     def __compose(
         self, cli_context: CliContext, command: Iterable[str]
@@ -228,6 +240,9 @@ class DockerSwarmOrchestrator(Orchestrator):
             sys.exit(result.returncode)
 
         return (ps, ls)
+
+    def get_name(self):
+        return "swarm"
 
     def __docker_stack(
         self, cli_context: CliContext, subcommand: Iterable[str]
