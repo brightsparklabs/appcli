@@ -10,7 +10,6 @@ www.brightsparklabs.com
 """
 
 # standard libraries
-from os import linesep
 import re
 from pathlib import Path
 

@@ -16,12 +16,12 @@ import subprocess
 import sys
 from math import floor
 from pathlib import Path
-from typing import Iterable
+from typing import Dict, Iterable
 from time import time
-from tabulate import tabulate
 
 # vendor libraries
 import click
+from tabulate import tabulate
 
 # local libraries
 from appcli.commands.configure_cli import ConfigureCli
@@ -47,7 +47,7 @@ BASE_DIR = Path(__file__).parent
 # ------------------------------------------------------------------------------
 
 
-def create_cli(configuration: Configuration):
+def create_cli(configuration: Configuration, desired_environment: Dict[str, str] = {}):
     """Build the CLI to be run
 
     Args:
@@ -160,6 +160,20 @@ def create_cli(configuration: Configuration):
             # Don't execute this function any further, continue to run subcommand with the current cli context
             return
 
+        # attempt to set desired environment
+        initialised_environment = {}
+        for k, v in desired_environment.items():
+            if v is None:
+                logger.warning("Environment variable [%s] has not been set", k)
+            else:
+                logger.debug("Exporting environment variable [%s]", k)
+                os.environ[k] = v
+                initialised_environment[k] = v
+        if len(initialised_environment) != len(desired_environment):
+            error_and_exit(
+                "Could not set desired environment. Please ensure specified environment variables are set."
+            )
+
         check_docker_socket()
         relaunch_if_required(ctx)
         check_environment()
@@ -268,6 +282,9 @@ def create_cli(configuration: Configuration):
                     """
                 )
             )
+
+        for name, value in desired_environment.items():
+            command.extend(shlex.split(f'--env {name}="{value}"'))
 
         for name, value in cli_context.additional_env_variables:
             command.extend(shlex.split(f'--env {name}="{value}"'))
