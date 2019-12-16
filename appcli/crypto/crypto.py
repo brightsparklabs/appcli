@@ -18,6 +18,7 @@ from Crypto.Random import get_random_bytes
 
 # local libraries
 from appcli.crypto.cipher import Cipher
+from appcli.logger import logger
 
 
 def create_key() -> bytes:
@@ -29,6 +30,7 @@ def create_and_save_key(key_file: Path):
         raise FileExistsError(
             f"Cannot create keyfile at [{key_file.absolute().as_posix()}] as a file already exists at this path."
         )
+    logger.debug("Creating key file at [%s]", key_file)
     key_file.write_bytes(create_key())
 
 

@@ -14,9 +14,6 @@ import git
 from pathlib import Path
 from typing import Iterable
 
-# vendor libraries
-import click
-
 # local libraries
 from appcli.functions import error_and_exit
 from appcli.logger import logger
@@ -35,12 +32,12 @@ class GitRepository:
     def __init__(self, repo_path: str, ignores: Iterable[str] = None):
         self.repo_path = repo_path
         self.ignores = ignores
-        self.actor: git.Actor = git.Actor(f"cli_managed", "")
+        self.actor: git.Actor = git.Actor(f"appcli", "root@localhost")
 
     def init(self):
         """Initialise the git repository, create .gitignore if required, and commit the initial files
         """
-        logger.debug("Initialising repository at [%s]", self.repo_path)
+        logger.info("Initialising repository at [%s] ...", self.repo_path)
 
         # Confirm that a repo doesn't already exist at this directory
         if self.repo_exists():
@@ -50,18 +47,18 @@ class GitRepository:
 
         # git init, and write to the .gitignore file
         repo = git.Repo.init(self.repo_path)
-        logger.debug("Repo initialised at [%s]", repo.working_dir)
+        logger.debug("Initialised repository at [%s]", repo.working_dir)
         if self.ignores:
             with open(self.repo_path.joinpath(".gitignore"), "w+") as ignore_file:
                 for ignore in self.ignores:
                     ignore_file.write(f"{ignore}\n")
-            logger.debug("Created .gitignore with ignores: [%s]", self.ignores)
+            logger.debug("Created .gitignore with ignores: %s", self.ignores)
             repo.index.add(".gitignore")
 
         # do the initial commit on the repo
         repo.index.add("*")
         repo.index.commit("[autocommit] Initialised repository", author=self.actor)
-        logger.debug("Initialised repository at [%s].", repo.working_dir)
+        logger.debug("Committed repository at [%s]", repo.working_dir)
 
     def commit_changes(self, message: str):
         """Commit the existing changes to the git repository
@@ -109,7 +106,7 @@ class GitRepository:
         try:
             git.Repo(self.repo_path)
             return True
-        except:
+        except Exception:
             return False
 
     def get_current_commit_hash(self):
@@ -123,7 +120,7 @@ class GitRepository:
         """
         try:
             repo = git.Repo(self.repo_path)
-        except:
+        except Exception:
             error_and_exit(f"No git repo found at [{self.repo_path}]")
 
         return repo

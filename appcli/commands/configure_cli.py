@@ -24,6 +24,7 @@ from jinja2 import Template, StrictUndefined
 
 # local libraries
 from appcli.configuration_manager import ConfigurationManager
+from appcli.crypto.crypto import create_and_save_key
 from appcli.functions import error_and_exit, get_generated_configuration_metadata_file
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
@@ -81,8 +82,14 @@ class ConfigureCli:
             logger.debug("Initialising configuration directory")
             self.__seed_configuration_dir(cli_context)
 
+            # Create an encryption key
+            create_and_save_key(cli_context.key_file)
+
             logger.debug("Running post-configure init hook")
             hooks.post_configure_init(ctx)
+
+            # After initialising the configuration directory, put it under source control
+            ConfigurationGitRepository(cli_context).init()
 
             logger.info("Finished initialising configuration")
 
@@ -209,9 +216,6 @@ class ConfigureCli:
             else:
                 logger.debug("Copying seed file to [%s] ...", target_file)
                 shutil.copy2(source_file, target_file)
-
-        # After initialising the configuration directory, put it under source control
-        ConfigurationGitRepository(cli_context).init()
 
     def __generate_configuration_files(
         self, configuration: Configuration, cli_context: CliContext
