@@ -62,5 +62,5 @@ setup(
         "ruamel-yaml",
         "tabulate",
     ],
-    extras_require={"dev": ["pytest",]},
+    extras_require={"dev": ["black", "flake8", "isort", "pytest"]},
 )

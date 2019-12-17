@@ -156,16 +156,14 @@ environment.
 
 The following must be installed and in the `PATH`:
 
+- make
 - python 3.7+
 - virtualenv
 - git
 
 ### Build
 
-    python -m venv .venv
-    . .venv/bin/activate
-    # install dev dependencies for unit testing
-    pip install -e '.[dev]'
+    make all
 
 ### Install
 
@@ -173,11 +171,7 @@ The following must be installed and in the `PATH`:
 
 ### Running unit tests
 
-We are running tests using `pytest`. To run these, ensure you have done
-`pip install -e '.[dev]'`, then at the root of the repo, run:
-
-    pytest
-
+    make test
 
 ## Contributing
 
