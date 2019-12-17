@@ -9,17 +9,16 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-# standard libraries
-import click
 import re
 import sys
 from pathlib import Path
-from typing import Iterable, Any
+
+# standard libraries
+import click
 
 # local libraries
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
-
 
 # ------------------------------------------------------------------------------
 # CONSTANTS

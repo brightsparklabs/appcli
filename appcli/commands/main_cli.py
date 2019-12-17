@@ -18,14 +18,14 @@ import sys
 import click
 
 # local libraries
-from appcli.logger import logger
-from appcli.models.cli_context import CliContext
 from appcli.functions import error_and_exit, get_generated_configuration_metadata_file
-from appcli.models.configuration import Configuration
 from appcli.git_repositories.git_repositories import (
     ConfigurationGitRepository,
     GeneratedConfigurationGitRepository,
 )
+from appcli.logger import logger
+from appcli.models.cli_context import CliContext
+from appcli.models.configuration import Configuration
 
 # ------------------------------------------------------------------------------
 # CLASSES

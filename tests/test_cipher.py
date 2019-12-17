@@ -9,14 +9,15 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
+# standard libraries
+from pathlib import Path
+
 # vendor libraries
 import pytest
-from pathlib import Path
 
 # local libraries
 from appcli.crypto import crypto
 from appcli.crypto.cipher import Cipher
-
 
 # ------------------------------------------------------------------------------
 # TESTS

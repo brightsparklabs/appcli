@@ -21,19 +21,19 @@ from typing import Iterable
 
 # vendor libraries
 import click
-from jinja2 import Template, StrictUndefined
+from jinja2 import StrictUndefined, Template
 
 # local libraries
 from appcli.configuration_manager import ConfigurationManager
 from appcli.crypto.crypto import create_and_save_key, decrypt_values_in_file
 from appcli.functions import error_and_exit, get_generated_configuration_metadata_file
-from appcli.logger import logger
-from appcli.models.cli_context import CliContext
-from appcli.models.configuration import Configuration
 from appcli.git_repositories.git_repositories import (
     ConfigurationGitRepository,
     GeneratedConfigurationGitRepository,
 )
+from appcli.logger import logger
+from appcli.models.cli_context import CliContext
+from appcli.models.configuration import Configuration
 
 # ------------------------------------------------------------------------------
 # CLASSES

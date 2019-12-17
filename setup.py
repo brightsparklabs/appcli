@@ -12,10 +12,10 @@ www.brightsparklabs.com
 # to use a consistent encoding
 from codecs import open
 from os import path
-from subprocess import run, PIPE
+from subprocess import PIPE, run
 
 # always prefer setuptools over distutils
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 # ------------------------------------------------------------------------------
 # UTILITY FUNCTIONS

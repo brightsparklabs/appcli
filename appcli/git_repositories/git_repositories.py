@@ -9,16 +9,17 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-# # standard library
-import git
+# standard library
 from pathlib import Path
 from typing import Iterable
+
+# vendor libraries
+import git
 
 # local libraries
 from appcli.functions import error_and_exit
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
-
 
 # ------------------------------------------------------------------------------
 # PRIVATE CLASSES

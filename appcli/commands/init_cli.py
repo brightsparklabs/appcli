@@ -13,8 +13,8 @@ www.brightsparklabs.com
 import click
 
 # local libraries
-from appcli.models.configuration import Configuration
 from appcli.keycloak_manager import KeycloakManager
+from appcli.models.configuration import Configuration
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
@@ -36,7 +36,7 @@ class InitCli:
         @click.group(invoke_without_command=True, help="Initialises the application.")
         @click.pass_context
         def init(ctx):
-            if not ctx.invoked_subcommand is None:
+            if ctx.invoked_subcommand is not None:
                 # subcommand provided
                 return
 

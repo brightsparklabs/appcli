@@ -11,13 +11,11 @@ www.brightsparklabs.com
 
 # standard libraries
 import json
-import logging
 
 # vendor libraries
 from keycloak import KeycloakAdmin
-from keycloak.exceptions import raise_error_from_response, KeycloakGetError
+from keycloak.exceptions import KeycloakGetError, raise_error_from_response
 from keycloak.urls_patterns import URL_ADMIN_REALM_ROLES
-import coloredlogs
 
 # local libraries
 from appcli.logger import logger

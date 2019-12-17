@@ -10,14 +10,11 @@ www.brightsparklabs.com
 """
 
 # standard library
-import io
-import logging
 import sys
 from functools import reduce
 from pathlib import Path
 
 # vendor libraries
-import coloredlogs
 from ruamel.yaml import YAML
 
 # local libraries
@@ -50,7 +47,7 @@ class ConfigurationManager:
         """
         try:
             return reduce(lambda e, k: e[k], path.split("."), self.configuration)
-        except:
+        except Exception:
             return ""
 
     def get_as_dict(self):
@@ -68,7 +65,7 @@ class ConfigurationManager:
 
         # ensure parent path exists
         def ensure_path(parent, child):
-            if not child in parent:
+            if child not in parent:
                 parent[child] = {}
             return parent[child]
 

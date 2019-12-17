@@ -3,8 +3,8 @@
 
 # standard libraries
 from pathlib import Path
-from typing import Callable, FrozenSet, Iterable, NamedTuple, Tuple
 from subprocess import CompletedProcess
+from typing import Callable, FrozenSet, Iterable, NamedTuple, Tuple
 
 # vendor libraries
 import click

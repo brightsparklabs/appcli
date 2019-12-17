@@ -9,9 +9,7 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-# vendor libraries
-import pytest
-from os import linesep
+# standard libraries
 from pathlib import Path
 
 # local libraries

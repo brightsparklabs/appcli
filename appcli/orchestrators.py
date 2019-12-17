@@ -9,12 +9,13 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
+import sys
+
 # standard libraries
 from pathlib import Path
+from subprocess import CompletedProcess, run
 from tempfile import NamedTemporaryFile
 from typing import Iterable
-from subprocess import CompletedProcess, run
-import sys
 
 # vendor libraries
 import click

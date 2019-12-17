@@ -16,8 +16,8 @@ import subprocess
 import sys
 from math import floor
 from pathlib import Path
-from typing import Dict, Iterable
 from time import time
+from typing import Dict, Iterable
 
 # vendor libraries
 import click
@@ -30,8 +30,8 @@ from appcli.commands.init_cli import InitCli
 from appcli.commands.install_cli import InstallCli
 from appcli.commands.launcher_cli import LauncherCli
 from appcli.commands.main_cli import MainCli
-from appcli.functions import extract_valid_environment_variable_names, error_and_exit
-from appcli.logger import logger, enable_debug_logging
+from appcli.functions import error_and_exit, extract_valid_environment_variable_names
+from appcli.logger import enable_debug_logging, logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
 

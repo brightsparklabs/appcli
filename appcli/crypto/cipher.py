@@ -10,9 +10,9 @@ www.brightsparklabs.com
 """
 
 # standard libraries
-from enum import Enum, unique
 import json
-from base64 import b64encode, b64decode
+from base64 import b64decode, b64encode
+from enum import Enum, unique
 from pathlib import Path
 
 # vendor libraries

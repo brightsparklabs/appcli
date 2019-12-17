@@ -89,7 +89,7 @@ class InstallCli:
         # Check all mandatory environment variables are set
         for env_variable in self.mandatory_env_variables:
             value = os.environ.get(env_variable)
-            if value == None:
+            if value is None:
                 logger.error(
                     "Mandatory environment variable is not defined [%s]", env_variable
                 )
