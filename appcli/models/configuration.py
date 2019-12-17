@@ -61,7 +61,7 @@ class Configuration(NamedTuple):
     hooks: Hooks = Hooks()
     """ Optional. Hooks to run before/after stages. """
 
-    custom_commands: Iterable[Callable] = []
+    custom_commands: Iterable[Callable] = frozenset()
     """
     Optional. Extra click commands to add to the CLI. Can be group or specific commands.
     """
@@ -74,4 +74,12 @@ class Configuration(NamedTuple):
     mandatory_additional_env_variables: FrozenSet[Tuple[str, Path]] = frozenset()
     """
     Optional. Additional environment variables which must be supplied.
+    """
+
+    decrypt_generated_files: Iterable[str] = frozenset()
+    """
+    Optional. Generated files which should be forcibly decrypted. It is
+    generally bad practice to do this unless a post hook re-encrypts the
+    generated files. Paths are relative and will be resolved against the
+    generated configuration directory.
     """

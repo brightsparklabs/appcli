@@ -17,6 +17,7 @@ import sys
 import tarfile
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Iterable
 
 # vendor libraries
 import click
@@ -24,7 +25,7 @@ from jinja2 import Template, StrictUndefined
 
 # local libraries
 from appcli.configuration_manager import ConfigurationManager
-from appcli.crypto.crypto import create_and_save_key
+from appcli.crypto.crypto import create_and_save_key, decrypt_values_in_file
 from appcli.functions import error_and_exit, get_generated_configuration_metadata_file
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
@@ -261,6 +262,14 @@ class ConfigureCli:
                 logger.info("Copying configuration file to [%s] ...", target_file)
                 shutil.copy2(template_file, target_file)
 
+        files_to_decrypt = self.cli_configuration.decrypt_generated_files
+        if len(files_to_decrypt) > 0:
+            self.__decrypt_generated_files(
+                cli_context.key_file,
+                cli_context.generated_configuration_dir,
+                files_to_decrypt,
+            )
+
         self.__copy_settings_file_to_generated_dir(cli_context)
 
         logger.info("Saving successful configuration record ...")
@@ -311,6 +320,25 @@ class ConfigureCli:
         logger.info(
             f"Deleted previous generated configuration directory [{source_dir}]"
         )
+
+    def __decrypt_generated_files(
+        self, key_file: Path, generated_config_dir: Path, files: Iterable[str]
+    ):
+        """
+        Decrypts the specified files in the generated configuration
+        directory. The current encrypted version will be overwritten by the
+        decrypted version.
+
+        Args:
+            key_file (Path): Key file to use when decrypting.
+            generated_config_dir (Path): Path to the generated configuration directory.
+            files (Iterable[str]): Relative path to the files to decrypt. Resolved against the generated configuration directory.
+        """
+        for relative_file in files:
+            # decrypt and overwrite the file
+            target_file = generated_config_dir.joinpath(relative_file)
+            logger.debug("Decrypting [%s] ...", target_file)
+            decrypt_values_in_file(target_file, target_file, key_file)
 
     def __copy_settings_file_to_generated_dir(self, cli_context: CliContext):
         """Copies the current settings file to the generated directory as a record of what configuration
@@ -365,8 +393,17 @@ class ConfigureCli:
         )
 
     def __generate_from_template(
-        self, template_file: Path, target_file: Path, configuration: Configuration
+        self, template_file: Path, target_file: Path, variables: dict
     ):
+        """
+        Generate configuration file from the specified template file using
+        the supplied variables.
+
+        Args:
+            template_file (Path): Template used to generate the file.
+            target_file (Path): Location to write the generated file to.
+            variables (dict): Variables used to populate the template.
+        """
         template = Template(
             template_file.read_text(),
             undefined=StrictUndefined,
@@ -374,7 +411,7 @@ class ConfigureCli:
             lstrip_blocks=True,
         )
         try:
-            output_text = template.render(configuration)
+            output_text = template.render(variables)
             target_file.write_text(output_text)
         except Exception as e:
             logger.error(
