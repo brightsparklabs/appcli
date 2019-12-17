@@ -13,7 +13,6 @@ www.brightsparklabs.com
 import json
 import os
 import sys
-from typing import List
 
 # vendor libraries
 import click
@@ -165,11 +164,13 @@ class MainCli:
             generated_commit_hash = metadata["generated_from_commit"]
             configuration_commit_hash = config_repo.get_current_commit_hash()
             if generated_commit_hash != configuration_commit_hash:
+                logger.debug(
+                    "Generated configuration hash [%s] does not match configuration hash [%s]",
+                    generated_commit_hash,
+                    configuration_commit_hash,
+                )
                 errors.append(
-                    "Mismatched hashes between applied and current configuration. "
-                    + f"Configuration hash: [{configuration_commit_hash}], "
-                    + f"Applied hash: [{generated_commit_hash}]. "
-                    + "Please run `configure apply`."
+                    "Generated configuration is out of date. Please run `configure apply`."
                 )
 
         if errors:
