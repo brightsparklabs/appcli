@@ -12,16 +12,27 @@ www.brightsparklabs.com
 """
 
 # standard library
+import datetime
+import importlib.resources as pkg_resources
 import os
 
 # vendor libraries
 import click
+from jinja2 import StrictUndefined, Template
 
 # local libraries
 from appcli.functions import extract_valid_environment_variable_names
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
+from appcli import templates
+
+# ------------------------------------------------------------------------------
+# CONSTANTS
+# ------------------------------------------------------------------------------
+
+LAUNCHER_TEMPLATE_FILENAME = "launcher.j2"
+""" The filename of the launcher template """
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -39,49 +50,47 @@ class LauncherCli:
         self.configuration: Configuration = configuration
 
         @click.command(help="Outputs an appropriate launcher bash script to stdout")
-        @click.option(
-            "--launcher-env-var",
-            "-e",
-            help="Environment variables to set in the launcher command output. Can be specified multiple times.",
-            type=str,
-            multiple=True,
-            callback=extract_valid_environment_variable_names,
-        )
         @click.pass_context
-        def launcher(ctx, launcher_env_var):
+        def launcher(ctx):
             logger.info("Generating launcher script ...")
-            cli_context: CliContext = ctx.obj
-            APP_VERSION = os.environ.get("APP_VERSION", "latest")
-            APP_NAME_UPPERCASE = configuration.app_name.upper()
 
-            # Variables are defaulted in the script so that they can be overridden if desired
-            print(
-                f"""
-#!/bin/bash
+            # Get the template from the appcli package
+            launcher_template = pkg_resources.read_text(
+                templates, LAUNCHER_TEMPLATE_FILENAME
+            )
+            logger.debug(f"Read template file [{LAUNCHER_TEMPLATE_FILENAME}]")
 
-docker run \\
-    --name osmosis_{cli_context.environment}_launcher_$(date +%s) \\
-    --rm \\
-    --interactive \\
-    --tty \\"""
+            # TODO: Pass through from CLI builder
+            desired_environment = {}
+
+            render_variables = {
+                "app_version": os.environ.get("APP_VERSION", "latest"),
+                "app_name": configuration.app_name.upper(),
+                "cli_context": ctx.obj,
+                "configuration": self.configuration,
+                "current_datetime": datetime.datetime.now(),
+                "desired_environment": desired_environment,
+            }
+
+            logger.debug(
+                f"Rendering template with render variables: [{render_variables}]"
             )
 
-            for name, value in launcher_env_var:
-                print(f'    --env {name}="{value}" \\')
-
-            print(
-                f"""    --volume /var/run/docker.sock:/var/run/docker.sock \\
-    {self.configuration.docker_image}:{APP_VERSION} \\
-        --configuration-dir "${{{APP_NAME_UPPERCASE}_CONFIG_DIR:-{cli_context.configuration_dir}}}" \\
-        --data-dir "${{{APP_NAME_UPPERCASE}_DATA_DIR:-{cli_context.data_dir}}}" \\
-        --environment "${{{APP_NAME_UPPERCASE}_ENVIRONMENT:-{cli_context.environment}}}" \\"""
+            template = Template(
+                launcher_template,
+                undefined=StrictUndefined,
+                trim_blocks=True,
+                lstrip_blocks=True,
             )
-
-            for name, path in cli_context.additional_data_dirs:
-                print(f'        --additional-data-dir {name}="{path}" \\')
-            for name, value in cli_context.additional_env_variables:
-                print(f'        --additional-env-var {name}="{value}" \\')
-            print("        $@")
+            try:
+                output_text = template.render(render_variables)
+                print(output_text)
+            except Exception as e:
+                logger.error(
+                    "Could not generate file from template. The configuration file is likely missing a setting: %s",
+                    e,
+                )
+                exit(1)
 
         # expose the cli command
         self.commands = {"launcher": launcher}

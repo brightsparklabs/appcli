@@ -100,14 +100,16 @@ class DockerComposeOrchestrator(Orchestrator):
     """
 
     def __init__(
-        self, docker_compose_file: Path, docker_compose_override_files: Iterable[Path]
+        self,
+        docker_compose_file: Path,
+        docker_compose_override_files: Iterable[Path] = [],
     ):
         """
         Creates a new instance.
 
         Args:
             docker_compose_file (Path): Path to a `docker-compose.yml` file relative to the generated configuration directory.
-            docker_compose_override_files (Iterable[Path]): Paths to any additional docker-compose override files relative to the generated configuration directory.
+            docker_compose_override_files (Iterable[Path], optional): Paths to any additional docker-compose override files relative to the generated configuration directory.
         """
         self.docker_compose_file = docker_compose_file
         self.docker_compose_override_files = docker_compose_override_files
@@ -186,14 +188,16 @@ class DockerSwarmOrchestrator(Orchestrator):
     """
 
     def __init__(
-        self, docker_compose_file: Path, docker_compose_override_files: Iterable[Path]
+        self,
+        docker_compose_file: Path,
+        docker_compose_override_files: Iterable[Path] = [],
     ):
         """
         Creates a new instance.
 
         Args:
             docker_compose_file (Path): Path to a `docker-compose.yml` file relative to the generated configuration directory.
-            docker_compose_override_files (Iterable[Path]): Paths to any additional docker-compose override files relative to the generated configuration directory.
+            docker_compose_override_files (Iterable[Path], optional): Paths to any additional docker-compose override files relative to the generated configuration directory.
         """
         self.docker_compose_file = docker_compose_file
         self.docker_compose_override_files = docker_compose_override_files

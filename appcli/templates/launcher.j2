@@ -1,42 +1,23 @@
 #!/usr/bin/env bash
 
 ##
- # Wrapper to launch the {{ app_name.capitalize() }} container.
+ # Wrapper to launch {{ app_name }}.
  #
  # Application version: v{{ app_version }}
- # Template version: v1.0
  # _____________________________________________________________________________
  #
- # Created by brightSPARK Labs
- # www.brightsparklabs.com
+ # Generated at {{ current_datetime }}
  ##
 
 # ------------------------------------------------------------------------------
-# CONSTANT
+# VARIABLES
 # ------------------------------------------------------------------------------
 
-# directory containing this script
-readonly BASE_DIR=$(cd "$(dirname $0)" && pwd)
-
-# {{ app_name.lower() }} home directory on the physical host
-readonly {{ app_name.upper() }}_EXT_{{ app_name.upper() }}_HOME=${BASE_DIR}
-export {{ app_name.upper() }}_EXT_{{ app_name.upper() }}_HOME
-
-# {{ app_name.lower() }} version
-readonly {{ app_name.upper() }}_VERSION={{ app_version }}
-
-# {{ app_name.lower() }} root directory on the physical host
-readonly {{ app_name.upper() }}_EXT_{{ app_name.upper() }}_ROOT=$(cd "${BASE_DIR}/.." && pwd)
-export {{ app_name.upper() }}_EXT_{{ app_name.upper() }}_ROOT
-
-# location to mount the physical host's root directory in the container
-readonly {{ app_name.upper() }}_EXT_HOST_ROOT=/mnt/host
-export {{ app_name.upper() }}_EXT_HOST_ROOT
-
-# mandatory environment variables in {{ app_name.lower() }}-host.env file
-declare -ra MANDATORY_ENV_VARIABLES=(
-    {{ app_name.upper() }}_EXT_DATA_DIR
-)
+# Variables are defaulted so that they can be overridden at runtime if desired
+MOUNTED_CONFIG_DIR="{{ '${' }}{{ app_name }}_CONFIG_DIR:-{{ cli_context.configuration_dir }}{{ '}' }}"
+MOUNTED_GENERATED_CONFIG_DIR="{{ '${' }}{{ app_name }}_GENERATED_CONFIG_DIR:-{{ cli_context.generated_configuration_dir }}{{ '}' }}"
+MOUNTED_DATA_DIR="{{ '${' }}{{ app_name }}_DATA_DIR:-{{ cli_context.data_dir}}{{ '}' }}"
+ENVIRONMENT="{{ '${' }}{{ app_name }}_ENVIRONMENT:-{{ cli_context.environment}}{{ '}' }}"
 
 # ------------------------------------------------------------------------------
 # LOGIC
@@ -44,43 +25,44 @@ declare -ra MANDATORY_ENV_VARIABLES=(
 
 function main()
 {
-    # if running 'configure' then use a reduced environment
-    local _env=
-    if [[ "${1:-}" == configure ]]; then
-        _env="--volume /:${{ "{" + app_name.upper() }}_EXT_HOST_ROOT} --env {{ app_name.upper() }}_EXT_HOST_ROOT"
-    else
-        [[ -r "${BASE_DIR}/{{ app_name.lower() }}-host.env" ]] || {
-            echo "ERROR: System has not been configured. Please run [$(dirname $0 | head -1)/{{ app_name.lower() }} configure]"
-            exit 1
-        }
-        # read environment variables
-        source "${BASE_DIR}/{{ app_name.lower() }}-host.env"
-        # check mandatory environment variables
-        for _env_var in ${MANDATORY_ENV_VARIABLES[@]}; do
-            [[ -z ${!_env_var:-} ]] && print_error_and_exit "Environment variable [${_env_var}] has not been defined."
-        done
 
-        # ensure variables are passed through to docker container
-        for _env_var in $(set | grep '^{{ app_name.upper() }}_EXT_' | cut -f1 -d=); do
-            _env="${_env} --env ${_env_var}=${!_env_var}"
-        done
-
-        # mount the data dir
-        _env="${_env} --volume ${{ "{" + app_name.upper() }}_EXT_DATA_DIR}:${{ "{" + app_name.upper() }}_EXT_DATA_DIR}"
-    fi
-
-    # launch container
-    exec docker run \
-        --name {{ app_name.lower() }} \
-        -it \
+    docker run \
+        --name {{ app_name }}_{{ cli_context.environment }}_launcher_$(date +%s) \
         --rm \
-        --network=host \
-        ${_env} \
-        --volume /etc/timezone:/etc/timezone:ro \
+        --interactive \
+        --tty \
+{% for name, value in desired_environment.items() %}
+        --env {{ name }}="{{ value }}" \
+{% endfor %}
+{% for name, value in cli_context.additional_env_variables %}
+        --env {{ name }}="{{ value }}" \
+{% endfor %}
+{% for name, path in cli_context.additional_data_dirs %}
+        --volume "{{ path }}={{ path }}" \
+{% endfor %}
         --volume /var/run/docker.sock:/var/run/docker.sock \
-        --volume "${{ "{" + app_name.upper() }}_EXT_{{ app_name.upper() }}_ROOT}":"${{ "{" + app_name.upper() }}_EXT_{{ app_name.upper() }}_ROOT}" \
-        --env {{ app_name.upper() }}_EXT_{{ app_name.upper() }}_HOME \
-        brightsparklabs/{{ app_name.lower() }}:{{app_version}} $@
+        --env {{ app_name }}_CONFIG_DIR="${MOUNTED_CONFIG_DIR}" \
+        --volume "${MOUNTED_CONFIG_DIR}:${MOUNTED_CONFIG_DIR}" \
+        --env {{ app_name }}_GENERATED_CONFIG_DIR="${MOUNTED_GENERATED_CONFIG_DIR}" \
+        --volume "${MOUNTED_GENERATED_CONFIG_DIR}:${MOUNTED_GENERATED_CONFIG_DIR}" \
+        --env {{ app_name }}_DATA_DIR="${MOUNTED_DATA_DIR}" \
+        --volume "${MOUNTED_DATA_DIR}:${MOUNTED_DATA_DIR}" \
+        --env {{ app_name }}_ENVIRONMENT="${ENVIRONMENT}" \
+        {{ configuration.docker_image }}:{{ app_version }} \
+            --configuration-dir "${MOUNTED_CONFIG_DIR}" \
+            --data-dir "${MOUNTED_DATA_DIR}" \
+            --environment "${ENVIRONMENT}" \
+{% for name, path in cli_context.additional_data_dirs %}
+            --additional-data-dir {{ name }}="{{ path }}" \
+{% endfor %}
+{% for name, value in cli_context.additional_env_variables %}
+            --additional-env-var {{ name }}="{{ value }}" \
+{% endfor %}
+{% if cli_context.debug %}
+            --debug \
+{% endif %}
+            $@
+
 }
 
 # ------------------------------------------------------------------------------
