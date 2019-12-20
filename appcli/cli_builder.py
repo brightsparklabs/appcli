@@ -140,13 +140,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             environment=environment,
             subcommand_args=ctx.obj,
             debug=debug,
-            key_file=Path(configuration_dir, "key"),
-            generated_configuration_dir=configuration_dir.joinpath(".generated"),
-            app_configuration_file=configuration_dir.joinpath(
-                f"{APP_NAME.lower()}.yml"
-            ),
-            templates_dir=configuration_dir.joinpath("templates"),
-            project_name=f"{APP_NAME}_{environment}",
+            app_name=APP_NAME,
             app_version=APP_VERSION,
             commands=default_commands,
         )
@@ -154,11 +148,6 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         if ctx.invoked_subcommand is None:
             click.echo(ctx.get_help())
             sys.exit(1)
-
-        # For the 'launcher' command, no further output/checks required.
-        if ctx.invoked_subcommand == "launcher":
-            # Don't execute this function any further, continue to run subcommand with the current cli context
-            return
 
         # attempt to set desired environment
         initialised_environment = {}
@@ -174,6 +163,11 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
                 "Could not set desired environment. Please ensure specified environment variables are set."
             )
 
+        # For the 'launcher' command, no further output/checks required.
+        if ctx.invoked_subcommand == "launcher":
+            # Don't execute this function any further, continue to run subcommand with the current cli context
+            return
+
         check_docker_socket()
         check_environment()
 
@@ -182,7 +176,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             [f"{ENV_VAR_CONFIG_DIR}", f"{ctx.obj.configuration_dir}"],
             [
                 f"{ENV_VAR_GENERATED_CONFIG_DIR}",
-                f"{ctx.obj.generated_configuration_dir}",
+                f"{ctx.obj.get_generated_configuration_dir()}",
             ],
             [f"{ENV_VAR_DATA_DIR}", f"{ctx.obj.data_dir}"],
             [f"{ENV_VAR_ENVIRONMENT}", f"{ctx.obj.environment}"],

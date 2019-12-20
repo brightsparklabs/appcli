@@ -60,16 +60,12 @@ class LauncherCli:
             )
             logger.debug(f"Read template file [{LAUNCHER_TEMPLATE_FILENAME}]")
 
-            # TODO: Pass through from CLI builder
-            desired_environment = {}
-
             render_variables = {
                 "app_version": os.environ.get("APP_VERSION", "latest"),
                 "app_name": configuration.app_name.upper(),
                 "cli_context": ctx.obj,
                 "configuration": self.configuration,
-                "current_datetime": datetime.datetime.now(),
-                "desired_environment": desired_environment,
+                "current_datetime": f"{datetime.datetime.utcnow().isoformat()}+00:00",  # Since we're using utcnow(), we specify the offset manually
             }
 
             logger.debug(

@@ -15,7 +15,7 @@
 
 # Variables are defaulted so that they can be overridden at runtime if desired
 MOUNTED_CONFIG_DIR="{{ '${' }}{{ app_name }}_CONFIG_DIR:-{{ cli_context.configuration_dir }}{{ '}' }}"
-MOUNTED_GENERATED_CONFIG_DIR="{{ '${' }}{{ app_name }}_GENERATED_CONFIG_DIR:-{{ cli_context.generated_configuration_dir }}{{ '}' }}"
+MOUNTED_GENERATED_CONFIG_DIR="{{ '${' }}{{ app_name }}_GENERATED_CONFIG_DIR:-{{ cli_context.get_generated_configuration_dir() }}{{ '}' }}"
 MOUNTED_DATA_DIR="{{ '${' }}{{ app_name }}_DATA_DIR:-{{ cli_context.data_dir}}{{ '}' }}"
 ENVIRONMENT="{{ '${' }}{{ app_name }}_ENVIRONMENT:-{{ cli_context.environment}}{{ '}' }}"
 
@@ -31,9 +31,6 @@ function main()
         --rm \
         --interactive \
         --tty \
-{% for name, value in desired_environment.items() %}
-        --env {{ name }}="{{ value }}" \
-{% endfor %}
 {% for name, value in cli_context.additional_env_variables %}
         --env {{ name }}="{{ value }}" \
 {% endfor %}

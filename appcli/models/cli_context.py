@@ -38,30 +38,27 @@ class CliContext(NamedTuple):
     # derived data
     # ---------------------------------
 
-    key_file: Path
-    """ File containing key for encryption/decryption. """
+    def get_key_file(self) -> Path:
+        return Path(self.configuration_dir, "key")
 
-    generated_configuration_dir: Path
-    """ Directory to store the generated configuration files to. """
+    def get_generated_configuration_dir(self) -> Path:
+        return self.configuration_dir.joinpath(".generated")
 
-    app_configuration_file: Path
-    """
-    Path to a YAML file containing variables which are applied to the
-    templates to generate the final configuration files.
-    """
+    def get_app_configuration_file(self) -> Path:
+        return self.configuration_dir.joinpath(f"{self.app_name.lower()}.yml")
 
-    templates_dir: Path
-    """
-    Directory containing jinja2 templates used to generate the final
-    configuration files.
-    """
+    def get_templates_dir(self) -> Path:
+        return self.configuration_dir.joinpath("templates")
 
-    project_name: str
-    """ Project name for launching docker containers/networks. """
+    def get_project_name(self) -> str:
+        return f"{self.app_name}_{self.environment}"
 
     # ---------------------------------
     # cli build data
     # ---------------------------------
+
+    app_name: str
+    """ The application's name """
 
     app_version: str
     """ The application's version """
