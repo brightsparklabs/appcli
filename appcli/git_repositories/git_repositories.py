@@ -149,7 +149,7 @@ class GeneratedConfigurationGitRepository(GitRepository):
 # ------------------------------------------------------------------------------
 
 
-def check_config_dir_initialised(cli_context: CliContext):
+def confirm_config_dir_initialised(cli_context: CliContext):
     config_repo: ConfigurationGitRepository = ConfigurationGitRepository(cli_context)
     if not config_repo.repo_exists():
         raise Exception(
@@ -157,13 +157,13 @@ def check_config_dir_initialised(cli_context: CliContext):
         )
 
 
-def check_config_dir_not_initialised(cli_context: CliContext):
+def confirm_config_dir_not_initialised(cli_context: CliContext):
     config_repo: ConfigurationGitRepository = ConfigurationGitRepository(cli_context)
     if config_repo.repo_exists():
         raise Exception(f"Configuration already exists at [{config_repo.repo_path}].")
 
 
-def check_generated_config_dir_initialised(cli_context: CliContext):
+def confirm_generated_config_dir_initialised(cli_context: CliContext):
     generated_config_repo: GeneratedConfigurationGitRepository = GeneratedConfigurationGitRepository(
         cli_context
     )
@@ -173,7 +173,7 @@ def check_generated_config_dir_initialised(cli_context: CliContext):
         )
 
 
-def check_config_dir_dirty(cli_context: CliContext):
+def confirm_config_dir_is_not_dirty(cli_context: CliContext):
     config_repo: ConfigurationGitRepository = ConfigurationGitRepository(cli_context)
     if config_repo.is_dirty(untracked_files=True):
         raise Exception(
@@ -181,7 +181,7 @@ def check_config_dir_dirty(cli_context: CliContext):
         )
 
 
-def check_generated_config_dir_dirty(cli_context: CliContext):
+def confirm_generated_config_dir_is_not_dirty(cli_context: CliContext):
     generated_config_repo: GeneratedConfigurationGitRepository = GeneratedConfigurationGitRepository(
         cli_context
     )
@@ -191,7 +191,9 @@ def check_generated_config_dir_dirty(cli_context: CliContext):
         )
 
 
-def check_generated_configuration_using_current_configuration(cli_context: CliContext):
+def confirm_generated_configuration_is_using_current_configuration(
+    cli_context: CliContext,
+):
     metadata_file = get_generated_configuration_metadata_file(cli_context)
     if not os.path.isfile(metadata_file):
         raise Exception(

@@ -22,11 +22,11 @@ from appcli.functions import error_and_exit, validate
 from appcli.git_repositories.git_repositories import (
     ConfigurationGitRepository,
     GeneratedConfigurationGitRepository,
-    check_config_dir_dirty,
-    check_config_dir_initialised,
-    check_generated_config_dir_dirty,
-    check_generated_config_dir_initialised,
-    check_generated_configuration_using_current_configuration,
+    confirm_config_dir_is_not_dirty,
+    confirm_config_dir_initialised,
+    confirm_generated_config_dir_is_not_dirty,
+    confirm_generated_config_dir_initialised,
+    confirm_generated_configuration_is_using_current_configuration,
 )
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
@@ -128,14 +128,12 @@ class MainCli:
         logger.info("Checking system configuration is valid before starting ...")
 
         # Only need to block if the generated configuration is not generated
-        blocking_checks = [check_generated_config_dir_initialised]
+        blocking_checks = [confirm_generated_config_dir_initialised]
 
-        # These checks are more 'nice-to-have' and are therefore '--force'-able
         forceable_checks = [
-            check_config_dir_dirty,
-            check_config_dir_initialised,
-            check_generated_config_dir_dirty,
-            check_generated_configuration_using_current_configuration,
+            confirm_config_dir_is_not_dirty,  # if the config dir is dirty, want the user to run configure apply, warn
+            confirm_generated_config_dir_is_not_dirty,  # if the generated config is dirty, warn
+            confirm_generated_configuration_is_using_current_configuration,  # if the generated config isn't aligned with config, warn
         ]
 
         validate(
@@ -158,7 +156,9 @@ class MainCli:
 
         validate(
             cli_context=cli_context,
-            blocking_checks=[check_generated_config_dir_initialised],
+            blocking_checks=[
+                confirm_generated_config_dir_initialised
+            ],  # Only block on the generated config not existing
             force=force,
         )
 

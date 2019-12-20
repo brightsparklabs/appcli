@@ -34,12 +34,12 @@ from appcli.functions import (
 from appcli.git_repositories.git_repositories import (
     ConfigurationGitRepository,
     GeneratedConfigurationGitRepository,
-    check_config_dir_dirty,
-    check_config_dir_initialised,
-    check_config_dir_not_initialised,
-    check_generated_config_dir_dirty,
-    check_generated_config_dir_initialised,
-    check_generated_configuration_using_current_configuration,
+    confirm_config_dir_is_not_dirty,
+    confirm_config_dir_initialised,
+    confirm_config_dir_not_initialised,
+    confirm_generated_config_dir_is_not_dirty,
+    confirm_generated_config_dir_initialised,
+    confirm_generated_configuration_is_using_current_configuration,
 )
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
@@ -185,13 +185,6 @@ class ConfigureCli:
                     "Mandatory environment variable is not defined [%s]", env_variable
                 )
                 result = False
-
-        # if the configuration file exists in the config directory, then don't allow init
-        if os.path.isfile(cli_context.get_app_configuration_file()):
-            logger.error(
-                f"Configuration directory already initialised at [{cli_context.configuration_dir}]"
-            )
-            result = False
 
         return result
 
@@ -388,7 +381,7 @@ class ConfigureCli:
         )
 
         # Cannot run configure init if the config directory already exists.
-        blocking_checks = [check_config_dir_not_initialised]
+        blocking_checks = [confirm_config_dir_not_initialised]
 
         validate(cli_context=cli_context, blocking_checks=blocking_checks, force=False)
 
@@ -408,11 +401,13 @@ class ConfigureCli:
         )
 
         # If the config dir doesn't exist, we cannot apply
-        blocking_checks = [check_config_dir_initialised]
+        blocking_checks = [confirm_config_dir_initialised]
 
-        # If the generated config is dirty, we want blocking but the option to override
+        # If the generated config is dirty, or not running against current config, warn
+        # TODO: Confirm this is the full list of reqs
         forceable_checks = [
-            check_generated_config_dir_dirty,
+            confirm_generated_config_dir_is_not_dirty,
+            confirm_generated_configuration_is_using_current_configuration,
         ]
 
         validate(
@@ -435,12 +430,14 @@ class ConfigureCli:
         """
         logger.info("Checking system configuration is valid before 'configure get' ...")
 
+        # TODO: This is copy pasted. need to validate these checks.
+
         # Block if the config dir doesn't exist as there's nothing to get or set
-        blocking_checks = [check_config_dir_initialised]
+        blocking_checks = [confirm_config_dir_initialised]
 
         # If the generated config is dirty, we want blocking but the option to override
         forceable_checks = [
-            check_generated_config_dir_dirty,
+            confirm_generated_config_dir_is_not_dirty,
         ]
 
         validate(
