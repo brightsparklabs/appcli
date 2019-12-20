@@ -87,24 +87,24 @@ def extract_valid_environment_variable_names(
 
 def validate(
     cli_context: CliContext,
-    blocking_checks: Iterable[Callable[[click.Context], None]] = [],
-    forceable_checks: Iterable[Callable[[click.Context], None]] = [],
+    must_have_checks: Iterable[Callable[[click.Context], None]] = [],
+    should_have_checks: Iterable[Callable[[click.Context], None]] = [],
     force: bool = False,
 ):
     """Perform validation checks, and exit if failed (and not overridden)
-    
+
     Args:
         cli_context (CliContext): the current cli context
-        blocking_checks (Iterable[Callable[[click.Context], None]], optional): The check functions to run that are not '--force'able. Defaults to [].
-        forceable_checks (Iterable[Callable[[click.Context], None]], optional): The check functions to run that are '--force'able. Defaults to [].
-        force (bool, optional): Whether to force pass any forceable_checks that fail. Defaults to False.
+        must_have_checks (Iterable[Callable[[click.Context], None]], optional): The check functions to run that are not '--force'able. Defaults to [].
+        should_have_checks (Iterable[Callable[[click.Context], None]], optional): The check functions to run that are '--force'able. Defaults to [].
+        force (bool, optional): Whether to force pass any should_have_checks that fail. Defaults to False.
     """
     logger.info("Performing validation ...")
 
-    blocking_errors = _run_checks(cli_context, blocking_checks)
+    blocking_errors = _run_checks(cli_context, must_have_checks)
     blocking_error_messages = "\n- ".join(blocking_errors)
 
-    forceable_errors = _run_checks(cli_context, forceable_checks)
+    forceable_errors = _run_checks(cli_context, should_have_checks)
     forceable_error_messages = "\n- ".join(forceable_errors)
 
     all_errors = blocking_errors + forceable_errors

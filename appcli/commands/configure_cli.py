@@ -13,7 +13,6 @@ www.brightsparklabs.com
 import json
 import os
 import shutil
-import sys
 import tarfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -34,11 +33,9 @@ from appcli.functions import (
 from appcli.git_repositories.git_repositories import (
     ConfigurationGitRepository,
     GeneratedConfigurationGitRepository,
-    confirm_config_dir_is_not_dirty,
-    confirm_config_dir_initialised,
-    confirm_config_dir_not_initialised,
+    confirm_config_dir_exists,
+    confirm_config_dir_not_exists,
     confirm_generated_config_dir_is_not_dirty,
-    confirm_generated_config_dir_initialised,
     confirm_generated_configuration_is_using_current_configuration,
 )
 from appcli.logger import logger
@@ -82,9 +79,8 @@ class ConfigureCli:
 
             self.__pre_configure_init_validation(cli_context)
 
-            if not self.__init_prequisites_met(cli_context):
-                logger.error("Prerequisite checks failed")
-                sys.exit(1)
+            if not self.__check_env_vars_set(cli_context):
+                error_and_exit("Prerequisite checks failed")
 
             hooks = self.cli_configuration.hooks
 
@@ -151,6 +147,9 @@ class ConfigureCli:
         @click.pass_context
         def get(ctx, setting):
             cli_context: CliContext = ctx.obj
+
+            self.__pre_configure_get_and_set_validation(cli_context)
+
             configuration = ConfigurationManager(
                 cli_context.get_app_configuration_file()
             )
@@ -162,6 +161,9 @@ class ConfigureCli:
         @click.pass_context
         def set(ctx, setting, value):
             cli_context: CliContext = ctx.obj
+
+            self.__pre_configure_get_and_set_validation(cli_context)
+
             configuration = ConfigurationManager(
                 cli_context.get_app_configuration_file()
             )
@@ -174,7 +176,7 @@ class ConfigureCli:
     # PRIVATE METHODS
     # ------------------------------------------------------------------------------
 
-    def __init_prequisites_met(self, cli_context: CliContext):
+    def __check_env_vars_set(self, cli_context: CliContext):
         logger.info("Checking prerequisites ...")
         result = True
 
@@ -210,11 +212,9 @@ class ConfigureCli:
         templates_dir.mkdir(parents=True, exist_ok=True)
         seed_templates_dir = self.cli_configuration.seed_templates_dir
         if not seed_templates_dir.is_dir():
-            logger.error(
-                "Seed templates directory [%s] is not valid. Release is corrupt.",
-                seed_templates_dir,
+            error_and_exit(
+                f"Seed templates directory [{seed_templates_dir}] is not valid. Release is corrupt."
             )
-            sys.exit(1)
 
         for source_file in seed_templates_dir.glob("**/*"):
             logger.info(source_file)
@@ -374,16 +374,17 @@ class ConfigureCli:
 
         Args:
             cli_context (CliContext): the current cli context
-            force (bool, optional): If True, only warns on validation checks. Defaults to False.
         """
         logger.info(
             "Checking system configuration is valid before 'configure init' ..."
         )
 
         # Cannot run configure init if the config directory already exists.
-        blocking_checks = [confirm_config_dir_not_initialised]
+        must_have_checks = [confirm_config_dir_not_exists]
 
-        validate(cli_context=cli_context, blocking_checks=blocking_checks, force=False)
+        validate(
+            cli_context=cli_context, must_have_checks=must_have_checks, force=False
+        )
 
         logger.info("System configuration is valid")
 
@@ -401,50 +402,36 @@ class ConfigureCli:
         )
 
         # If the config dir doesn't exist, we cannot apply
-        blocking_checks = [confirm_config_dir_initialised]
+        must_have_checks = [confirm_config_dir_exists]
 
-        # If the generated config is dirty, or not running against current config, warn
-        # TODO: Confirm this is the full list of reqs
-        forceable_checks = [
+        # If the generated config is dirty, or not running against current config, warn before overwriting
+        should_have_checks = [
             confirm_generated_config_dir_is_not_dirty,
             confirm_generated_configuration_is_using_current_configuration,
         ]
 
         validate(
             cli_context=cli_context,
-            blocking_checks=blocking_checks,
-            forceable_checks=forceable_checks,
+            must_have_checks=must_have_checks,
+            should_have_checks=should_have_checks,
             force=force,
         )
 
         logger.info("System configuration is valid")
 
-    def __pre_configure_get_validation(
-        self, cli_context: CliContext, force: bool = False
-    ):
+    def __pre_configure_get_and_set_validation(self, cli_context: CliContext):
         """Ensures the system is in a valid state for 'configure get'.
 
         Args:
             cli_context (CliContext): the current cli context
-            force (bool, optional): If True, only warns on validation checks. Defaults to False.
         """
         logger.info("Checking system configuration is valid before 'configure get' ...")
 
-        # TODO: This is copy pasted. need to validate these checks.
-
         # Block if the config dir doesn't exist as there's nothing to get or set
-        blocking_checks = [confirm_config_dir_initialised]
-
-        # If the generated config is dirty, we want blocking but the option to override
-        forceable_checks = [
-            confirm_generated_config_dir_is_not_dirty,
-        ]
+        must_have_checks = [confirm_config_dir_exists]
 
         validate(
-            cli_context=cli_context,
-            blocking_checks=blocking_checks,
-            forceable_checks=forceable_checks,
-            force=force,
+            cli_context=cli_context, must_have_checks=must_have_checks,
         )
 
         logger.info("System configuration is valid")

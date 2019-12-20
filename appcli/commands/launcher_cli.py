@@ -21,9 +21,7 @@ import click
 from jinja2 import StrictUndefined, Template
 
 # local libraries
-from appcli.functions import extract_valid_environment_variable_names
 from appcli.logger import logger
-from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
 from appcli import templates
 

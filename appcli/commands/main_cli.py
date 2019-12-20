@@ -10,22 +10,17 @@ www.brightsparklabs.com
 """
 
 # standard libraries
-import json
-import os
 import sys
 
 # vendor libraries
 import click
 
 # local libraries
-from appcli.functions import error_and_exit, validate
+from appcli.functions import validate
 from appcli.git_repositories.git_repositories import (
-    ConfigurationGitRepository,
-    GeneratedConfigurationGitRepository,
     confirm_config_dir_is_not_dirty,
-    confirm_config_dir_initialised,
     confirm_generated_config_dir_is_not_dirty,
-    confirm_generated_config_dir_initialised,
+    confirm_generated_config_dir_exists,
     confirm_generated_configuration_is_using_current_configuration,
 )
 from appcli.logger import logger
@@ -127,19 +122,21 @@ class MainCli:
         """
         logger.info("Checking system configuration is valid before starting ...")
 
-        # Only need to block if the generated configuration is not generated
-        blocking_checks = [confirm_generated_config_dir_initialised]
+        # Only need to block if the generated configuration is not present
+        must_have_checks = [confirm_generated_config_dir_exists]
 
-        forceable_checks = [
-            confirm_config_dir_is_not_dirty,  # if the config dir is dirty, want the user to run configure apply, warn
-            confirm_generated_config_dir_is_not_dirty,  # if the generated config is dirty, warn
-            confirm_generated_configuration_is_using_current_configuration,  # if the generated config isn't aligned with config, warn
+        # If either config dirs are dirty, or generated config doesn't align with
+        # current config, then warn before allowing start.
+        should_have_checks = [
+            confirm_config_dir_is_not_dirty,
+            confirm_generated_config_dir_is_not_dirty,
+            confirm_generated_configuration_is_using_current_configuration,
         ]
 
         validate(
             cli_context=cli_context,
-            blocking_checks=blocking_checks,
-            forceable_checks=forceable_checks,
+            must_have_checks=must_have_checks,
+            should_have_checks=should_have_checks,
             force=force,
         )
 
@@ -156,9 +153,9 @@ class MainCli:
 
         validate(
             cli_context=cli_context,
-            blocking_checks=[
-                confirm_generated_config_dir_initialised
-            ],  # Only block on the generated config not existing
+            must_have_checks=[
+                confirm_generated_config_dir_exists
+            ],  # Only block stopping the system on the generated config not existing
             force=force,
         )
 

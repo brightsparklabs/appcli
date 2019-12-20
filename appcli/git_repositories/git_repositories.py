@@ -149,7 +149,7 @@ class GeneratedConfigurationGitRepository(GitRepository):
 # ------------------------------------------------------------------------------
 
 
-def confirm_config_dir_initialised(cli_context: CliContext):
+def confirm_config_dir_exists(cli_context: CliContext):
     config_repo: ConfigurationGitRepository = ConfigurationGitRepository(cli_context)
     if not config_repo.repo_exists():
         raise Exception(
@@ -157,13 +157,13 @@ def confirm_config_dir_initialised(cli_context: CliContext):
         )
 
 
-def confirm_config_dir_not_initialised(cli_context: CliContext):
+def confirm_config_dir_not_exists(cli_context: CliContext):
     config_repo: ConfigurationGitRepository = ConfigurationGitRepository(cli_context)
     if config_repo.repo_exists():
         raise Exception(f"Configuration already exists at [{config_repo.repo_path}].")
 
 
-def confirm_generated_config_dir_initialised(cli_context: CliContext):
+def confirm_generated_config_dir_exists(cli_context: CliContext):
     generated_config_repo: GeneratedConfigurationGitRepository = GeneratedConfigurationGitRepository(
         cli_context
     )
