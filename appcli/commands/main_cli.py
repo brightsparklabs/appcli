@@ -92,7 +92,6 @@ class MainCli:
             logger.info("Stop command finished with code [%i]", result.returncode)
             sys.exit(result.returncode)
 
-        # TODO: Do validation checks before running 'logs'. Block if generated config doesn't exist.
         # expose the cli commands
         self.commands = {
             "start": start,
