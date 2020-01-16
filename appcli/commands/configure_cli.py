@@ -35,6 +35,7 @@ from appcli.git_repositories.git_repositories import (
     GeneratedConfigurationGitRepository,
     confirm_config_dir_exists,
     confirm_config_dir_not_exists,
+    confirm_generated_config_dir_exists,
     confirm_generated_config_dir_is_not_dirty,
     confirm_generated_configuration_is_using_current_configuration,
 )
@@ -118,11 +119,12 @@ class ConfigureCli:
         @click.pass_context
         def apply(ctx, message, force):
             cli_context: CliContext = ctx.obj
+
+            self.__pre_configure_apply_validation(cli_context, force=force)
+
             configuration = ConfigurationManager(
                 cli_context.get_app_configuration_file()
             )
-
-            self.__pre_configure_apply_validation(cli_context, force=force)
 
             hooks = self.cli_configuration.hooks
             logger.debug("Running pre-configure apply hook")
@@ -404,11 +406,19 @@ class ConfigureCli:
         # If the config dir doesn't exist, we cannot apply
         must_have_checks = [confirm_config_dir_exists]
 
-        # If the generated config is dirty, or not running against current config, warn before overwriting
-        should_have_checks = [
-            confirm_generated_config_dir_is_not_dirty,
-            confirm_generated_configuration_is_using_current_configuration,
-        ]
+        should_have_checks = []
+
+        # If the generated configuration directory exists, test it for 'dirtiness'.
+        # Otherwise the generated config doesn't exist, so the directories are 'clean'.
+        try:
+            confirm_generated_config_dir_exists(cli_context)
+            # If the generated config is dirty, or not running against current config, warn before overwriting
+            should_have_checks = [
+                confirm_generated_config_dir_is_not_dirty,
+                confirm_generated_configuration_is_using_current_configuration,
+            ]
+        except Exception:
+            pass
 
         validate(
             cli_context=cli_context,
