@@ -39,18 +39,43 @@ class CliContext(NamedTuple):
     # ---------------------------------
 
     def get_key_file(self) -> Path:
+        """Get the location of the key file for decrypting secrets
+
+        Returns:
+            Path: location of the key file
+        """
         return Path(self.configuration_dir, "key")
 
     def get_generated_configuration_dir(self) -> Path:
+        """Get the directory containing the generated configuration
+
+        Returns:
+            Path: directory of generated configuration
+        """
         return self.configuration_dir.joinpath(".generated")
 
     def get_app_configuration_file(self) -> Path:
+        """Get the location of the configuration file
+
+        Returns:
+            Path: location of the configuration file
+        """
         return self.configuration_dir.joinpath(f"{self.app_name.lower()}.yml")
 
     def get_templates_dir(self) -> Path:
+        """Get the directory of the raw configuration templates
+
+        Returns:
+            Path: directory of configuration templates
+        """
         return self.configuration_dir.joinpath("templates")
 
     def get_project_name(self) -> str:
+        """Get a unique name for the application and environment
+
+        Returns:
+            str: the project name
+        """
         return f"{self.app_name}_{self.environment}"
 
     # ---------------------------------

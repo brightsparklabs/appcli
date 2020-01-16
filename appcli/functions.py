@@ -14,7 +14,7 @@ import click
 from pathlib import Path
 import re
 import sys
-from typing import Callable, Iterable
+from typing import Callable, Iterable, List
 
 # local libraries
 from appcli.logger import logger
@@ -48,6 +48,15 @@ def error_and_exit(message: str):
     """
     logger.error(message)
     sys.exit(1)
+
+
+def print_header(title):
+    logger.info(
+        """============================================================
+                        %s
+                        ============================================================""",
+        title.upper(),
+    )
 
 
 def get_generated_configuration_metadata_file(cli_context: CliContext) -> Path:
@@ -101,18 +110,23 @@ def validate(
     """
     logger.info("Performing validation ...")
 
+    # Get the blocking errors
     blocking_errors = _run_checks(cli_context, must_have_checks)
     blocking_error_messages = "\n- ".join(blocking_errors)
 
+    # Get the non-blocking errors - 'warnings'
     forceable_errors = _run_checks(cli_context, should_have_checks)
     forceable_error_messages = "\n- ".join(forceable_errors)
 
     all_errors = blocking_errors + forceable_errors
 
+    # If there's no errors, validation ends here and is successful
     if not all_errors:
         logger.debug("No errors found in validation.")
         return
 
+    # If there's no blocking errors, and there's forceable errors and the force flag is provided, warn the user
+    # but succeed in validation.
     if not blocking_errors and forceable_errors and force:
         logger.warn(
             "Force flag `--force` applied. Ignoring the following issues:\n- %s",
@@ -131,7 +145,16 @@ def validate(
 
 def _run_checks(
     cli_context: CliContext, checks: Iterable[Callable[[click.Context], None]]
-):
+) -> List[str]:
+    """Runs a set of functions which either return None or throws an error. Returns all the error messages.
+
+    Args:
+        cli_context (CliContext): the current context of the cli
+        checks (Iterable[Callable[[click.Context], None]]): a set of functions to try running
+
+    Returns:
+        List[str]: List of error messages. Could be an empty list.
+    """
     errors = []
     for check in checks:
         check_name = check.__name__

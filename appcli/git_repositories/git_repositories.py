@@ -150,6 +150,15 @@ class GeneratedConfigurationGitRepository(GitRepository):
 
 
 def confirm_config_dir_exists(cli_context: CliContext):
+    """Confirm that the configuration repository exists.
+    If this fails, it will raise a general Exception with the error message.
+
+    Args:
+        cli_context (CliContext): the current cli context
+
+    Raises:
+        Exception: Raised if the configuration repository does *not* exist.
+    """
     config_repo: ConfigurationGitRepository = ConfigurationGitRepository(cli_context)
     if not config_repo.repo_exists():
         raise Exception(
@@ -158,12 +167,30 @@ def confirm_config_dir_exists(cli_context: CliContext):
 
 
 def confirm_config_dir_not_exists(cli_context: CliContext):
+    """Confirm that the configuration repository does *not* exist.
+    If this fails, it will raise a general Exception with the error message.
+
+    Args:
+        cli_context (CliContext): the current cli context
+
+    Raises:
+        Exception: Raised if the configuration repository exists.
+    """
     config_repo: ConfigurationGitRepository = ConfigurationGitRepository(cli_context)
     if config_repo.repo_exists():
         raise Exception(f"Configuration already exists at [{config_repo.repo_path}].")
 
 
 def confirm_generated_config_dir_exists(cli_context: CliContext):
+    """Confirm that the generated configuration repository exists.
+    If this fails, it will raise a general Exception with the error message.
+
+    Args:
+        cli_context (CliContext): the current cli context
+
+    Raises:
+        Exception: Raised if the generated configuration repository does not exist.
+    """
     generated_config_repo: GeneratedConfigurationGitRepository = GeneratedConfigurationGitRepository(
         cli_context
     )
@@ -174,6 +201,15 @@ def confirm_generated_config_dir_exists(cli_context: CliContext):
 
 
 def confirm_config_dir_is_not_dirty(cli_context: CliContext):
+    """Confirm that the configuration repository has not been modified and not 'applied'.
+    If this fails, it will raise a general Exception with the error message.
+
+    Args:
+        cli_context (CliContext): the current cli context
+
+    Raises:
+        Exception: Raised if the configuration repository has been modified and not 'applied'.
+    """
     config_repo: ConfigurationGitRepository = ConfigurationGitRepository(cli_context)
     if config_repo.is_dirty(untracked_files=True):
         raise Exception(
@@ -182,6 +218,15 @@ def confirm_config_dir_is_not_dirty(cli_context: CliContext):
 
 
 def confirm_generated_config_dir_is_not_dirty(cli_context: CliContext):
+    """Confirm that the generated configuration repository has not been manually modified and not checked-in.
+    If this fails, it will raise a general Exception with the error message.
+
+    Args:
+        cli_context (CliContext): the current cli context
+
+    Raises:
+        Exception: Raised if the generated configuration repository has been manually modified and not checked in.
+    """
     generated_config_repo: GeneratedConfigurationGitRepository = GeneratedConfigurationGitRepository(
         cli_context
     )
@@ -194,6 +239,15 @@ def confirm_generated_config_dir_is_not_dirty(cli_context: CliContext):
 def confirm_generated_configuration_is_using_current_configuration(
     cli_context: CliContext,
 ):
+    """Confirm that the generated configuration directory was generated from the current state configuration directory.
+    If this fails, it will raise a general Exception with the error message.
+
+    Args:
+        cli_context (CliContext): the current cli context
+
+    Raises:
+        Exception: Raised if metadata file not found, or generated config is out of sync with config.
+    """
     metadata_file = get_generated_configuration_metadata_file(cli_context)
     if not os.path.isfile(metadata_file):
         raise Exception(
@@ -215,5 +269,5 @@ def confirm_generated_configuration_is_using_current_configuration(
             configuration_commit_hash,
         )
         raise Exception(
-            "Generated configuration is out of date. Please run `configure apply`."
+            "Generated configuration is out of sync with raw configuration. Please run `configure apply`."
         )

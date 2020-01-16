@@ -28,6 +28,7 @@ from appcli.crypto.crypto import create_and_save_key, decrypt_values_in_file
 from appcli.functions import (
     error_and_exit,
     get_generated_configuration_metadata_file,
+    print_header,
     validate,
 )
 from appcli.git_repositories.git_repositories import (
@@ -74,14 +75,13 @@ class ConfigureCli:
         @configure.command(help="Initialises the configuration directory")
         @click.pass_context
         def init(ctx):
-            self.__print_header(f"Seeding configuration directory for {self.app_name}")
+            print_header(f"Seeding configuration directory for {self.app_name}")
 
             cli_context: CliContext = ctx.obj
 
             self.__pre_configure_init_validation(cli_context)
 
-            if not self.__check_env_vars_set(cli_context):
-                error_and_exit("Prerequisite checks failed")
+            self.__check_env_vars_set(cli_context, self.mandatory_env_variables)
 
             hooks = self.cli_configuration.hooks
 
@@ -178,22 +178,36 @@ class ConfigureCli:
     # PRIVATE METHODS
     # ------------------------------------------------------------------------------
 
-    def __check_env_vars_set(self, cli_context: CliContext):
-        logger.info("Checking prerequisites ...")
-        result = True
+    def __check_env_vars_set(
+        self, cli_context: CliContext, mandatory_env_variables: Iterable[str]
+    ):
+        """Check that all mandatory environment variables have been set.
 
-        for env_variable in self.mandatory_env_variables:
+        Args:
+            cli_context (CliContext): the current cli context
+            mandatory_env_variables (Iterable[str]): the environment variables to check
+        """
+        logger.info("Checking prerequisites ...")
+        has_errors = False
+
+        for env_variable in mandatory_env_variables:
             value = os.environ.get(env_variable)
             if value is None:
                 logger.error(
                     "Mandatory environment variable is not defined [%s]", env_variable
                 )
-                result = False
+                has_errors = True
 
-        return result
+        if has_errors:
+            error_and_exit("Missing mandatory environment variables.")
 
     def __seed_configuration_dir(self, cli_context: CliContext):
-        self.__print_header("Seeding configuration directory ...")
+        """Seed the raw configuration into the configuration directory
+
+        Args:
+            cli_context (CliContext): the current cli context
+        """
+        print_header("Seeding configuration directory ...")
 
         logger.info("Copying app configuration file ...")
         seed_app_configuration_file = self.cli_configuration.seed_app_configuration_file
@@ -233,7 +247,13 @@ class ConfigureCli:
     def __generate_configuration_files(
         self, configuration: Configuration, cli_context: CliContext
     ):
-        self.__print_header(f"Generating configuration files")
+        """Generate the generated configuration files
+
+        Args:
+            configuration (Configuration): the current cli configuration
+            cli_context (CliContext): the current cli context
+        """
+        print_header(f"Generating configuration files")
         generated_configuration_dir = cli_context.get_generated_configuration_dir()
 
         # If the generated configuration directory is not empty, back it up and delete
@@ -445,14 +465,6 @@ class ConfigureCli:
         )
 
         logger.info("System configuration is valid")
-
-    def __print_header(self, title):
-        logger.info(
-            """============================================================
-                          %s
-                          ============================================================""",
-            title.upper(),
-        )
 
     def __generate_from_template(
         self, template_file: Path, target_file: Path, variables: dict
