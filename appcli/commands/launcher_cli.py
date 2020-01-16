@@ -21,6 +21,7 @@ import click
 from jinja2 import StrictUndefined, Template
 
 # local libraries
+from appcli.functions import error_and_exit
 from appcli.logger import logger
 from appcli.models.configuration import Configuration
 from appcli import templates
@@ -80,11 +81,9 @@ class LauncherCli:
                 output_text = template.render(render_variables)
                 print(output_text)
             except Exception as e:
-                logger.error(
-                    "Could not generate file from template. The configuration file is likely missing a setting: %s",
-                    e,
+                error_and_exit(
+                    f"Could not generate file from template. The configuration file is likely missing a setting: {e}"
                 )
-                exit(1)
 
         # expose the cli command
         self.commands = {"launcher": launcher}

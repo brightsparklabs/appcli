@@ -35,6 +35,19 @@ class CliContext(NamedTuple):
     """ Whether to print debug logs. """
 
     # ---------------------------------
+    # cli build data
+    # ---------------------------------
+
+    app_name: str
+    """ The application's name """
+
+    app_version: str
+    """ The application's version """
+
+    commands: Dict
+    """ Internal commands. """
+
+    # ---------------------------------
     # derived data
     # ---------------------------------
 
@@ -77,16 +90,3 @@ class CliContext(NamedTuple):
             str: the project name
         """
         return f"{self.app_name}_{self.environment}"
-
-    # ---------------------------------
-    # cli build data
-    # ---------------------------------
-
-    app_name: str
-    """ The application's name """
-
-    app_version: str
-    """ The application's version """
-
-    commands: Dict
-    """ Internal commands. """

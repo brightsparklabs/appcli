@@ -29,7 +29,7 @@ from appcli.functions import (
     error_and_exit,
     get_generated_configuration_metadata_file,
     print_header,
-    validate,
+    execute_validation_functions,
 )
 from appcli.git_repositories.git_repositories import (
     ConfigurationGitRepository,
@@ -402,10 +402,12 @@ class ConfigureCli:
         )
 
         # Cannot run configure init if the config directory already exists.
-        must_have_checks = [confirm_config_dir_not_exists]
+        must_succeed_checks = [confirm_config_dir_not_exists]
 
-        validate(
-            cli_context=cli_context, must_have_checks=must_have_checks, force=False
+        execute_validation_functions(
+            cli_context=cli_context,
+            must_succeed_checks=must_succeed_checks,
+            force=False,
         )
 
         logger.info("System configuration is valid")
@@ -417,33 +419,33 @@ class ConfigureCli:
 
         Args:
             cli_context (CliContext): the current cli context
-            force (bool, optional): If True, only warns on validation checks. Defaults to False.
+            force (bool, optional): If True, only warns on validation failures, rather than exiting
         """
         logger.info(
             "Checking system configuration is valid before 'configure apply' ..."
         )
 
         # If the config dir doesn't exist, we cannot apply
-        must_have_checks = [confirm_config_dir_exists]
+        must_succeed_checks = [confirm_config_dir_exists]
 
-        should_have_checks = []
+        should_succeed_checks = []
 
         # If the generated configuration directory exists, test it for 'dirtiness'.
         # Otherwise the generated config doesn't exist, so the directories are 'clean'.
         try:
             confirm_generated_config_dir_exists(cli_context)
             # If the generated config is dirty, or not running against current config, warn before overwriting
-            should_have_checks = [
+            should_succeed_checks = [
                 confirm_generated_config_dir_is_not_dirty,
                 confirm_generated_configuration_is_using_current_configuration,
             ]
         except Exception:
             pass
 
-        validate(
+        execute_validation_functions(
             cli_context=cli_context,
-            must_have_checks=must_have_checks,
-            should_have_checks=should_have_checks,
+            must_succeed_checks=must_succeed_checks,
+            should_succeed_checks=should_succeed_checks,
             force=force,
         )
 
@@ -458,10 +460,10 @@ class ConfigureCli:
         logger.info("Checking system configuration is valid before 'configure get' ...")
 
         # Block if the config dir doesn't exist as there's nothing to get or set
-        must_have_checks = [confirm_config_dir_exists]
+        must_succeed_checks = [confirm_config_dir_exists]
 
-        validate(
-            cli_context=cli_context, must_have_checks=must_have_checks,
+        execute_validation_functions(
+            cli_context=cli_context, must_succeed_checks=must_succeed_checks,
         )
 
         logger.info("System configuration is valid")
@@ -488,8 +490,7 @@ class ConfigureCli:
             output_text = template.render(variables)
             target_file.write_text(output_text)
         except Exception as e:
-            logger.error(
-                "Could not generate file from template. The configuration file is likely missing a setting: %s",
-                e,
+            error_and_exit(
+                f"Could not generate file from template. The configuration file is likely missing a setting: {e}"
             )
-            exit(1)
+

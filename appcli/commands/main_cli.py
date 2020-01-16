@@ -16,7 +16,7 @@ import sys
 import click
 
 # local libraries
-from appcli.functions import validate
+from appcli.functions import execute_validation_functions
 from appcli.git_repositories.git_repositories import (
     confirm_config_dir_is_not_dirty,
     confirm_generated_config_dir_is_not_dirty,
@@ -48,7 +48,7 @@ class MainCli:
 
         @click.command(help="Starts the system.")
         @click.option(
-            "--force", is_flag=True, help="Force start through validation checks",
+            "--force", is_flag=True, help="Force start even if validation checks fail",
         )
         @click.pass_context
         def start(ctx, force):
@@ -71,7 +71,7 @@ class MainCli:
 
         @click.command(help="Stops the system.")
         @click.option(
-            "--force", is_flag=True, help="Force stop through validation checks",
+            "--force", is_flag=True, help="Force stop even if validation checks fail",
         )
         @click.pass_context
         def stop(ctx, force):
@@ -117,25 +117,25 @@ class MainCli:
 
         Args:
             cli_context (CliContext): the current cli context
-            force (bool, optional): If True, only warns on validation checks. Defaults to False.
+            force (bool, optional): If True, only warns on validation failures, rather than exiting
         """
         logger.info("Checking system configuration is valid before starting ...")
 
         # Only need to block if the generated configuration is not present
-        must_have_checks = [confirm_generated_config_dir_exists]
+        must_succeed_checks = [confirm_generated_config_dir_exists]
 
         # If either config dirs are dirty, or generated config doesn't align with
         # current config, then warn before allowing start.
-        should_have_checks = [
+        should_succeed_checks = [
             confirm_config_dir_is_not_dirty,
             confirm_generated_config_dir_is_not_dirty,
             confirm_generated_configuration_is_using_current_configuration,
         ]
 
-        validate(
+        execute_validation_functions(
             cli_context=cli_context,
-            must_have_checks=must_have_checks,
-            should_have_checks=should_have_checks,
+            must_succeed_checks=must_succeed_checks,
+            should_succeed_checks=should_succeed_checks,
             force=force,
         )
 
@@ -146,13 +146,13 @@ class MainCli:
 
         Args:
             cli_context (CliContext): the current cli context
-            force (bool, optional): If True, only warns on validation checks. Defaults to False.
+            force (bool, optional): If True, only warns on validation failures, rather than exiting
         """
         logger.info("Checking system configuration is valid before stopping ...")
 
-        validate(
+        execute_validation_functions(
             cli_context=cli_context,
-            must_have_checks=[
+            must_succeed_checks=[
                 confirm_generated_config_dir_exists
             ],  # Only block stopping the system on the generated config not existing
             force=force,

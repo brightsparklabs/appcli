@@ -213,7 +213,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         """Check that the docker socket exists, and exit if it does not
         """
         if not os.path.exists("/var/run/docker.sock"):
-            error_msg = f"""Docker socket not present. Please launch with a mounted `docker.sock`."""
+            error_msg = f"""Docker socket not present. Please launch with a mounted /var/run/docker.sock"""
             error_and_exit(error_msg)
 
     def check_environment():
