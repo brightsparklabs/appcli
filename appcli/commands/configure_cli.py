@@ -13,7 +13,6 @@ www.brightsparklabs.com
 import json
 import os
 import shutil
-import sys
 import tarfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -26,10 +25,20 @@ from jinja2 import StrictUndefined, Template
 # local libraries
 from appcli.configuration_manager import ConfigurationManager
 from appcli.crypto.crypto import create_and_save_key, decrypt_values_in_file
-from appcli.functions import error_and_exit, get_generated_configuration_metadata_file
+from appcli.functions import (
+    error_and_exit,
+    get_generated_configuration_metadata_file,
+    print_header,
+    execute_validation_functions,
+)
 from appcli.git_repositories.git_repositories import (
     ConfigurationGitRepository,
     GeneratedConfigurationGitRepository,
+    confirm_config_dir_exists,
+    confirm_config_dir_not_exists,
+    confirm_generated_config_dir_exists,
+    confirm_generated_config_dir_is_not_dirty,
+    confirm_generated_configuration_is_using_current_configuration,
 )
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
@@ -66,13 +75,13 @@ class ConfigureCli:
         @configure.command(help="Initialises the configuration directory")
         @click.pass_context
         def init(ctx):
-            self.__print_header(f"Seeding configuration directory for {self.app_name}")
+            print_header(f"Seeding configuration directory for {self.app_name}")
 
             cli_context: CliContext = ctx.obj
 
-            if not self.__init_prequisites_met(cli_context):
-                logger.error("Prerequisite checks failed")
-                sys.exit(1)
+            self.__pre_configure_init_validation(cli_context)
+
+            self.__check_env_vars_set(cli_context, self.mandatory_env_variables)
 
             hooks = self.cli_configuration.hooks
 
@@ -84,7 +93,7 @@ class ConfigureCli:
             self.__seed_configuration_dir(cli_context)
 
             # Create an encryption key
-            create_and_save_key(cli_context.key_file)
+            create_and_save_key(cli_context.get_key_file())
 
             logger.debug("Running post-configure init hook")
             hooks.post_configure_init(ctx)
@@ -110,10 +119,12 @@ class ConfigureCli:
         @click.pass_context
         def apply(ctx, message, force):
             cli_context: CliContext = ctx.obj
-            configuration = ConfigurationManager(cli_context.app_configuration_file)
 
-            # Don't allow apply if generated directory is dirty
-            self._block_on_existing_dirty_generated_config(cli_context, force)
+            self.__pre_configure_apply_validation(cli_context, force=force)
+
+            configuration = ConfigurationManager(
+                cli_context.get_app_configuration_file()
+            )
 
             hooks = self.cli_configuration.hooks
             logger.debug("Running pre-configure apply hook")
@@ -138,7 +149,12 @@ class ConfigureCli:
         @click.pass_context
         def get(ctx, setting):
             cli_context: CliContext = ctx.obj
-            configuration = ConfigurationManager(cli_context.app_configuration_file)
+
+            self.__pre_configure_get_and_set_validation(cli_context)
+
+            configuration = ConfigurationManager(
+                cli_context.get_app_configuration_file()
+            )
             print(configuration.get(setting))
 
         @configure.command(help="Saves a setting to the configuration.")
@@ -147,7 +163,12 @@ class ConfigureCli:
         @click.pass_context
         def set(ctx, setting, value):
             cli_context: CliContext = ctx.obj
-            configuration = ConfigurationManager(cli_context.app_configuration_file)
+
+            self.__pre_configure_get_and_set_validation(cli_context)
+
+            configuration = ConfigurationManager(
+                cli_context.get_app_configuration_file()
+            )
             configuration.set(setting, value)
             configuration.save()
 
@@ -157,29 +178,36 @@ class ConfigureCli:
     # PRIVATE METHODS
     # ------------------------------------------------------------------------------
 
-    def __init_prequisites_met(self, cli_context: CliContext):
-        logger.info("Checking prerequisites ...")
-        result = True
+    def __check_env_vars_set(
+        self, cli_context: CliContext, mandatory_env_variables: Iterable[str]
+    ):
+        """Check that all mandatory environment variables have been set.
 
-        for env_variable in self.mandatory_env_variables:
+        Args:
+            cli_context (CliContext): the current cli context
+            mandatory_env_variables (Iterable[str]): the environment variables to check
+        """
+        logger.info("Checking prerequisites ...")
+        has_errors = False
+
+        for env_variable in mandatory_env_variables:
             value = os.environ.get(env_variable)
             if value is None:
                 logger.error(
                     "Mandatory environment variable is not defined [%s]", env_variable
                 )
-                result = False
+                has_errors = True
 
-        # if the configuration file exists in the config directory, then don't allow init
-        if os.path.isfile(cli_context.app_configuration_file):
-            logger.error(
-                f"Configuration directory already initialised at [{cli_context.configuration_dir}]"
-            )
-            result = False
-
-        return result
+        if has_errors:
+            error_and_exit("Missing mandatory environment variables.")
 
     def __seed_configuration_dir(self, cli_context: CliContext):
-        self.__print_header("Seeding configuration directory ...")
+        """Seed the raw configuration into the configuration directory
+
+        Args:
+            cli_context (CliContext): the current cli context
+        """
+        print_header("Seeding configuration directory ...")
 
         logger.info("Copying app configuration file ...")
         seed_app_configuration_file = self.cli_configuration.seed_app_configuration_file
@@ -188,7 +216,7 @@ class ConfigureCli:
                 f"Seed file [{seed_app_configuration_file}] is not valid. Release is corrupt."
             )
 
-        target_app_configuration_file = cli_context.app_configuration_file
+        target_app_configuration_file = cli_context.get_app_configuration_file()
         logger.debug(
             "Copying app configuration file to [%s] ...", target_app_configuration_file
         )
@@ -196,15 +224,13 @@ class ConfigureCli:
         shutil.copy2(seed_app_configuration_file, target_app_configuration_file)
 
         logger.info("Copying templates ...")
-        templates_dir = cli_context.templates_dir
+        templates_dir = cli_context.get_templates_dir()
         templates_dir.mkdir(parents=True, exist_ok=True)
         seed_templates_dir = self.cli_configuration.seed_templates_dir
         if not seed_templates_dir.is_dir():
-            logger.error(
-                "Seed templates directory [%s] is not valid. Release is corrupt.",
-                seed_templates_dir,
+            error_and_exit(
+                f"Seed templates directory [{seed_templates_dir}] is not valid. Release is corrupt."
             )
-            sys.exit(1)
 
         for source_file in seed_templates_dir.glob("**/*"):
             logger.info(source_file)
@@ -221,8 +247,14 @@ class ConfigureCli:
     def __generate_configuration_files(
         self, configuration: Configuration, cli_context: CliContext
     ):
-        self.__print_header(f"Generating configuration files")
-        generated_configuration_dir = cli_context.generated_configuration_dir
+        """Generate the generated configuration files
+
+        Args:
+            configuration (Configuration): the current cli configuration
+            cli_context (CliContext): the current cli context
+        """
+        print_header(f"Generating configuration files")
+        generated_configuration_dir = cli_context.get_generated_configuration_dir()
 
         # If the generated configuration directory is not empty, back it up and delete
         if os.path.exists(generated_configuration_dir) and os.listdir(
@@ -242,8 +274,8 @@ class ConfigureCli:
                 f"Configuration record removed from [{configuration_record_file}]"
             )
 
-        for template_file in cli_context.templates_dir.glob("**/*"):
-            relative_file = template_file.relative_to(cli_context.templates_dir)
+        for template_file in cli_context.get_templates_dir().glob("**/*"):
+            relative_file = template_file.relative_to(cli_context.get_templates_dir())
             target_file = generated_configuration_dir.joinpath(relative_file)
 
             if template_file.is_dir():
@@ -265,8 +297,8 @@ class ConfigureCli:
         files_to_decrypt = self.cli_configuration.decrypt_generated_files
         if len(files_to_decrypt) > 0:
             self.__decrypt_generated_files(
-                cli_context.key_file,
-                cli_context.generated_configuration_dir,
+                cli_context.get_key_file(),
+                cli_context.get_generated_configuration_dir(),
                 files_to_decrypt,
             )
 
@@ -350,47 +382,91 @@ class ConfigureCli:
         logger.debug(
             "Copying applied settings file to generated configuration directory"
         )
-        applied_configuration_file = cli_context.generated_configuration_dir.joinpath(
-            cli_context.app_configuration_file.name
+        applied_configuration_file = cli_context.get_generated_configuration_dir().joinpath(
+            cli_context.get_app_configuration_file().name
         )
-        shutil.copy2(cli_context.app_configuration_file, applied_configuration_file)
+        shutil.copy2(
+            cli_context.get_app_configuration_file(), applied_configuration_file
+        )
 
         logger.debug("Applied settings written to [%s]", applied_configuration_file)
 
-    def _block_on_existing_dirty_generated_config(
-        self, cli_context: CliContext, force: bool = False
-    ):
-        """Checks if the generated configuration directory exists, and whether it's dirty.
-        If it does exist, and is dirty (tracked files only), then this will error and exit.
-        Also provides a mechanism to override this behaviour with a force flag.
-        Need to check if the repository exists before checking for dirtiness, otherwise this
-        check will fail on an un-initialised repository.
+    def __pre_configure_init_validation(self, cli_context: CliContext):
+        """Ensures the system is in a valid state for 'configure init'.
 
         Args:
             cli_context (CliContext): the current cli context
-            force (bool): whether to force pass this check and only warn instead of error and exit. Defaults to False.
         """
-        repo: GeneratedConfigurationGitRepository = GeneratedConfigurationGitRepository(
-            cli_context
-        )
-        # If the repository exists, and the repository is dirty (not counting untracked files), then
-        # error out with a --force override possible
-        if repo.repo_exists() and repo.is_dirty(untracked_files=False):
-            if not force:
-                error_and_exit(
-                    f"Generated configuration repository is dirty, cannot apply. Use --force to override."
-                )
-            logger.info(
-                "Dirty generated configuration repository overwritten due to --force flag."
-            )
-
-    def __print_header(self, title):
         logger.info(
-            """============================================================
-                          %s
-                          ============================================================""",
-            title.upper(),
+            "Checking system configuration is valid before 'configure init' ..."
         )
+
+        # Cannot run configure init if the config directory already exists.
+        must_succeed_checks = [confirm_config_dir_not_exists]
+
+        execute_validation_functions(
+            cli_context=cli_context,
+            must_succeed_checks=must_succeed_checks,
+            force=False,
+        )
+
+        logger.info("System configuration is valid")
+
+    def __pre_configure_apply_validation(
+        self, cli_context: CliContext, force: bool = False
+    ):
+        """Ensures the system is in a valid state for 'configure apply'.
+
+        Args:
+            cli_context (CliContext): the current cli context
+            force (bool, optional): If True, only warns on validation failures, rather than exiting
+        """
+        logger.info(
+            "Checking system configuration is valid before 'configure apply' ..."
+        )
+
+        # If the config dir doesn't exist, we cannot apply
+        must_succeed_checks = [confirm_config_dir_exists]
+
+        should_succeed_checks = []
+
+        # If the generated configuration directory exists, test it for 'dirtiness'.
+        # Otherwise the generated config doesn't exist, so the directories are 'clean'.
+        try:
+            confirm_generated_config_dir_exists(cli_context)
+            # If the generated config is dirty, or not running against current config, warn before overwriting
+            should_succeed_checks = [
+                confirm_generated_config_dir_is_not_dirty,
+                confirm_generated_configuration_is_using_current_configuration,
+            ]
+        except Exception:
+            pass
+
+        execute_validation_functions(
+            cli_context=cli_context,
+            must_succeed_checks=must_succeed_checks,
+            should_succeed_checks=should_succeed_checks,
+            force=force,
+        )
+
+        logger.info("System configuration is valid")
+
+    def __pre_configure_get_and_set_validation(self, cli_context: CliContext):
+        """Ensures the system is in a valid state for 'configure get'.
+
+        Args:
+            cli_context (CliContext): the current cli context
+        """
+        logger.info("Checking system configuration is valid before 'configure get' ...")
+
+        # Block if the config dir doesn't exist as there's nothing to get or set
+        must_succeed_checks = [confirm_config_dir_exists]
+
+        execute_validation_functions(
+            cli_context=cli_context, must_succeed_checks=must_succeed_checks,
+        )
+
+        logger.info("System configuration is valid")
 
     def __generate_from_template(
         self, template_file: Path, target_file: Path, variables: dict
@@ -414,8 +490,7 @@ class ConfigureCli:
             output_text = template.render(variables)
             target_file.write_text(output_text)
         except Exception as e:
-            logger.error(
-                "Could not generate file from template. The configuration file is likely missing a setting: %s",
-                e,
+            error_and_exit(
+                f"Could not generate file from template. The configuration file is likely missing a setting: {e}"
             )
-            exit(1)
+

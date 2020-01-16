@@ -23,6 +23,7 @@ import click
 from jinja2 import Template
 
 # local libraries
+from appcli.functions import error_and_exit
 from appcli.logger import logger
 from appcli.models.configuration import Configuration
 
@@ -101,8 +102,7 @@ class InstallCli:
             prerequisites_met = False
 
         if not prerequisites_met:
-            logger.error("Prerequisite checks failed")
-            sys.exit(1)
+            error_and_exit("Prerequisite checks failed")
 
     def __setup_application_home(self, overwrite_install_dir):
         logger.info(f"Setting up [{self.app_home}] ...")

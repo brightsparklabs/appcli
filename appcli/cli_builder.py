@@ -11,12 +11,8 @@ www.brightsparklabs.com
 
 # standard libraries
 import os
-import shlex
-import subprocess
 import sys
-from math import floor
 from pathlib import Path
-from time import time
 from typing import Dict, Iterable
 
 # vendor libraries
@@ -53,13 +49,11 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     Args:
         configuration (Configuration): the application's configuration settings
     """
-    APP_NAME = configuration.app_name
-    APP_NAME_UPPERCASE = APP_NAME.upper()
-    ENV_VAR_CONFIG_DIR = f"{APP_NAME_UPPERCASE}_CONFIG_DIR"
-    ENV_VAR_GENERATED_CONFIG_DIR = f"{APP_NAME_UPPERCASE}_GENERATED_CONFIG_DIR"
-    ENV_VAR_DATA_DIR = f"{APP_NAME_UPPERCASE}_DATA_DIR"
-    ENV_VAR_ENVIRONMENT = f"{APP_NAME_UPPERCASE}_ENVIRONMENT"
-
+    APP_NAME = configuration.app_name.upper()
+    ENV_VAR_CONFIG_DIR = f"{APP_NAME}_CONFIG_DIR"
+    ENV_VAR_GENERATED_CONFIG_DIR = f"{APP_NAME}_GENERATED_CONFIG_DIR"
+    ENV_VAR_DATA_DIR = f"{APP_NAME}_DATA_DIR"
+    ENV_VAR_ENVIRONMENT = f"{APP_NAME}_ENVIRONMENT"
     APP_VERSION = os.environ.get("APP_VERSION", "latest")
 
     # --------------------------------------------------------------------------
@@ -142,11 +136,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             environment=environment,
             subcommand_args=ctx.obj,
             debug=debug,
-            key_file=Path(configuration_dir, "key"),
-            generated_configuration_dir=configuration_dir.joinpath(".generated"),
-            app_configuration_file=configuration_dir.joinpath(f"{APP_NAME}.yml"),
-            templates_dir=configuration_dir.joinpath("templates"),
-            project_name=f"{APP_NAME}_{environment}",
+            app_name=APP_NAME,
             app_version=APP_VERSION,
             commands=default_commands,
         )
@@ -154,11 +144,6 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         if ctx.invoked_subcommand is None:
             click.echo(ctx.get_help())
             sys.exit(1)
-
-        # For the 'launcher' command, no further output/checks required.
-        if ctx.invoked_subcommand == "launcher":
-            # Don't execute this function any further, continue to run subcommand with the current cli context
-            return
 
         # attempt to set desired environment
         initialised_environment = {}
@@ -174,8 +159,12 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
                 "Could not set desired environment. Please ensure specified environment variables are set."
             )
 
+        # For the 'launcher' command, no further output/checks required.
+        if ctx.invoked_subcommand == "launcher":
+            # Don't execute this function any further, continue to run subcommand with the current cli context
+            return
+
         check_docker_socket()
-        relaunch_if_required(ctx)
         check_environment()
 
         # Table of configuration variables to print
@@ -183,7 +172,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             [f"{ENV_VAR_CONFIG_DIR}", f"{ctx.obj.configuration_dir}"],
             [
                 f"{ENV_VAR_GENERATED_CONFIG_DIR}",
-                f"{ctx.obj.generated_configuration_dir}",
+                f"{ctx.obj.get_generated_configuration_dir()}",
             ],
             [f"{ENV_VAR_DATA_DIR}", f"{ctx.obj.data_dir}"],
             [f"{ENV_VAR_ENVIRONMENT}", f"{ctx.obj.environment}"],
@@ -192,7 +181,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         # Print out the configuration values as an aligned table
         logger.info(
             "%s (version: %s) CLI running with:\n\n%s\n",
-            APP_NAME_UPPERCASE,
+            APP_NAME,
             APP_VERSION,
             tabulate(table, colalign=("right",)),
         )
@@ -224,105 +213,8 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         """Check that the docker socket exists, and exit if it does not
         """
         if not os.path.exists("/var/run/docker.sock"):
-            error_msg = f"""Please relaunch using:
-
-    docker run \\
-        --rm
-        --volume /var/run/docker.sock:/var/run/docker.sock \\
-        {configuration.docker_image}:{APP_VERSION} \\
-            --configuration-dir <dir> \\
-            --data-dir <dir> COMMAND'
-            --environment <str>
-"""
+            error_msg = f"""Docker socket not present. Please launch with a mounted /var/run/docker.sock"""
             error_and_exit(error_msg)
-
-    def relaunch_if_required(ctx: click.Context):
-        """Check if the appcli is being run within the context of the appcli container. If not, relaunch with appropriate
-        environment variables and mounted volumes.
-
-        Args:
-            ctx (click.Context): The current cli context
-        """
-        is_appcli_managed = os.environ.get("APPCLI_MANAGED")
-        if is_appcli_managed is not None:
-            # launched by appcli => no need to relaunch
-            return
-
-        # launched by user, not by appcli => need to launch via appcli
-        cli_context: CliContext = ctx.obj
-        configuration_dir = cli_context.configuration_dir
-        generated_configuration_dir = cli_context.generated_configuration_dir
-        data_dir = cli_context.data_dir
-        environment = cli_context.environment
-        seconds_since_epoch = floor(time())
-        command = shlex.split(
-            f"""docker run
-                        --name osmosis_{cli_context.environment}_relauncher_{seconds_since_epoch}
-                        --rm
-                        --interactive
-                        --tty
-                        --volume /var/run/docker.sock:/var/run/docker.sock
-                        --env APPCLI_MANAGED=Y
-                        --env {ENV_VAR_CONFIG_DIR}='{configuration_dir}'
-                        --volume '{configuration_dir}:{configuration_dir}'
-                        --env {ENV_VAR_GENERATED_CONFIG_DIR}='{generated_configuration_dir}'
-                        --volume '{generated_configuration_dir}:{generated_configuration_dir}'
-                        --env {ENV_VAR_DATA_DIR}='{data_dir}'
-                        --volume '{data_dir}:{data_dir}'
-                        --env {ENV_VAR_ENVIRONMENT}='{environment}'
-            """
-        )
-
-        for name, path in cli_context.additional_data_dirs:
-            command.extend(
-                shlex.split(
-                    f"""
-                        --env {name}="{path}"
-                        --volume "{path}:{path}"
-                    """
-                )
-            )
-
-        for name, value in desired_environment.items():
-            command.extend(shlex.split(f'--env {name}="{value}"'))
-
-        for name, value in cli_context.additional_env_variables:
-            command.extend(shlex.split(f'--env {name}="{value}"'))
-
-        command.extend(
-            shlex.split(
-                f"""
-                    {configuration.docker_image}:{APP_VERSION}
-                    --configuration-dir "{configuration_dir}"
-                    --data-dir "{data_dir}"
-                    --environment "{environment}"
-                """
-            )
-        )
-        for name, path in cli_context.additional_data_dirs:
-            command.extend(shlex.split(f'--additional-data-dir {name}="{path}"'))
-        for name, value in cli_context.additional_env_variables:
-            command.extend(shlex.split(f'--additional-env-var {name}="{value}"'))
-
-        if cli_context.debug:
-            command.append("--debug")
-            # useful when debugging
-            new_env = ""
-            for i, value in enumerate(command):
-                if value == "--env" and i + 1 < len(command):
-                    new_env += f"\t{command[i+1]} \\\n"
-            logger.debug(
-                f"Relaunched environment will be initialised with:\n%s", new_env,
-            )
-        if ctx.invoked_subcommand is not None:
-            command.append(ctx.invoked_subcommand)
-        if cli_context.subcommand_args is not None:
-            command.extend(cli_context.subcommand_args)
-
-        logger.info("Relaunching with initialised environment ...")
-        logger.debug("Running [%s]", " ".join(command))
-        result = subprocess.run(command)
-        sys.exit(result.returncode)
 
     def check_environment():
         """Confirm that mandatory environment variables and additional data directories are defined.

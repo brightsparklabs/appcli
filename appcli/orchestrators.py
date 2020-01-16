@@ -100,14 +100,16 @@ class DockerComposeOrchestrator(Orchestrator):
     """
 
     def __init__(
-        self, docker_compose_file: Path, docker_compose_override_files: Iterable[Path]
+        self,
+        docker_compose_file: Path,
+        docker_compose_override_files: Iterable[Path] = [],
     ):
         """
         Creates a new instance.
 
         Args:
             docker_compose_file (Path): Path to a `docker-compose.yml` file relative to the generated configuration directory.
-            docker_compose_override_files (Iterable[Path]): Paths to any additional docker-compose override files relative to the generated configuration directory.
+            docker_compose_override_files (Iterable[Path], optional): Paths to any additional docker-compose override files relative to the generated configuration directory.
         """
         self.docker_compose_file = docker_compose_file
         self.docker_compose_override_files = docker_compose_override_files
@@ -165,7 +167,7 @@ class DockerComposeOrchestrator(Orchestrator):
         docker_compose_command = [
             "docker-compose",
             "--project-name",
-            cli_context.project_name,
+            cli_context.get_project_name(),
         ]
 
         compose_files = decrypt_files(
@@ -186,14 +188,16 @@ class DockerSwarmOrchestrator(Orchestrator):
     """
 
     def __init__(
-        self, docker_compose_file: Path, docker_compose_override_files: Iterable[Path]
+        self,
+        docker_compose_file: Path,
+        docker_compose_override_files: Iterable[Path] = [],
     ):
         """
         Creates a new instance.
 
         Args:
             docker_compose_file (Path): Path to a `docker-compose.yml` file relative to the generated configuration directory.
-            docker_compose_override_files (Iterable[Path]): Paths to any additional docker-compose override files relative to the generated configuration directory.
+            docker_compose_override_files (Iterable[Path], optional): Paths to any additional docker-compose override files relative to the generated configuration directory.
         """
         self.docker_compose_file = docker_compose_file
         self.docker_compose_override_files = docker_compose_override_files
@@ -221,7 +225,7 @@ class DockerSwarmOrchestrator(Orchestrator):
         def logs(ctx, service):
             cli_context = ctx.obj
             command = ["docker", "service", "logs", "--follow"]
-            command.append(f"{cli_context.project_name}_{service}")
+            command.append(f"{cli_context.get_project_name()}_{service}")
             result = self.__exec_command(command)
             sys.exit(result.returncode)
 
@@ -250,7 +254,7 @@ class DockerSwarmOrchestrator(Orchestrator):
     ) -> CompletedProcess:
         command = ["docker", "stack"]
         command.extend(subcommand)
-        command.append(cli_context.project_name)
+        command.append(cli_context.get_project_name())
         return self.__exec_command(command)
 
     def __exec_command(self, command: str) -> CompletedProcess:
@@ -272,12 +276,12 @@ def decrypt_files(
     compose_files.extend(docker_compose_override_files)
     # turn relative paths into absolute paths
     compose_files = [
-        cli_context.generated_configuration_dir.joinpath(relative_path)
+        cli_context.get_generated_configuration_dir().joinpath(relative_path)
         for relative_path in compose_files
     ]
 
     # decrypt files if key is available
-    key_file = cli_context.key_file
+    key_file = cli_context.get_key_file()
     decrypted_files = [
         decrypt_file(encrypted_file, key_file) for encrypted_file in compose_files
     ]

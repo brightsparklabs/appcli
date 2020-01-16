@@ -45,7 +45,7 @@ class EncryptCli:
         def encrypt(ctx, text: str):
 
             cli_context: CliContext = ctx.obj
-            key_file: Path = cli_context.key_file
+            key_file: Path = cli_context.get_key_file()
             if not key_file.is_file():
                 logger.info("Creating encryption key at [%s]", key_file)
                 crypto.create_and_save_key(key_file)

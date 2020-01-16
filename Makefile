@@ -42,7 +42,7 @@ lint: venv
 	${PYTHON} -m isort -c || echo -e "\nReview isort errors with 'make isort'"
 
 format: venv
-	${PYTHON} -m black . || echo ha
+	${PYTHON} -m black .
 
 isort: venv
 	${PYTHON} -m isort
