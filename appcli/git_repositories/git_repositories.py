@@ -35,7 +35,7 @@ class GitRepository:
     def __init__(self, repo_path: str, ignores: Iterable[str] = None):
         self.repo_path = repo_path
         self.ignores = ignores
-        self.author: str = "appcli <root@localhost"
+        self.actor: git.Actor = git.Actor(f"appcli", "root@localhost")
 
     def init(self):
         """Initialise the git repository, create .gitignore if required, and commit the initial files
@@ -52,8 +52,9 @@ class GitRepository:
         repo = git.Repo.init(self.repo_path)
         logger.debug("Initialised repository at [%s]", repo.working_dir)
         with open(self.repo_path.joinpath(".gitignore"), "w+") as ignore_file:
-            for ignore in self.ignores:
-                ignore_file.write(f"{ignore}\n")
+            if self.ignores:
+                for ignore in self.ignores:
+                    ignore_file.write(f"{ignore}\n")
         logger.debug("Created .gitignore with ignores: [%s]", self.ignores)
         repo.git.add(".gitignore")
 
@@ -61,7 +62,7 @@ class GitRepository:
 
         # do the initial commit on the repo
         repo.git.add("*")
-        repo.git.commit(m="[autocommit] Initialised repository", author=self.author)
+        repo.index.commit("[autocommit] Initialised repository", author=self.actor)
         logger.debug("Committed repository at [%s]", repo.working_dir)
 
     def commit_changes(self, message: str):
@@ -86,7 +87,7 @@ class GitRepository:
             repo.git.add(".gitignore")
         repo.git.add("*")
 
-        repo.git.commit(m=message, author=self.author)
+        repo.index.commit(message, author=self.actor)
 
     def checkout_new_branch(self, branch_name: str):
         """Checkout a new branch from the current commit
