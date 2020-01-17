@@ -35,7 +35,7 @@ class GitRepository:
     def __init__(self, repo_path: str, ignores: Iterable[str] = None):
         self.repo_path = repo_path
         self.ignores = ignores
-        self.actor: git.Actor = git.Actor(f"appcli", "root@localhost")
+        self.author: str = "appcli <root@localhost"
 
     def init(self):
         """Initialise the git repository, create .gitignore if required, and commit the initial files
@@ -51,16 +51,17 @@ class GitRepository:
         # git init, and write to the .gitignore file
         repo = git.Repo.init(self.repo_path)
         logger.debug("Initialised repository at [%s]", repo.working_dir)
-        if self.ignores:
-            with open(self.repo_path.joinpath(".gitignore"), "w+") as ignore_file:
-                for ignore in self.ignores:
-                    ignore_file.write(f"{ignore}\n")
-            logger.debug("Created .gitignore with ignores: %s", self.ignores)
-            repo.index.add(".gitignore")
+        with open(self.repo_path.joinpath(".gitignore"), "w+") as ignore_file:
+            for ignore in self.ignores:
+                ignore_file.write(f"{ignore}\n")
+        logger.debug("Created .gitignore with ignores: [%s]", self.ignores)
+        repo.git.add(".gitignore")
+
+        # TODO: Generate encryption key here on the master branch, it should be used across all branches
 
         # do the initial commit on the repo
-        repo.index.add("*")
-        repo.index.commit("[autocommit] Initialised repository", author=self.actor)
+        repo.git.add("*")
+        repo.git.commit(m="[autocommit] Initialised repository", author=self.author)
         logger.debug("Committed repository at [%s]", repo.working_dir)
 
     def commit_changes(self, message: str):
@@ -82,10 +83,67 @@ class GitRepository:
 
         # Add all files (and optionally the .gitignore if it exists)
         if Path(repo.working_dir).joinpath(".gitignore").exists():
-            repo.index.add(".gitignore")
-        repo.index.add("*")
+            repo.git.add(".gitignore")
+        repo.git.add("*")
 
-        repo.index.commit(message, author=self.actor)
+        repo.git.commit(m=message, author=self.author)
+
+    def checkout_new_branch(self, branch_name: str):
+        """Checkout a new branch from the current commit
+
+        Args:
+            branch_name (str): name of the new branch
+        """
+        repo = self._get_repo()
+        repo.git.checkout("HEAD", b=branch_name)
+
+    def checkout_existing_branch(self, branch_name: str):
+        """Checkout an existing branch
+
+        Args:
+            branch_name (str): name of the branch to checkout to
+        """
+        repo = self._get_repo()
+        repo.git.checkout(branch_name)
+
+    def checkout_master_branch(self):
+        """Checkout the 'master' branch
+        """
+        self.checkout_existing_branch("master")
+
+    def get_current_branch_name(self) -> str:
+        """Get the name of the current branch
+
+        Returns:
+            str: name of the current branch
+        """
+        repo = self._get_repo()
+        return repo.git.symbolic_ref("HEAD", short=True)
+
+    def does_branch_exist(self, branch_name: str) -> bool:
+        """Checks if a branch with a particular name exists
+
+        Args:
+            branch_name (str): the name of the branch to check
+
+        Returns:
+            bool: True if the branch exists, otherwise false
+        """
+        repo = self._get_repo()
+        try:
+            repo.git.show_ref(f"refs/heads/{branch_name}", verify=True, quiet=True)
+            return True
+        except Exception:
+            return False
+
+    def tag_current_commit(self, tag_name: str):
+        """Tag the current commit with a tag name
+
+        Args:
+            tag_name (str): the tagname to use in the tag
+        """
+        repo = self._get_repo()
+        repo.git.tag(tag_name)
 
     def is_dirty(self, untracked_files: bool = False):
         """Tests if the repository is dirty or not. True if dirty, False if not.
@@ -116,7 +174,7 @@ class GitRepository:
         """Get the commit hash of the current commit
         """
         repo = self._get_repo()
-        return repo.head.object.hexsha
+        return repo.git.rev_parse("HEAD")
 
     def _get_repo(self):
         """Get the repository if it exists, otherwise raise a custom Exception
@@ -270,4 +328,25 @@ def confirm_generated_configuration_is_using_current_configuration(
         )
         raise Exception(
             "Generated configuration is out of sync with raw configuration. Please run `configure apply`."
+        )
+
+
+def confirm_config_version_matches_app_version(cli_context: CliContext):
+    """Confirm that the configuration repository version matches the application version.
+    If this fails, it will raise a general Exception with the error message.
+
+    Args:
+        cli_context (CliContext): the current cli context
+
+    Raises:
+        Exception: Raised if the configuration repository version doesn't match the application version.
+    """
+    config_repo: ConfigurationGitRepository = ConfigurationGitRepository(cli_context)
+    config_version: str = config_repo.get_current_branch_name()
+
+    app_version: str = cli_context.app_version
+
+    if config_version != app_version:
+        raise Exception(
+            f"Configuration at [{config_repo.repo_path}] is using version [{config_version}] which is incompatible with current application version [{app_version}]. Migrate to this application version using 'migrate'."
         )

@@ -88,18 +88,15 @@ class ConfigureCli:
             logger.debug("Running pre-configure init hook")
             hooks.pre_configure_init(ctx)
 
-            # Seed the configuration directory
+            # Initialise configuration directory
             logger.debug("Initialising configuration directory")
-            self.__seed_configuration_dir(cli_context)
+            self.__initialise_configuration_directory(cli_context)
 
             # Create an encryption key
             create_and_save_key(cli_context.get_key_file())
 
             logger.debug("Running post-configure init hook")
             hooks.post_configure_init(ctx)
-
-            # After initialising the configuration directory, put it under source control
-            ConfigurationGitRepository(cli_context).init()
 
             logger.info("Finished initialising configuration")
 
@@ -200,6 +197,26 @@ class ConfigureCli:
 
         if has_errors:
             error_and_exit("Missing mandatory environment variables.")
+
+    def __initialise_configuration_directory(self, cli_context: CliContext):
+
+        config_repo: ConfigurationGitRepository = ConfigurationGitRepository(
+            cli_context
+        )
+        app_version: str = cli_context.app_version
+
+        # Initialise the empty repo
+        config_repo.init()
+
+        # Create a new branch for this current application version
+        config_repo.checkout_new_branch(app_version)
+
+        # Seed the configuration directory
+        self.__seed_configuration_dir(cli_context)
+
+        # Commit the changes, and tag as $VERSION
+        config_repo.commit_changes(f"Default configuration at version [{app_version}]")
+        config_repo.tag_current_commit(app_version)
 
     def __seed_configuration_dir(self, cli_context: CliContext):
         """Seed the raw configuration into the configuration directory
