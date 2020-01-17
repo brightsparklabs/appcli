@@ -4,7 +4,7 @@
 # standard libraries
 from pathlib import Path
 from subprocess import CompletedProcess
-from typing import Callable, FrozenSet, Iterable, NamedTuple, Tuple
+from typing import Callable, FrozenSet, Iterable, NamedTuple, Tuple, Dict
 
 # vendor libraries
 import click
@@ -16,6 +16,10 @@ from appcli.orchestrators import Orchestrator
 class Hooks(NamedTuple):
     """ Hooks to run before/after stages """
 
+    migrate_variables: Callable[[Dict, str], Dict]
+    """ Delegate function to run during a migration, which converts variables between application versions.
+     Args are: Dict of variables to transform, and the version of the current variables file. Returns a
+     transformed Dict of variables."""
     pre_start: Callable[[click.Context], None] = lambda x: None
     """ Optional. Hook function to run before running 'start'. """
     post_start: Callable[[click.Context, CompletedProcess], None] = lambda x, y: None

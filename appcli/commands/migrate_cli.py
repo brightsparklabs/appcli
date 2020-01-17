@@ -17,6 +17,7 @@ www.brightsparklabs.com
 import click
 
 # local libraries
+from appcli.configuration_manager import ConfigurationManager
 from appcli.functions import execute_validation_functions
 from appcli.logger import logger
 from appcli.models.configuration import Configuration
@@ -139,6 +140,8 @@ class MigrateCli:
         """Migrates the configuration version to the current application version
         """
 
+        # TODO: Test and confirm this works as expected.
+
         config_repo: ConfigurationGitRepository = ConfigurationGitRepository(
             cli_context
         )
@@ -155,8 +158,17 @@ class MigrateCli:
             # Change to that branch, no further migration steps will be taken.
             config_repo.checkout_existing_branch(app_version)
 
-        # TODO: read the current configuration
-        # TODO: delegate the 'migration' of configuration to the application being upgraded, which returns a migrated config (e.g. 'v2 migrated')
+            return
+
+        # Read the current configuration variables
+        app_config_file = cli_context.get_app_configuration_file()
+        config_manager: ConfigurationManager = ConfigurationManager(app_config_file)
+        current_variables = config_manager.get_as_dict()
+
+        # Delegate migration to the application callback function
+        new_variables = self.cli_configuration.hooks.migrate_variables(
+            current_variables, self._get_config_version(cli_context)
+        )
 
         # Change branch to the clean 'master' branch
         config_repo.checkout_master_branch()
@@ -173,7 +185,9 @@ class MigrateCli:
 
         # TODO: Compare new v2 config to the 'clean v2', and make sure all settings are there.
 
-        # TODO: Write out 'v2 migrated' variables file
+        # Write out 'v2 migrated' variables file
+        config_manager.set_all(new_variables)
+        config_manager.save()
 
         # Commit the new variables file
         config_repo.commit_changes(
