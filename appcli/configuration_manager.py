@@ -13,6 +13,7 @@ www.brightsparklabs.com
 import sys
 from functools import reduce
 from pathlib import Path
+from typing import Dict
 
 # vendor libraries
 from ruamel.yaml import YAML
@@ -74,6 +75,14 @@ class ConfigurationManager:
         # set the value
         parent_element = reduce(lambda e, k: e[k], parent_path, self.configuration)
         parent_element[path_elements[-1]] = value
+
+    def set_all(self, variables: Dict):
+        """Sets all values in the configuration
+
+        Args:
+            variables (Dict): the variables to set
+        """
+        self.configuration = variables
 
     def save(self):
         """Saves the configuration"""
