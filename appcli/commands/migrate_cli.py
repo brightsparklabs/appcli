@@ -17,9 +17,16 @@ www.brightsparklabs.com
 import click
 
 # local libraries
-from appcli.functions import error_and_exit
+from appcli.functions import execute_validation_functions
 from appcli.logger import logger
 from appcli.models.configuration import Configuration
+from appcli.models.cli_context import CliContext
+from appcli.git_repositories.git_repositories import (
+    ConfigurationGitRepository,
+    confirm_config_dir_is_not_dirty,
+    confirm_generated_config_dir_is_not_dirty,
+    confirm_generated_configuration_is_using_current_configuration,
+)
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -41,8 +48,12 @@ class MigrateCli:
         @click.pass_context
         def migrate(ctx):
 
-            config_version: str = self._get_config_version()
-            app_version: str = self._get_app_version()
+            cli_context: CliContext = ctx.obj
+
+            self.__pre_migrate_validation(cli_context)
+
+            config_version: str = self._get_config_version(cli_context)
+            app_version: str = self._get_app_version(cli_context)
 
             logger.info(
                 f"Migrating configuration at version [{config_version}] to match application version [{app_version}]"
@@ -53,13 +64,9 @@ class MigrateCli:
                 logger.info("Migration not required.")
                 return
 
-            # Check if the system is ready to migrate
-            if not self._is_ready_to_migrate():
-                error_and_exit("Not ready for migration. See errors above.")
-
             # TODO: Should we have a prompt to confirm that the user definitely wants to migrate from X version to Y version? Include a '-y' or '--yes' option to skip the prompt.
 
-            self._migrate_configuration_to_version(app_version)
+            self._migrate_configuration(cli_context)
 
             logger.info(
                 f"Migration successfully completed. Migrated configuration from version [{config_version}] to [{app_version}]"
@@ -72,72 +79,111 @@ class MigrateCli:
     # PRIVATE METHODS
     # ------------------------------------------------------------------------------
 
-    def _get_app_version(self) -> str:
+    def __pre_migrate_validation(self, cli_context: CliContext):
+        """Ensures the system is in a valid state for migration.
+
+        Args:
+            cli_context (CliContext): the current cli context
+        """
+        logger.info("Checking system configuration is valid before migration ...")
+
+        execute_validation_functions(
+            cli_context=cli_context,
+            must_succeed_checks=[confirm_config_dir_is_not_dirty],
+            should_succeed_checks=[
+                confirm_generated_config_dir_is_not_dirty,
+                confirm_generated_configuration_is_using_current_configuration,
+            ],
+        )
+
+        logger.info("System configuration is valid for migration.")
+
+    def _get_app_version(self, cli_context: CliContext) -> str:
         """Get the target application version, which is the version of the application
         which is currently running in the Docker container.
 
         Returns:
             str: version of the application according to the Docker container this script is running in.
         """
-        # TODO: return the version of the application from environment variable
-        return ""
+        return cli_context.app_version
 
-    def _get_config_version(self) -> str:
+    def _get_config_version(self, cli_context: CliContext) -> str:
         """Get the current configuration repository's version
 
         Returns:
             str: version of the configuration repository
         """
         # TODO: return the branch name of the configuration repository
-        return ""
+        config_repo: ConfigurationGitRepository = ConfigurationGitRepository(
+            cli_context
+        )
+        return config_repo.get_current_branch_name()
 
-    def _is_ready_to_migrate(self) -> bool:
+    def _is_ready_to_migrate(self, cli_context: CliContext) -> bool:
         """Check if the application is in a state where it is ready to migrate cleanly
 
         Returns:
             bool: returns True if the application is ready for migration, otherwise False.
         """
-        # TODO: Implement check
+        try:
+            confirm_config_dir_is_not_dirty(cli_context)
+        except Exception:
+            logger.error(
+                "Un-applied changes to configuration repository, so migration cannot continue. Please run 'configure apply'."
+            )
+            return False
 
-        # If the configuration directory is dirty, warn and return False.
+        return True
 
-        # return True
-        return False
-
-    def _migrate_configuration_to_version(self, version: str):
-        """Migrates the configuration to another version
-
-        Args:
-            version (str): the version to migrate to
+    def _migrate_configuration(self, cli_context: CliContext):
+        """Migrates the configuration version to the current application version
         """
-        # TODO: Implement
+
+        config_repo: ConfigurationGitRepository = ConfigurationGitRepository(
+            cli_context
+        )
+        app_version = self._get_app_version(cli_context)
+
+        if config_repo.does_branch_exist(app_version):
+            # If the branch already exists, then this version has previously been installed.
+
+            # TODO: Handle the case where it was previously installed, but we want multiple versions of a single version. e.g. v1-a, v1-b, v1-c
+            logger.warn(
+                f"Version [{app_version}] of this application was previously installed. Rolling back to previous configuration. Manual remediation may be required."
+            )
+
+            # Change to that branch, no further migration steps will be taken.
+            config_repo.checkout_existing_branch(app_version)
+
+        # TODO: read the current configuration
+        # TODO: delegate the 'migration' of configuration to the application being upgraded, which returns a migrated config (e.g. 'v2 migrated')
 
         # Change branch to the clean 'master' branch
+        config_repo.checkout_master_branch()
 
-        # Copy over new version configuration files (re-seed)
+        # TODO: Copy over new version configuration files (re-seed)
 
         # Create new branch, named after the version being deployed
+        config_repo.checkout_new_branch(app_version)
 
-        # Commit 'inital' v2
+        # Commit the default v2 configuration
+        config_repo.commit_changes(
+            f"Initialised application at version [{app_version}]"
+        )
 
-        # >> Now at v2
+        # TODO: Compare new v2 config to the 'clean v2', and make sure all settings are there.
 
-        # Get variables file at v1 and v1.c
+        # TODO: Write out 'v2 migrated' variables file
 
-        # Parse and diff these as dictionaries -> List of different key values
+        # Commit the new variables file
+        config_repo.commit_changes(
+            f"Migrated variables file to version [{app_version}]"
+        )
 
-        # Parse v2 variables file
-        # For each different key value from v1 to v1.c:
-        #   If key exists in v2 variables file, then set
-        #   If key does not exist in v2 variables file, collect for manual fixing
-        # Write out new file and commit
+        # >> Now at v2 variables file. Still templates to go.
 
-        # Provde user with list of manual fixes required to variables file
+        # TODO: Diff all non-variables files (i.e. all templates files + w/e else) -> List of changed files, and their changes.
 
-        # Commit after applying manual fixes to variables file
+        # TODO: For each changed file, notify user that manual changes will need to be made to that template file. Provide diff.
 
-        # Diff all non-variables files (i.e. all templates files + w/e else) -> List of changed files, and their changes.
-
-        # For each changed file, notify user that manual changes will need to be made to that template file. Provide diff.
-
-        # Once all templates have been upgraded to v2, commit and done with migration!
+        # TODO: Once all templates have been upgraded to v2, commit and done with migration!
