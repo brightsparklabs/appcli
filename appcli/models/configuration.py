@@ -16,10 +16,10 @@ from appcli.orchestrators import Orchestrator
 class Hooks(NamedTuple):
     """ Hooks to run before/after stages """
 
-    migrate_variables: Callable[[Dict, str], Dict]
-    """ Delegate function to run during a migration, which converts variables between application versions.
-     Args are: Dict of variables to transform, and the version of the current variables file. Returns a
-     transformed Dict of variables."""
+    migrate_variables: Callable[[Dict, str], Dict] = lambda x, y: x
+    """ Optional. Delegate function to run during a migration, which converts variables between application versions.
+     Args are: [Dict of variables to transform], and [version of the current variables file]. Returns
+     [transformed Dict of variables]. If no function provided, identity function is used."""
     pre_start: Callable[[click.Context], None] = lambda x: None
     """ Optional. Hook function to run before running 'start'. """
     post_start: Callable[[click.Context, CompletedProcess], None] = lambda x, y: None
