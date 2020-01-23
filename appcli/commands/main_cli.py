@@ -17,7 +17,7 @@ import click
 
 # local libraries
 from appcli.functions import execute_validation_functions
-from appcli.git_repositories.git_repositories import (
+from appcli.configuration_manager import (
     confirm_config_dir_is_not_dirty,
     confirm_config_version_matches_app_version,
     confirm_generated_config_dir_exists,
