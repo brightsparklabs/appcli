@@ -239,6 +239,7 @@ class ConfigureCli:
                 confirm_generated_configuration_is_using_current_configuration,
             ]
         except Exception:
+            # If the confirm fails, then we just pass as this is an expected error
             pass
 
         execute_validation_functions(
