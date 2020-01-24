@@ -142,8 +142,6 @@ class SettingsManager:
 # ------------------------------------------------------------------------------
 # PUBLIC CLASSES
 # ------------------------------------------------------------------------------
-
-
 class ConfigurationManager:
     """Manages the configuration of the application. Handles initialisation, settings changes, migration to new versions, etc."""
 
@@ -192,8 +190,11 @@ class ConfigurationManager:
             f"[autocommit] Generated configuration files for 'apply' with message [{message}]"
         )
 
-    def migrate(self, ignore_settings_migration_structural_errors: bool = False):
+    def migrate(self, ignore_variables_migration_structural_errors: bool = False):
         """Migrates the configuration version to the current application version
+
+        Args:
+            ignore_variables_migration_structural_errors (bool, optional): If True, will ignore stuctural validation errors in the application-migrated variables. Defaults to False.
         """
 
         # TODO: Test and confirm this works as expected.
@@ -201,14 +202,16 @@ class ConfigurationManager:
         config_version: str = self.__get_config_version()
         app_version: str = self.__get_app_version()
 
+        # If the configuration version matches the application version, no migration is required.
+        if config_version == app_version:
+            logger.info(
+                f"Migration not required. Config version [{config_version}] matches application version [{app_version}]"
+            )
+            return
+
         logger.info(
             f"Migrating configuration version [{config_version}] to match application version [{app_version}]"
         )
-
-        # If the configuration version matches the application version, no migration is required.
-        if config_version == app_version:
-            logger.info("Migration not required.")
-            return
 
         # TODO: Should we have a prompt to confirm that the user definitely wants to migrate from X version to Y version? Include a '-y' or '--yes' option to skip the prompt.
 
@@ -224,28 +227,22 @@ class ConfigurationManager:
             self.config_repo.checkout_existing_branch(app_version)
             return
 
-        # Installing a version which has not previously been installed.
-
-        # Read the current configuration variables
+        # Migrate the current configuration variables
         current_variables = self.get_all()
-
-        # Delegate migration to the application callback function
         migrated_variables = self.cli_configuration.hooks.migrate_variables(
             current_variables, config_version
         )
 
-        # Get the 'clean settings' of the new application
-        clean_new_version_variables = SettingsManager(
-            self.cli_configuration.seed_app_configuration_file
-        ).get_all()
-
         # Compare migrated config to the 'clean config' of the new version, and make sure all variables have been set and are the same type.
         # TODO: Should we be comparing the entire Dict or just a slice of it? We should probably ignore a 'custom' block of variables, and focus
         # solely on the application's default settings
+        clean_new_version_variables = SettingsManager(
+            self.cli_configuration.seed_app_configuration_file
+        ).get_all()
         self.__verify_migrated_settings_match_clean_settings_structure(
             migrated_variables,
             clean_new_version_variables,
-            ignore_settings_migration_structural_errors,
+            ignore_variables_migration_structural_errors,
         )
 
         # Backup and remove the existing generated config dir since it's now out of date
@@ -363,15 +360,22 @@ class ConfigurationManager:
 
     def __verify_migrated_settings_match_clean_settings_structure(
         self,
-        migrated_variables,
-        clean_new_version_variables,
-        ignore_settings_migration_structural_errors,
+        migrated_variables: Dict,
+        clean_new_version_variables: Dict,
+        ignore_variables_migration_structural_errors: bool,
     ):
+        """Verify that migrated variables match the structure of the clean new version variables
+
+        Args:
+            migrated_variables (Dict): the migrated variables to check
+            clean_new_version_variables (Dict): the clean new version variables to check against
+            ignore_variables_migration_structural_errors (bool): True to warn on structural errors, otherwise if False then it will error and exit.
+        """
         if not self.__are_dicts_matching_structure(
             migrated_variables, clean_new_version_variables
         ):
             error_message: str = "Migrated settings structure does not match structure of clean structure."
-            if ignore_settings_migration_structural_errors:
+            if ignore_variables_migration_structural_errors:
                 logger.warn(
                     f"{error_message} Settings may need to be manually modified to fit expected structure."
                 )
@@ -407,9 +411,6 @@ class ConfigurationManager:
 
     def __seed_configuration_dir(self):
         """Seed the raw configuration into the configuration directory
-
-        Args:
-            cli_context (CliContext): the current cli context
         """
         print_header("Seeding configuration directory ...")
 
@@ -494,7 +495,12 @@ class ConfigurationManager:
 
         logger.info("Generated configuration files successfully ...")
 
-    def __backup_and_create_new_generated_config_dir(self):
+    def __backup_and_create_new_generated_config_dir(self) -> Path:
+        """Backup the generated configuration dir, and create a new one
+
+        Returns:
+            Path: path to the clean generated configuration dir
+        """
         generated_configuration_dir = self.cli_context.get_generated_configuration_dir()
 
         # If the generated configuration directory is not empty, back it up and delete
