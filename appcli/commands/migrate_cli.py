@@ -22,6 +22,7 @@ from appcli.configuration_manager import (
     confirm_config_dir_is_not_dirty,
     confirm_generated_config_dir_is_not_dirty,
     confirm_generated_configuration_is_using_current_configuration,
+    confirm_generated_config_dir_exists,
 )
 from appcli.functions import execute_validation_functions
 from appcli.logger import logger
@@ -73,13 +74,25 @@ class MigrateCli:
         """
         logger.info("Checking system configuration is valid before migration ...")
 
+        should_succeed_checks = []
+
+        # If the generated configuration directory exists, test it for 'dirtiness'.
+        # Otherwise the generated config doesn't exist, so the directories are 'clean'.
+        try:
+            confirm_generated_config_dir_exists(cli_context)
+            # If the generated config is dirty, or not running against current config, warn before overwriting
+            should_succeed_checks = [
+                confirm_generated_config_dir_is_not_dirty,
+                confirm_generated_configuration_is_using_current_configuration,
+            ]
+        except Exception:
+            # If the confirm fails, then we just pass as this is an expected error
+            pass
+
         execute_validation_functions(
             cli_context=cli_context,
             must_succeed_checks=[confirm_config_dir_is_not_dirty],
-            should_succeed_checks=[
-                confirm_generated_config_dir_is_not_dirty,
-                confirm_generated_configuration_is_using_current_configuration,
-            ],
+            should_succeed_checks=should_succeed_checks,
         )
 
         logger.info("System configuration is valid for migration.")
