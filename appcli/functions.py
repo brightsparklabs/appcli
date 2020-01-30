@@ -39,7 +39,9 @@ def error_and_exit(message: str):
         message (str): [description]
     """
     logger.error(message)
-    sys.exit(1)
+    # Raise a SystemExit exception with another exception with the error message
+    # as the code so we can capture it externally.
+    raise SystemExit(1) from SystemExit(message)
 
 
 def print_header(title):
