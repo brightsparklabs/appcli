@@ -38,7 +38,7 @@ class GitRepository:
     def __init__(self, repo_path: Path, ignores: Iterable[str] = []):
         self.actor: git.Actor = git.Actor(f"appcli", "root@localhost")
 
-        # Ensure repo exists
+        # Get or create repo at this path to ensure it exists
         try:
             repo = git.Repo(repo_path)
         except git.InvalidGitRepositoryError:
@@ -283,11 +283,6 @@ def confirm_config_version_matches_app_version(cli_context: CliContext):
     config_version: str = config_repo.get_current_branch_name()
 
     app_version: str = cli_context.app_version
-
-    logger.error(
-        "Currently invalidated confirm_config_version_matches_app_version check. Roll back before deploying!"
-    )  # TODO: Roll this back!!!! Remove the logged error and the return statement
-    return
 
     if config_version != app_version:
         raise Exception(
