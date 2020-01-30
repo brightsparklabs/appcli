@@ -36,8 +36,6 @@ def test_initialise(tmpdir):
     # Don't expect any errors
     conf_manager.initialise_configuration()
 
-    assert Path(tmpdir, "conf/").exists()
-
     # Check the variables file has been copied
     assert Path(tmpdir, f"conf/{APP_NAME}.yml").exists()
 
@@ -51,13 +49,37 @@ def test_initialise(tmpdir):
     assert not Path(tmpdir, "conf/.generated").exists()
 
 
-def test_initialise_non_empty_dir(tmpdir):
+def test_initialise_on_initialised_repo(tmpdir):
     conf_manager = create_conf_manager(tmpdir)
     conf_manager.initialise_configuration()
-    with pytest.raises(SystemExit):
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
         # Expect that we cannot initialise on an already-initialised repo
         conf_manager.initialise_configuration()
-        # TODO: Can we capture the specific error somehow to show that it's failing in the way we expect?
+    assert pytest_wrapped_e.type == SystemExit
+    assert pytest_wrapped_e.value.code == 1
+    assert "Configuration already exists" in pytest_wrapped_e.value.__cause__.code
+
+
+def test_apply_before_init(tmpdir):
+    conf_manager = create_conf_manager(tmpdir)
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        # Expect that we cannot apply on an uninitialised repo
+        conf_manager.apply_configuration_changes(message="some message")
+    assert pytest_wrapped_e.type == SystemExit
+    assert pytest_wrapped_e.value.code == 1
+    assert "Configuration does not exist" in pytest_wrapped_e.value.__cause__.code
+
+
+def test_migrate_before_init(tmpdir):
+    conf_manager = create_conf_manager(tmpdir)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        # Expect that we cannot migrate on an uninitialised repo
+        conf_manager.migrate_configuration()
+    assert pytest_wrapped_e.type == SystemExit
+    assert pytest_wrapped_e.value.code == 1
+    assert "Configuration does not exist" in pytest_wrapped_e.value.__cause__.code
 
 
 def test_apply_workflow(tmpdir):
