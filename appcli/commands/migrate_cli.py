@@ -17,14 +17,7 @@ www.brightsparklabs.com
 import click
 
 # local libraries
-from appcli.configuration_manager import (
-    ConfigurationManager,
-    confirm_config_dir_is_not_dirty,
-    confirm_generated_config_dir_is_not_dirty,
-    confirm_generated_configuration_is_using_current_configuration,
-    confirm_generated_config_dir_exists,
-)
-from appcli.functions import execute_validation_functions
+from appcli.configuration_manager import ConfigurationManager
 from appcli.logger import logger
 from appcli.models.configuration import Configuration
 from appcli.models.cli_context import CliContext
@@ -51,48 +44,12 @@ class MigrateCli:
 
             cli_context: CliContext = ctx.obj
 
-            # Validate environment
-            self.__pre_migrate_validation(cli_context)
-
             # Perform migration
-            ConfigurationManager(cli_context, self.cli_configuration).migrate()
+            ConfigurationManager(
+                cli_context, self.cli_configuration
+            ).migrate_configuration()
 
-            logger.info(f"Migration successfully completed.")
+            logger.info(f"Migration complete.")
 
         # expose the cli command
         self.commands = {"migrate": migrate}
-
-    # ------------------------------------------------------------------------------
-    # PRIVATE METHODS
-    # ------------------------------------------------------------------------------
-
-    def __pre_migrate_validation(self, cli_context: CliContext):
-        """Ensures the system is in a valid state for migration.
-
-        Args:
-            cli_context (CliContext): the current cli context
-        """
-        logger.info("Checking system configuration is valid before migration ...")
-
-        should_succeed_checks = []
-
-        # If the generated configuration directory exists, test it for 'dirtiness'.
-        # Otherwise the generated config doesn't exist, so the directories are 'clean'.
-        try:
-            confirm_generated_config_dir_exists(cli_context)
-            # If the generated config is dirty, or not running against current config, warn before overwriting
-            should_succeed_checks = [
-                confirm_generated_config_dir_is_not_dirty,
-                confirm_generated_configuration_is_using_current_configuration,
-            ]
-        except Exception:
-            # If the confirm fails, then we just pass as this is an expected error
-            pass
-
-        execute_validation_functions(
-            cli_context=cli_context,
-            must_succeed_checks=[confirm_config_dir_is_not_dirty],
-            should_succeed_checks=should_succeed_checks,
-        )
-
-        logger.info("System configuration is valid for migration.")

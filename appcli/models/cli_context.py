@@ -67,6 +67,14 @@ class CliContext(NamedTuple):
         """
         return self.configuration_dir.joinpath(".generated")
 
+    def get_configuration_metadata_dir(self) -> Path:
+        """Get the directory containing the metadata for app configuration
+
+        Returns:
+            Path: directory of application metadata
+        """
+        return self.configuration_dir.joinpath(".metadata")
+
     def get_app_configuration_file(self) -> Path:
         """Get the location of the configuration file
 

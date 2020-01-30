@@ -15,12 +15,10 @@ import os
 import shutil
 import tarfile
 from datetime import datetime, timezone
-from functools import reduce
 from pathlib import Path
-from typing import Dict, Iterable
+from typing import Iterable
 
 # vendor libraries
-from ruamel.yaml import YAML
 from jinja2 import StrictUndefined, Template
 
 
@@ -29,14 +27,22 @@ from appcli.crypto.crypto import decrypt_values_in_file
 from appcli.functions import (
     error_and_exit,
     print_header,
+    execute_validation_functions,
 )
 from appcli.git_repositories.git_repositories import (
     ConfigurationGitRepository,
     GeneratedConfigurationGitRepository,
+    confirm_config_dir_exists,
+    confirm_config_dir_not_exists,
+    confirm_config_dir_exists_and_is_not_dirty,
+    confirm_not_on_master_branch,
+    confirm_generated_config_dir_exists,
+    confirm_generated_config_dir_exists_and_is_not_dirty,
 )
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
+from appcli.variables_manager import VariablesManager
 
 from appcli.crypto import crypto
 
@@ -48,100 +54,10 @@ METADATA_FILE_NAME = "metadata-configure-apply.json"
 """ Name of the file holding metadata from running a configure (relative to the generated configuration directory) """
 
 # ------------------------------------------------------------------------------
-# INTERNAL CLASSES
-# ------------------------------------------------------------------------------
-
-
-class SettingsManager:
-    """Manages the configuration"""
-
-    def __init__(self, configuration_file):
-        """Creates a manager for the specified file
-
-        Args:
-            configuration_file (str): Path to the configuration file to manage
-        """
-        self.configuration_file = Path(configuration_file)
-        self.yaml = YAML()
-
-    def get(self, path):
-        """Gets a value from the configuration.
-
-        Args:
-            path (str): Dot notation for the setting. E.g. insilico.external.database.host
-        """
-        configuration = self.__get_configuration()
-        try:
-            return reduce(lambda e, k: e[k], path.split("."), configuration)
-        except Exception:
-            return ""
-
-    def get_all(self):
-        return self.__get_configuration()
-
-    def set(self, path, value):
-        """Sets a value in the configuration.
-
-        Args:
-            path (str): Dot notation for the setting. E.g. insilico.external.database.host
-            value: value for the setting
-        """
-        configuration = self.__get_configuration()
-
-        path_elements = path.split(".")
-        parent_path = path_elements[:-1]
-
-        # ensure parent path exists
-        def ensure_path(parent, child):
-            if child not in parent:
-                parent[child] = {}
-            return parent[child]
-
-        reduce(ensure_path, parent_path, configuration)
-
-        # set the value
-        parent_element = reduce(lambda e, k: e[k], parent_path, configuration)
-        parent_element[path_elements[-1]] = value
-
-        self.__save(configuration)
-
-    def set_all(self, variables: Dict):
-        """Sets all values in the configuration
-
-        Args:
-            variables (Dict): the variables to set
-        """
-        self.__save(variables)
-
-    def __get_configuration(self) -> Dict:
-        """Get the current configuration from file
-
-        Returns:
-            Dict: the current configuration
-        """
-        try:
-            data = self.configuration_file.read_text(encoding="utf-8")
-            return self.yaml.load(data)
-        except Exception as ex:
-            raise Exception(
-                f"Could not read configuration file at [{self.configuration_file}]"
-            ) from ex
-
-    def __save(self, variables: Dict):
-        """Saves the supplied Dict of variables to the configuration file
-
-        Args:
-            variables (Dict): the variables to save
-        """
-        full_path = self.configuration_file.absolute().as_posix()
-        logger.info(f"Saving configuration to [{full_path}] ...")
-        with open(full_path, "w") as config_file:
-            self.yaml.dump(variables, config_file)
-
-
-# ------------------------------------------------------------------------------
 # PUBLIC CLASSES
 # ------------------------------------------------------------------------------
+
+
 class ConfigurationManager:
     """Manages the configuration of the application. Handles initialisation, settings changes, migration to new versions, etc."""
 
@@ -149,57 +65,113 @@ class ConfigurationManager:
         self.cli_context = cli_context
         self.cli_configuration: Configuration = configuration
 
-        # Get the SettingsManager for the current settings file
-        self.app_config_file = self.cli_context.get_app_configuration_file()
-        self.settings_manager: SettingsManager = SettingsManager(self.app_config_file)
-
-        self.config_repo: ConfigurationGitRepository = ConfigurationGitRepository(
-            self.cli_context
-        )
-        self.generated_config_repo: GeneratedConfigurationGitRepository = GeneratedConfigurationGitRepository(
-            self.cli_context
-        )
-
-    def init(self):
+    def initialise_configuration(self):
         """Initialises the configuration repository
         """
+
+        self.__pre_init_validation(self.cli_context)
+
         # Initialise the empty repo
-        self.config_repo.init()
+        config_repo: ConfigurationGitRepository = ConfigurationGitRepository(
+            self.cli_context
+        )
 
-        # Create a .gitignore, and commit the base commit for the master branch
-        self.config_repo.set_gitignore([".generated*"])
-        self.config_repo.commit_changes("[autocommit] Initialised repository")
+        # Populate with new configuration
+        self.__create_new_configuration_branch_and_files(config_repo)
 
-        self.__create_new_configuration_branch_and_files()
+    def __pre_init_validation(self, cli_context: CliContext):
+        """Ensures the system is in a valid state for 'configure init'.
 
-    def apply(self, message: str):
+        Args:
+            cli_context (CliContext): the current cli context
+        """
+        logger.debug("Checking system configuration is valid before initialising ...")
+
+        execute_validation_functions(
+            cli_context=cli_context,
+            must_succeed_checks=[confirm_config_dir_not_exists],
+            force=False,
+        )
+
+        logger.debug("System configuration is valid for initialisation")
+
+    def apply_configuration_changes(self, message: str, force: bool = False):
         """Applies the current configuration settings to templates to generate application files.
 
         Args:
             message (str): the message associated with the changes this applies
+            force (bool): If True, only warns on validation failures, rather than exiting
         """
-        # Commit changes to the configuration repository
-        self.config_repo.commit_changes(message)
 
-        # Regenerate generated configuration files
-        self.__regenerate_generated_configuration()
+        self.__pre_apply_validation(self.cli_context, force)
 
-        # Put the generated config repo under version control
-        self.generated_config_repo.init()
-        self.generated_config_repo.commit_changes(
-            f"[autocommit] Generated configuration files for 'apply' with message [{message}]"
+        config_repo: ConfigurationGitRepository = ConfigurationGitRepository(
+            self.cli_context
         )
 
-    def migrate(self, ignore_variables_migration_structural_errors: bool = False):
+        # Commit changes to the configuration repository
+        config_repo.commit_changes(message)
+
+        generated_config_repo = self.__regenerate_generated_configuration(config_repo)
+        logger.debug(
+            f"Initialised generated configuration at [{generated_config_repo.repo.working_dir}]"
+        )
+
+    def __pre_apply_validation(self, cli_context: CliContext, force: bool = False):
+        """Ensures the system is in a valid state to do an 'apply' on the configuration
+
+        Args:
+            cli_context (CliContext): the current cli context
+            force (bool, optional): If True, only warns on validation failures, rather than exiting
+        """
+        logger.debug("Checking system configuration is valid before 'apply' ...")
+
+        # If the config dir doesn't exist, or we're on the master branch, we cannot apply
+        must_succeed_checks = [
+            confirm_config_dir_exists,
+            confirm_not_on_master_branch,
+        ]
+
+        should_succeed_checks = []
+
+        # If the generated configuration directory exists, test it for 'dirtiness'.
+        # Otherwise the generated config doesn't exist, so the directories are 'clean'.
+        try:
+            confirm_generated_config_dir_exists(cli_context)
+        except Exception:
+            # If the confirm fails, then we just pass as this is an expected error
+            pass
+        else:
+            # If the generated config is dirty, or not running against current config, warn before overwriting
+            should_succeed_checks = [
+                confirm_generated_config_dir_exists_and_is_not_dirty,
+                confirm_generated_configuration_is_using_current_configuration,
+            ]
+
+        execute_validation_functions(
+            cli_context=cli_context,
+            must_succeed_checks=must_succeed_checks,
+            should_succeed_checks=should_succeed_checks,
+            force=force,
+        )
+
+        logger.debug("System configuration is valid for 'apply' function")
+
+    def migrate_configuration(
+        self, ignore_variables_migration_structural_errors: bool = False
+    ):
         """Migrates the configuration version to the current application version
 
         Args:
             ignore_variables_migration_structural_errors (bool, optional): If True, will ignore stuctural validation errors in the application-migrated variables. Defaults to False.
         """
 
-        # TODO: Test and confirm this works as expected.
+        self.__pre_migrate_validation(self.cli_context)
 
-        config_version: str = self.__get_config_version()
+        config_repo: ConfigurationGitRepository = ConfigurationGitRepository(
+            self.cli_context
+        )
+        config_version: str = config_repo.get_current_branch_name()
         app_version: str = self.__get_app_version()
 
         # If the configuration version matches the application version, no migration is required.
@@ -213,99 +185,117 @@ class ConfigurationManager:
             f"Migrating configuration version [{config_version}] to match application version [{app_version}]"
         )
 
-        # TODO: Should we have a prompt to confirm that the user definitely wants to migrate from X version to Y version? Include a '-y' or '--yes' option to skip the prompt.
-
-        if self.config_repo.does_branch_exist(app_version):
+        if config_repo.does_branch_exist(app_version):
             # If the branch already exists, then this version has previously been installed.
 
-            # TODO: Handle the case where it was previously installed, but we want multiple versions of a single version. e.g. v1-a, v1-b, v1-c
             logger.warn(
                 f"Version [{app_version}] of this application was previously installed. Rolling back to previous configuration. Manual remediation may be required."
             )
 
             # Switch to that branch, no further migration steps will be taken. This is effectively a roll-back.
-            self.config_repo.checkout_existing_branch(app_version)
+            config_repo.checkout_existing_branch(app_version)
             return
 
         # Migrate the current configuration variables
-        current_variables = self.get_all()
-        migrated_variables = self.cli_configuration.hooks.migrate_variables(
-            current_variables, config_version
-        )
+        current_variables = self.get_variables_manager().get_all_variables()
 
         # Compare migrated config to the 'clean config' of the new version, and make sure all variables have been set and are the same type.
-        # TODO: Should we be comparing the entire Dict or just a slice of it? We should probably ignore a 'custom' block of variables, and focus
-        # solely on the application's default settings
-        clean_new_version_variables = SettingsManager(
+        clean_new_version_variables = VariablesManager(
             self.cli_configuration.seed_app_configuration_file
-        ).get_all()
-        self.__verify_migrated_settings_match_clean_settings_structure(
-            migrated_variables,
-            clean_new_version_variables,
-            ignore_variables_migration_structural_errors,
+        ).get_all_variables()
+
+        migrated_variables = self.cli_configuration.hooks.migrate_variables(
+            current_variables, config_version, clean_new_version_variables
         )
 
+        if not self.cli_configuration.hooks.is_valid_variables(
+            migrated_variables, clean_new_version_variables
+        ):
+            error_and_exit(
+                f"Migrated variables did not pass application-specific variables validation function."
+            )
+
+        # Get the diff of template files from 'base' of branch (i.e. the tag which matches the branch name) to current HEAD of the branch
+        diff_data = config_repo.get_diff_to_tag(config_version, "templates/")
+
         # Backup and remove the existing generated config dir since it's now out of date
-        self.__backup_and_create_new_generated_config_dir()
+        self.__backup_and_create_new_generated_config_dir(config_version)
 
         # Initialise the new configuration branch and directory with all new files
-        self.__create_new_configuration_branch_and_files()
+        self.__create_new_configuration_branch_and_files(config_repo)
 
         # Write out 'migrated' variables file
-        self.set_all(migrated_variables)
+        self.get_variables_manager().set_all_variables(migrated_variables)
 
         # Commit the new variables file
-        self.config_repo.commit_changes(
+        config_repo.commit_changes(
             f"Migrated variables file from version [{config_version}] to version [{app_version}]"
         )
 
-        # >> Now at v2 variables file. Still templates to go.
+        if diff_data:
+            logger.warn(
+                "Changes to default templates have been made. These changes need to be re-applied manually."
+            )
+            logger.warn(
+                f"Diff of all templates since default of version [{config_version}]:\n{diff_data}"
+            )
+            current_datetime = (
+                datetime.now().replace(microsecond=0).isoformat().replace(":", "")
+            )
+            self.cli_context.get_configuration_metadata_dir().mkdir(
+                parents=True, exist_ok=True
+            )
+            diff_out_file = self.cli_context.get_configuration_metadata_dir().joinpath(
+                f"template-changes-from-default_{config_version}_{current_datetime}.diff"
+            )
+            diff_out_file.write_text(diff_data)
+            logger.warn(
+                f"These diffs have also been written out to file: [{diff_out_file}]"
+            )
+        else:
+            logger.info(
+                "No changes to default templates detected, no manual fixes are required."
+            )
 
-        # TODO: Diff all non-variables files (i.e. all templates files + w/e else) -> List of changed files, and their changes.
-
-        # TODO: For each changed file, notify user that manual changes will need to be made to that template file. Provide diff.
-
-        # TODO: Once all templates have been upgraded to v2, commit and done with migration!
-
-        logger.info("Migration complete!")
-
-    def get(self, path) -> str:
-        """Gets a value from the configuration settings.
-
-        Args:
-            path (str): Dot notation for the setting. E.g. insilico.external.database.host
-
-        Returns:
-            str: current setting value
-        """
-        return self.settings_manager.get(path)
-
-    def get_all(self) -> Dict:
-        """Gets all configuration settings.
-
-        Returns:
-            Dict: current application settings
-        """
-        return self.settings_manager.get_all()
-
-    def set(self, path, value):
-        """Sets a value in the configuration settings.
+    def __pre_migrate_validation(self, cli_context: CliContext):
+        """Ensures the system is in a valid state for migration.
 
         Args:
-            path (str): Dot notation for the setting. E.g. insilico.external.database.host
-            value: value for the setting
+            cli_context (CliContext): the current cli context
         """
-        self.settings_manager.set(path, value)
+        logger.debug("Checking system configuration is valid before migration ...")
 
-    def set_all(self, variables: Dict):
-        """Sets all values in the configuration
+        should_succeed_checks = []
 
-        Args:
-            variables (Dict): the variables to set
-        """
-        self.settings_manager.set_all(variables)
+        # If the generated configuration directory exists, test it for 'dirtiness'.
+        # Otherwise the generated config doesn't exist, so the directories are 'clean'.
+        try:
+            confirm_generated_config_dir_exists(cli_context)
+            # If the generated config is dirty, or not running against current config, warn before overwriting
+            should_succeed_checks = [
+                confirm_generated_config_dir_exists_and_is_not_dirty,
+                confirm_generated_configuration_is_using_current_configuration,
+            ]
+        except Exception:
+            # If the confirm fails, then we just pass as this is an expected error
+            pass
 
-    def __create_new_configuration_branch_and_files(self):
+        # TODO: Checks aren't explicit enough. e.g. confirm_config_dir_is_not_dirty implicitly implies that config exists already, but isn't explicitly checked
+        execute_validation_functions(
+            cli_context=cli_context,
+            must_succeed_checks=[confirm_config_dir_exists_and_is_not_dirty],
+            should_succeed_checks=should_succeed_checks,
+        )
+
+        logger.debug("System configuration is valid for migration.")
+
+    def get_variables_manager(self):
+        app_config_file = self.cli_context.get_app_configuration_file()
+        return VariablesManager(app_config_file)
+
+    def __create_new_configuration_branch_and_files(
+        self, config_repo: ConfigurationGitRepository
+    ):
 
         app_version: str = self.__get_app_version()
 
@@ -315,27 +305,24 @@ class ConfigurationManager:
         if path_to_key_file.exists():
             key_file_contents = path_to_key_file.read_bytes()
 
-        # Change branch to the clean 'master' branch
-        self.config_repo.checkout_master_branch()
-
         # Create a new branch for this current application version
-        self.config_repo.checkout_new_branch(app_version)
+        config_repo.checkout_new_branch_from_master(app_version)
 
         # If the keyfile already exists, re-use it across branches. Otherwise create a new keyfile.
         if key_file_contents:
-            logger.debug("Copied existing key file to new configuration branch")
+            logger.debug("Found existing key. Copied to new configuration branch")
             path_to_key_file.write_bytes(key_file_contents)
         else:
-            logger.debug("Creating new key file, as one could not be found")
+            logger.debug("No key found. Creating new key file")
             crypto.create_and_save_key(path_to_key_file)
 
         # Seed the configuration directory
         self.__seed_configuration_dir()
 
         # Commit the changes, and tag as $VERSION
-        self.config_repo.commit_changes(
-            f"Default configuration at version [{app_version}]"
-        )
+        config_repo.commit_changes(f"Default configuration at version [{app_version}]")
+
+        config_repo.tag_current_commit(f"{app_version}")
 
     def __get_app_version(self) -> str:
         """Get the target application version, which is the version of the application
@@ -349,65 +336,6 @@ class ConfigurationManager:
         )
         return f"{datetime.now().timestamp()}"  # TODO: Roll this back!!!!
         # return self.cli_context.app_version
-
-    def __get_config_version(self) -> str:
-        """Get the current configuration repository's version
-
-        Returns:
-            str: version of the configuration repository
-        """
-        return self.config_repo.get_current_branch_name()
-
-    def __verify_migrated_settings_match_clean_settings_structure(
-        self,
-        migrated_variables: Dict,
-        clean_new_version_variables: Dict,
-        ignore_variables_migration_structural_errors: bool,
-    ):
-        """Verify that migrated variables match the structure of the clean new version variables
-
-        Args:
-            migrated_variables (Dict): the migrated variables to check
-            clean_new_version_variables (Dict): the clean new version variables to check against
-            ignore_variables_migration_structural_errors (bool): True to warn on structural errors, otherwise if False then it will error and exit.
-        """
-        if not self.__are_dicts_matching_structure(
-            migrated_variables, clean_new_version_variables
-        ):
-            error_message: str = "Migrated settings structure does not match structure of clean structure."
-            if ignore_variables_migration_structural_errors:
-                logger.warn(
-                    f"{error_message} Settings may need to be manually modified to fit expected structure."
-                )
-            else:
-                error_and_exit(f"{error_message} Cancelling migration.")
-
-    def __are_dicts_matching_structure(self, dict_1: Dict, dict_2: Dict) -> bool:
-        """Recursively checks if the keys of the first dictionary match the keys of the second.
-
-        Args:
-            migrated_variables (Dict): the migrated settings
-            clean_new_version_variables (Dict): the clean version settings
-
-        Returns:
-            bool: True if the Dict keys match, else False
-        """
-        # If the set of keys isn't matching, these dicts don't "match"
-        if dict_1.keys() != dict_2.keys():
-            return False
-
-        for key in dict_1.keys():
-            # If the type of key_x in dict_1 doesn't match the type of the same key in dict_2, the
-            # dicts don't match
-            if not isinstance(dict_2[key], type(dict_1[key])):
-                return False
-
-            # If it's a dict type, recurse
-            if isinstance(dict_1[key], dict):
-                if not self.__are_dicts_matching_structure(dict_1[key], dict_2[key]):
-                    return False
-
-        return True
 
     def __seed_configuration_dir(self):
         """Seed the raw configuration into the configuration directory
@@ -449,12 +377,15 @@ class ConfigurationManager:
                 logger.debug("Copying seed file to [%s] ...", target_file)
                 shutil.copy2(source_file, target_file)
 
-    def __regenerate_generated_configuration(self):
+    def __regenerate_generated_configuration(
+        self, config_repo: ConfigurationGitRepository
+    ) -> GeneratedConfigurationGitRepository:
         """Generate the generated configuration files
         """
+
         print_header(f"Generating configuration files")
-        generated_configuration_dir = (
-            self.__backup_and_create_new_generated_config_dir()
+        generated_configuration_dir = self.__backup_and_create_new_generated_config_dir(
+            config_repo.get_current_branch_name()
         )
 
         for template_file in self.cli_context.get_templates_dir().glob("**/*"):
@@ -473,7 +404,9 @@ class ConfigurationManager:
                 target_file = target_file.with_suffix("")
                 logger.info("Generating configuration file [%s] ...", target_file)
                 self.__generate_from_template(
-                    template_file, target_file, self.get_all()
+                    template_file,
+                    target_file,
+                    self.get_variables_manager().get_all_variables(),
                 )
             else:
                 logger.info("Copying configuration file to [%s] ...", target_file)
@@ -491,64 +424,27 @@ class ConfigurationManager:
         self.__copy_settings_files_to_generated_dir()
 
         # Generate the metadata file
-        self.__generate_configuration_metadata_file()
+        self.__generate_configuration_metadata_file(config_repo)
+
+        # Put the generated config repo under version control
+        generated_config_repo: GeneratedConfigurationGitRepository = GeneratedConfigurationGitRepository(
+            self.cli_context
+        )
 
         logger.info("Generated configuration files successfully ...")
+        return generated_config_repo
 
-    def __backup_and_create_new_generated_config_dir(self) -> Path:
+    def __backup_and_create_new_generated_config_dir(
+        self, current_config_version
+    ) -> Path:
         """Backup the generated configuration dir, and create a new one
 
         Returns:
             Path: path to the clean generated configuration dir
         """
         generated_configuration_dir = self.cli_context.get_generated_configuration_dir()
-
-        # If the generated configuration directory is not empty, back it up and delete
-        if os.path.exists(generated_configuration_dir) and os.listdir(
-            generated_configuration_dir
-        ):
-            self.__backup_and_remove_directory(generated_configuration_dir)
-
-        generated_configuration_dir.mkdir(parents=True, exist_ok=True)
-        return generated_configuration_dir
-
-    def __backup_and_remove_directory(self, source_dir: Path):
-        """Backs up a directory to a tar gzipped file with the current datetimestamp,
-        and deletes the existing directory
-
-        Args:
-            source_dir (Path): Path to the directory to backup and delete
-        """
-
-        # The datetime is accurate to seconds (microseconds was overkill), and we remove
-        # colon (:) because `tar tvf` doesn't like filenames with colons
-        current_datetime = (
-            datetime.now().replace(microsecond=0).isoformat().replace(":", "")
-        )
-        config_version = self.__get_config_version()
-        basename = os.path.basename(source_dir)
-        output_filename = os.path.join(
-            os.path.dirname(source_dir),
-            f"{basename}_{config_version}_{current_datetime}.tgz",
-        )
-
-        # Create the backup
-        logger.info(
-            f"Backing up current generated configuration directory [{source_dir}] to [{output_filename}]"
-        )
-        with tarfile.open(output_filename, "w:gz") as tar:
-            tar.add(source_dir, arcname=os.path.basename(source_dir))
-
-        # Ensure the backup has been successfully created before deleting the existing generated configuration directory
-        if not os.path.exists(output_filename):
-            error_and_exit(
-                f"Current generated configuration directory backup failed. Could not write out file [{output_filename}]."
-            )
-
-        # Remove the existing directory
-        shutil.rmtree(source_dir, ignore_errors=True)
-        logger.info(
-            f"Deleted previous generated configuration directory [{source_dir}]"
+        return backup_and_create_new_directory(
+            generated_configuration_dir, current_config_version
         )
 
     def __generate_from_template(
@@ -625,10 +521,12 @@ class ConfigurationManager:
             applied_key_file,
         )
 
-    def __generate_configuration_metadata_file(self):
+    def __generate_configuration_metadata_file(
+        self, config_repo: ConfigurationGitRepository
+    ):
         record = {
             "generated_at": datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(),
-            "generated_from_commit": self.config_repo.get_current_commit_hash(),
+            "generated_from_commit": config_repo.get_current_commit_hash(),
         }
         configuration_record_file = get_generated_configuration_metadata_file(
             self.cli_context
@@ -645,6 +543,59 @@ class ConfigurationManager:
 # ------------------------------------------------------------------------------
 
 
+def backup_and_create_new_directory(
+    source_dir: Path, additional_filename_descriptor: str = "backup"
+) -> Path:
+    """Backs up a directory to a tar gzipped file with the current datetimestamp,
+    and deletes the existing directory
+
+    Args:
+        source_dir (Path): Path to the directory to backup and delete
+        additional_filename_descriptor (str, optional): an additional identifier to put into
+            the new tgz filename. If not supplied, defaults to 'backup'.
+    """
+
+    if os.path.exists(source_dir) and os.listdir(source_dir):
+        # The datetime is accurate to seconds (microseconds was overkill), and we remove
+        # colon (:) because `tar tvf` doesn't like filenames with colons
+        current_datetime = (
+            datetime.now().replace(microsecond=0).isoformat().replace(":", "")
+        )
+        # We have to do a replacement in case it has a slash in it, which causes the
+        # creation of the tar file to fail
+        clean_additional_filename_descriptor = additional_filename_descriptor.replace(
+            "/", "-"
+        )
+        basename = os.path.basename(source_dir)
+        output_filename = os.path.join(
+            os.path.dirname(source_dir),
+            f"{basename}_{clean_additional_filename_descriptor}_{current_datetime}.tgz",
+        )
+
+        # Create the backup
+        logger.info(f"Backing up directory [{source_dir}] to [{output_filename}]")
+        with tarfile.open(output_filename, "w:gz") as tar:
+            tar.add(source_dir, arcname=os.path.basename(source_dir))
+
+        # Ensure the backup has been successfully created before deleting the existing generated configuration directory
+        if not os.path.exists(output_filename):
+            error_and_exit(
+                f"Current generated configuration directory backup failed. Could not write out file [{output_filename}]."
+            )
+
+        # Remove the existing directory
+        shutil.rmtree(source_dir, ignore_errors=True)
+        logger.info(
+            f"Deleted previous generated configuration directory [{source_dir}]"
+        )
+
+    source_dir.mkdir(parents=True, exist_ok=True)
+
+    logger.info(f"Created clean directory [{source_dir}]")
+
+    return source_dir
+
+
 def get_generated_configuration_metadata_file(cli_context: CliContext) -> Path:
     """Get the path to the generated configuration's metadata file
 
@@ -656,93 +607,6 @@ def get_generated_configuration_metadata_file(cli_context: CliContext) -> Path:
     """
     generated_configuration_dir = cli_context.get_generated_configuration_dir()
     return generated_configuration_dir.joinpath(METADATA_FILE_NAME)
-
-
-def confirm_config_dir_exists(cli_context: CliContext):
-    """Confirm that the configuration repository exists.
-    If this fails, it will raise a general Exception with the error message.
-
-    Args:
-        cli_context (CliContext): the current cli context
-
-    Raises:
-        Exception: Raised if the configuration repository does *not* exist.
-    """
-    config_repo: ConfigurationGitRepository = ConfigurationGitRepository(cli_context)
-    if not config_repo.repo_exists():
-        raise Exception(
-            f"Configuration does not exist at [{config_repo.repo_path}]. Please run `configure init`."
-        )
-
-
-def confirm_config_dir_not_exists(cli_context: CliContext):
-    """Confirm that the configuration repository does *not* exist.
-    If this fails, it will raise a general Exception with the error message.
-
-    Args:
-        cli_context (CliContext): the current cli context
-
-    Raises:
-        Exception: Raised if the configuration repository exists.
-    """
-    config_repo: ConfigurationGitRepository = ConfigurationGitRepository(cli_context)
-    if config_repo.repo_exists():
-        raise Exception(f"Configuration already exists at [{config_repo.repo_path}].")
-
-
-def confirm_generated_config_dir_exists(cli_context: CliContext):
-    """Confirm that the generated configuration repository exists.
-    If this fails, it will raise a general Exception with the error message.
-
-    Args:
-        cli_context (CliContext): the current cli context
-
-    Raises:
-        Exception: Raised if the generated configuration repository does not exist.
-    """
-    generated_config_repo: GeneratedConfigurationGitRepository = GeneratedConfigurationGitRepository(
-        cli_context
-    )
-    if not generated_config_repo.repo_exists():
-        raise Exception(
-            f"Generated configuration does not exist at [{generated_config_repo.repo_path}]. Please run `configure apply`."
-        )
-
-
-def confirm_config_dir_is_not_dirty(cli_context: CliContext):
-    """Confirm that the configuration repository has not been modified and not 'applied'.
-    If this fails, it will raise a general Exception with the error message.
-
-    Args:
-        cli_context (CliContext): the current cli context
-
-    Raises:
-        Exception: Raised if the configuration repository has been modified and not 'applied'.
-    """
-    config_repo: ConfigurationGitRepository = ConfigurationGitRepository(cli_context)
-    if config_repo.is_dirty(untracked_files=True):
-        raise Exception(
-            f"Configuration at [{config_repo.repo_path}]] contains changes which have not been applied. Please run `configure apply`."
-        )
-
-
-def confirm_generated_config_dir_is_not_dirty(cli_context: CliContext):
-    """Confirm that the generated configuration repository has not been manually modified and not checked-in.
-    If this fails, it will raise a general Exception with the error message.
-
-    Args:
-        cli_context (CliContext): the current cli context
-
-    Raises:
-        Exception: Raised if the generated configuration repository has been manually modified and not checked in.
-    """
-    generated_config_repo: GeneratedConfigurationGitRepository = GeneratedConfigurationGitRepository(
-        cli_context
-    )
-    if generated_config_repo.is_dirty(untracked_files=False):
-        raise Exception(
-            f"Generated configuration at [{generated_config_repo.repo_path}] has been manually modified."
-        )
 
 
 def confirm_generated_configuration_is_using_current_configuration(
@@ -757,6 +621,7 @@ def confirm_generated_configuration_is_using_current_configuration(
     Raises:
         Exception: Raised if metadata file not found, or generated config is out of sync with config.
     """
+    confirm_config_dir_exists(cli_context)
     metadata_file = get_generated_configuration_metadata_file(cli_context)
     if not os.path.isfile(metadata_file):
         raise Exception(
@@ -765,7 +630,7 @@ def confirm_generated_configuration_is_using_current_configuration(
 
     with open(metadata_file, "r") as f:
         metadata = json.load(f)
-        logger.debug("Metadata from generated configuration: %s", metadata)
+        logger.debug("Found metadata from generated configuration: %s", metadata)
 
     generated_commit_hash = metadata["generated_from_commit"]
     configuration_commit_hash = ConfigurationGitRepository(
@@ -773,51 +638,10 @@ def confirm_generated_configuration_is_using_current_configuration(
     ).get_current_commit_hash()
     if generated_commit_hash != configuration_commit_hash:
         logger.debug(
-            "Generated configuration hash [%s] does not match configuration hash [%s]",
+            "Mismatched hash. Generated configuration hash [%s] does not match configuration hash [%s]",
             generated_commit_hash,
             configuration_commit_hash,
         )
         raise Exception(
             "Generated configuration is out of sync with raw configuration. Please run `configure apply`."
-        )
-
-
-def confirm_config_version_matches_app_version(cli_context: CliContext):
-    """Confirm that the configuration repository version matches the application version.
-    If this fails, it will raise a general Exception with the error message.
-
-    Args:
-        cli_context (CliContext): the current cli context
-
-    Raises:
-        Exception: Raised if the configuration repository version doesn't match the application version.
-    """
-    config_repo: ConfigurationGitRepository = ConfigurationGitRepository(cli_context)
-    config_version: str = config_repo.get_current_branch_name()
-
-    app_version: str = cli_context.app_version
-
-    logger.error(
-        "Currently invalidated confirm_config_version_matches_app_version check. Roll back before deploying!"
-    )  # TODO: Remove this override and the return
-    return
-
-    if config_version != app_version:
-        raise Exception(
-            f"Configuration at [{config_repo.repo_path}] is using version [{config_version}] which is incompatible with current application version [{app_version}]. Migrate to this application version using 'migrate'."
-        )
-
-
-def confirm_not_on_master_branch(cli_context: CliContext):
-    """Confirm that the configuration repository is not currently on the master branch.
-
-    Args:
-        cli_context (CliContext): the current cli context
-    """
-    config_repo: ConfigurationGitRepository = ConfigurationGitRepository(cli_context)
-    config_version: str = config_repo.get_current_branch_name()
-
-    if config_version == "master":
-        raise Exception(
-            f"Configuration at [{config_repo.repo_path}] is on the master branch."
         )
