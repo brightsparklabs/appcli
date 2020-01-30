@@ -18,6 +18,9 @@ import pytest
 # local libraries
 from appcli.configuration_manager import ConfigurationManager
 from appcli import CliContext, Configuration, DockerComposeOrchestrator
+from appcli.configuration_manager import (
+    confirm_generated_configuration_is_using_current_configuration,
+)
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
@@ -83,7 +86,8 @@ def test_migrate_before_init(tmpdir):
 
 
 def test_apply_workflow(tmpdir):
-    conf_manager = create_conf_manager(tmpdir)
+    cli_context = create_cli_context(tmpdir)
+    conf_manager = create_conf_manager(tmpdir, cli_context)
 
     # Initialise the application
     conf_manager.initialise_configuration()
@@ -106,22 +110,59 @@ def test_apply_workflow(tmpdir):
     assert Path(tmpdir, "conf/.generated/password_file").exists()
     assert Path(tmpdir, "conf/.generated/password_file").read_text() == new_password
 
-    # Assert the generated metadata file exists
-    assert Path(tmpdir, "conf/.generated/metadata-configure-apply.json").exists()
+    # This should not raise an exception
+    confirm_generated_configuration_is_using_current_configuration(cli_context)
 
+
+def test_migration(tmpdir):
+    cli_context_1 = create_cli_context(tmpdir, app_version="1.0.0")
+    conf_manager_1 = create_conf_manager(tmpdir, cli_context_1)
+
+    # Initialise and apply
+    conf_manager_1.initialise_configuration()
+    conf_manager_1.apply_configuration_changes(message="testing test_migration")
+
+    cli_context_2 = create_cli_context(tmpdir, app_version="2.0.0")
+    conf_manager_2 = create_conf_manager(tmpdir, cli_context_2)
+
+    # Expect no error
+    conf_manager_2.migrate_configuration()
+
+    # TODO: Asserts on the git repo state?
+    # TODO: Asserts on migrated varibles? Should pass in a migration hook function?
+
+
+def test_migration_same_version(tmpdir):
+    cli_context = create_cli_context(tmpdir, app_version="1.0.0")
+    conf_manager = create_conf_manager(tmpdir, cli_context)
+
+    # Initialise and apply
+    conf_manager.initialise_configuration()
+    conf_manager.apply_configuration_changes(
+        message="testing test_migration_same_version"
+    )
+
+    # Expect no error - migration doesn't throw an error if no migration is required
+    conf_manager.migrate_configuration()
+
+    # TODO: Asserts on the git repo state?
+
+
+# TODO: Test where conf/data directories don't exist
+# TODO: Test deliberately failing migrations with migration function hooks
 
 # ------------------------------------------------------------------------------
 # FIXTURES
 # ------------------------------------------------------------------------------
 
 
-def create_conf_manager(tmpdir) -> ConfigurationManager:
+def create_cli_context(tmpdir, app_version: str = "0.0.0") -> CliContext:
     conf_dir = Path(tmpdir, "conf")
-    conf_dir.mkdir()
+    conf_dir.mkdir(exist_ok=True)
     data_dir = Path(tmpdir, "data")
-    data_dir.mkdir()
+    data_dir.mkdir(exist_ok=True)
 
-    cli_context = CliContext(
+    return CliContext(
         configuration_dir=conf_dir,
         data_dir=data_dir,
         additional_data_dirs=None,
@@ -130,9 +171,16 @@ def create_conf_manager(tmpdir) -> ConfigurationManager:
         subcommand_args=None,
         debug=True,
         app_name=APP_NAME,
-        app_version="0.0.0",
+        app_version=app_version,
         commands={},
     )
+
+
+def create_conf_manager(tmpdir, cli_context: CliContext = None) -> ConfigurationManager:
+
+    # If not supplied, create default CliContext.
+    if not cli_context:
+        cli_context = create_cli_context(tmpdir)
 
     # directory containing this script
     BASE_DIR = Path(__file__).parent

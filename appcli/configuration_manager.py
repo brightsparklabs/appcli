@@ -280,7 +280,6 @@ class ConfigurationManager:
             # If the confirm fails, then we just pass as this is an expected error
             pass
 
-        # TODO: Checks aren't explicit enough. e.g. confirm_config_dir_is_not_dirty implicitly implies that config exists already, but isn't explicitly checked
         execute_validation_functions(
             cli_context=cli_context,
             must_succeed_checks=[confirm_config_dir_exists_and_is_not_dirty],
@@ -334,8 +333,7 @@ class ConfigurationManager:
         logger.error(
             "Currently getting app_version from datetime. This MUST be rolled back."
         )
-        return f"{datetime.now().timestamp()}"  # TODO: Roll this back!!!!
-        # return self.cli_context.app_version
+        return self.cli_context.app_version
 
     def __seed_configuration_dir(self):
         """Seed the raw configuration into the configuration directory
