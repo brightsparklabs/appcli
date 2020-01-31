@@ -91,13 +91,16 @@ class GitRepository:
         """
         self.repo.git.checkout(branch_name)
 
-    def get_current_branch_name(self) -> str:
-        """Get the name of the current branch
+    def get_repository_version(self) -> str:
+        """Get the nominal 'version' associated with this git repository. This is not a 'git'
+        concept, but rather an 'appcli' concept for what 'version' the repository is using.
 
         Returns:
-            str: name of the current branch
+            str: the 'appcli-specific' version of this particular git repository, which aligns
+                with the version of the application.
         """
-        return self.repo.git.symbolic_ref("HEAD", short=True).replace("heads/", "")
+        # Version is stored as the branch name
+        return self.__get_current_branch_name()
 
     def does_branch_exist(self, branch_name: str) -> bool:
         """Checks if a branch with a particular name exists
@@ -141,6 +144,23 @@ class GitRepository:
     def get_diff_to_tag(self, tag: str, diff_dir: str = ""):
         return self.repo.git.diff(f"tags/{tag}", f"{diff_dir}")
 
+    def rename_current_branch(self, branch_name: str):
+        """Renames the current branch
+
+        Args:
+            branch_name (str): the new branch name
+        """
+        self.repo.git.branch(m=branch_name)
+        logger.debug(f"Renamed branch to [{branch_name}]")
+
+    def __get_current_branch_name(self) -> str:
+        """Get the name of the current branch
+
+        Returns:
+            str: name of the current branch
+        """
+        return self.repo.git.symbolic_ref("HEAD", short=True).replace("heads/", "")
+
     def __initialise_new_repo(
         self, repo_path: Path, ignores: Iterable[str]
     ) -> git.Repo:
@@ -175,6 +195,7 @@ class ConfigurationGitRepository(GitRepository):
 class GeneratedConfigurationGitRepository(GitRepository):
     def __init__(self, cli_context: CliContext):
         super().__init__(cli_context.get_generated_configuration_dir())
+        self.rename_current_branch(cli_context.app_version)
 
 
 # ------------------------------------------------------------------------------
@@ -280,7 +301,7 @@ def confirm_config_version_matches_app_version(cli_context: CliContext):
     """
     confirm_config_dir_exists(cli_context)
     config_repo: ConfigurationGitRepository = ConfigurationGitRepository(cli_context)
-    config_version: str = config_repo.get_current_branch_name()
+    config_version: str = config_repo.get_repository_version()
 
     app_version: str = cli_context.app_version
 
@@ -298,7 +319,7 @@ def confirm_not_on_master_branch(cli_context: CliContext):
     """
     confirm_config_dir_exists(cli_context)
     config_repo: ConfigurationGitRepository = ConfigurationGitRepository(cli_context)
-    config_version: str = config_repo.get_current_branch_name()
+    config_version: str = config_repo.get_repository_version()
 
     if config_version == "master":
         raise Exception(
