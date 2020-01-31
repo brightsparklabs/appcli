@@ -112,11 +112,11 @@ def execute_validation_functions(
 
     # Get the blocking errors
     must_succeed_errors = _run_checks(cli_context, must_succeed_checks)
-    must_succeed_error_messages = "\n- ".join(must_succeed_errors)
+    must_succeed_error_messages = "\n- ".join(set(must_succeed_errors))
 
     # Get the non-blocking errors - 'warnings'
     should_succeed_errors = _run_checks(cli_context, should_succeed_checks)
-    should_succeed_error_messages = "\n- ".join(should_succeed_errors)
+    should_succeed_error_messages = "\n- ".join(set(should_succeed_errors))
 
     all_errors = must_succeed_errors + should_succeed_errors
 

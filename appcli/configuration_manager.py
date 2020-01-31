@@ -330,9 +330,6 @@ class ConfigurationManager:
         Returns:
             str: version of the application according to the Docker container this script is running in.
         """
-        logger.error(
-            "Currently getting app_version from datetime. This MUST be rolled back."
-        )
         return self.cli_context.app_version
 
     def __seed_configuration_dir(self):
