@@ -171,7 +171,7 @@ class ConfigurationManager:
         config_repo: ConfigurationGitRepository = ConfigurationGitRepository(
             self.cli_context
         )
-        config_version: str = config_repo.get_current_branch_name()
+        config_version: str = config_repo.get_repository_version()
         app_version: str = self.__get_app_version()
 
         # If the configuration version matches the application version, no migration is required.
@@ -383,7 +383,7 @@ class ConfigurationManager:
 
         print_header(f"Generating configuration files")
         generated_configuration_dir = self.__backup_and_create_new_generated_config_dir(
-            config_repo.get_current_branch_name()
+            config_repo.get_repository_version()
         )
 
         for template_file in self.cli_context.get_templates_dir().glob("**/*"):
