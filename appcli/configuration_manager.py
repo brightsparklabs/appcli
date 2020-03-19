@@ -365,9 +365,12 @@ class ConfigurationManager:
             config_repo.get_repository_version()
         )
 
+        logger.info("Generating configuration from default templates")
         self.__apply_templates_from_directory(
             self.cli_configuration.seed_templates_dir, generated_configuration_dir
         )
+
+        logger.info("Generating configuration from override templates")
         self.__apply_templates_from_directory(
             self.cli_context.get_template_overrides_dir(), generated_configuration_dir
         )
@@ -396,7 +399,13 @@ class ConfigurationManager:
 
     def __apply_templates_from_directory(
         self, template_path: Path, generated_configuration_dir: Path
-    ):
+    ) -> None:
+        """Applies templates from a source directory to the generated directory
+
+        Args:
+            template_path (Path): directory to the templates
+            generated_configuration_dir (Path): directory to output generated files
+        """
         for template_file in template_path.glob("**/*"):
             relative_file = template_file.relative_to(template_path)
             target_file = generated_configuration_dir.joinpath(relative_file)
