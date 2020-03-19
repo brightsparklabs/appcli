@@ -351,26 +351,8 @@ class ConfigurationManager:
         target_app_configuration_file.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(seed_app_configuration_file, target_app_configuration_file)
 
-        logger.info("Copying templates ...")
-        templates_dir = self.cli_context.get_templates_dir()
-        templates_dir.mkdir(parents=True, exist_ok=True)
-        seed_templates_dir = self.cli_configuration.seed_templates_dir
-        if not seed_templates_dir.is_dir():
-            error_and_exit(
-                f"Seed templates directory [{seed_templates_dir}] is not valid. Release is corrupt."
-            )
-
-        for source_file in seed_templates_dir.glob("**/*"):
-            logger.info(source_file)
-            relative_file = source_file.relative_to(seed_templates_dir)
-            target_file = templates_dir.joinpath(relative_file)
-
-            if source_file.is_dir():
-                logger.debug("Creating directory [%s] ...", target_file)
-                target_file.mkdir(parents=True, exist_ok=True)
-            else:
-                logger.debug("Copying seed file to [%s] ...", target_file)
-                shutil.copy2(source_file, target_file)
+        template_overrides_dir = self.cli_context.get_template_overrides_dir()
+        template_overrides_dir.mkdir(parents=True, exist_ok=True)
 
     def __regenerate_generated_configuration(
         self, config_repo: ConfigurationGitRepository
@@ -383,29 +365,12 @@ class ConfigurationManager:
             config_repo.get_repository_version()
         )
 
-        for template_file in self.cli_context.get_templates_dir().glob("**/*"):
-            relative_file = template_file.relative_to(
-                self.cli_context.get_templates_dir()
-            )
-            target_file = generated_configuration_dir.joinpath(relative_file)
-
-            if template_file.is_dir():
-                logger.debug("Creating directory [%s] ...", target_file)
-                target_file.mkdir(parents=True, exist_ok=True)
-                continue
-
-            if template_file.suffix == ".j2":
-                # parse jinja2 templates against configuration
-                target_file = target_file.with_suffix("")
-                logger.info("Generating configuration file [%s] ...", target_file)
-                self.__generate_from_template(
-                    template_file,
-                    target_file,
-                    self.get_variables_manager().get_all_variables(),
-                )
-            else:
-                logger.info("Copying configuration file to [%s] ...", target_file)
-                shutil.copy2(template_file, target_file)
+        self.__apply_templates_from_directory(
+            self.cli_configuration.seed_templates_dir, generated_configuration_dir
+        )
+        self.__apply_templates_from_directory(
+            self.cli_context.get_template_overrides_dir(), generated_configuration_dir
+        )
 
         files_to_decrypt = self.cli_configuration.decrypt_generated_files
         if len(files_to_decrypt) > 0:
@@ -428,6 +393,31 @@ class ConfigurationManager:
 
         logger.info("Generated configuration files successfully ...")
         return generated_config_repo
+
+    def __apply_templates_from_directory(
+        self, template_path: Path, generated_configuration_dir: Path
+    ):
+        for template_file in template_path.glob("**/*"):
+            relative_file = template_file.relative_to(template_path)
+            target_file = generated_configuration_dir.joinpath(relative_file)
+
+            if template_file.is_dir():
+                logger.debug("Creating directory [%s] ...", target_file)
+                target_file.mkdir(parents=True, exist_ok=True)
+                continue
+
+            if template_file.suffix == ".j2":
+                # parse jinja2 templates against configuration
+                target_file = target_file.with_suffix("")
+                logger.info("Generating configuration file [%s] ...", target_file)
+                self.__generate_from_template(
+                    template_file,
+                    target_file,
+                    self.get_variables_manager().get_all_variables(),
+                )
+            else:
+                logger.info("Copying configuration file to [%s] ...", target_file)
+                shutil.copy2(template_file, target_file)
 
     def __backup_and_create_new_generated_config_dir(
         self, current_config_version
