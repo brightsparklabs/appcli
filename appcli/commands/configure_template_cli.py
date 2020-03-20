@@ -13,6 +13,7 @@ www.brightsparklabs.com
 import glob
 import os
 from pathlib import Path
+import shutil
 
 # vendor libraries
 import click
@@ -21,6 +22,7 @@ import click
 from appcli.functions import error_and_exit
 from appcli.logger import logger
 from appcli.models.configuration import Configuration
+from appcli.models.cli_context import CliContext
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -56,6 +58,7 @@ class ConfigureTemplateCli:
         @click.pass_context
         def ls(ctx):
             seed_templates_dir = self.cli_configuration.seed_templates_dir
+
             # Get the relative path of all files within the seed templates directory
             files = [
                 os.path.relpath(f, seed_templates_dir)
@@ -68,25 +71,42 @@ class ConfigureTemplateCli:
             for file in files:
                 print(file)
 
-        @template.command(help="Shows a default template.")
-        @click.argument("template_path")
+        @template.command(help="Gets a default template and prints its contents.")
+        @click.argument("template_rel_path")
         @click.pass_context
-        def get(ctx, template_path):
+        def get(ctx, template_rel_path):
             seed_templates_dir = self.cli_configuration.seed_templates_dir
 
-            template_file_path = Path(os.path.join(seed_templates_dir, template_path))
+            template_file_path = Path(
+                os.path.join(seed_templates_dir, template_rel_path)
+            )
             if not template_file_path.exists():
-                error_and_exit(f"Could not find template [{template_path}]")
+                error_and_exit(f"Could not find template [{template_rel_path}]")
 
             print(template_file_path.read_text())
 
         @template.command(help="Copies a default template to the overrides folder.")
-        @click.argument("template_path")
+        @click.argument("template_rel_path")
         @click.pass_context
-        def override(ctx, template_path):
-            # cli_context: CliContext = ctx.obj
-            # TODO: Impl
-            logger.error(f"override called: [{template_path}]")
+        def override(ctx, template_rel_path):
+            cli_context: CliContext = ctx.obj
+            seed_templates_dir = self.cli_configuration.seed_templates_dir
+
+            template_file_path = Path(
+                os.path.join(seed_templates_dir, template_rel_path)
+            )
+            if not template_file_path.exists():
+                error_and_exit(f"Could not find template [{template_rel_path}]")
+
+            override_file_path = cli_context.get_template_overrides_dir().joinpath(
+                template_rel_path
+            )
+
+            os.makedirs(override_file_path.parent, exist_ok=True)
+            shutil.copy2(template_file_path, override_file_path)
+            logger.info(
+                f"Copied template [{template_rel_path}] to [{override_file_path}]"
+            )
 
         @template.command(help="Diffs overridde templates with the default templates")
         @click.pass_context
