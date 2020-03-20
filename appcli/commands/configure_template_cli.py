@@ -87,8 +87,11 @@ class ConfigureTemplateCli:
 
         @template.command(help="Copies a default template to the overrides folder.")
         @click.argument("template_rel_path")
+        @click.option(
+            "--force", is_flag=True, help="Overwrite existing override template",
+        )
         @click.pass_context
-        def override(ctx, template_rel_path):
+        def override(ctx, template_rel_path, force):
             cli_context: CliContext = ctx.obj
             seed_templates_dir = self.cli_configuration.seed_templates_dir
 
@@ -101,6 +104,13 @@ class ConfigureTemplateCli:
             override_file_path = cli_context.get_template_overrides_dir().joinpath(
                 template_rel_path
             )
+
+            if override_file_path.exists():
+                if not force:
+                    error_and_exit(
+                        f"Override template already exists at [{override_file_path}]. Use --force to overwrite."
+                    )
+                logger.info("Force flag provided. Overwriting existing override file.")
 
             os.makedirs(override_file_path.parent, exist_ok=True)
             shutil.copy2(template_file_path, override_file_path)
