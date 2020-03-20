@@ -10,6 +10,7 @@ www.brightsparklabs.com
 """
 
 # standard library
+import difflib
 import os
 from typing import Iterable
 
@@ -158,6 +159,28 @@ class ConfigureCli:
             # Set settings value
             configuration = ConfigurationManager(cli_context, self.cli_configuration)
             configuration.get_variables_manager().set_variable(setting, value)
+
+        @configure.command(
+            help="Get the differences between current and default configuration settings."
+        )
+        @click.pass_context
+        def diff(ctx):
+            cli_context: CliContext = ctx.obj
+
+            default_settings_file = self.cli_configuration.seed_app_configuration_file
+            current_settings_file = cli_context.get_app_configuration_file()
+
+            default_settings = open(default_settings_file).readlines()
+            current_settings = open(current_settings_file).readlines()
+            for line in difflib.unified_diff(
+                default_settings,
+                current_settings,
+                fromfile=f"default",
+                tofile=f"current",
+                lineterm="",
+            ):
+                # remove superfluous \n characters added by unified_diff
+                print(line.rstrip())
 
         # Add the 'template' subcommand
         configure.add_command(ConfigureTemplateCli(self.cli_configuration).command)
