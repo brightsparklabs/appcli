@@ -56,7 +56,7 @@ docker:
 
 docker-publish: docker
 	docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
-	docker publish brightsparklabs/appcli:${APP_VERSION}
+	docker push brightsparklabs/appcli:${APP_VERSION}
 	docker logout
 
 all: format lint test
