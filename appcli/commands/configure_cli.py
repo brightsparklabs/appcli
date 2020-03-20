@@ -21,18 +21,12 @@ from appcli.commands.configure_template_cli import ConfigureTemplateCli
 
 # local libraries
 from appcli.configuration_manager import ConfigurationManager
-from appcli.crypto.crypto import create_and_save_key, decrypt_values_in_file
 from appcli.functions import (
     error_and_exit,
     execute_validation_functions,
-    get_generated_configuration_metadata_file,
     print_header,
 )
-from appcli.git_repositories.git_repositories import (
-    ConfigurationGitRepository,
-    GeneratedConfigurationGitRepository,
-    confirm_config_dir_exists,
-)
+from appcli.git_repositories.git_repositories import confirm_config_dir_exists
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
@@ -227,29 +221,3 @@ class ConfigureCli:
         )
 
         logger.info("System configuration is valid")
-
-    def __generate_from_template(
-        self, template_file: Path, target_file: Path, variables: dict
-    ):
-        """
-        Generate configuration file from the specified template file using
-        the supplied variables.
-
-        Args:
-            template_file (Path): Template used to generate the file.
-            target_file (Path): Location to write the generated file to.
-            variables (dict): Variables used to populate the template.
-        """
-        template = Template(
-            template_file.read_text(),
-            undefined=StrictUndefined,
-            trim_blocks=True,
-            lstrip_blocks=True,
-        )
-        try:
-            output_text = template.render(variables)
-            target_file.write_text(output_text)
-        except Exception as e:
-            error_and_exit(
-                f"Could not generate file from template. The configuration file is likely missing a setting: {e}"
-            )

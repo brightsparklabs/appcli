@@ -16,7 +16,6 @@ import sys
 import click
 
 from appcli.configuration_manager import (
-    confirm_config_version_matches_app_version,
     confirm_generated_config_dir_exists,
     confirm_generated_configuration_is_using_current_configuration,
 )
@@ -25,6 +24,7 @@ from appcli.configuration_manager import (
 from appcli.functions import execute_validation_functions
 from appcli.git_repositories.git_repositories import (
     confirm_config_dir_exists_and_is_not_dirty,
+    confirm_config_version_matches_app_version,
     confirm_generated_config_dir_exists_and_is_not_dirty,
 )
 from appcli.logger import logger

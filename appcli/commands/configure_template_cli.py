@@ -133,10 +133,6 @@ class ConfigureTemplateCli:
                 f for f in override_files_rel_paths if f not in template_files_rel_paths
             ]
 
-            overridden_templates = [
-                f for f in template_files_rel_paths if f in override_files_rel_paths
-            ]
-
             if not_overriding_overrides:
                 error_message = (
                     f"Overrides present with no matching default template:\n - "
@@ -144,14 +140,14 @@ class ConfigureTemplateCli:
                 error_message += "\n - ".join(not_overriding_overrides)
                 logger.warn(error_message)
 
+            overridden_templates = [
+                f for f in template_files_rel_paths if f in override_files_rel_paths
+            ]
+
             no_effect_overrides = [
                 f
                 for f in overridden_templates
                 if is_files_matching(f, seed_templates_dir, override_templates_dir)
-            ]
-
-            effective_overrides = [
-                f for f in overridden_templates if f not in no_effect_overrides
             ]
 
             if no_effect_overrides:
@@ -159,7 +155,12 @@ class ConfigureTemplateCli:
                 error_message += "\n - ".join(no_effect_overrides)
                 logger.warn(error_message)
 
+            effective_overrides = [
+                f for f in overridden_templates if f not in no_effect_overrides
+            ]
+
             if effective_overrides:
+                logger.info("The following files differ from default templates:")
                 for template_rel_path in effective_overrides:
                     seed_template = seed_templates_dir.joinpath(template_rel_path)
                     override_template = override_templates_dir.joinpath(
