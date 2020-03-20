@@ -43,7 +43,7 @@ test: venv
 	${PYTHON} -m pytest
 
 lint: venv
-	${PYTHON} -m flake8 --ignore=E501 --exclude=appcli/__init__.py appcli tests
+	${PYTHON} -m flake8 --ignore=E501,W503 --exclude=appcli/__init__.py appcli tests
 
 isort: venv
 	${PYTHON} -m isort -y

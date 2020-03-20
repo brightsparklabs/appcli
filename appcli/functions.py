@@ -11,7 +11,6 @@ www.brightsparklabs.com
 
 # standard libraries
 import re
-import sys
 from typing import Callable, Iterable, List
 
 # vendor libraries
