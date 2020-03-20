@@ -21,11 +21,7 @@ from appcli.commands.configure_template_cli import ConfigureTemplateCli
 
 # local libraries
 from appcli.configuration_manager import ConfigurationManager
-from appcli.functions import (
-    error_and_exit,
-    execute_validation_functions,
-    print_header,
-)
+from appcli.functions import error_and_exit, execute_validation_functions, print_header
 from appcli.git_repositories.git_repositories import confirm_config_dir_exists
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
