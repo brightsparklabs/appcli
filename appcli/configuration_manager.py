@@ -17,6 +17,8 @@ import tarfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
+import tempfile
+from distutils.dir_util import copy_tree
 
 # vendor libraries
 from jinja2 import StrictUndefined, Template
@@ -172,7 +174,7 @@ class ConfigurationManager:
             self.cli_context
         )
         config_version: str = config_repo.get_repository_version()
-        app_version: str = self.__get_app_version()
+        app_version: str = self.cli_context.app_version
 
         # If the configuration version matches the application version, no migration is required.
         if config_version == app_version:
@@ -215,14 +217,19 @@ class ConfigurationManager:
                 f"Migrated variables did not pass application-specific variables validation function."
             )
 
-        # Get the diff of template files from 'base' of branch (i.e. the tag which matches the branch name) to current HEAD of the branch
-        diff_data = config_repo.get_diff_to_tag(config_version, "templates/")
+        overrides_exist = self.__check_overrides_exist()
+        override_dir: Path
+        if overrides_exist:
+            override_dir = self.__backup_overrides_directory()
 
         # Backup and remove the existing generated config dir since it's now out of date
         self.__backup_and_create_new_generated_config_dir(config_version)
 
         # Initialise the new configuration branch and directory with all new files
         self.__create_new_configuration_branch_and_files(config_repo)
+
+        if overrides_exist:
+            self.__copy_in_overrides(override_dir)
 
         # Write out 'migrated' variables file
         self.get_variables_manager().set_all_variables(migrated_variables)
@@ -231,31 +238,6 @@ class ConfigurationManager:
         config_repo.commit_changes(
             f"Migrated variables file from version [{config_version}] to version [{app_version}]"
         )
-
-        if diff_data:
-            logger.warn(
-                "Changes to default templates have been made. These changes need to be re-applied manually."
-            )
-            logger.warn(
-                f"Diff of all templates since default of version [{config_version}]:\n{diff_data}"
-            )
-            current_datetime = (
-                datetime.now().replace(microsecond=0).isoformat().replace(":", "")
-            )
-            self.cli_context.get_configuration_metadata_dir().mkdir(
-                parents=True, exist_ok=True
-            )
-            diff_out_file = self.cli_context.get_configuration_metadata_dir().joinpath(
-                f"template-changes-from-default_{config_version}_{current_datetime}.diff"
-            )
-            diff_out_file.write_text(diff_data)
-            logger.warn(
-                f"These diffs have also been written out to file: [{diff_out_file}]"
-            )
-        else:
-            logger.info(
-                "No changes to default templates detected, no manual fixes are required."
-            )
 
     def __pre_migrate_validation(self, cli_context: CliContext):
         """Ensures the system is in a valid state for migration.
@@ -296,7 +278,7 @@ class ConfigurationManager:
         self, config_repo: ConfigurationGitRepository
     ):
 
-        app_version: str = self.__get_app_version()
+        app_version: str = self.cli_context.app_version
 
         # Try to get an existing key
         path_to_key_file = self.cli_context.get_key_file()
@@ -322,15 +304,6 @@ class ConfigurationManager:
         config_repo.commit_changes(f"Default configuration at version [{app_version}]")
 
         config_repo.tag_current_commit(f"{app_version}")
-
-    def __get_app_version(self) -> str:
-        """Get the target application version, which is the version of the application
-        which is currently running in the Docker container.
-
-        Returns:
-            str: version of the application according to the Docker container this script is running in.
-        """
-        return self.cli_context.app_version
 
     def __seed_configuration_dir(self):
         """Seed the raw configuration into the configuration directory
@@ -428,13 +401,47 @@ class ConfigurationManager:
                 logger.info("Copying configuration file to [%s] ...", target_file)
                 shutil.copy2(template_file, target_file)
 
+    def __check_overrides_exist(self) -> bool:
+        """Checks if any template overrides exist in the overrides directory.
+
+        Returns:
+            bool: Returns True if any overrides exist, otherwise False.
+        """
+        template_overrides_dir = self.cli_context.get_template_overrides_dir()
+        return bool(
+            os.path.exists(template_overrides_dir)
+            and os.listdir(template_overrides_dir)
+        )
+
+    def __backup_overrides_directory(self) -> Path:
+        temp_dir = Path(tempfile.mkdtemp())
+
+        # Due to a limitation with 'copytree', it fails to copy if the root directory exists
+        # before copying. So we delete the temp dir prior to copying.
+        os.rmdir(temp_dir)
+        copy_tree(str(self.cli_context.get_template_overrides_dir()), str(temp_dir))
+
+        return temp_dir
+
+    def __copy_in_overrides(self, temp_dir: Path):
+        logger.debug(f"Copying in overrides")
+
+        overrides_dir = self.cli_context.get_template_overrides_dir()
+
+        copy_tree(str(temp_dir), str(overrides_dir))
+        shutil.rmtree(temp_dir)
+
+        logger.warn(
+            f"Overrides directory [{overrides_dir}] is non-empty, please check for compatibility of overridden files"
+        )
+
     def __backup_and_create_new_generated_config_dir(
         self, current_config_version
     ) -> Path:
-        """Backup the generated configuration dir, and create a new one
+        """Backup the generated configuration dir, and delete all its contents
 
         Returns:
-            Path: path to the clean generated configuration dir
+            Path: path to the generated configuration dir
         """
         generated_configuration_dir = self.cli_context.get_generated_configuration_dir()
         return backup_and_create_new_directory(
@@ -541,7 +548,7 @@ def backup_and_create_new_directory(
     source_dir: Path, additional_filename_descriptor: str = "backup"
 ) -> Path:
     """Backs up a directory to a tar gzipped file with the current datetimestamp,
-    and deletes the existing directory
+    deletes the existing directory, and creates a new empty directory in its place
 
     Args:
         source_dir (Path): Path to the directory to backup and delete
