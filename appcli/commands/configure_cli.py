@@ -38,6 +38,7 @@ from appcli.functions import (
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
+from appcli.commands.configure_template_cli import ConfigureTemplateCli
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -157,6 +158,9 @@ class ConfigureCli:
             # Set settings value
             configuration = ConfigurationManager(cli_context, self.cli_configuration)
             configuration.get_variables_manager().set_variable(setting, value)
+
+        # Add the 'template' subcommand
+        configure.add_command(ConfigureTemplateCli(self.cli_configuration).command)
 
         # Expose the commands
         self.commands = {"configure": configure}

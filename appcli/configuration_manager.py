@@ -435,6 +435,8 @@ class ConfigurationManager:
             f"Overrides directory [{overrides_dir}] is non-empty, please check for compatibility of overridden files"
         )
 
+        # TODO: Call command to show diff in overrides (configure template diff)
+
     def __backup_and_create_new_generated_config_dir(
         self, current_config_version
     ) -> Path:
