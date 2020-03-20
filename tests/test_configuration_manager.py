@@ -43,9 +43,6 @@ def test_initialise(tmpdir):
     # Check the variables file has been copied
     assert Path(tmpdir, f"conf/{APP_NAME}.yml").exists()
 
-    # Check the password_file template has been copied
-    assert Path(tmpdir, f"conf/templates/password_file.j2").exists()
-
     # Check the key has been generated
     assert Path(tmpdir, "conf/key").exists()
 
