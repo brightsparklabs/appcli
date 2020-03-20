@@ -174,16 +174,15 @@ rather than having to rebuild a container each time you update it.
 
 ## Contributing
 
-When committing code, first run the python code formatter
-[black](https://pypi.org/project/black/) with default settings. This will
-ensure that PR diffs are minimal and focussed on the code change rather than
-stylistic coding decisions.
+When committing code, call `make all` to automatically run code formatting/
+linting/testing.
+
+Appcli uses the python code formatter [black](https://pypi.org/project/black/)
+with default settings. This ensures that PR diffs are minimal and focussed on
+the code change rather than stylistic coding decisions.
 
 Install with `pip install black`. This can be run through VSCode or via the
-CLI. See the documentation for details.
-
-We also use `isort` to automatically sort imports, which can be invoked by
-calling `make all`.
+CLI. See the `black` documentation for details.
 
 ## Licenses
 
