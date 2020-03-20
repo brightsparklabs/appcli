@@ -10,11 +10,13 @@ www.brightsparklabs.com
 """
 
 # standard libraries
-import click
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 from typing import Callable, Iterable, List
+
+# vendor libraries
+import click
 
 # local libraries
 from appcli.logger import logger

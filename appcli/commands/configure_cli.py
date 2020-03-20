@@ -27,9 +27,9 @@ from appcli.configuration_manager import ConfigurationManager
 from appcli.crypto.crypto import create_and_save_key, decrypt_values_in_file
 from appcli.functions import (
     error_and_exit,
+    execute_validation_functions,
     get_generated_configuration_metadata_file,
     print_header,
-    execute_validation_functions,
 )
 from appcli.git_repositories.git_repositories import (
     ConfigurationGitRepository,
@@ -493,4 +493,3 @@ class ConfigureCli:
             error_and_exit(
                 f"Could not generate file from template. The configuration file is likely missing a setting: {e}"
             )
-

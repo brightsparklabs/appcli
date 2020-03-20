@@ -16,7 +16,6 @@ www.brightsparklabs.com
 
 # standard library
 import os
-import sys
 
 # vendor libraries
 import click

@@ -19,8 +19,8 @@ import click
 from appcli.functions import execute_validation_functions
 from appcli.git_repositories.git_repositories import (
     confirm_config_dir_is_not_dirty,
-    confirm_generated_config_dir_is_not_dirty,
     confirm_generated_config_dir_exists,
+    confirm_generated_config_dir_is_not_dirty,
     confirm_generated_configuration_is_using_current_configuration,
 )
 from appcli.logger import logger

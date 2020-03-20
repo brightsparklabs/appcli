@@ -82,23 +82,13 @@ The library leverages the following environment variables:
 
         # filename: Dockerfile
 
-        FROM python:3.7.4-alpine
+        FROM brightsparklabs/appcli
 
         ENTRYPOINT ["./myapp"]
         WORKDIR /app
 
-        RUN \
-              apk add --no-cache \
-                    docker \
-                    git \
-                    # docker-compose dependencies
-                    gcc \
-                    libffi-dev \
-                    make \
-                    musl-dev \
-                    openssl-dev \
-                    python3-dev \
-              && pip install docker-compose==1.24.1
+        # install compose if using it as the orchestrator
+        RUN pip install docker-compose
 
         COPY requirements.txt .
         RUN pip install --requirement requirements.txt

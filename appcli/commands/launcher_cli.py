@@ -21,10 +21,10 @@ import click
 from jinja2 import StrictUndefined, Template
 
 # local libraries
+from appcli import templates
 from appcli.functions import error_and_exit
 from appcli.logger import logger
 from appcli.models.configuration import Configuration
-from appcli import templates
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
