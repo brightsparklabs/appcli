@@ -10,6 +10,8 @@ www.brightsparklabs.com
 """
 
 # standard library
+import difflib
+import filecmp
 import glob
 import os
 from pathlib import Path
@@ -60,13 +62,7 @@ class ConfigureTemplateCli:
             seed_templates_dir = self.cli_configuration.seed_templates_dir
 
             # Get the relative path of all files within the seed templates directory
-            files = [
-                os.path.relpath(f, seed_templates_dir)
-                for f in glob.glob(
-                    str(seed_templates_dir.joinpath("**/*")), recursive=True
-                )
-                if os.path.isfile(f)
-            ]
+            files = get_relative_paths_of_all_files_in_directory(seed_templates_dir)
 
             for file in files:
                 print(file)
@@ -121,9 +117,65 @@ class ConfigureTemplateCli:
         @template.command(help="Diffs overridde templates with the default templates")
         @click.pass_context
         def diff(ctx):
-            # cli_context: CliContext = ctx.obj
-            # TODO: Impl
-            logger.error(f"diff called")
+            cli_context: CliContext = ctx.obj
+            seed_templates_dir = self.cli_configuration.seed_templates_dir
+            override_templates_dir = cli_context.get_template_overrides_dir()
+
+            template_files_rel_paths = get_relative_paths_of_all_files_in_directory(
+                seed_templates_dir
+            )
+
+            override_files_rel_paths = get_relative_paths_of_all_files_in_directory(
+                override_templates_dir
+            )
+
+            not_overriding_overrides = [
+                f for f in override_files_rel_paths if f not in template_files_rel_paths
+            ]
+
+            overridden_templates = [
+                f for f in template_files_rel_paths if f in override_files_rel_paths
+            ]
+
+            if not_overriding_overrides:
+                error_message = (
+                    f"Overrides present with no matching default template:\n - "
+                )
+                error_message += "\n - ".join(not_overriding_overrides)
+                logger.warn(error_message)
+
+            no_effect_overrides = [
+                f
+                for f in overridden_templates
+                if is_files_matching(f, seed_templates_dir, override_templates_dir)
+            ]
+
+            effective_overrides = [
+                f for f in overridden_templates if f not in no_effect_overrides
+            ]
+
+            if no_effect_overrides:
+                error_message = f"Overrides present which match default template:\n - "
+                error_message += "\n - ".join(no_effect_overrides)
+                logger.warn(error_message)
+
+            if effective_overrides:
+                for template_rel_path in effective_overrides:
+                    seed_template = seed_templates_dir.joinpath(template_rel_path)
+                    override_template = override_templates_dir.joinpath(
+                        template_rel_path
+                    )
+                    template_text = open(seed_template).readlines()
+                    override_text = open(override_template).readlines()
+                    for line in difflib.unified_diff(
+                        template_text,
+                        override_text,
+                        fromfile=f"template - {template_rel_path}",
+                        tofile=f"override - {template_rel_path}",
+                        lineterm="",
+                    ):
+                        # remove superfluous \n characters added by unified_diff
+                        print(line.rstrip())
 
         # Expose the commands
         self.command = template
@@ -132,3 +184,16 @@ class ConfigureTemplateCli:
     # PRIVATE METHODS
     # ------------------------------------------------------------------------------
 
+
+def get_relative_paths_of_all_files_in_directory(directory: Path):
+    return [
+        os.path.relpath(f, directory)
+        for f in glob.glob(str(directory.joinpath("**/*")), recursive=True)
+        if os.path.isfile(f)
+    ]
+
+
+def is_files_matching(file_rel_path: str, directory_1: Path, directory_2: Path):
+    file_1 = directory_1.joinpath(file_rel_path)
+    file_2 = directory_2.joinpath(file_rel_path)
+    return filecmp.cmp(file_1, file_2)
