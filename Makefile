@@ -52,11 +52,12 @@ format: isort
 	${PYTHON} -m black .
 
 docker:
-	docker build -t brightsparklabs/appcli:${APP_VERSION} .
+	docker build -t brightsparklabs/appcli:${APP_VERSION} -t brightsparklabs/appcli:latest .
 
 docker-publish: docker
 	docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
 	docker push brightsparklabs/appcli:${APP_VERSION}
+	docker push brightsparklabs/appcli:latest
 	docker logout
 
 all: format lint test
