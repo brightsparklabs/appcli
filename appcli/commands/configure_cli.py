@@ -17,6 +17,8 @@ from typing import Iterable
 # vendor libraries
 import click
 
+from appcli.commands.configure_template_cli import ConfigureTemplateCli
+
 # local libraries
 from appcli.configuration_manager import ConfigurationManager
 from appcli.crypto.crypto import create_and_save_key, decrypt_values_in_file
@@ -31,15 +33,9 @@ from appcli.git_repositories.git_repositories import (
     GeneratedConfigurationGitRepository,
     confirm_config_dir_exists,
 )
-from appcli.functions import (
-    error_and_exit,
-    execute_validation_functions,
-    print_header,
-)
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
-from appcli.commands.configure_template_cli import ConfigureTemplateCli
 
 # ------------------------------------------------------------------------------
 # CLASSES

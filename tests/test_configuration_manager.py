@@ -15,10 +15,11 @@ from pathlib import Path
 # vendor libraries
 import pytest
 
-# local libraries
-from appcli.configuration_manager import ConfigurationManager
 from appcli import CliContext, Configuration, DockerComposeOrchestrator
+
+# local libraries
 from appcli.configuration_manager import (
+    ConfigurationManager,
     confirm_generated_configuration_is_using_current_configuration,
 )
 

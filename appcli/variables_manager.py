@@ -11,11 +11,11 @@ www.brightsparklabs.com
 
 # standard library
 from functools import reduce
+from pathlib import Path
+from typing import Dict
 
 # vendor libraries
 from ruamel.yaml import YAML
-from pathlib import Path
-from typing import Dict
 
 # local libraries
 from appcli.logger import logger

@@ -19,8 +19,8 @@ import click
 # local libraries
 from appcli.configuration_manager import ConfigurationManager
 from appcli.logger import logger
-from appcli.models.configuration import Configuration
 from appcli.models.cli_context import CliContext
+from appcli.models.configuration import Configuration
 
 # ------------------------------------------------------------------------------
 # CLASSES

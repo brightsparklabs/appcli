@@ -14,8 +14,8 @@ import difflib
 import filecmp
 import glob
 import os
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 # vendor libraries
 import click
@@ -23,8 +23,8 @@ import click
 # local libraries
 from appcli.functions import error_and_exit
 from appcli.logger import logger
-from appcli.models.configuration import Configuration
 from appcli.models.cli_context import CliContext
+from appcli.models.configuration import Configuration
 
 # ------------------------------------------------------------------------------
 # CLASSES

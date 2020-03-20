@@ -14,39 +14,34 @@ import json
 import os
 import shutil
 import tarfile
+import tempfile
 from datetime import datetime, timezone
+from distutils.dir_util import copy_tree
 from pathlib import Path
 from typing import Iterable
-import tempfile
-from distutils.dir_util import copy_tree
 
 # vendor libraries
 from jinja2 import StrictUndefined, Template
 
+from appcli.crypto import crypto
 
 # local libraries
 from appcli.crypto.crypto import decrypt_values_in_file
-from appcli.functions import (
-    error_and_exit,
-    print_header,
-    execute_validation_functions,
-)
+from appcli.functions import error_and_exit, execute_validation_functions, print_header
 from appcli.git_repositories.git_repositories import (
     ConfigurationGitRepository,
     GeneratedConfigurationGitRepository,
     confirm_config_dir_exists,
-    confirm_config_dir_not_exists,
     confirm_config_dir_exists_and_is_not_dirty,
-    confirm_not_on_master_branch,
+    confirm_config_dir_not_exists,
     confirm_generated_config_dir_exists,
     confirm_generated_config_dir_exists_and_is_not_dirty,
+    confirm_not_on_master_branch,
 )
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
 from appcli.variables_manager import VariablesManager
-
-from appcli.crypto import crypto
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
