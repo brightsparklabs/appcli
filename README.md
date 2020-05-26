@@ -6,7 +6,8 @@ style.
 ## Overview
 
 This library can be leveraged to add a standardised CLI capability to
-applications to handle system lifecycle events (start, stop, configure, migrate, etc).
+applications to handle system lifecycle events (start, stop, configure,
+migrate, etc).
 
 The CLI is designed to run within a Docker container and launch other Docker
 containers (i.e. Docker-in-Docker). This is generally managed via a
@@ -22,7 +23,8 @@ The library leverages the following environment variables:
   files generated from the templates in `<APP_NAME>_CONFIG_DIR`.
 - `<APP_NAME>_ENVIRONMENT` - the 'environment' of the application to be run. For
   example `production` or `staging`. This allows multiple instances of the same
-  project to run on the same docker daemon. If undefined, this defaults to 'default'.
+  project to run on the same docker daemon. If undefined, this defaults to
+  'default'.
 
 ## Usage
 
@@ -105,27 +107,19 @@ The library leverages the following environment variables:
         # sh
         docker build -t brightsparklabs/myapp --build-arg APP_VERSION=latest .
 
-- Create an initial launcher script `init.sh`:
-
-        #!/bin/bash
-        export MYAPP_CONFIG_DIR=/tmp/myapp/config \
-               MYAPP_DATA_DIR=/tmp/myapp/data
-
-        docker run \
-            --volume /var/run/docker.sock:/var/run/docker.sock \
-            brightsparklabs/myapp \
-                --debug \
-                --configuration-dir "${MYAPP_CONFIG_DIR}" \
-                --data-dir "${MYAPP_DATA_DIR}" \
-                $@
-
 - Create a launcher `myapp.sh` from the init script:
 
         # sh
-        ./init.sh launcher >> myapp.sh
+        docker run brightsparklabs/myapp \
+            --configuration-dir /path/to/myapp/conf \
+            --data-dir /path/to/myapp/data \
+            launcher \
+        > myapp.sh
 
-This script, `myapp.sh` should now be used as the main entrypoint to all appcli functions
-for managing your application.
+        chmod +x myapp.sh
+
+This script, `myapp.sh` should now be used as the main entrypoint to all appcli
+functions for managing your application.
 
 ## Development
 
