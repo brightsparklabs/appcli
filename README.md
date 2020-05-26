@@ -6,7 +6,8 @@ style.
 ## Overview
 
 This library can be leveraged to add a standardised CLI capability to
-applications to handle system lifecycle events (start, stop, configure, etc).
+applications to handle system lifecycle events (start, stop, configure,
+migrate, etc).
 
 The CLI is designed to run within a Docker container and launch other Docker
 containers (i.e. Docker-in-Docker). This is generally managed via a
@@ -18,14 +19,12 @@ The library leverages the following environment variables:
 - `<APP_NAME>_CONFIG_DIR` - the directory containing configuration files
   consumed by the system.
 - `<APP_NAME>_DATA_DIR` - the directory containing data produced by the system.
-- `APPCLI_MANAGED` - a flag indicating that the environment currently running
-  was created by the `appcli` library.
 - `<APP_NAME>_GENERATED_CONFIG_DIR` - the directory containing configuration
-  files generated from the templates in `<APP_NAME>_CONFIG_DIR`. This is only
-  set in environments which have the `APPCLI_MANAGED` flag.
+  files generated from the templates in `<APP_NAME>_CONFIG_DIR`.
 - `<APP_NAME>_ENVIRONMENT` - the 'environment' of the application to be run. For
   example `production` or `staging`. This allows multiple instances of the same
-  project to run on the same docker daemon. If undefined, this defaults to 'default'.
+  project to run on the same docker daemon. If undefined, this defaults to
+  'default'.
 
 ## Usage
 
@@ -33,9 +32,12 @@ The library leverages the following environment variables:
 
         pip install git+https://github.com/brightsparklabs/appcli.git@<VERSION>
 
-- Define the CLI for your application:
+- Define the CLI for your application `myapp`:
 
         # filename: myapp
+
+        #!/usr/bin/env python3
+        # # -*- coding: utf-8 -*-
 
         # standard libraries
         import os
@@ -61,7 +63,10 @@ The library leverages the following environment variables:
                 app_name='myapp',
                 docker_image='brightsparklabs/myapp',
                 seed_app_configuration_file=Path(BASE_DIR, 'resources/myapp.yml'),
-                seed_templates_dir=Path(BASE_DIR, 'resources/templates')
+                seed_templates_dir=Path(BASE_DIR, 'resources/templates'),
+                orchestrator=appcli.DockerComposeOrchestrator(
+                  Path(BASE_DIR, 'resources/templates/cli/docker-compose.yml.j2')
+                )
             )
             cli = appcli.create_cli(configuration)
             cli()
@@ -102,40 +107,19 @@ The library leverages the following environment variables:
         # sh
         docker build -t brightsparklabs/myapp --build-arg APP_VERSION=latest .
 
-- Launch the system via your container:
+- Create a launcher `myapp.sh` from the init script:
 
         # sh
-        export MYAPP_CONFIG_DIR=/tmp/myapp/config \
-               MYAPP_DATA_DIR=/tmp/myapp/data
+        docker run brightsparklabs/myapp \
+            --configuration-dir /path/to/myapp/conf \
+            --data-dir /path/to/myapp/data \
+            launcher \
+        > myapp.sh
 
-        docker run \
-            --volume /var/run/docker.sock:/var/run/docker.sock \
-            brightsparklabs/myapp \
-                --debug \
-                --configuration-dir "${MYAPP_CONFIG_DIR}" \
-                --data-dir "${MYAPP_DATA_DIR}"
+        chmod +x myapp.sh
 
-## Usage while developing your CLI application
-
-While developing, it may be preferable to run your python script directly
-rather than having to rebuild a container each time you update it.
-
-- Ensure docker is installed (more specifically a docker socket at
-  `/var/run/docker.sock`).
-- Set the environment variables which the CLI usually sets for you:
-
-        export APP_VERSION=latest \
-            APPCLI_MANAGED=Y \
-            MYAPP_CONFIG_DIR=/tmp/myapp/config \
-            MYAPP_DATA_DIR=/tmp/myapp/data \
-            MYAPP_GENERATED_CONFIG_DIR=/tmp/myapp/config/.generated
-
-- Run your CLI application:
-
-        ./myapp \
-          --debug \
-          --configuration-dir "${MYAPP_CONFIG_DIR}" \
-          --data-dir "${MYAPP_DATA_DIR}"
+This script, `myapp.sh` should now be used as the main entrypoint to all appcli
+functions for managing your application.
 
 ## Development
 
@@ -163,15 +147,36 @@ The following must be installed and in the `PATH`:
 
     make test
 
+## Usage while developing your CLI application
+
+While developing, it may be preferable to run your python script directly
+rather than having to rebuild a container each time you update it.
+
+- Ensure docker is installed (more specifically a docker socket at
+  `/var/run/docker.sock`).
+- Set the environment variables which the CLI usually sets for you:
+
+        export MYAPP_CONFIG_DIR=/tmp/myapp/config \
+               MYAPP_DATA_DIR=/tmp/myapp/data
+
+- Run your CLI application:
+
+        ./myapp \
+          --debug \
+          --configuration-dir "${MYAPP_CONFIG_DIR}" \
+          --data-dir "${MYAPP_DATA_DIR}"
+
 ## Contributing
 
-When committing code, first run the python code formatter
-[black](https://pypi.org/project/black/) with default settings. This will
-ensure that PR diffs are minimal and focussed on the code change rather than
-stylistic coding decisions.
+When committing code, call `make all` to automatically run code formatting/
+linting/testing.
+
+Appcli uses the python code formatter [black](https://pypi.org/project/black/)
+with default settings. This ensures that PR diffs are minimal and focussed on
+the code change rather than stylistic coding decisions.
 
 Install with `pip install black`. This can be run through VSCode or via the
-CLI. See the documentation for details.
+CLI. See the `black` documentation for details.
 
 ## Licenses
 

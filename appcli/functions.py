@@ -11,8 +11,6 @@ www.brightsparklabs.com
 
 # standard libraries
 import re
-import sys
-from pathlib import Path
 from typing import Callable, Iterable, List
 
 # vendor libraries
@@ -21,13 +19,6 @@ import click
 # local libraries
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
-
-# ------------------------------------------------------------------------------
-# CONSTANTS
-# ------------------------------------------------------------------------------
-
-METADATA_FILE_NAME = "metadata-configure-apply.json"
-""" Name of the file holding metadata from running a configure (relative to the generated configuration directory) """
 
 # ------------------------------------------------------------------------------
 # VARIABLES
@@ -49,7 +40,9 @@ def error_and_exit(message: str):
         message (str): [description]
     """
     logger.error(message)
-    sys.exit(1)
+    # Raise a SystemExit exception with another exception with the error message
+    # as the code so we can capture it externally.
+    raise SystemExit(1) from SystemExit(message)
 
 
 def print_header(title):
@@ -59,11 +52,6 @@ def print_header(title):
                         ============================================================""",
         title.upper(),
     )
-
-
-def get_generated_configuration_metadata_file(cli_context: CliContext) -> Path:
-    generated_configuration_dir = cli_context.get_generated_configuration_dir()
-    return generated_configuration_dir.joinpath(METADATA_FILE_NAME)
 
 
 def extract_valid_environment_variable_names(
@@ -125,11 +113,11 @@ def execute_validation_functions(
 
     # Get the blocking errors
     must_succeed_errors = _run_checks(cli_context, must_succeed_checks)
-    must_succeed_error_messages = "\n- ".join(must_succeed_errors)
+    must_succeed_error_messages = "\n- ".join(set(must_succeed_errors))
 
     # Get the non-blocking errors - 'warnings'
     should_succeed_errors = _run_checks(cli_context, should_succeed_checks)
-    should_succeed_error_messages = "\n- ".join(should_succeed_errors)
+    should_succeed_error_messages = "\n- ".join(set(should_succeed_errors))
 
     all_errors = must_succeed_errors + should_succeed_errors
 

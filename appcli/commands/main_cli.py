@@ -15,13 +15,17 @@ import sys
 # vendor libraries
 import click
 
+from appcli.configuration_manager import (
+    confirm_generated_config_dir_exists,
+    confirm_generated_configuration_is_using_current_configuration,
+)
+
 # local libraries
 from appcli.functions import execute_validation_functions
 from appcli.git_repositories.git_repositories import (
-    confirm_config_dir_is_not_dirty,
-    confirm_generated_config_dir_exists,
-    confirm_generated_config_dir_is_not_dirty,
-    confirm_generated_configuration_is_using_current_configuration,
+    confirm_config_dir_exists_and_is_not_dirty,
+    confirm_config_version_matches_app_version,
+    confirm_generated_config_dir_exists_and_is_not_dirty,
 )
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
@@ -53,6 +57,8 @@ class MainCli:
         @click.pass_context
         def start(ctx, force):
             hooks = self.cli_configuration.hooks
+
+            # TODO: run self.cli_configuration.hooks.is_valid_variables() to confirm variables are valid
 
             logger.debug("Running pre-start hook")
             hooks.pre_start(ctx)
@@ -127,9 +133,10 @@ class MainCli:
         # If either config dirs are dirty, or generated config doesn't align with
         # current config, then warn before allowing start.
         should_succeed_checks = [
-            confirm_config_dir_is_not_dirty,
-            confirm_generated_config_dir_is_not_dirty,
+            confirm_config_dir_exists_and_is_not_dirty,
+            confirm_generated_config_dir_exists_and_is_not_dirty,
             confirm_generated_configuration_is_using_current_configuration,
+            confirm_config_version_matches_app_version,
         ]
 
         execute_validation_functions(

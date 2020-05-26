@@ -67,6 +67,14 @@ class CliContext(NamedTuple):
         """
         return self.configuration_dir.joinpath(".generated")
 
+    def get_configuration_metadata_dir(self) -> Path:
+        """Get the directory containing the metadata for app configuration
+
+        Returns:
+            Path: directory of application metadata
+        """
+        return self.configuration_dir.joinpath(".metadata")
+
     def get_app_configuration_file(self) -> Path:
         """Get the location of the configuration file
 
@@ -75,13 +83,13 @@ class CliContext(NamedTuple):
         """
         return self.configuration_dir.joinpath(f"{self.app_name.lower()}.yml")
 
-    def get_templates_dir(self) -> Path:
-        """Get the directory of the raw configuration templates
+    def get_template_overrides_dir(self) -> Path:
+        """Get the directory of the configuration template overrides
 
         Returns:
-            Path: directory of configuration templates
+            Path: directory of configuration template overrides
         """
-        return self.configuration_dir.joinpath("templates")
+        return self.configuration_dir.joinpath("overrides")
 
     def get_project_name(self) -> str:
         """Get a unique name for the application and environment

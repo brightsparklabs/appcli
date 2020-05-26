@@ -26,6 +26,7 @@ from appcli.commands.init_cli import InitCli
 from appcli.commands.install_cli import InstallCli
 from appcli.commands.launcher_cli import LauncherCli
 from appcli.commands.main_cli import MainCli
+from appcli.commands.migrate_cli import MigrateCli
 from appcli.functions import error_and_exit, extract_valid_environment_variable_names
 from appcli.logger import enable_debug_logging, logger
 from appcli.models.cli_context import CliContext
@@ -68,6 +69,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         InstallCli,
         LauncherCli,
         MainCli,
+        MigrateCli,
     ):
         commands = cli_class(configuration).commands
         default_commands.update(**commands)
@@ -207,7 +209,9 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     def run():
         """Run the entry-point click cli command
         """
-        cli(prog_name=configuration.app_name)
+        cli(  # pylint: disable=no-value-for-parameter,unexpected-keyword-arg
+            prog_name=configuration.app_name
+        )
 
     def check_docker_socket():
         """Check that the docker socket exists, and exit if it does not
