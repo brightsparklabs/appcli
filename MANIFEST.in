@@ -1,0 +1,1 @@
+include appcli/templates/*.j2

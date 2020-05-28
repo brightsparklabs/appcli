@@ -50,7 +50,10 @@ setup(
     description=long_description,
     license=license,
     author="brightSPARK Labs",
+    author_email="enquire@brightsparklabs.com",
+    url="www.brightsparklabs.com",
     packages=find_packages(exclude=["contrib", "docs", "tests"]),
+    include_package_data=True,
     install_requires=[
         "click",
         "coloredlogs",
