@@ -135,7 +135,7 @@ class ConfigureTemplateCli:
 
             if not_overriding_overrides:
                 error_message = (
-                    f"Overrides present with no matching default template:\n - "
+                    "Overrides present with no matching default template:\n - "
                 )
                 error_message += "\n - ".join(not_overriding_overrides)
                 logger.warn(error_message)
@@ -151,7 +151,7 @@ class ConfigureTemplateCli:
             ]
 
             if no_effect_overrides:
-                error_message = f"Overrides present which match default template:\n - "
+                error_message = "Overrides present which match default template:\n - "
                 error_message += "\n - ".join(no_effect_overrides)
                 logger.warn(error_message)
 

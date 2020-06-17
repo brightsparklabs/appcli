@@ -49,7 +49,7 @@ class MigrateCli:
                 cli_context, self.cli_configuration
             ).migrate_configuration()
 
-            logger.info(f"Migration complete.")
+            logger.info("Migration complete.")
 
         # expose the cli command
         self.commands = {"migrate": migrate}

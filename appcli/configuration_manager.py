@@ -202,14 +202,17 @@ class ConfigurationManager:
         ).get_all_variables()
 
         migrated_variables = self.cli_configuration.hooks.migrate_variables(
-            self.cli_context, current_variables, config_version, clean_new_version_variables
+            self.cli_context,
+            current_variables,
+            config_version,
+            clean_new_version_variables,
         )
 
         if not self.cli_configuration.hooks.is_valid_variables(
             self.cli_context, migrated_variables, clean_new_version_variables
         ):
             error_and_exit(
-                f"Migrated variables did not pass application-specific variables validation function."
+                "Migrated variables did not pass application-specific variables validation function."
             )
 
         overrides_exist = self.__check_overrides_exist()
@@ -328,7 +331,7 @@ class ConfigurationManager:
         """Generate the generated configuration files
         """
 
-        print_header(f"Generating configuration files")
+        print_header("Generating configuration files")
         generated_configuration_dir = self.__backup_and_create_new_generated_config_dir(
             config_repo.get_repository_version()
         )
@@ -419,7 +422,7 @@ class ConfigurationManager:
         return temp_dir
 
     def __copy_in_overrides(self, temp_dir: Path):
-        logger.debug(f"Copying in overrides")
+        logger.debug("Copying in overrides")
 
         overrides_dir = self.cli_context.get_template_overrides_dir()
 
