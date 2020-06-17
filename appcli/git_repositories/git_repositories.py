@@ -36,7 +36,7 @@ class GitRepository:
     """
 
     def __init__(self, repo_path: Path, ignores: Iterable[str] = []):
-        self.actor: git.Actor = git.Actor(f"appcli", "root@localhost")
+        self.actor: git.Actor = git.Actor("appcli", "root@localhost")
 
         # Get or create repo at this path to ensure it exists
         try:

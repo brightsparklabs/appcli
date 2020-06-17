@@ -161,8 +161,8 @@ class ConfigureCli:
             for line in difflib.unified_diff(
                 default_settings,
                 current_settings,
-                fromfile=f"default",
-                tofile=f"current",
+                fromfile="default",
+                tofile="current",
                 lineterm="",
             ):
                 # remove superfluous \n characters added by unified_diff
