@@ -202,11 +202,11 @@ class ConfigurationManager:
         ).get_all_variables()
 
         migrated_variables = self.cli_configuration.hooks.migrate_variables(
-            current_variables, config_version, clean_new_version_variables
+            self.cli_context, current_variables, config_version, clean_new_version_variables
         )
 
         if not self.cli_configuration.hooks.is_valid_variables(
-            migrated_variables, clean_new_version_variables
+            self.cli_context, migrated_variables, clean_new_version_variables
         ):
             error_and_exit(
                 f"Migrated variables did not pass application-specific variables validation function."

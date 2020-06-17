@@ -16,17 +16,17 @@ from appcli.orchestrators import Orchestrator
 class Hooks(NamedTuple):
     """ Hooks to run before/after stages """
 
-    migrate_variables: Callable[[Dict, str, Dict], Dict] = lambda x, y, z: x
+    migrate_variables: Callable[[click.Context, Dict, str, Dict], Dict] = lambda x, y, z: x
     """ Optional. Delegate function to run during a migration, which converts variables between application versions.
-     Args are: [Dict of variables to transform], [version of the current variables], and [Dict of clean variables
+     Args are: CLI context, [Dict of variables to transform], [version of the current variables], and [Dict of clean variables
      at the new application version]. Returns [transformed Dict of variables]. If no function provided, identity
      function is used."""
     is_valid_variables: Callable[
-        [Dict, Dict], bool
+        [click.Context, Dict, Dict], bool
     ] = lambda x, y: is_matching_dict_structure(x, y)
-    """ Validate a Dict of variables are valid for use in the current application version. Args are: [Dict of the
-    variables to validate], and [Dict of the current version's clean variables]. Returns True if the
-    Dict to validate is valid for the application at the current version. """
+    """ Validate a Dict of variables are valid for use in the current application version.
+      Args are: CLI context, [Dict of the variables to validate], and [Dict of the current version's clean variables]. Returns
+      True if the Dict to validate is valid for the application at the current version. """
     pre_start: Callable[[click.Context], None] = lambda x: None
     """ Optional. Hook function to run before running 'start'. """
     post_start: Callable[[click.Context, CompletedProcess], None] = lambda x, y: None
