@@ -41,7 +41,7 @@ def test_initialise(tmpdir):
     conf_manager.initialise_configuration()
 
     # Check the variables file has been copied
-    assert Path(tmpdir, f"conf/{APP_NAME}.yml").exists()
+    assert Path(tmpdir, f"conf/settings.yml").exists()
 
     # Check the key has been generated
     assert Path(tmpdir, "conf/key").exists()
