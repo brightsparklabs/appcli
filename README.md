@@ -13,15 +13,16 @@ The CLI is designed to run within a Docker container and launch other Docker
 containers (i.e. Docker-in-Docker). This is generally managed via a
 `docker-compose.yml` file.
 
-The library leverages the following environment variables:
+The library leverages a single environment variable:
 
-- `APP_VERSION` - the version of containers to launch.
-- `<APP_NAME>_CONFIG_DIR` - the directory containing configuration files
+- `APP_VERSION` - the version of containers to launch
+
+The library also references several folder locations for your applications, namely:
+
+- `--configuration-dir` - the directory containing configuration files
   consumed by the system.
-- `<APP_NAME>_DATA_DIR` - the directory containing data produced by the system.
-- `<APP_NAME>_GENERATED_CONFIG_DIR` - the directory containing configuration
-  files generated from the templates in `<APP_NAME>_CONFIG_DIR`.
-- `<APP_NAME>_ENVIRONMENT` - the 'environment' of the application to be run. For
+- `--data-dir` - the directory containing data produced by the system.
+- `--enviroment` - the 'environment' of the application to be run. For
   example `production` or `staging`. This allows multiple instances of the same
   project to run on the same docker daemon. If undefined, this defaults to
   'default'.
@@ -81,9 +82,12 @@ The library leverages the following environment variables:
 
 - Store any Jinja2 variable definitions you wish to use in your configuration
   template files in `resources/myapp.yml`.
-- Store your `docker-compose.yml.j2` file under `resources/templates/cli/`.
-- Store any other Jinja2 configuration template files under
-  `resources/templates`.
+- Store your `docker-compose.yml.j2` file under `resources/templates/baseline/cli/`.
+- Configuration files (Jinja2 compatible templates or otherwise) can be stored in one
+  of two locations:
+  - `resources/templates/baseline` - for templates that usually don't change between instances
+    of your application
+  - `resources/templates/configurable` - for templates that usually vary between instances
 - Define a container for your CLI application:
 
         # filename: Dockerfile
@@ -108,12 +112,13 @@ The library leverages the following environment variables:
         # sh
         docker build -t brightsparklabs/myapp --build-arg APP_VERSION=latest .
 
-- Create a launcher `myapp.sh` from the init script:
+- Generate a launcher script `myapp.sh`:
 
         # sh
         docker run brightsparklabs/myapp \
             --configuration-dir /path/to/myapp/conf \
             --data-dir /path/to/myapp/data \
+            --environment "production" \
             launcher \
         > myapp.sh
 
