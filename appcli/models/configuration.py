@@ -62,14 +62,22 @@ class Configuration(NamedTuple):
     templates to generate the final configuration files.
     """
 
-    seed_templates_dir: Path
+    baseline_templates_dir: Path
     """
-    Seed directory containing jinja2 templates used to generate the final
-    configuration files.
+    Directory containing the baseline set of jinja2 templates used to generate the final
+    configuration files. These template files are expected to remain static and should
+    only be overridden as a hotfix.
     """
 
     orchestrator: Orchestrator
     """ Orchestrator to use to launch Docker containers. """
+
+    configurable_templates_dir: Path = None
+    """
+    Optional. Directory containing a default initial set of configurable jinja2 templates
+    used to generate the final configuration files. These template files are expected to be
+    modified as required on a per-deployment basis.
+    """
 
     hooks: Hooks = Hooks()
     """ Optional. Hooks to run before/after stages. """

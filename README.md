@@ -63,7 +63,8 @@ The library leverages the following environment variables:
                 app_name='myapp',
                 docker_image='brightsparklabs/myapp',
                 seed_app_configuration_file=Path(BASE_DIR, 'resources/myapp.yml'),
-                seed_templates_dir=Path(BASE_DIR, 'resources/templates'),
+                baseline_templates_dir=Path(BASE_DIR, 'resources/templates/baseline'),
+                configurable_templates_dir=Path(BASE_DIR, 'resource/templates/configurable'),
                 orchestrator=appcli.DockerComposeOrchestrator(
                   Path(BASE_DIR, 'resources/templates/cli/docker-compose.yml.j2')
                 )

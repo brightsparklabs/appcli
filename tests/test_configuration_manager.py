@@ -187,7 +187,7 @@ def create_conf_manager(tmpdir, cli_context: CliContext = None) -> Configuration
         app_name=APP_NAME,
         docker_image="invalid-image-name",
         seed_app_configuration_file=Path(BASE_DIR, "resources/test_app.yml"),
-        seed_templates_dir=Path(BASE_DIR, "resources/templates"),
+        baseline_templates_dir=Path(BASE_DIR, "resources/templates"),
         orchestrator=DockerComposeOrchestrator("cli/docker-compose.yml", []),
     )
 

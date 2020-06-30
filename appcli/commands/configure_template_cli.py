@@ -59,10 +59,10 @@ class ConfigureTemplateCli:
         @template.command(help="Lists all default templates")
         @click.pass_context
         def ls(ctx):
-            seed_templates_dir = self.cli_configuration.seed_templates_dir
+            baseline_templates_dir = self.cli_configuration.baseline_templates_dir
 
             # Get the relative path of all files within the seed templates directory
-            files = get_relative_paths_of_all_files_in_directory(seed_templates_dir)
+            files = get_relative_paths_of_all_files_in_directory(baseline_templates_dir)
 
             for file in files:
                 print(file)
@@ -71,10 +71,10 @@ class ConfigureTemplateCli:
         @click.argument("template_rel_path")
         @click.pass_context
         def get(ctx, template_rel_path):
-            seed_templates_dir = self.cli_configuration.seed_templates_dir
+            baseline_templates_dir = self.cli_configuration.baseline_templates_dir
 
             template_file_path = Path(
-                os.path.join(seed_templates_dir, template_rel_path)
+                os.path.join(baseline_templates_dir, template_rel_path)
             )
             if not template_file_path.exists():
                 error_and_exit(f"Could not find template [{template_rel_path}]")
@@ -89,15 +89,15 @@ class ConfigureTemplateCli:
         @click.pass_context
         def override(ctx, template_rel_path, force):
             cli_context: CliContext = ctx.obj
-            seed_templates_dir = self.cli_configuration.seed_templates_dir
+            baseline_templates_dir = self.cli_configuration.baseline_templates_dir
 
             template_file_path = Path(
-                os.path.join(seed_templates_dir, template_rel_path)
+                os.path.join(baseline_templates_dir, template_rel_path)
             )
             if not template_file_path.exists():
                 error_and_exit(f"Could not find template [{template_rel_path}]")
 
-            override_file_path = cli_context.get_template_overrides_dir().joinpath(
+            override_file_path = cli_context.get_baseline_template_overrides_dir().joinpath(
                 template_rel_path
             )
 
@@ -108,6 +108,7 @@ class ConfigureTemplateCli:
                     )
                 logger.info("Force flag provided. Overwriting existing override file.")
 
+            # Makes the override and sub folders if they do not exist
             os.makedirs(override_file_path.parent, exist_ok=True)
             shutil.copy2(template_file_path, override_file_path)
             logger.info(
@@ -118,11 +119,11 @@ class ConfigureTemplateCli:
         @click.pass_context
         def diff(ctx):
             cli_context: CliContext = ctx.obj
-            seed_templates_dir = self.cli_configuration.seed_templates_dir
-            override_templates_dir = cli_context.get_template_overrides_dir()
+            baseline_templates_dir = self.cli_configuration.baseline_templates_dir
+            override_templates_dir = cli_context.get_baseline_template_overrides_dir()
 
             template_files_rel_paths = get_relative_paths_of_all_files_in_directory(
-                seed_templates_dir
+                baseline_templates_dir
             )
 
             override_files_rel_paths = get_relative_paths_of_all_files_in_directory(
@@ -147,7 +148,7 @@ class ConfigureTemplateCli:
             no_effect_overrides = [
                 f
                 for f in overridden_templates
-                if is_files_matching(f, seed_templates_dir, override_templates_dir)
+                if is_files_matching(f, baseline_templates_dir, override_templates_dir)
             ]
 
             if no_effect_overrides:
@@ -162,7 +163,7 @@ class ConfigureTemplateCli:
             if effective_overrides:
                 logger.info("The following files differ from default templates:")
                 for template_rel_path in effective_overrides:
-                    seed_template = seed_templates_dir.joinpath(template_rel_path)
+                    seed_template = baseline_templates_dir.joinpath(template_rel_path)
                     override_template = override_templates_dir.joinpath(
                         template_rel_path
                     )
