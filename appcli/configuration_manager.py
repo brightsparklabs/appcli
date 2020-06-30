@@ -34,6 +34,7 @@ from appcli.git_repositories.git_repositories import (
     confirm_config_dir_exists,
     confirm_config_dir_exists_and_is_not_dirty,
     confirm_config_dir_not_exists,
+    confirm_config_version_matches_app_version,
     confirm_generated_config_dir_exists,
     confirm_generated_config_dir_exists_and_is_not_dirty,
     confirm_not_on_master_branch,
@@ -123,10 +124,14 @@ class ConfigurationManager:
         """
         logger.debug("Checking system configuration is valid before 'apply' ...")
 
-        # If the config dir doesn't exist, or we're on the master branch, we cannot apply
+        # Cannot apply if:
+        # - config dir doesn't exist, or
+        # - we're on the master branch, or
+        # - config version doesn't match the currently running application version
         must_succeed_checks = [
             confirm_config_dir_exists,
             confirm_not_on_master_branch,
+            confirm_config_version_matches_app_version,
         ]
 
         should_succeed_checks = []
