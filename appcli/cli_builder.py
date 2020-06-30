@@ -167,13 +167,13 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
 
         # Table of configuration variables to print
         table = [
-            [f"Configuration directory", f"{ctx.obj.configuration_dir}"],
+            ["Configuration directory", f"{ctx.obj.configuration_dir}"],
             [
-                f"Generated Configuration directory",
+                "Generated Configuration directory",
                 f"{ctx.obj.get_generated_configuration_dir()}",
             ],
-            [f"Data directory", f"{ctx.obj.data_dir}"],
-            [f"Environment", f"{ctx.obj.environment}"],
+            ["Data directory", f"{ctx.obj.data_dir}"],
+            ["Environment", f"{ctx.obj.environment}"],
         ]
 
         # Print out the configuration values as an aligned table
