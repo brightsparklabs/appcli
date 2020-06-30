@@ -15,7 +15,6 @@
 
 # Variables are defaulted so that they can be overridden at runtime if desired
 MOUNTED_CONFIG_DIR="{{ '${' }}{{ app_name }}_CONFIG_DIR:-{{ cli_context.configuration_dir }}{{ '}' }}"
-MOUNTED_GENERATED_CONFIG_DIR="{{ '${' }}{{ app_name }}_GENERATED_CONFIG_DIR:-{{ cli_context.get_generated_configuration_dir() }}{{ '}' }}"
 MOUNTED_DATA_DIR="{{ '${' }}{{ app_name }}_DATA_DIR:-{{ cli_context.data_dir}}{{ '}' }}"
 ENVIRONMENT="{{ '${' }}{{ app_name }}_ENVIRONMENT:-{{ cli_context.environment}}{{ '}' }}"
 
@@ -38,13 +37,8 @@ function main()
         --volume "{{ path }}={{ path }}" \
 {% endfor %}
         --volume /var/run/docker.sock:/var/run/docker.sock \
-        --env {{ app_name }}_CONFIG_DIR="${MOUNTED_CONFIG_DIR}" \
         --volume "${MOUNTED_CONFIG_DIR}:${MOUNTED_CONFIG_DIR}" \
-        --env {{ app_name }}_GENERATED_CONFIG_DIR="${MOUNTED_GENERATED_CONFIG_DIR}" \
-        --volume "${MOUNTED_GENERATED_CONFIG_DIR}:${MOUNTED_GENERATED_CONFIG_DIR}" \
-        --env {{ app_name }}_DATA_DIR="${MOUNTED_DATA_DIR}" \
         --volume "${MOUNTED_DATA_DIR}:${MOUNTED_DATA_DIR}" \
-        --env {{ app_name }}_ENVIRONMENT="${ENVIRONMENT}" \
         {{ configuration.docker_image }}:{{ app_version }} \
             --configuration-dir "${MOUNTED_CONFIG_DIR}" \
             --data-dir "${MOUNTED_DATA_DIR}" \

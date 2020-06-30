@@ -37,10 +37,6 @@ class ConfigureTemplateCli:
 
         self.app_name = self.cli_configuration.app_name
 
-        env_config_dir = f"{self.app_name}_CONFIG_DIR".upper()
-        env_data_dir = f"{self.app_name}_DATA_DIR".upper()
-        self.mandatory_env_variables = (env_config_dir, env_data_dir)
-
         # ------------------------------------------------------------------------------
         # CLI METHODS
         # ------------------------------------------------------------------------------

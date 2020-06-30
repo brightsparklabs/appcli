@@ -51,10 +51,6 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         configuration (Configuration): the application's configuration settings
     """
     APP_NAME = configuration.app_name.upper()
-    ENV_VAR_CONFIG_DIR = f"{APP_NAME}_CONFIG_DIR"
-    ENV_VAR_GENERATED_CONFIG_DIR = f"{APP_NAME}_GENERATED_CONFIG_DIR"
-    ENV_VAR_DATA_DIR = f"{APP_NAME}_DATA_DIR"
-    ENV_VAR_ENVIRONMENT = f"{APP_NAME}_ENVIRONMENT"
     APP_VERSION = os.environ.get("APP_VERSION", "latest")
 
     # --------------------------------------------------------------------------
@@ -171,13 +167,13 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
 
         # Table of configuration variables to print
         table = [
-            [f"{ENV_VAR_CONFIG_DIR}", f"{ctx.obj.configuration_dir}"],
+            [f"Configuration directory", f"{ctx.obj.configuration_dir}"],
             [
-                f"{ENV_VAR_GENERATED_CONFIG_DIR}",
+                f"Generated Configuration directory",
                 f"{ctx.obj.get_generated_configuration_dir()}",
             ],
-            [f"{ENV_VAR_DATA_DIR}", f"{ctx.obj.data_dir}"],
-            [f"{ENV_VAR_ENVIRONMENT}", f"{ctx.obj.environment}"],
+            [f"Data directory", f"{ctx.obj.data_dir}"],
+            [f"Environment", f"{ctx.obj.environment}"],
         ]
 
         # Print out the configuration values as an aligned table
@@ -223,13 +219,6 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     def check_environment():
         """Confirm that mandatory environment variables and additional data directories are defined.
         """
-        mandatory_variables = (ENV_VAR_CONFIG_DIR, ENV_VAR_DATA_DIR)
-        check_environment_variable_defined(
-            mandatory_variables,
-            "Mandatory environment variable [%s] is not defined. [%s] should have been defined automatically by the CLI.",
-            "Cannot run without all mandatory environment variables defined",
-        )
-
         check_environment_variable_defined(
             configuration.mandatory_additional_env_variables,
             "Mandatory additional environment variable [%s] not defined. Please define with:\n\t--additional-env-var %s <value>",
