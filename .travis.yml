@@ -20,6 +20,7 @@ env:
 
 notifications:
   email:
+    if: branch IN (develop, master)
     on_success: change
     recipients:
     - admin@brightsparklabs.com

@@ -238,16 +238,13 @@ class ConfigurationManager:
         # Initialise the new configuration branch and directory with all new files
         self.__create_new_configuration_branch_and_files(config_repo)
 
-        self.__copy_directory_contents_with_overwrite(
-            override_backup_dir, baseline_template_overrides_dir
-        )
+        self.__overwrite_directory(override_backup_dir, baseline_template_overrides_dir)
         if self.__directory_is_not_empty(baseline_template_overrides_dir):
             logger.warn(
                 f"Overrides directory [{baseline_template_overrides_dir}] is non-empty, please check for compatibility of overridden files"
             )
 
-        # We need to overwrite copy so that the configurable templates doesn't include the set of default configurable templates
-        self.__copy_directory_contents_with_overwrite(
+        self.__overwrite_directory(
             configurable_templates_backup_dir, configurable_templates_dir
         )
         if self.__directory_is_not_empty(configurable_templates_dir):
@@ -357,27 +354,27 @@ class ConfigurationManager:
             self.cli_configuration.configurable_templates_dir
         )
 
-        # If a seed configurable templates directory is supplied
-        if seed_configurable_templates_dir is not None:
+        if seed_configurable_templates_dir is None:
+            logger.debug("No configurable templates directory defined")
+            return
 
-            # If the supplied seed configurable templates directory is not a directory, throw an error
-            if not seed_configurable_templates_dir.is_dir():
-                error_and_exit(
-                    f"Seed templates directory [{seed_configurable_templates_dir}] is not valid. Release is corrupt."
-                )
+        if not seed_configurable_templates_dir.is_dir():
+            error_and_exit(
+                f"Seed templates directory [{seed_configurable_templates_dir}] is not valid. Release is corrupt."
+            )
 
-            # Copy each seed file to the configurable templates directory
-            for source_file in seed_configurable_templates_dir.glob("**/*"):
-                logger.info(source_file)
-                relative_file = source_file.relative_to(seed_configurable_templates_dir)
-                target_file = configurable_templates_dir.joinpath(relative_file)
+        # Copy each seed file to the configurable templates directory
+        for source_file in seed_configurable_templates_dir.glob("**/*"):
+            logger.info(source_file)
+            relative_file = source_file.relative_to(seed_configurable_templates_dir)
+            target_file = configurable_templates_dir.joinpath(relative_file)
 
-                if source_file.is_dir():
-                    logger.debug("Creating directory [%s] ...", target_file)
-                    target_file.mkdir(parents=True, exist_ok=True)
-                else:
-                    logger.debug("Copying seed file to [%s] ...", target_file)
-                    shutil.copy2(source_file, target_file)
+            if source_file.is_dir():
+                logger.debug("Creating directory [%s] ...", target_file)
+                target_file.mkdir(parents=True, exist_ok=True)
+            else:
+                logger.debug("Copying seed file to [%s] ...", target_file)
+                shutil.copy2(source_file, target_file)
 
     def __regenerate_generated_configuration(
         self, config_repo: ConfigurationGitRepository
@@ -500,9 +497,7 @@ class ConfigurationManager:
 
         return temp_dir
 
-    def __copy_directory_contents_with_overwrite(
-        self, source_dir: Path, target_dir: Path
-    ):
+    def __overwrite_directory(self, source_dir: Path, target_dir: Path):
         """Copies the contents of one directory to another, overwriting any existing contents.
         If the source directory doesn't exist, the target directory will not either.
 
