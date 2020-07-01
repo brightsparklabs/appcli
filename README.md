@@ -63,12 +63,14 @@ The library also references several folder locations for your applications, name
             configuration = appcli.Configuration(
                 app_name='myapp',
                 docker_image='brightsparklabs/myapp',
-                seed_app_configuration_file=Path(BASE_DIR, 'resources/myapp.yml'),
+                seed_app_configuration_file=Path(BASE_DIR, 'resources/settings.yml'),
                 baseline_templates_dir=Path(BASE_DIR, 'resources/templates/baseline'),
                 configurable_templates_dir=Path(BASE_DIR, 'resource/templates/configurable'),
                 orchestrator=appcli.DockerComposeOrchestrator(
-                  Path(BASE_DIR, 'resources/templates/cli/docker-compose.yml.j2')
-                )
+                  Path('docker-compose.yml')
+                ),
+                mandatory_additional_data_dirs=["EXTRA_DATA",],
+                mandatory_additional_env_variables=["ENV_VAR_2",],
             )
             cli = appcli.create_cli(configuration)
             cli()
@@ -81,13 +83,13 @@ The library also references several folder locations for your applications, name
             main()
 
 - Store any Jinja2 variable definitions you wish to use in your configuration
-  template files in `resources/myapp.yml`.
-- Store your `docker-compose.yml.j2` file under `resources/templates/baseline/cli/`.
+  template files in `resources/settings.yml`.
+- Store your `docker-compose.yml.j2` file in `resources/templates/baseline/`.
 - Configuration files (Jinja2 compatible templates or otherwise) can be stored in one
   of two locations:
-  - `resources/templates/baseline` - for templates that usually don't change between instances
+  - `resources/templates/baseline/` - for templates that usually don't change between instances
     of your application
-  - `resources/templates/configurable` - for templates that usually vary between instances
+  - `resources/templates/configurable/` - for templates that usually vary between instances
 - Define a container for your CLI application:
 
         # filename: Dockerfile
@@ -119,6 +121,8 @@ The library also references several folder locations for your applications, name
             --configuration-dir /path/to/myapp/conf \
             --data-dir /path/to/myapp/data \
             --environment "production" \
+            --additional-data-dir "EXTRA_DATA"="/path/to/extra/data" \
+            --additional-env-var "ENV_VAR_2"="Some value here" \
             launcher \
         > myapp.sh
 

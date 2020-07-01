@@ -87,12 +87,12 @@ class Configuration(NamedTuple):
     Optional. Extra click commands to add to the CLI. Can be group or specific commands.
     """
 
-    mandatory_additional_data_dirs: FrozenSet[Tuple[str, Path]] = frozenset()
+    mandatory_additional_data_dirs: FrozenSet[str] = frozenset()
     """
     Optional. Additional data directories which must be supplied.
     """
 
-    mandatory_additional_env_variables: FrozenSet[Tuple[str, Path]] = frozenset()
+    mandatory_additional_env_variables: FrozenSet[str] = frozenset()
     """
     Optional. Additional environment variables which must be supplied.
     """

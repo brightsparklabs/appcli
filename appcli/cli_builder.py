@@ -219,21 +219,49 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     def check_environment():
         """Confirm that mandatory environment variables and additional data directories are defined.
         """
-        check_environment_variable_defined(
+
+        ENV_VAR_CONFIG_DIR = f"{APP_NAME}_CONFIG_DIR"
+        ENV_VAR_GENERATED_CONFIG_DIR = f"{APP_NAME}_GENERATED_CONFIG_DIR"
+        ENV_VAR_DATA_DIR = f"{APP_NAME}_DATA_DIR"
+        ENV_VAR_ENVIRONMENT = f"{APP_NAME}_ENVIRONMENT"
+        launcher_set_mandatory_env_vars = [
+            ENV_VAR_CONFIG_DIR,
+            ENV_VAR_GENERATED_CONFIG_DIR,
+            ENV_VAR_DATA_DIR,
+            ENV_VAR_ENVIRONMENT,
+        ]
+
+        launcher_env_vars_set = check_environment_variable_defined(
+            launcher_set_mandatory_env_vars,
+            "Mandatory environment variable [%s] not defined. This should be set within the script generated with the 'launcher' command.",
+            "Cannot run without all mandatory environment variables defined",
+        )
+
+        additional_env_vars_set = check_environment_variable_defined(
             configuration.mandatory_additional_env_variables,
-            "Mandatory additional environment variable [%s] not defined. Please define with:\n\t--additional-env-var %s <value>",
+            'Mandatory additional environment variable [%s] not defined. When running the \'launcher\' command, define with:\n\t--additional-env-var "%s"="<value>"',
             "Cannot run without all mandatory additional environment variables defined",
         )
 
-        check_environment_variable_defined(
+        additional_data_dir_env_vars_set = check_environment_variable_defined(
             configuration.mandatory_additional_data_dirs,
-            "Mandatory additional data directory [%s] not defined. Please define with:\n\t--additional-data-dir %s </path/to/dir>",
+            'Mandatory additional data directory [%s] not defined. When running the \'launcher\' command, define with:\n\t--additional-data-dir "%s"="</path/to/dir>"',
             "Cannot run without all mandatory additional data directories defined",
         )
 
+        if not (
+            launcher_env_vars_set
+            and additional_env_vars_set
+            and additional_data_dir_env_vars_set
+        ):
+            error_and_exit(
+                "Some mandatory environment variables weren't set. See error messages above."
+            )
+        logger.info("All required environment variables are set.")
+
     def check_environment_variable_defined(
         env_variables: Iterable[str], error_message_template: str, exit_message: str
-    ):
+    ) -> bool:
         """Check if environment variables are defined
 
         Args:
@@ -242,7 +270,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             exit_message (str): the exit message on error
 
         Returns:
-            [type]: [description]
+            [bool]: True if all environment variables are defined, otherwise False.
         """
         result = True
         for env_variable in env_variables:
@@ -250,8 +278,14 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             if value is None:
                 logger.error(error_message_template, env_variable, env_variable)
                 result = False
+            else:
+                logger.debug(
+                    f"Confirmed environment variable is set - '{env_variable}' = '{value}'"
+                )
         if not result:
-            error_and_exit(exit_message)
+            logger.error(exit_message)
+
+        return result
 
     for command in default_commands.values():
         cli.add_command(command)
