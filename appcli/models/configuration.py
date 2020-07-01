@@ -4,7 +4,7 @@
 # standard libraries
 from pathlib import Path
 from subprocess import CompletedProcess
-from typing import Callable, Dict, FrozenSet, Iterable, NamedTuple, Tuple
+from typing import Callable, Dict, FrozenSet, Iterable, NamedTuple
 
 # vendor libraries
 import click

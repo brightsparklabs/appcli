@@ -88,9 +88,8 @@ setting variables within the `settings.yml` file as described in the Usage secti
 - Store your `docker-compose.yml`/`docker-compose.yml.j2` file in `resources/templates/baseline/`.
 - Configuration files (Jinja2 compatible templates or otherwise) can be stored in one
   of two locations:
-  - `resources/templates/baseline/` - for templates that usually don't change between instances
-    of your application
-  - `resources/templates/configurable/` - for templates that usually vary between instances
+  - `resources/templates/baseline` - for templates which the end user **is not** expected to modify.
+  - `resources/templates/configurable` - for templates which the end user is expected to modify.
 - Define a container for your CLI application:
 
         # filename: Dockerfile
