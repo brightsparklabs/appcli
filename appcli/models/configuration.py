@@ -4,7 +4,7 @@
 # standard libraries
 from pathlib import Path
 from subprocess import CompletedProcess
-from typing import Callable, Dict, FrozenSet, Iterable, NamedTuple, Tuple
+from typing import Callable, Dict, FrozenSet, Iterable, NamedTuple
 
 # vendor libraries
 import click
@@ -62,14 +62,22 @@ class Configuration(NamedTuple):
     templates to generate the final configuration files.
     """
 
-    seed_templates_dir: Path
+    baseline_templates_dir: Path
     """
-    Seed directory containing jinja2 templates used to generate the final
-    configuration files.
+    Directory containing the baseline set of jinja2 templates used to generate the final
+    configuration files. These template files are expected to remain static and should
+    only be overridden as a hotfix.
     """
 
     orchestrator: Orchestrator
     """ Orchestrator to use to launch Docker containers. """
+
+    configurable_templates_dir: Path = None
+    """
+    Optional. Directory containing a default initial set of configurable jinja2 templates
+    used to generate the final configuration files. These template files are expected to be
+    modified as required on a per-deployment basis.
+    """
 
     hooks: Hooks = Hooks()
     """ Optional. Hooks to run before/after stages. """
@@ -79,12 +87,12 @@ class Configuration(NamedTuple):
     Optional. Extra click commands to add to the CLI. Can be group or specific commands.
     """
 
-    mandatory_additional_data_dirs: FrozenSet[Tuple[str, Path]] = frozenset()
+    mandatory_additional_data_dirs: FrozenSet[str] = frozenset()
     """
     Optional. Additional data directories which must be supplied.
     """
 
-    mandatory_additional_env_variables: FrozenSet[Tuple[str, Path]] = frozenset()
+    mandatory_additional_env_variables: FrozenSet[str] = frozenset()
     """
     Optional. Additional environment variables which must be supplied.
     """

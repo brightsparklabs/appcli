@@ -41,13 +41,16 @@ def test_initialise(tmpdir):
     conf_manager.initialise_configuration()
 
     # Check the variables file has been copied
-    assert Path(tmpdir, f"conf/{APP_NAME}.yml").exists()
+    assert Path(tmpdir, "conf/settings.yml").exists()
 
     # Check the key has been generated
     assert Path(tmpdir, "conf/key").exists()
 
     # .generated shouldn't exist yet
     assert not Path(tmpdir, "conf/.generated").exists()
+
+    # overrides directory should not exist on clean initialise
+    assert not Path(tmpdir, "conf/overrides").exists()
 
 
 def test_initialise_on_initialised_repo(tmpdir):
@@ -103,10 +106,12 @@ def test_apply_workflow(tmpdir):
     commit_message = "test commit message"
     conf_manager.apply_configuration_changes(message=commit_message)
 
-    # Assert a templated file has been generated
+    # Assert template files have been generated
     assert Path(tmpdir, "conf/.generated").exists()
     assert Path(tmpdir, "conf/.generated/password_file").exists()
     assert Path(tmpdir, "conf/.generated/password_file").read_text() == new_password
+    assert Path(tmpdir, "conf/.generated/baseline_file.txt").exists()
+    assert Path(tmpdir, "conf/.generated/nesting/nested_baseline_file.py").exists()
 
     # This should not raise an exception
     confirm_generated_configuration_is_using_current_configuration(cli_context)
@@ -187,7 +192,8 @@ def create_conf_manager(tmpdir, cli_context: CliContext = None) -> Configuration
         app_name=APP_NAME,
         docker_image="invalid-image-name",
         seed_app_configuration_file=Path(BASE_DIR, "resources/test_app.yml"),
-        seed_templates_dir=Path(BASE_DIR, "resources/templates"),
+        baseline_templates_dir=Path(BASE_DIR, "resources/templates/baseline"),
+        configurable_templates_dir=Path(BASE_DIR, "resources/templates/configurable"),
         orchestrator=DockerComposeOrchestrator("cli/docker-compose.yml", []),
     )
 

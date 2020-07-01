@@ -13,11 +13,10 @@ The CLI is designed to run within a Docker container and launch other Docker
 containers (i.e. Docker-in-Docker). This is generally managed via a
 `docker-compose.yml` file.
 
-The library leverages the following environment variables:
+The library exposes the following environment variables to the `docker-compose.yml` file:
 
-- `APP_VERSION` - the version of containers to launch.
+- `APP_VERSION` - the version of containers to launch
 - `<APP_NAME>_CONFIG_DIR` - the directory containing configuration files
-  consumed by the system.
 - `<APP_NAME>_DATA_DIR` - the directory containing data produced by the system.
 - `<APP_NAME>_GENERATED_CONFIG_DIR` - the directory containing configuration
   files generated from the templates in `<APP_NAME>_CONFIG_DIR`.
@@ -25,6 +24,9 @@ The library leverages the following environment variables:
   example `production` or `staging`. This allows multiple instances of the same
   project to run on the same docker daemon. If undefined, this defaults to
   'default'.
+
+The `docker-compose.yml` can be templated by renaming to `docker-compose.yml.j2`, and
+setting variables within the `settings.yml` file as described in the Usage section.
 
 ## Usage
 
@@ -62,11 +64,14 @@ The library leverages the following environment variables:
             configuration = appcli.Configuration(
                 app_name='myapp',
                 docker_image='brightsparklabs/myapp',
-                seed_app_configuration_file=Path(BASE_DIR, 'resources/myapp.yml'),
-                seed_templates_dir=Path(BASE_DIR, 'resources/templates'),
+                seed_app_configuration_file=Path(BASE_DIR, 'resources/settings.yml'),
+                baseline_templates_dir=Path(BASE_DIR, 'resources/templates/baseline'),
+                configurable_templates_dir=Path(BASE_DIR, 'resource/templates/configurable'),
                 orchestrator=appcli.DockerComposeOrchestrator(
-                  Path(BASE_DIR, 'resources/templates/cli/docker-compose.yml.j2')
-                )
+                  Path('docker-compose.yml')
+                ),
+                mandatory_additional_data_dirs=["EXTRA_DATA",],
+                mandatory_additional_env_variables=["ENV_VAR_2",],
             )
             cli = appcli.create_cli(configuration)
             cli()
@@ -79,10 +84,12 @@ The library leverages the following environment variables:
             main()
 
 - Store any Jinja2 variable definitions you wish to use in your configuration
-  template files in `resources/myapp.yml`.
-- Store your `docker-compose.yml.j2` file under `resources/templates/cli/`.
-- Store any other Jinja2 configuration template files under
-  `resources/templates`.
+  template files in `resources/settings.yml`.
+- Store your `docker-compose.yml`/`docker-compose.yml.j2` file in `resources/templates/baseline/`.
+- Configuration files (Jinja2 compatible templates or otherwise) can be stored in one
+  of two locations:
+  - `resources/templates/baseline` - for templates which the end user **is not** expected to modify.
+  - `resources/templates/configurable` - for templates which the end user is expected to modify.
 - Define a container for your CLI application:
 
         # filename: Dockerfile
@@ -107,12 +114,15 @@ The library leverages the following environment variables:
         # sh
         docker build -t brightsparklabs/myapp --build-arg APP_VERSION=latest .
 
-- Create a launcher `myapp.sh` from the init script:
+- Generate a launcher script `myapp.sh`:
 
         # sh
         docker run brightsparklabs/myapp \
             --configuration-dir /path/to/myapp/conf \
             --data-dir /path/to/myapp/data \
+            --environment "production" \
+            --additional-data-dir "EXTRA_DATA"="/path/to/extra/data" \
+            --additional-env-var "ENV_VAR_2"="Some value here" \
             launcher \
         > myapp.sh
 

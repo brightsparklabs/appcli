@@ -11,8 +11,6 @@ www.brightsparklabs.com
 
 # standard library
 import difflib
-import os
-from typing import Iterable
 
 # vendor libraries
 import click
@@ -21,7 +19,7 @@ from appcli.commands.configure_template_cli import ConfigureTemplateCli
 
 # local libraries
 from appcli.configuration_manager import ConfigurationManager
-from appcli.functions import error_and_exit, execute_validation_functions, print_header
+from appcli.functions import execute_validation_functions, print_header
 from appcli.git_repositories.git_repositories import confirm_config_dir_exists
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
@@ -37,10 +35,6 @@ class ConfigureCli:
         self.cli_configuration: Configuration = configuration
 
         self.app_name = self.cli_configuration.app_name
-
-        env_config_dir = f"{self.app_name}_CONFIG_DIR".upper()
-        env_data_dir = f"{self.app_name}_DATA_DIR".upper()
-        self.mandatory_env_variables = (env_config_dir, env_data_dir)
 
         # ------------------------------------------------------------------------------
         # CLI METHODS
@@ -61,10 +55,6 @@ class ConfigureCli:
             print_header(f"Seeding configuration directory for {self.app_name}")
 
             cli_context: CliContext = ctx.obj
-
-            # Validate environment
-            # TODO: Do we even need this any more? If so, is this the right spot?
-            self.__check_env_vars_set(cli_context, self.mandatory_env_variables)
 
             # Run pre-hooks
             hooks = self.cli_configuration.hooks
@@ -177,29 +167,6 @@ class ConfigureCli:
     # ------------------------------------------------------------------------------
     # PRIVATE METHODS
     # ------------------------------------------------------------------------------
-
-    def __check_env_vars_set(
-        self, cli_context: CliContext, mandatory_env_variables: Iterable[str]
-    ):
-        """Check that all mandatory environment variables have been set.
-
-        Args:
-            cli_context (CliContext): the current cli context
-            mandatory_env_variables (Iterable[str]): the environment variables to check
-        """
-        logger.info("Checking prerequisites ...")
-        has_errors = False
-
-        for env_variable in mandatory_env_variables:
-            value = os.environ.get(env_variable)
-            if value is None:
-                logger.error(
-                    "Mandatory environment variable is not defined [%s]", env_variable
-                )
-                has_errors = True
-
-        if has_errors:
-            error_and_exit("Missing mandatory environment variables.")
 
     def __pre_configure_get_and_set_validation(self, cli_context: CliContext):
         """Ensures the system is in a valid state for 'configure get'.

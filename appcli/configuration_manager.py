@@ -34,6 +34,7 @@ from appcli.git_repositories.git_repositories import (
     confirm_config_dir_exists,
     confirm_config_dir_exists_and_is_not_dirty,
     confirm_config_dir_not_exists,
+    confirm_config_version_matches_app_version,
     confirm_generated_config_dir_exists,
     confirm_generated_config_dir_exists_and_is_not_dirty,
     confirm_not_on_master_branch,
@@ -123,10 +124,14 @@ class ConfigurationManager:
         """
         logger.debug("Checking system configuration is valid before 'apply' ...")
 
-        # If the config dir doesn't exist, or we're on the master branch, we cannot apply
+        # Cannot apply if:
+        # - config dir doesn't exist, or
+        # - we're on the master branch, or
+        # - config version doesn't match the currently running application version
         must_succeed_checks = [
             confirm_config_dir_exists,
             confirm_not_on_master_branch,
+            confirm_config_version_matches_app_version,
         ]
 
         should_succeed_checks = []
@@ -215,10 +220,17 @@ class ConfigurationManager:
                 "Migrated variables did not pass application-specific variables validation function."
             )
 
-        overrides_exist = self.__check_overrides_exist()
-        override_dir: Path
-        if overrides_exist:
-            override_dir = self.__backup_overrides_directory()
+        baseline_template_overrides_dir = (
+            self.cli_context.get_baseline_template_overrides_dir()
+        )
+        override_backup_dir: Path = self.__backup_directory(
+            baseline_template_overrides_dir
+        )
+
+        configurable_templates_dir = self.cli_context.get_configurable_templates_dir()
+        configurable_templates_backup_dir = self.__backup_directory(
+            configurable_templates_dir
+        )
 
         # Backup and remove the existing generated config dir since it's now out of date
         self.__backup_and_create_new_generated_config_dir(config_version)
@@ -226,8 +238,19 @@ class ConfigurationManager:
         # Initialise the new configuration branch and directory with all new files
         self.__create_new_configuration_branch_and_files(config_repo)
 
-        if overrides_exist:
-            self.__copy_in_overrides(override_dir)
+        self.__overwrite_directory(override_backup_dir, baseline_template_overrides_dir)
+        if self.__directory_is_not_empty(baseline_template_overrides_dir):
+            logger.warn(
+                f"Overrides directory [{baseline_template_overrides_dir}] is non-empty, please check for compatibility of overridden files"
+            )
+
+        self.__overwrite_directory(
+            configurable_templates_backup_dir, configurable_templates_dir
+        )
+        if self.__directory_is_not_empty(configurable_templates_dir):
+            logger.warn(
+                f"Configurable templates directory [{configurable_templates_dir}] is non-empty, please check for compatibility"
+            )
 
         # Write out 'migrated' variables file
         self.get_variables_manager().set_all_variables(migrated_variables)
@@ -315,15 +338,43 @@ class ConfigurationManager:
                 f"Seed file [{seed_app_configuration_file}] is not valid. Release is corrupt."
             )
 
+        # Create the configuration directory and copy in the app config file
         target_app_configuration_file = self.cli_context.get_app_configuration_file()
         logger.debug(
             "Copying app configuration file to [%s] ...", target_app_configuration_file
         )
-        target_app_configuration_file.parent.mkdir(parents=True, exist_ok=True)
+        os.makedirs(target_app_configuration_file.parent, exist_ok=True)
         shutil.copy2(seed_app_configuration_file, target_app_configuration_file)
 
-        template_overrides_dir = self.cli_context.get_template_overrides_dir()
-        template_overrides_dir.mkdir(parents=True, exist_ok=True)
+        # Create the configurable templates directory
+        logger.info("Copying configurable templates ...")
+        configurable_templates_dir = self.cli_context.get_configurable_templates_dir()
+        configurable_templates_dir.mkdir(parents=True, exist_ok=True)
+        seed_configurable_templates_dir = (
+            self.cli_configuration.configurable_templates_dir
+        )
+
+        if seed_configurable_templates_dir is None:
+            logger.debug("No configurable templates directory defined")
+            return
+
+        if not seed_configurable_templates_dir.is_dir():
+            error_and_exit(
+                f"Seed templates directory [{seed_configurable_templates_dir}] is not valid. Release is corrupt."
+            )
+
+        # Copy each seed file to the configurable templates directory
+        for source_file in seed_configurable_templates_dir.glob("**/*"):
+            logger.info(source_file)
+            relative_file = source_file.relative_to(seed_configurable_templates_dir)
+            target_file = configurable_templates_dir.joinpath(relative_file)
+
+            if source_file.is_dir():
+                logger.debug("Creating directory [%s] ...", target_file)
+                target_file.mkdir(parents=True, exist_ok=True)
+            else:
+                logger.debug("Copying seed file to [%s] ...", target_file)
+                shutil.copy2(source_file, target_file)
 
     def __regenerate_generated_configuration(
         self, config_repo: ConfigurationGitRepository
@@ -338,12 +389,19 @@ class ConfigurationManager:
 
         logger.info("Generating configuration from default templates")
         self.__apply_templates_from_directory(
-            self.cli_configuration.seed_templates_dir, generated_configuration_dir
+            self.cli_configuration.baseline_templates_dir, generated_configuration_dir
         )
 
         logger.info("Generating configuration from override templates")
         self.__apply_templates_from_directory(
-            self.cli_context.get_template_overrides_dir(), generated_configuration_dir
+            self.cli_context.get_baseline_template_overrides_dir(),
+            generated_configuration_dir,
+        )
+
+        logger.info("Generating configuration from configurable templates")
+        self.__apply_templates_from_directory(
+            self.cli_context.get_configurable_templates_dir(),
+            generated_configuration_dir,
         )
 
         files_to_decrypt = self.cli_configuration.decrypt_generated_files
@@ -399,41 +457,63 @@ class ConfigurationManager:
                 logger.info("Copying configuration file to [%s] ...", target_file)
                 shutil.copy2(template_file, target_file)
 
-    def __check_overrides_exist(self) -> bool:
-        """Checks if any template overrides exist in the overrides directory.
+    def __directory_is_not_empty(self, directory: Path) -> bool:
+        """Checks if a directory is not empty.
 
         Returns:
-            bool: Returns True if any overrides exist, otherwise False.
+            bool: Returns True if the directory exists and contains any files, otherwise False
         """
-        template_overrides_dir = self.cli_context.get_template_overrides_dir()
-        return bool(
-            os.path.exists(template_overrides_dir)
-            and os.listdir(template_overrides_dir)
-        )
+        if not os.path.exists(directory):
+            return False
 
-    def __backup_overrides_directory(self) -> Path:
+        files_in_directory = [i for i in os.listdir(directory) if i != ".gitkeep"]
+
+        return len(files_in_directory) > 0
+
+    def __backup_directory(self, directory_to_backup: Path) -> Path:
+        """Backup a specified directory to a temporary directory
+
+        Args:
+            directory_to_backup (Path): The directory to backup
+
+        Returns:
+            Path: The directory to the temporary backup, or None if the directory to backup doesn't exist
+        """
+        if not os.path.isdir(directory_to_backup):
+            return None
+
         temp_dir = Path(tempfile.mkdtemp())
 
         # Due to a limitation with 'copytree', it fails to copy if the root directory exists
         # before copying. So we delete the temp dir prior to copying.
         os.rmdir(temp_dir)
-        copy_tree(str(self.cli_context.get_template_overrides_dir()), str(temp_dir))
+        copy_tree(str(directory_to_backup), str(temp_dir))
 
         return temp_dir
 
-    def __copy_in_overrides(self, temp_dir: Path):
-        logger.debug("Copying in overrides")
+    def __overwrite_directory(self, source_dir: Path, target_dir: Path):
+        """Copies the contents of one directory to another, overwriting any existing contents.
+        If the source directory doesn't exist, the target directory will not either.
 
-        overrides_dir = self.cli_context.get_template_overrides_dir()
+        Args:
+            source_dir (Path): Source directory
+            target_dir (Path): Target directory
+        """
+        logger.debug(f"Copying from {source_dir} to {target_dir}")
 
-        copy_tree(str(temp_dir), str(overrides_dir))
-        shutil.rmtree(temp_dir)
+        # If the target directory exists, delete all contents
+        # This is achieved by deleting the folder and re-creating it
+        # This is easier than iterating through the contents and deleting those
+        if os.path.isdir(target_dir):
+            shutil.rmtree(target_dir, ignore_errors=True)
 
-        logger.warn(
-            f"Overrides directory [{overrides_dir}] is non-empty, please check for compatibility of overridden files"
-        )
+        # If the source directory doesn't exist, or isn't a directory, then do not create the
+        # target directory
+        if source_dir is None or not source_dir.exists() or not source_dir.is_dir():
+            return
 
-        # TODO: Call command to show diff in overrides (configure template diff)
+        os.mkdir(target_dir)
+        copy_tree(str(source_dir), str(target_dir))
 
     def __backup_and_create_new_generated_config_dir(
         self, current_config_version

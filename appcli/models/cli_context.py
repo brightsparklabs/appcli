@@ -81,15 +81,25 @@ class CliContext(NamedTuple):
         Returns:
             Path: location of the configuration file
         """
-        return self.configuration_dir.joinpath(f"{self.app_name.lower()}.yml")
+        return self.configuration_dir.joinpath("settings.yml")
 
-    def get_template_overrides_dir(self) -> Path:
+    def get_baseline_template_overrides_dir(self) -> Path:
         """Get the directory of the configuration template overrides
 
         Returns:
             Path: directory of configuration template overrides
         """
         return self.configuration_dir.joinpath("overrides")
+
+    def get_configurable_templates_dir(self) -> Path:
+        """Get the directory containing client-specific templates that
+        aren't overrides,
+        but that need to be applied separately.
+
+        Returns:
+            Path: directory of configurable templates
+        """
+        return self.configuration_dir.joinpath("templates")
 
     def get_project_name(self) -> str:
         """Get a unique name for the application and environment
