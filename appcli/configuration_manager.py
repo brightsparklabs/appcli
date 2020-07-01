@@ -461,18 +461,12 @@ class ConfigurationManager:
         """Checks if a directory is not empty.
 
         Returns:
-            bool: Returns True if the directory contains any files, otherwise false
+            bool: Returns True if the directory exists and contains any files, otherwise False
         """
         if not os.path.exists(directory):
             return False
 
-        # Get the files in directory that don't include .gitkeep
-        files_in_directory = os.listdir(directory)
-        try:
-            files_in_directory.remove(".gitkeep")
-        except ValueError:
-            # Ignore if .gitkeep file doesn't exist
-            pass
+        files_in_directory = [i for i in os.listdir(directory) if i != ".gitkeep"]
 
         return len(files_in_directory) > 0
 
