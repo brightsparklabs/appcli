@@ -42,7 +42,7 @@ class ConfigureTemplateCli:
         # ------------------------------------------------------------------------------
 
         @click.group(
-            invoke_without_command=True, help="Configures the application templates."
+            invoke_without_command=True, help="Configures the baseline templates."
         )
         @click.pass_context
         def template(ctx):
@@ -52,7 +52,7 @@ class ConfigureTemplateCli:
 
             click.echo(ctx.get_help())
 
-        @template.command(help="Lists all default templates")
+        @template.command(help="Lists all baseline templates")
         @click.pass_context
         def ls(ctx):
             baseline_templates_dir = self.cli_configuration.baseline_templates_dir
@@ -63,7 +63,7 @@ class ConfigureTemplateCli:
             for file in files:
                 print(file)
 
-        @template.command(help="Gets a default template and prints its contents.")
+        @template.command(help="Gets a baseline template and prints its contents.")
         @click.argument("template")
         @click.pass_context
         def get(ctx, template):
@@ -75,7 +75,7 @@ class ConfigureTemplateCli:
 
             print(template_file_path.read_text())
 
-        @template.command(help="Copies a default template to the overrides folder.")
+        @template.command(help="Copies a baseline template to the overrides folder.")
         @click.argument("template")
         @click.option(
             "--force", is_flag=True, help="Overwrite existing override template",
@@ -105,7 +105,7 @@ class ConfigureTemplateCli:
             shutil.copy2(template_file_path, override_file_path)
             logger.info(f"Copied template [{template}] to [{override_file_path}]")
 
-        @template.command(help="Diffs overridde templates with the default templates")
+        @template.command(help="Diffs overridde templates with the baseline templates")
         @click.pass_context
         def diff(ctx):
             cli_context: CliContext = ctx.obj
@@ -126,7 +126,7 @@ class ConfigureTemplateCli:
 
             if not_overriding_overrides:
                 error_message = (
-                    "Overrides present with no matching default template:\n - "
+                    "Overrides present with no matching baseline template:\n - "
                 )
                 error_message += "\n - ".join(not_overriding_overrides)
                 logger.warn(error_message)
@@ -142,7 +142,7 @@ class ConfigureTemplateCli:
             ]
 
             if no_effect_overrides:
-                error_message = "Overrides present which match default template:\n - "
+                error_message = "Overrides present which match baseline template:\n - "
                 error_message += "\n - ".join(no_effect_overrides)
                 logger.warn(error_message)
 
@@ -151,7 +151,7 @@ class ConfigureTemplateCli:
             ]
 
             if effective_overrides:
-                logger.info("The following files differ from default templates:")
+                logger.info("The following files differ from baseline templates:")
                 for template_rel_path in effective_overrides:
                     seed_template = baseline_templates_dir.joinpath(template_rel_path)
                     override_template = override_templates_dir.joinpath(
