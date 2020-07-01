@@ -13,19 +13,20 @@ The CLI is designed to run within a Docker container and launch other Docker
 containers (i.e. Docker-in-Docker). This is generally managed via a
 `docker-compose.yml` file.
 
-The library leverages a single environment variable:
+The library exposes the following environment variables to the `docker-compose.yml` file:
 
 - `APP_VERSION` - the version of containers to launch
-
-The library also references several folder locations for your applications, namely:
-
-- `--configuration-dir` - the directory containing configuration files
-  consumed by the system.
-- `--data-dir` - the directory containing data produced by the system.
-- `--enviroment` - the 'environment' of the application to be run. For
+- `<APP_NAME>_CONFIG_DIR` - the directory containing configuration files
+- `<APP_NAME>_DATA_DIR` - the directory containing data produced by the system.
+- `<APP_NAME>_GENERATED_CONFIG_DIR` - the directory containing configuration
+  files generated from the templates in `<APP_NAME>_CONFIG_DIR`.
+- `<APP_NAME>_ENVIRONMENT` - the 'environment' of the application to be run. For
   example `production` or `staging`. This allows multiple instances of the same
   project to run on the same docker daemon. If undefined, this defaults to
   'default'.
+
+The `docker-compose.yml` can be templated by renaming to `docker-compose.yml.j2`, and
+setting variables within the `settings.yml` file as described in the Usage section.
 
 ## Usage
 
@@ -84,7 +85,7 @@ The library also references several folder locations for your applications, name
 
 - Store any Jinja2 variable definitions you wish to use in your configuration
   template files in `resources/settings.yml`.
-- Store your `docker-compose.yml.j2` file in `resources/templates/baseline/`.
+- Store your `docker-compose.yml`/`docker-compose.yml.j2` file in `resources/templates/baseline/`.
 - Configuration files (Jinja2 compatible templates or otherwise) can be stored in one
   of two locations:
   - `resources/templates/baseline/` - for templates that usually don't change between instances
