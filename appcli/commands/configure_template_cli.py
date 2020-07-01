@@ -64,37 +64,33 @@ class ConfigureTemplateCli:
                 print(file)
 
         @template.command(help="Gets a default template and prints its contents.")
-        @click.argument("template_rel_path")
+        @click.argument("template")
         @click.pass_context
-        def get(ctx, template_rel_path):
+        def get(ctx, template):
             baseline_templates_dir = self.cli_configuration.baseline_templates_dir
 
-            template_file_path = Path(
-                os.path.join(baseline_templates_dir, template_rel_path)
-            )
+            template_file_path = Path(os.path.join(baseline_templates_dir, template))
             if not template_file_path.exists():
-                error_and_exit(f"Could not find template [{template_rel_path}]")
+                error_and_exit(f"Could not find template [{template}]")
 
             print(template_file_path.read_text())
 
         @template.command(help="Copies a default template to the overrides folder.")
-        @click.argument("template_rel_path")
+        @click.argument("template")
         @click.option(
             "--force", is_flag=True, help="Overwrite existing override template",
         )
         @click.pass_context
-        def override(ctx, template_rel_path, force):
+        def override(ctx, template, force):
             cli_context: CliContext = ctx.obj
             baseline_templates_dir = self.cli_configuration.baseline_templates_dir
 
-            template_file_path = Path(
-                os.path.join(baseline_templates_dir, template_rel_path)
-            )
+            template_file_path = Path(os.path.join(baseline_templates_dir, template))
             if not template_file_path.exists():
-                error_and_exit(f"Could not find template [{template_rel_path}]")
+                error_and_exit(f"Could not find template [{template}]")
 
             override_file_path = cli_context.get_baseline_template_overrides_dir().joinpath(
-                template_rel_path
+                template
             )
 
             if override_file_path.exists():
@@ -107,9 +103,7 @@ class ConfigureTemplateCli:
             # Makes the override and sub folders if they do not exist
             os.makedirs(override_file_path.parent, exist_ok=True)
             shutil.copy2(template_file_path, override_file_path)
-            logger.info(
-                f"Copied template [{template_rel_path}] to [{override_file_path}]"
-            )
+            logger.info(f"Copied template [{template}] to [{override_file_path}]")
 
         @template.command(help="Diffs overridde templates with the default templates")
         @click.pass_context
