@@ -46,6 +46,7 @@ function main()
         --env {{ app_name }}_DATA_DIR="${MOUNTED_DATA_DIR}" \
         --volume "${MOUNTED_DATA_DIR}:${MOUNTED_DATA_DIR}" \
         --env {{ app_name }}_ENVIRONMENT="${ENVIRONMENT}" \
+        --network host \
         {{ configuration.docker_image }}:{{ app_version }} \
             --configuration-dir "${MOUNTED_CONFIG_DIR}" \
             --data-dir "${MOUNTED_DATA_DIR}" \
