@@ -9,13 +9,8 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-# standard libraries
-import json
-
 # vendor libraries
 from keycloak import KeycloakAdmin
-from keycloak.exceptions import KeycloakGetError, raise_error_from_response
-from keycloak.urls_patterns import URL_ADMIN_REALM_ROLES
 
 # local libraries
 from appcli.logger import logger
