@@ -9,36 +9,11 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-# standard libraries
-import json
-
 # vendor libraries
 from keycloak import KeycloakAdmin
-from keycloak.exceptions import KeycloakGetError, raise_error_from_response
-from keycloak.urls_patterns import URL_ADMIN_REALM_ROLES
 
 # local libraries
 from appcli.logger import logger
-
-# ------------------------------------------------------------------------------
-# INTERNAL CLASSES
-# ------------------------------------------------------------------------------
-
-
-class KeycloakAdminExt(KeycloakAdmin):
-    """Extension to the keycloak.KeycloakAdmin class to add missing functionality."""
-
-    # PR has been merged to add this function https://github.com/marcospereirampj/python-keycloak/pull/35
-    # Once a new version of the library has been published, we can remove this function
-    def create_realm_role(self, payload, skip_exists=False):
-        params_path = {"realm-name": self.realm_name}
-        data_raw = self.connection.raw_post(
-            URL_ADMIN_REALM_ROLES.format(**params_path), data=json.dumps(payload)
-        )
-        return raise_error_from_response(
-            data_raw, KeycloakGetError, expected_code=201, skip_exists=skip_exists
-        )
-
 
 # ------------------------------------------------------------------------------
 # EXTERNAL CLASSES
@@ -76,13 +51,13 @@ class KeycloakManager:
         self.admin_username = admin_username
         self.admin_password = admin_password
 
-        # A dict containing instances of the KeycloakAdminExt for different realms
+        # A dict containing instances of the KeycloakAdmin for different realms
         self.keycloak_admins = {}
 
         # Connect to the master realm to ensure the url/username/password are correct
         self.__get_keycloak_admin()
 
-    def __get_keycloak_admin(self, realm_name="master") -> KeycloakAdminExt:
+    def __get_keycloak_admin(self, realm_name="master") -> KeycloakAdmin:
         """Private function to get a Keycloak administration object which points at a specific realm.
 
         Uses a dict to store all instances of the Keycloak administration object as a cache. This
@@ -101,7 +76,7 @@ class KeycloakManager:
 
         if realm_name not in self.keycloak_admins:
             # Can't log directly into a non-master realm, set the realm after logging in to the 'master' realm
-            self.keycloak_admins[realm_name] = KeycloakAdminExt(
+            self.keycloak_admins[realm_name] = KeycloakAdmin(
                 server_url=self.server_url,
                 username=self.admin_username,
                 password=self.admin_password,
