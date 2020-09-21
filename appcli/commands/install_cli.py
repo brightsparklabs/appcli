@@ -15,9 +15,7 @@ www.brightsparklabs.com
 """
 
 # standard library
-import datetime
 import importlib.resources as pkg_resources
-import os
 from pathlib import Path
 
 # vendor libraries
