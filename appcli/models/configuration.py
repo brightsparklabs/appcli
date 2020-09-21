@@ -117,7 +117,10 @@ def is_matching_dict_structure(dict_to_validate: Dict, clean_dict: Dict):
     # Pop the root 'custom' blocks so they aren't compared by default
     dict_to_validate.pop("custom", None)
     clean_dict.pop("custom", None)
-    return are_dicts_matching_structure(dict_to_validate, clean_dict,)
+    return are_dicts_matching_structure(
+        dict_to_validate,
+        clean_dict,
+    )
 
 
 def are_dicts_matching_structure(dict_1: Dict, dict_2: Dict) -> bool:

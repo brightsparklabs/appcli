@@ -122,7 +122,7 @@ class DockerComposeOrchestrator(Orchestrator):
 
     def get_logs_command(self):
         @click.command(
-            help="Prints logs from all services (or the ones specified)",
+            help="Prints logs from all services (or the ones specified).",
             context_settings=dict(ignore_unknown_options=True),
         )
         @click.pass_context
@@ -137,14 +137,14 @@ class DockerComposeOrchestrator(Orchestrator):
         return logs
 
     def get_additional_commands(self):
-        @click.command(help="List the status of services")
+        @click.command(help="List the status of services.")
         @click.pass_context
         def ps(ctx):
             result = self.__compose(ctx.obj, ("ps",))
             sys.exit(result.returncode)
 
         @click.command(
-            help="Runs a docker compose command",
+            help="Runs a docker compose command.",
             context_settings=dict(ignore_unknown_options=True),
         )
         @click.pass_context
@@ -217,7 +217,7 @@ class DockerSwarmOrchestrator(Orchestrator):
 
     def get_logs_command(self):
         @click.command(
-            help="Prints logs from the specified service",
+            help="Prints logs from the specified service.",
             context_settings=dict(ignore_unknown_options=True),
         )
         @click.pass_context
@@ -232,13 +232,13 @@ class DockerSwarmOrchestrator(Orchestrator):
         return logs
 
     def get_additional_commands(self):
-        @click.command(help="List the status of services")
+        @click.command(help="List the status of services.")
         @click.pass_context
         def ps(ctx):
             result = self.__docker_stack(ctx.obj, ("ps",))
             sys.exit(result.returncode)
 
-        @click.command(help="List the defined services")
+        @click.command(help="List the defined services.")
         @click.pass_context
         def ls(ctx):
             result = self.__docker_stack(ctx.obj, ("services",))

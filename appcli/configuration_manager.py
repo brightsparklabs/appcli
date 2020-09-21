@@ -64,8 +64,7 @@ class ConfigurationManager:
         self.cli_configuration: Configuration = configuration
 
     def initialise_configuration(self):
-        """Initialises the configuration repository
-        """
+        """Initialises the configuration repository"""
 
         self.__pre_init_validation(self.cli_context)
 
@@ -190,7 +189,7 @@ class ConfigurationManager:
         if config_repo.does_branch_exist(app_version):
             # If the branch already exists, then this version has previously been installed.
 
-            logger.warn(
+            logger.warning(
                 f"Version [{app_version}] of this application was previously installed. Rolling back to previous configuration. Manual remediation may be required."
             )
 
@@ -240,7 +239,7 @@ class ConfigurationManager:
 
         self.__overwrite_directory(override_backup_dir, baseline_template_overrides_dir)
         if self.__directory_is_not_empty(baseline_template_overrides_dir):
-            logger.warn(
+            logger.warning(
                 f"Overrides directory [{baseline_template_overrides_dir}] is non-empty, please check for compatibility of overridden files"
             )
 
@@ -248,7 +247,7 @@ class ConfigurationManager:
             configurable_templates_backup_dir, configurable_templates_dir
         )
         if self.__directory_is_not_empty(configurable_templates_dir):
-            logger.warn(
+            logger.warning(
                 f"Configurable templates directory [{configurable_templates_dir}] is non-empty, please check for compatibility"
             )
 
@@ -327,8 +326,7 @@ class ConfigurationManager:
         config_repo.tag_current_commit(f"{app_version}")
 
     def __seed_configuration_dir(self):
-        """Seed the raw configuration into the configuration directory
-        """
+        """Seed the raw configuration into the configuration directory"""
         print_header("Seeding configuration directory ...")
 
         logger.info("Copying app configuration file ...")
@@ -379,8 +377,7 @@ class ConfigurationManager:
     def __regenerate_generated_configuration(
         self, config_repo: ConfigurationGitRepository
     ) -> GeneratedConfigurationGitRepository:
-        """Generate the generated configuration files
-        """
+        """Generate the generated configuration files"""
 
         print_header("Generating configuration files")
         generated_configuration_dir = self.__backup_and_create_new_generated_config_dir(
@@ -419,8 +416,8 @@ class ConfigurationManager:
         self.__generate_configuration_metadata_file(config_repo)
 
         # Put the generated config repo under version control
-        generated_config_repo: GeneratedConfigurationGitRepository = GeneratedConfigurationGitRepository(
-            self.cli_context
+        generated_config_repo: GeneratedConfigurationGitRepository = (
+            GeneratedConfigurationGitRepository(self.cli_context)
         )
 
         logger.info("Generated configuration files successfully ...")

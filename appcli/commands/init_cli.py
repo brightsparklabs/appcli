@@ -43,7 +43,7 @@ class InitCli:
             click.echo(ctx.get_help())
 
         @init.command(
-            help="Initialises a Keycloak instance with BSL-specific initial configuration"
+            help="Initialises a Keycloak instance with BSL-specific initial configuration."
         )
         @click.option(
             "--url",

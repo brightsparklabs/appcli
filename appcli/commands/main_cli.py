@@ -52,7 +52,9 @@ class MainCli:
 
         @click.command(help="Starts the system.")
         @click.option(
-            "--force", is_flag=True, help="Force start even if validation checks fail",
+            "--force",
+            is_flag=True,
+            help="Force start even if validation checks fail.",
         )
         @click.pass_context
         def start(ctx, force):
@@ -77,7 +79,9 @@ class MainCli:
 
         @click.command(help="Stops the system.")
         @click.option(
-            "--force", is_flag=True, help="Force stop even if validation checks fail",
+            "--force",
+            is_flag=True,
+            help="Force stop even if validation checks fail.",
         )
         @click.pass_context
         def stop(ctx, force):
@@ -109,7 +113,7 @@ class MainCli:
         orchestrator_commands = self.orchestrator.get_additional_commands()
         if len(orchestrator_commands) > 0:
 
-            @click.group(help="Orchestrator specific commands")
+            @click.group(help="Orchestrator specific commands.")
             @click.pass_context
             def orchestrator(ctx):
                 pass

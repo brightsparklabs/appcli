@@ -22,8 +22,7 @@ The library exposes the following environment variables to the `docker-compose.y
   files generated from the templates in `<APP_NAME>_CONFIG_DIR`.
 - `<APP_NAME>_ENVIRONMENT` - the 'environment' of the application to be run. For
   example `production` or `staging`. This allows multiple instances of the same
-  project to run on the same docker daemon. If undefined, this defaults to
-  'default'.
+  project to run on the same docker daemon. Defaults to 'production'.
 
 The `docker-compose.yml` can be templated by renaming to `docker-compose.yml.j2`, and
 setting variables within the `settings.yml` file as described in the Usage section.
