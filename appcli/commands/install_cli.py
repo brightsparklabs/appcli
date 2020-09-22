@@ -85,7 +85,7 @@ class InstallCli:
             render_variables = {
                 "cli_context": cli_context,
                 "configuration": self.configuration,
-                "install_dir": f"{install_dir}/{environment}",
+                "install_dir": f"{target_install_dir}",
             }
 
             logger.debug(
