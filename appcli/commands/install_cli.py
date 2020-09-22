@@ -15,23 +15,26 @@ www.brightsparklabs.com
 """
 
 # standard library
-import os
+import importlib.resources as pkg_resources
+from pathlib import Path
 
 # vendor libraries
 import click
-from jinja2 import Template
+from jinja2 import StrictUndefined, Template
 
 # local libraries
+from appcli import templates
 from appcli.functions import error_and_exit
 from appcli.logger import logger
+from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
 # ------------------------------------------------------------------------------
 
-# directory containing this script
-BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+INSTALLER_TEMPLATE_FILENAME = "installer.j2"
+""" The filename of the installer template """
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -45,87 +48,63 @@ class InstallCli:
     # ------------------------------------------------------------------------------
 
     def __init__(self, configuration: Configuration):
-        # get the app name
-        self.app_name = configuration.app_name
+        self.configuration: Configuration = configuration
+        default_install_dir = f"/opt/brightsparklabs/{configuration.app_name.lower()}"
 
-        # environment variables which must be defined
-        env_root_dir = f"{self.app_name}_EXT_{self.app_name}_ROOT_DIR".upper()
-        self.mandatory_env_variables = [
-            "APP_VERSION",
-            env_root_dir,
-        ]
-
-        # directory containing all app installations
-        self.app_root_dir = os.environ.get(env_root_dir)
-
-        # app version
-        self.app_version = os.environ.get("APP_VERSION")
-
-        # directory to install this version into
-        self.app_home = f"{self.app_root_dir}/{self.app_version}"
-
+        @click.command(
+            hidden=True, help="Outputs an appropriate installer bash script to stdout."
+        )
+        @click.option(
+            "--install-dir",
+            "-i",
+            help="Directory to install into. Defaults to '{default_install_dir}/<ENVIRONMENT>'.",
+            type=Path,
+            default=default_install_dir,
+        )
+        @click.pass_context
         # NOTE: Hide the cli command as end users should not run it manually
-        @click.command(hidden=True, help="Installs the system")
-        @click.option("--overwrite", is_flag=True)
-        def install(overwrite):
-            self.__install(overwrite)
+        def install(ctx, install_dir: Path):
+            logger.info("Generating installer script ...")
+
+            # Get the template from the appcli package
+            launcher_template = pkg_resources.read_text(
+                templates, INSTALLER_TEMPLATE_FILENAME
+            )
+            logger.debug(f"Read template file [{INSTALLER_TEMPLATE_FILENAME}]")
+
+            cli_context: CliContext = ctx.obj
+            environment: str = cli_context.environment
+            target_install_dir: Path = install_dir / environment
+            if cli_context.configuration_dir is None:
+                cli_context = cli_context._replace(
+                    configuration_dir=target_install_dir / "conf"
+                )
+            if cli_context.data_dir is None:
+                cli_context = cli_context._replace(data_dir=target_install_dir / "data")
+
+            render_variables = {
+                "cli_context": cli_context,
+                "configuration": self.configuration,
+                "install_dir": f"{target_install_dir}",
+            }
+
+            logger.debug(
+                f"Rendering template with render variables: [{render_variables}]"
+            )
+
+            template = Template(
+                launcher_template,
+                undefined=StrictUndefined,
+                trim_blocks=True,
+                lstrip_blocks=True,
+            )
+            try:
+                output_text = template.render(render_variables)
+                print(output_text)
+            except Exception as e:
+                error_and_exit(
+                    f"Could not generate file from template. The configuration file is likely missing a setting: {e}"
+                )
 
         # expose the cli command
         self.commands = {"install": install}
-
-    # ------------------------------------------------------------------------------
-    # PRIVATE METHODS
-    # ------------------------------------------------------------------------------
-
-    def __install(self, overwrite):
-        logger.info(f"Installing application [v{self.app_version}] ...")
-        self.__check_prequisites(overwrite)
-        self.__setup_application_home(overwrite)
-
-    def __check_prequisites(self, overwrite_install_dir):
-        logger.info("Checking prerequisites ...")
-        prerequisites_met = True
-
-        # Check all mandatory environment variables are set
-        for env_variable in self.mandatory_env_variables:
-            value = os.environ.get(env_variable)
-            if value is None:
-                logger.error(
-                    "Mandatory environment variable is not defined [%s]", env_variable
-                )
-                prerequisites_met = False
-
-        # Check if the application home already exists and we don't want to overwrite
-        if os.path.exists(self.app_home) and not overwrite_install_dir:
-            logger.error("Install directory [%s] already exists", self.app_home)
-            prerequisites_met = False
-
-        if not prerequisites_met:
-            error_and_exit("Prerequisite checks failed")
-
-    def __setup_application_home(self, overwrite_install_dir):
-        logger.info(f"Setting up [{self.app_home}] ...")
-        if os.path.exists(self.app_home) and overwrite_install_dir:
-            logger.info("Overwriting extant installation ...")
-        else:
-            # make the application home folder, and shift the 'current' and 'previous' symlinks
-            os.makedirs(self.app_home)
-            current_symlink = f"{self.app_root_dir}/current"
-            if os.path.exists(current_symlink) or os.path.islink(current_symlink):
-                logger.info("Updating [previous] symlink ...")
-                previous_symlink = f"{self.app_root_dir}/previous"
-                os.replace(current_symlink, previous_symlink)
-            logger.info("Updating [current] symlink ...")
-            os.symlink(os.path.basename(self.app_home), current_symlink)
-
-        # create launcher
-        launcher_file = f"{self.app_home}/{self.app_name}"
-        logger.info(f"Creating launcher [{launcher_file}] ...")
-        template_file = f"{self.BASE_DIR}/templates/launcher.j2"
-        with open(template_file) as f:
-            template = Template(f.read())
-        template_params = {"app_version": self.app_version, "app_name": self.app_name}
-        output_text = template.render(template_params)
-        with open(launcher_file, "w") as f:
-            f.write(output_text)
-        os.chmod(launcher_file, 0o775)

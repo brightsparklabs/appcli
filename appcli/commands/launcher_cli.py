@@ -48,7 +48,7 @@ class LauncherCli:
 
         self.configuration: Configuration = configuration
 
-        @click.command(help="Outputs an appropriate launcher bash script to stdout")
+        @click.command(help="Outputs an appropriate launcher bash script to stdout.")
         @click.pass_context
         def launcher(ctx):
             logger.info("Generating launcher script ...")

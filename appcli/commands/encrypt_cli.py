@@ -39,7 +39,7 @@ class EncryptCli:
 
         self.configuration: Configuration = configuration
 
-        @click.command(help="Encrypts the specified string")
+        @click.command(help="Encrypts the specified string.")
         @click.argument("text")
         @click.pass_context
         def encrypt(ctx, text: str):

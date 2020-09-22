@@ -128,7 +128,7 @@ def execute_validation_functions(
 
     # If there's errors in the 'should' checks and force is True, then only warn for those errors
     if should_succeed_errors and force:
-        logger.warn(
+        logger.warning(
             "Force flag `--force` applied. Ignoring the following issues:\n- %s",
             should_succeed_error_messages,
         )

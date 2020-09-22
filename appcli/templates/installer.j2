@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+
+##
+ # Pipe this through bash to install {{ cli_context.app_name|lower }}.
+ #
+ # Application version: {{ cli_context.app_version }}
+ ##
+
+# ------------------------------------------------------------------------------
+# FUNCTIONS
+# ------------------------------------------------------------------------------
+
+function main()
+{
+    mkdir -p "{{ install_dir }}" || print_error_and_exit "Could not create [{{ install_dir }}]"
+    [[ -w "{{ install_dir }}" ]] || print_error_and_exit "No permissions to write to [{{ install_dir }}]"
+
+    cd "{{ install_dir }}"
+
+    local _launcher_versioned=".{{ cli_context.app_name|lower }}-{{ cli_context.app_version }}"
+    generate_launcher > "${_launcher_versioned}" || print_error_and_exit "No permissions to write to [${_launcher_versioned}]"
+    chmod a+x "${_launcher_versioned}"
+
+    local _launcher_deploy_date=".$(date -Isec --utc)"
+    rm -f "${_launcher_deploy_date}" || print_error_and_exit "No permissions to delete to [${_launcher_deploy_date}]"
+    ln -s "${_launcher_versioned}" "${_launcher_deploy_date}"
+
+    local _launcher_generic="{{ cli_context.app_name|lower }}"
+    rm -f "${_launcher_generic}" || print_error_and_exit "No permissions to delete to [${_launcher_generic}]"
+    ln -s "${_launcher_versioned}" "${_launcher_generic}"
+
+    cat <<EOF
+    $(date -Isec --utc) INFO: {{ cli_context.app_name|lower }} version [{{ cli_context.app_version }}] can be launched via:
+
+        {{ install_dir }}/{{ cli_context.app_name|lower }}
+EOF
+}
+
+function generate_launcher()
+{
+    docker run \
+        --name {{ cli_context.app_name }}_{{ cli_context.environment }}_launcher_$(date +%s) \
+        --rm \
+        {{ configuration.docker_image }}:{{ cli_context.app_version }} \
+            --configuration-dir "{{ cli_context.configuration_dir }}" \
+            --data-dir "{{ cli_context.data_dir }}" \
+            --environment "{{ cli_context.environment }}" \
+{% for name, path in cli_context.additional_data_dirs %}
+            --additional-data-dir {{ name }}="{{ path }}" \
+{% endfor %}
+{% for name, value in cli_context.additional_env_variables %}
+            --additional-env-var {{ name }}="{{ value }}" \
+{% endfor %}
+{% if cli_context.debug %}
+            --debug \
+{% endif %}
+            launcher
+}
+
+function print_error_and_exit()
+{
+    echo "$(date -Isec --utc) ERROR: $@"
+    exit 1
+}
+
+# ------------------------------------------------------------------------------
+# LOGIC
+# ------------------------------------------------------------------------------
+
+main $@
