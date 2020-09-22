@@ -29,11 +29,11 @@ setting variables within the `settings.yml` file as described in the Usage secti
 
 ## Usage
 
-- Add the library to your python CLI application:
+### Add the library to your python CLI application
 
         pip install git+https://github.com/brightsparklabs/appcli.git@<VERSION>
 
-- Define the CLI for your application `myapp`:
+### Define the CLI for your application `myapp`
 
         # filename: myapp
 
@@ -82,6 +82,8 @@ setting variables within the `settings.yml` file as described in the Usage secti
         if __name__ == "__main__":
             main()
 
+### Build configuration template directories
+
 - Store any Jinja2 variable definitions you wish to use in your configuration
   template files in `resources/settings.yml`.
 - Store your `docker-compose.yml`/`docker-compose.yml.j2` file in `resources/templates/baseline/`.
@@ -89,7 +91,8 @@ setting variables within the `settings.yml` file as described in the Usage secti
   of two locations:
   - `resources/templates/baseline` - for templates which the end user **is not** expected to modify.
   - `resources/templates/configurable` - for templates which the end user is expected to modify.
-- Define a container for your CLI application:
+
+### Define a container for your CLI application
 
         # filename: Dockerfile
 
@@ -108,27 +111,56 @@ setting variables within the `settings.yml` file as described in the Usage secti
         ARG APP_VERSION=latest
         ENV APP_VERSION=${APP_VERSION}
 
-- Build the container:
+### Build the container
 
         # sh
         docker build -t brightsparklabs/myapp --build-arg APP_VERSION=latest .
 
-- Generate a launcher script `myapp.sh`:
+### Generate and run the installer script
 
         # sh
-        docker run brightsparklabs/myapp \
+        docker run --rm brightsparklabs/myapp \
+            --environment "production" \
+            --install-dir /path/to/myapp/installation/dir
             --configuration-dir /path/to/myapp/conf \
             --data-dir /path/to/myapp/data \
-            --environment "production" \
-            --additional-data-dir "EXTRA_DATA"="/path/to/extra/data" \
-            --additional-env-var "ENV_VAR_2"="Some value here" \
-            launcher \
-        > myapp.sh
+            install \
+        > myapp-installer.sh
 
-        chmod +x myapp.sh
+        # Check the contents before running
+        bash myapp-installer.sh
 
-This script, `myapp.sh` should now be used as the main entrypoint to all appcli
+Alternatively, you can pipe the output of the `install` command directly to `bash` or `sudo bash`.
+Only do this if you are confident that you understand what the installation script is doing.
+
+Note - some variables are optional when running the `install` command:
+
+- `--environment` defines the environment name for the deployment which allows multiple
+  instances of the application on a single machine.
+  Defaults to `production`.
+- `--install-dir` defines the base path for default configuration and data directories.
+  Defaults to `/opt/brightsparklabs/${APP_NAME}/${ENVIRONMENT}/` (`${ENVIRONMENT}` is defined by `--environment` above).
+- `--configuration-dir` defines the path to the configuration directory.
+  Defaults to `${INSTALL_DIR}/conf` (`${INSTALL_DIR}` is defined by `--install-dir` above).
+- `--data-dir` defines the path to the data directory.
+  Defaults to `${INSTALL_DIR}/data` (`${INSTALL_DIR}` is defined by `--install-dir` above).
+
+The installation script will generate a script to control the application using appcli.
+The script location will be printed out when running the install script.
+This script should now be used as the main entrypoint to all appcli
 functions for managing your application.
+
+#### Default installation example
+
+Assuming the APP_NAME is `myapp`.
+
+        # sh
+        docker run --rm brightsparklabs/myapp install | bash
+
+This will install myapp such that:
+- configuration directory: `/opt/brightsparklabs/myapp/production/conf`
+- data directory: `/opt/brightsparklabs/myapp/production/data`
+- `myapp` main script: `/opt/brightsparklabs/myapp/production/myapp`
 
 ## Development
 

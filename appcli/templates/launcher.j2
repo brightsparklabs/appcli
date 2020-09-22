@@ -36,7 +36,7 @@ function main()
 {% endfor %}
 {% for name, path in cli_context.additional_data_dirs %}
         --env {{ name }}="{{ path }}" \
-        --volume "{{ path }}={{ path }}" \
+        --volume "{{ path }}:{{ path }}" \
 {% endfor %}
         --volume /var/run/docker.sock:/var/run/docker.sock \
         --env {{ app_name }}_CONFIG_DIR="${MOUNTED_CONFIG_DIR}" \
