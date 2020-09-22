@@ -82,16 +82,22 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         "--configuration-dir",
         "-c",
         help="Directory to read configuration files from.",
-        required=True,
         type=Path,
+        cls=NotRequiredOn,
+        not_required_on=("install"),
     )
     @click.option(
-        "--data-dir", "-d", help="Directory to store data to.", required=True, type=Path
+        "--data-dir",
+        "-d",
+        help="Directory to store data to.",
+        type=Path,
+        cls=NotRequiredOn,
+        not_required_on=("install"),
     )
     @click.option(
         "--environment",
         "-t",
-        help="Environment to run, defaults to 'production'",
+        help="Environment to run. Defaults to 'production'.",
         required=False,
         type=click.STRING,
         default="production",
@@ -157,8 +163,8 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
                 "Could not set desired environment. Please ensure specified environment variables are set."
             )
 
-        # For the 'launcher' command, no further output/checks required.
-        if ctx.invoked_subcommand == "launcher":
+        # For the `installer`/`launcher` commands, no further output/checks required.
+        if ctx.invoked_subcommand in ("launcher", "install"):
             # Don't execute this function any further, continue to run subcommand with the current cli context
             return
 
@@ -203,22 +209,19 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             )
 
     def run():
-        """Run the entry-point click cli command
-        """
+        """Run the entry-point click cli command"""
         cli(  # pylint: disable=no-value-for-parameter,unexpected-keyword-arg
             prog_name=configuration.app_name
         )
 
     def check_docker_socket():
-        """Check that the docker socket exists, and exit if it does not
-        """
+        """Check that the docker socket exists, and exit if it does not"""
         if not os.path.exists("/var/run/docker.sock"):
             error_msg = """Docker socket not present. Please launch with a mounted /var/run/docker.sock"""
             error_and_exit(error_msg)
 
     def check_environment():
-        """Confirm that mandatory environment variables and additional data directories are defined.
-        """
+        """Confirm that mandatory environment variables and additional data directories are defined."""
 
         ENV_VAR_CONFIG_DIR = f"{APP_NAME}_CONFIG_DIR"
         ENV_VAR_GENERATED_CONFIG_DIR = f"{APP_NAME}_GENERATED_CONFIG_DIR"
@@ -302,3 +305,26 @@ class ArgsGroup(click.Group):
     def invoke(self, ctx):
         ctx.obj = tuple(ctx.args)
         super(ArgsGroup, self).invoke(ctx)
+
+
+# allow required options to be ignored on certain subcommands
+# see: https://stackoverflow.com/a/51235564/3602961
+class NotRequiredOn(click.Option):
+    def __init__(self, *args, **kwargs):
+        self.not_required_on = kwargs.pop("not_required_on")
+        assert self.not_required_on, "'not_required_on' parameter required"
+        kwargs["help"] = (
+            kwargs.get("help", "")
+            + f"  [required] unless subcommand is one of: {self.not_required_on}."
+        )
+        super(NotRequiredOn, self).__init__(*args, **kwargs)
+
+    def handle_parse_result(self, ctx, opts, args):
+        subcommand = args[0] if len(args) > 0 else ""
+        if subcommand in self.not_required_on:
+            self.prompt = None
+        elif self.name not in opts:
+            options = " / ".join([f"'{x}'" for x in self.opts])
+            raise click.UsageError(f"Error: Missing option {options}.")
+
+        return super(NotRequiredOn, self).handle_parse_result(ctx, opts, args)

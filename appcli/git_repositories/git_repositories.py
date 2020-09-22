@@ -32,8 +32,7 @@ BASE_BRANCH_NAME: str = "master"
 
 
 class GitRepository:
-    """Class which encapsulates different git repo actions for configuration repositories
-    """
+    """Class which encapsulates different git repo actions for configuration repositories"""
 
     def __init__(self, repo_path: Path, ignores: Iterable[str] = []):
         self.actor: git.Actor = git.Actor("appcli", "root@localhost")
@@ -137,8 +136,7 @@ class GitRepository:
         return self.repo.is_dirty(untracked_files=untracked_files)
 
     def get_current_commit_hash(self):
-        """Get the commit hash of the current commit
-        """
+        """Get the commit hash of the current commit"""
         return self.repo.git.rev_parse("HEAD")
 
     def get_diff_to_tag(self, tag: str, diff_dir: str = ""):
@@ -188,7 +186,8 @@ class GitRepository:
 class ConfigurationGitRepository(GitRepository):
     def __init__(self, cli_context: CliContext):
         super().__init__(
-            cli_context.configuration_dir, [".generated*", ".metadata*"],
+            cli_context.configuration_dir,
+            [".generated*", ".metadata*"],
         )
 
 
@@ -280,8 +279,8 @@ def confirm_generated_config_dir_exists_and_is_not_dirty(cli_context: CliContext
         Exception: Raised if the generated configuration repository has been manually modified and not checked in.
     """
     confirm_generated_config_dir_exists(cli_context)
-    generated_config_repo: GeneratedConfigurationGitRepository = GeneratedConfigurationGitRepository(
-        cli_context
+    generated_config_repo: GeneratedConfigurationGitRepository = (
+        GeneratedConfigurationGitRepository(cli_context)
     )
     if generated_config_repo.is_dirty(untracked_files=False):
         raise Exception(

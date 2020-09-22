@@ -49,7 +49,7 @@ class ConfigureCli:
 
             click.echo(ctx.get_help())
 
-        @configure.command(help="Initialises the configuration directory")
+        @configure.command(help="Initialises the configuration directory.")
         @click.pass_context
         def init(ctx):
             print_header(f"Seeding configuration directory for {self.app_name}")
@@ -84,7 +84,7 @@ class ConfigureCli:
         @click.option(
             "--force",
             is_flag=True,
-            help="Overwrite existing generated configuration, regardless of modified status",
+            help="Overwrite existing generated configuration, regardless of modified status.",
         )
         @click.pass_context
         def apply(ctx, message, force):
@@ -180,7 +180,8 @@ class ConfigureCli:
         must_succeed_checks = [confirm_config_dir_exists]
 
         execute_validation_functions(
-            cli_context=cli_context, must_succeed_checks=must_succeed_checks,
+            cli_context=cli_context,
+            must_succeed_checks=must_succeed_checks,
         )
 
         logger.info("System configuration is valid")
