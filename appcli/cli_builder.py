@@ -81,7 +81,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     @click.option(
         "--configuration-dir",
         "-c",
-        help="Directory to read configuration files from.",
+        help="Directory containing configuration files.",
         type=Path,
         cls=NotRequiredOn,
         not_required_on=("install"),
@@ -89,7 +89,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     @click.option(
         "--data-dir",
         "-d",
-        help="Directory to store data to.",
+        help="Directory containing data produced/consumed by the system.",
         type=Path,
         cls=NotRequiredOn,
         not_required_on=("install"),
@@ -97,15 +97,15 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     @click.option(
         "--environment",
         "-t",
-        help="Environment to run. Defaults to 'production'.",
+        help="Deployment environment the system is running in. Defaults to `production`.",
         required=False,
         type=click.STRING,
         default="production",
     )
     @click.option(
         "--docker-credentials-file",
-        "-o",
-        help="Path to the Docker credentials file (config.json) on the host for private docker registries.",
+        "-p",
+        help="Path to the Docker credentials file (config.json) on the host for connecting to private Docker registries.",
         required=False,
         type=Path,
     )

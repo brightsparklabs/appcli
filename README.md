@@ -12,14 +12,14 @@ Docker-in-Docker). This is generally managed via a `docker-compose.yml` file.
 
 The library exposes the following environment variables to the `docker-compose.yml` file:
 
-- `APP_VERSION` - the version of containers to launch
-- `<APP_NAME>_CONFIG_DIR` - the directory containing configuration files
-- `<APP_NAME>_DATA_DIR` - the directory containing data produced by the system.
+- `APP_VERSION` - the version of containers to launch.
+- `<APP_NAME>_CONFIG_DIR` - the directory containing configuration files.
+- `<APP_NAME>_DATA_DIR` - the directory containing data produced/consumed by the system.
 - `<APP_NAME>_GENERATED_CONFIG_DIR` - the directory containing configuration files generated from
   the templates in `<APP_NAME>_CONFIG_DIR`.
-- `<APP_NAME>_ENVIRONMENT` - the deployment environment of the application. For example `production`
-  or `staging`. This allows multiple instances of the application to run on the same docker daemon.
-  Defaults to 'production'.
+- `<APP_NAME>_ENVIRONMENT` - the deployment environment the system is running in. For example
+  `production` or `staging`. This allows multiple instances of the application to run on the same
+  Docker daemon. Defaults to `production`.
 
 The `docker-compose.yml` can be templated by renaming to `docker-compose.yml.j2`, and setting
 variables within the `settings.yml` file as described in the Usage section.
@@ -113,22 +113,25 @@ variables within the `settings.yml` file as described in the Usage section.
     # sh
     docker build -t brightsparklabs/myapp --build-arg APP_VERSION=latest .
 
-### (Optional) Login to private docker registries and pass through credentials
+### (Optional) Login to private Docker registries and pass through credentials
 
-It is possible to login to private docker registries on the host, and pass through
-credentials to the cli container run by the launcher script. This enables pulling
-and running docker images from private docker registries.
+It is possible to login to private Docker registries on the host, and pass through credentials to
+the CLI container run by the launcher script. This enables pulling and running Docker images from
+private Docker registries.
 
 Login using:
 
-    docker login $REGISTRY_URL
+    docker login ${REGISTRY_URL}
 
-The credentials file path, default `~/.docker/config.json`, can be passed as
-an option `--docker-credentials-file` or `-o` to the `myapp` container.
+The credentials file path can be passed as an option via `--docker-credentials-file` or `-p` to the
+`myapp` container.
 
 ### View the installer script
 
     # sh
+    docker run --rm brightsparklabs/myapp:<version> install
+
+    # or if using a private registry for images
     docker run --rm brightsparklabs/myapp:<version> --docker-credentials-file ~/.docker/config.json install
 
 While it is not mandatory to view the script before running, it is highly recommended.
