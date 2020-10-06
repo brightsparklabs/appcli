@@ -31,6 +31,9 @@ function main()
         --rm \
         --interactive \
         --tty \
+{% if cli_context.docker_credentials_file %}
+        --volume "{{ cli_context.docker_credentials_file }}:/root/.docker/config.json" \
+{% endif %}
 {% for name, value in cli_context.additional_env_variables %}
         --env {{ name }}="{{ value }}" \
 {% endfor %}

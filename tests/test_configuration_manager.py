@@ -171,6 +171,7 @@ def create_cli_context(tmpdir, app_version: str = "0.0.0") -> CliContext:
         additional_data_dirs=None,
         additional_env_variables=None,
         environment="test",
+        docker_credentials_file=None,
         subcommand_args=None,
         debug=True,
         app_name=APP_NAME,

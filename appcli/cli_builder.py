@@ -81,7 +81,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     @click.option(
         "--configuration-dir",
         "-c",
-        help="Directory to read configuration files from.",
+        help="Directory containing configuration files.",
         type=Path,
         cls=NotRequiredOn,
         not_required_on=("install"),
@@ -89,7 +89,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     @click.option(
         "--data-dir",
         "-d",
-        help="Directory to store data to.",
+        help="Directory containing data produced/consumed by the system.",
         type=Path,
         cls=NotRequiredOn,
         not_required_on=("install"),
@@ -97,10 +97,17 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     @click.option(
         "--environment",
         "-t",
-        help="Environment to run. Defaults to 'production'.",
+        help="Deployment environment the system is running in. Defaults to `production`.",
         required=False,
         type=click.STRING,
         default="production",
+    )
+    @click.option(
+        "--docker-credentials-file",
+        "-p",
+        help="Path to the Docker credentials file (config.json) on the host for connecting to private Docker registries.",
+        required=False,
+        type=Path,
     )
     @click.option(
         "--additional-data-dir",
@@ -125,6 +132,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         configuration_dir,
         data_dir,
         environment,
+        docker_credentials_file,
         additional_data_dir,
         additional_env_var,
     ):
@@ -138,6 +146,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             additional_data_dirs=additional_data_dir,
             additional_env_variables=additional_env_var,
             environment=environment,
+            docker_credentials_file=docker_credentials_file,
             subcommand_args=ctx.obj,
             debug=debug,
             app_name=APP_NAME,

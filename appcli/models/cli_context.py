@@ -28,6 +28,9 @@ class CliContext(NamedTuple):
     environment: str
     """ Environment to run. """
 
+    docker_credentials_file: Path
+    """ Path to the Docker credentials file (config.json) on the host for private docker registries. """
+
     subcommand_args: tuple
     """ Arguments passed to CLI subcommand. """
 
