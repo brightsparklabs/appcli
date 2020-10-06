@@ -45,6 +45,9 @@ function generate_launcher()
             --configuration-dir "{{ cli_context.configuration_dir }}" \
             --data-dir "{{ cli_context.data_dir }}" \
             --environment "{{ cli_context.environment }}" \
+{% if cli_context.docker_credentials_file %}
+            --docker-credentials-file "{{ cli_context.docker_credentials_file }}" \
+{% endif %}
 {% for name, path in cli_context.additional_data_dirs %}
             --additional-data-dir {{ name }}="{{ path }}" \
 {% endfor %}

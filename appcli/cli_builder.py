@@ -103,6 +103,13 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         default="production",
     )
     @click.option(
+        "--docker-credentials-file",
+        "-o",
+        help="Path to the Docker credentials file (config.json) on the host for private docker registries.",
+        required=False,
+        type=Path,
+    )
+    @click.option(
         "--additional-data-dir",
         "-a",
         help="Additional data directory to expose to launcher container. Can be specified multiple times.",
@@ -125,6 +132,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         configuration_dir,
         data_dir,
         environment,
+        docker_credentials_file,
         additional_data_dir,
         additional_env_var,
     ):
@@ -138,6 +146,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             additional_data_dirs=additional_data_dir,
             additional_env_variables=additional_env_var,
             environment=environment,
+            docker_credentials_file=docker_credentials_file,
             subcommand_args=ctx.obj,
             debug=debug,
             app_name=APP_NAME,
