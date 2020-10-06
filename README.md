@@ -113,10 +113,23 @@ variables within the `settings.yml` file as described in the Usage section.
     # sh
     docker build -t brightsparklabs/myapp --build-arg APP_VERSION=latest .
 
+### (Optional) Login to private docker registries and pass through credentials
+
+It is possible to login to private docker registries on the host, and pass through
+credentials to the cli container run by the launcher script. This enables pulling
+and running docker images from private docker registries.
+
+Login using:
+
+    docker login $REGISTRY_URL
+
+The credentials file path, default `~/.docker/config.json`, can be passed as
+an option `--docker-credentials-file` or `-o` to the `myapp` container.
+
 ### View the installer script
 
     # sh
-    docker run --rm brightsparklabs/myapp:<version> install
+    docker run --rm brightsparklabs/myapp:<version> --docker-credentials-file ~/.docker/config.json install
 
 While it is not mandatory to view the script before running, it is highly recommended.
 
