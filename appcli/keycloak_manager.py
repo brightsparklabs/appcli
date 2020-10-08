@@ -33,7 +33,7 @@ class KeycloakManager:
       keycloak.create_client("example-realm", "example-client", {"redirectUris" : [ "*" ]})
     """
 
-    def __init__(self, server_url, admin_username, admin_password):
+    def __init__(self, server_url, admin_username, admin_password, insecure=False):
         """Main constructor.
 
         Creates a new KeycloakManager object.
@@ -42,6 +42,7 @@ class KeycloakManager:
             server_url (string): URL to the keycloak server's auth API endpoint. e.g. "http://localhost/auth/"
             admin_username (string): Administrator username for accessing the Keycloak admin API endpoint.
             admin_password (string): The password to the administrator user.
+            insecure (boolean): Whether to allow insecure SSL connections to Keycloak. Defaults to 'False'.
 
         Returns:
             The initialised KeycloakManager object
@@ -50,6 +51,7 @@ class KeycloakManager:
         self.server_url = server_url
         self.admin_username = admin_username
         self.admin_password = admin_password
+        self.insecure = insecure
 
         # A dict containing instances of the KeycloakAdmin for different realms
         self.keycloak_admins = {}
@@ -76,12 +78,13 @@ class KeycloakManager:
 
         if realm_name not in self.keycloak_admins:
             # Can't log directly into a non-master realm, set the realm after logging in to the 'master' realm
+            # There's flipped logic for 'self.insecure' and 'verify', as 'verified connection == not insecure'
             self.keycloak_admins[realm_name] = KeycloakAdmin(
                 server_url=self.server_url,
                 username=self.admin_username,
                 password=self.admin_password,
                 realm_name="master",
-                verify=True,
+                verify=(not self.insecure),
             )
             self.keycloak_admins[realm_name].realm_name = realm_name
         return self.keycloak_admins[realm_name]

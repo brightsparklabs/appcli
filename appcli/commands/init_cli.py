@@ -51,9 +51,15 @@ class InitCli:
         )
         @click.option("--username", prompt="Admin username")
         @click.option("--password", prompt="Admin password", hide_input=True)
+        @click.option(
+            "--insecure",
+            "-k",
+            is_flag=True,
+            help="If supplied, allows insecure and unverified SSL connections to Keycloak.",
+        )
         @click.pass_context
-        def keycloak(ctx, url, username, password):
-            keycloak = KeycloakManager(url, username, password)
+        def keycloak(ctx, url, username, password, insecure):
+            keycloak = KeycloakManager(url, username, password, insecure=insecure)
             keycloak.configure_default(self.app_name)
 
         self.commands = {"init": init}
