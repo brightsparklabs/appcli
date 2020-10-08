@@ -59,7 +59,7 @@ class InitCli:
         )
         @click.pass_context
         def keycloak(ctx, url, username, password, insecure):
-            keycloak = KeycloakManager(url, username, password, insecure)
+            keycloak = KeycloakManager(url, username, password, insecure=insecure)
             keycloak.configure_default(self.app_name)
 
         self.commands = {"init": init}

@@ -28,12 +28,12 @@ class KeycloakManager:
 
       Typical usage example:
 
-      keycloak = KeycloakManager("http://localhost/auth/", "admin", "password", False)
+      keycloak = KeycloakManager("http://localhost/auth/", "admin", "password")
       keycloak.create_realm("example-realm")
       keycloak.create_client("example-realm", "example-client", {"redirectUris" : [ "*" ]})
     """
 
-    def __init__(self, server_url, admin_username, admin_password, insecure):
+    def __init__(self, server_url, admin_username, admin_password, insecure=False):
         """Main constructor.
 
         Creates a new KeycloakManager object.
@@ -42,7 +42,7 @@ class KeycloakManager:
             server_url (string): URL to the keycloak server's auth API endpoint. e.g. "http://localhost/auth/"
             admin_username (string): Administrator username for accessing the Keycloak admin API endpoint.
             admin_password (string): The password to the administrator user.
-            insecure (boolean): Whether to allow insecure SSL connections to Keycloak.
+            insecure (boolean): Whether to allow insecure SSL connections to Keycloak. Defaults to 'False'.
 
         Returns:
             The initialised KeycloakManager object
