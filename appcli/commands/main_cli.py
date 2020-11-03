@@ -95,11 +95,28 @@ class MainCli:
         def stop(ctx, force):
             self.__shutdown(ctx, force)
 
+        @click.command(
+            help="Runs a specified oneshot container.",
+            context_settings=dict(ignore_unknown_options=True),
+        )
+        @click.option(
+            "--force",
+            is_flag=True,
+            help="Force start even if validation checks fail.",
+        )
+        @click.argument("service_name", required=True, type=click.STRING)
+        @click.argument("extra_args", nargs=-1, type=click.UNPROCESSED)
+        @click.pass_context
+        def oneshot(ctx, force, service_name, extra_args):
+            result = self.orchestrator.oneshot(ctx.obj, service_name, extra_args)
+            sys.exit(result.returncode)
+
         # expose the cli commands
         self.commands = {
             "start": start,
             "stop": stop,
             "shutdown": shutdown,
+            "oneshot": oneshot,
             "logs": self.orchestrator.get_logs_command(),
         }
 

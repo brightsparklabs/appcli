@@ -63,6 +63,23 @@ class Orchestrator:
         """
         raise NotImplementedError
 
+    def oneshot(
+        self, cli_context: CliContext, service_name: str, extra_args: Iterable[str]
+    ) -> CompletedProcess:
+        """
+        Runs a specified Docker container which is expected to exit
+        upon completing a short-lived task.
+
+        Args:
+            cli_context (CliContext): Context for this CLI run.
+            service_name (str): Name of the container to run.
+            extra_args (Iterable[str]): Extra arguments to the oneshot command.
+
+        Returns:
+            CompletedProcess: Result of the orchestrator command.
+        """
+        raise NotImplementedError
+
     def get_logs_command(self) -> click.Command:
         """
         Retuns a click command which streams logs for Docker containers.
@@ -119,6 +136,13 @@ class DockerComposeOrchestrator(Orchestrator):
 
     def shutdown(self, cli_context: CliContext) -> CompletedProcess:
         return self.__compose(cli_context, ("down",))
+
+    def oneshot(
+        self, cli_context: CliContext, service_name: str, extra_args: Iterable[str]
+    ) -> CompletedProcess:
+        return self.__compose(
+            cli_context, ["run", "--rm", service_name].extend(extra_args)
+        )
 
     def get_logs_command(self):
         @click.command(
@@ -215,6 +239,13 @@ class DockerSwarmOrchestrator(Orchestrator):
     def shutdown(self, cli_context: CliContext) -> CompletedProcess:
         return self.__docker_stack(cli_context, ("rm",))
 
+    def oneshot(
+        self, cli_context: CliContext, service_name: str, extra_args: Iterable[str]
+    ) -> CompletedProcess:
+        return self.__compose(
+            cli_context, ["run", "--rm", service_name].extend(extra_args)
+        )
+
     def get_logs_command(self):
         @click.command(
             help="Prints logs from the specified service.",
@@ -256,6 +287,26 @@ class DockerSwarmOrchestrator(Orchestrator):
         command.extend(subcommand)
         command.append(cli_context.get_project_name())
         return self.__exec_command(command)
+
+    def __compose(
+        self, cli_context: CliContext, command: Iterable[str]
+    ) -> CompletedProcess:
+        docker_compose_command = [
+            "docker-compose",
+            "--project-name",
+            cli_context.get_project_name(),
+        ]
+
+        compose_files = decrypt_files(
+            cli_context, self.docker_compose_file, self.docker_compose_override_files
+        )
+        for compose_file in compose_files:
+            docker_compose_command.extend(("--file", str(compose_file)))
+
+        docker_compose_command.extend(command)
+        logger.debug("Running [%s]", " ".join(docker_compose_command))
+        result = run(docker_compose_command)
+        return result
 
     def __exec_command(self, command: str) -> CompletedProcess:
         logger.debug("Running [%s]", " ".join(command))
