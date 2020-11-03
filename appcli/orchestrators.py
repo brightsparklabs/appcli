@@ -119,6 +119,7 @@ class DockerComposeOrchestrator(Orchestrator):
     def __init__(
         self,
         docker_compose_file: Path,
+        docker_compose_oneshot_file: Path = None,
         docker_compose_override_files: Iterable[Path] = [],
     ):
         """
@@ -129,18 +130,19 @@ class DockerComposeOrchestrator(Orchestrator):
             docker_compose_override_files (Iterable[Path], optional): Paths to any additional docker-compose override files relative to the generated configuration directory.
         """
         self.docker_compose_file = docker_compose_file
+        self.docker_compose_oneshot_file = docker_compose_oneshot_file
         self.docker_compose_override_files = docker_compose_override_files
 
     def start(self, cli_context: CliContext) -> CompletedProcess:
-        return self.__compose(cli_context, ("up", "-d"))
+        return self.__compose_service(cli_context, ("up", "-d"))
 
     def shutdown(self, cli_context: CliContext) -> CompletedProcess:
-        return self.__compose(cli_context, ("down",))
+        return self.__compose_service(cli_context, ("down",))
 
     def oneshot(
         self, cli_context: CliContext, service_name: str, extra_args: Iterable[str]
     ) -> CompletedProcess:
-        return self.__compose(
+        return self.__compose_oneshot(
             cli_context, ["run", "--rm", service_name].extend(extra_args)
         )
 
@@ -155,7 +157,7 @@ class DockerComposeOrchestrator(Orchestrator):
             cli_context = ctx.obj
             subcommand = ["logs", "--follow"]
             subcommand.extend(service)
-            result = self.__compose(cli_context, subcommand)
+            result = self.__compose_service(cli_context, subcommand)
             sys.exit(result.returncode)
 
         return logs
@@ -164,7 +166,7 @@ class DockerComposeOrchestrator(Orchestrator):
         @click.command(help="List the status of services.")
         @click.pass_context
         def ps(ctx):
-            result = self.__compose(ctx.obj, ("ps",))
+            result = self.__compose_service(ctx.obj, ("ps",))
             sys.exit(result.returncode)
 
         @click.command(
@@ -174,7 +176,7 @@ class DockerComposeOrchestrator(Orchestrator):
         @click.pass_context
         @click.argument("command", nargs=-1, type=click.UNPROCESSED)
         def compose(ctx, command):
-            result = self.__compose(ctx.obj, command)
+            result = self.__compose_service(ctx.obj, command)
             sys.exit(result.returncode)
 
         return (
@@ -185,9 +187,42 @@ class DockerComposeOrchestrator(Orchestrator):
     def get_name(self):
         return "compose"
 
+    def __compose_service(
+        self,
+        cli_context: CliContext,
+        command: Iterable[str],
+    ):
+        return self.__compose(
+            cli_context,
+            command,
+            self.docker_compose_file,
+            self.docker_compose_override_files,
+        )
+
+    def __compose_oneshot(
+        self,
+        cli_context: CliContext,
+        command: Iterable[str],
+    ):
+        return self.__compose(
+            cli_context,
+            command,
+            self.docker_compose_oneshot_file,
+        )
+
     def __compose(
-        self, cli_context: CliContext, command: Iterable[str]
+        self,
+        cli_context: CliContext,
+        command: Iterable[str],
+        docker_compose_file: Path,
+        docker_compose_override_files: Iterable[Path] = (),
     ) -> CompletedProcess:
+        if docker_compose_file is None:
+            logger.error(
+                "Could not run docker-compose due to missing docker-compose file"
+            )
+            return CompletedProcess(args=None, returncode=1)
+
         docker_compose_command = [
             "docker-compose",
             "--project-name",
@@ -195,7 +230,7 @@ class DockerComposeOrchestrator(Orchestrator):
         ]
 
         compose_files = decrypt_files(
-            cli_context, self.docker_compose_file, self.docker_compose_override_files
+            cli_context, docker_compose_file, docker_compose_override_files
         )
         for compose_file in compose_files:
             docker_compose_command.extend(("--file", str(compose_file)))
@@ -214,6 +249,7 @@ class DockerSwarmOrchestrator(Orchestrator):
     def __init__(
         self,
         docker_compose_file: Path,
+        docker_compose_oneshot_file: Path = None,
         docker_compose_override_files: Iterable[Path] = [],
     ):
         """
@@ -224,6 +260,7 @@ class DockerSwarmOrchestrator(Orchestrator):
             docker_compose_override_files (Iterable[Path], optional): Paths to any additional docker-compose override files relative to the generated configuration directory.
         """
         self.docker_compose_file = docker_compose_file
+        self.docker_compose_oneshot_file = docker_compose_oneshot_file
         self.docker_compose_override_files = docker_compose_override_files
 
     def start(self, cli_context: CliContext) -> CompletedProcess:
@@ -242,7 +279,7 @@ class DockerSwarmOrchestrator(Orchestrator):
     def oneshot(
         self, cli_context: CliContext, service_name: str, extra_args: Iterable[str]
     ) -> CompletedProcess:
-        return self.__compose(
+        return self.__compose_oneshot(
             cli_context, ["run", "--rm", service_name].extend(extra_args)
         )
 
@@ -288,9 +325,30 @@ class DockerSwarmOrchestrator(Orchestrator):
         command.append(cli_context.get_project_name())
         return self.__exec_command(command)
 
+    def __compose_oneshot(
+        self,
+        cli_context: CliContext,
+        command: Iterable[str],
+    ):
+        return self.__compose(
+            cli_context,
+            command,
+            self.docker_compose_oneshot_file,
+        )
+
     def __compose(
-        self, cli_context: CliContext, command: Iterable[str]
+        self,
+        cli_context: CliContext,
+        command: Iterable[str],
+        docker_compose_file: Path,
+        docker_compose_override_files: Iterable[Path] = (),
     ) -> CompletedProcess:
+        if docker_compose_file is None:
+            logger.error(
+                "Could not run docker-compose due to missing docker-compose file"
+            )
+            return CompletedProcess(args=None, returncode=1)
+
         docker_compose_command = [
             "docker-compose",
             "--project-name",
@@ -298,7 +356,7 @@ class DockerSwarmOrchestrator(Orchestrator):
         ]
 
         compose_files = decrypt_files(
-            cli_context, self.docker_compose_file, self.docker_compose_override_files
+            cli_context, docker_compose_file, docker_compose_override_files
         )
         for compose_file in compose_files:
             docker_compose_command.extend(("--file", str(compose_file)))
