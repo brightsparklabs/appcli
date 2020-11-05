@@ -33,10 +33,10 @@ class Hooks(NamedTuple):
     """ Optional. Hook function to run before running 'start'. """
     post_start: Callable[[click.Context, CompletedProcess], None] = lambda x, y: None
     """ Optional. Hook function to run after running 'start'. """
-    pre_stop: Callable[[click.Context], None] = lambda x: None
-    """ Optional. Hook function to run before running 'stop'. """
-    post_stop: Callable[[click.Context, CompletedProcess], None] = lambda x, y: None
-    """ Optional. Hook function to run after running 'stop'. """
+    pre_shutdown: Callable[[click.Context], None] = lambda x: None
+    """ Optional. Hook function to run before running 'shutdown'. """
+    post_shutdown: Callable[[click.Context, CompletedProcess], None] = lambda x, y: None
+    """ Optional. Hook function to run after running 'shutdown'. """
     pre_configure_init: Callable[[click.Context], None] = lambda x: None
     """ Optional. Hook function to run before running 'configure init'. """
     post_configure_init: Callable[[click.Context], None] = lambda x: None
