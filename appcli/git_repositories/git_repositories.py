@@ -306,7 +306,7 @@ def confirm_config_version_matches_app_version(cli_context: CliContext):
 
     if config_version != app_version:
         raise Exception(
-            f"Configuration at [{config_repo.repo.working_dir}] is using version [{config_version}] which is incompatible with current application version [{app_version}]. Migrate to this application version using 'migrate'."
+            f"Configuration at [{config_repo.repo.working_dir}] is using version [{config_version}] which is incompatible with current application version [{app_version}]. Upgrade to this application version using 'upgrade'."
         )
 
 

@@ -2,9 +2,9 @@
 # # -*- coding: utf-8 -*-
 
 """
-The migrate command available when running the CLI.
+The Upgrade command available when running the CLI.
 
-Responsible for migrating the application to a newer version.
+Responsible for upgrading the application to a newer version.
 ________________________________________________________________________________
 
 Created by brightSPARK Labs
@@ -27,7 +27,7 @@ from appcli.models.configuration import Configuration
 # ------------------------------------------------------------------------------
 
 
-class MigrateCli:
+class UpgradeCli:
 
     # ------------------------------------------------------------------------------
     # CONSTRUCTOR
@@ -37,19 +37,31 @@ class MigrateCli:
         self.cli_configuration: Configuration = configuration
 
         @click.command(
-            help="Migrates the application configuration to work with the current application version."
+            help="Upgrades the application configuration to work with the current application version (deprecated - use upgrage).", hidden=True
         )
         @click.pass_context
         def migrate(ctx):
+            self.__upgrade(ctx)
 
-            cli_context: CliContext = ctx.obj
-
-            # Perform migration
-            ConfigurationManager(
-                cli_context, self.cli_configuration
-            ).migrate_configuration()
-
-            logger.info("Migration complete.")
+        @click.command(
+            help="Upgrades the application configuration to work with the current application version.",
+        )
+        @click.pass_context
+        def upgrade(ctx):
+            self.__upgrade(ctx)
 
         # expose the cli command
-        self.commands = {"migrate": migrate}
+        self.commands = {
+            "migrate": migrate,
+            "upgrade": upgrade
+        }
+
+    def __upgrade(self, ctx):
+        cli_context: CliContext = ctx.obj
+
+        # Perform upgrade
+        ConfigurationManager(
+            cli_context, self.cli_configuration
+        ).upgrade_configuration()
+
+        logger.info("Upgrade complete.")
