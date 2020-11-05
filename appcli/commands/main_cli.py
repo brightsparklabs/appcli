@@ -87,11 +87,10 @@ class MainCli:
         def shutdown(ctx, force):
             self.__shutdown(ctx, force)
 
-        @click.command(help="Stops the system (deprecated - use shutdown).", hidden=True)
-        @click.option(
-            "--force",
-            is_flag=True
+        @click.command(
+            help="Stops the system (deprecated - use shutdown).", hidden=True
         )
+        @click.option("--force", is_flag=True)
         @click.pass_context
         def stop(ctx, force):
             self.__shutdown(ctx, force)
