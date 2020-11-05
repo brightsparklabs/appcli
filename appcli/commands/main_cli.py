@@ -84,28 +84,23 @@ class MainCli:
             help="Force stop even if validation checks fail.",
         )
         @click.pass_context
+        def shutdown(ctx, force):
+            self.__stop(ctx, force)
+
+        @click.command(help="Stops the system (deprecated - use shutdown).", hidden=True)
+        @click.option(
+            "--force",
+            is_flag=True
+        )
+        @click.pass_context
         def stop(ctx, force):
-            hooks = self.cli_configuration.hooks
-
-            logger.debug("Running pre-stop hook")
-            hooks.pre_stop(ctx)
-
-            cli_context: CliContext = ctx.obj
-            self.__pre_stop_validation(cli_context, force=force)
-
-            logger.info("Stopping %s ...", configuration.app_name)
-            result = self.orchestrator.stop(ctx.obj)
-
-            logger.debug("Running post-stop hook")
-            hooks.post_stop(ctx, result)
-
-            logger.info("Stop command finished with code [%i]", result.returncode)
-            sys.exit(result.returncode)
+            self.__stop(ctx, force)
 
         # expose the cli commands
         self.commands = {
             "start": start,
             "stop": stop,
+            "shutdown": shutdown,
             "logs": self.orchestrator.get_logs_command(),
         }
 
@@ -170,3 +165,22 @@ class MainCli:
         )
 
         logger.info("System configuration is valid")
+
+    def __stop(self, ctx, force):
+        hooks = self.cli_configuration.hooks
+
+        logger.debug("Running pre-stop hook")
+        hooks.pre_stop(ctx)
+
+        cli_context: CliContext = ctx.obj
+        self.__pre_stop_validation(cli_context, force=force)
+
+        logger.info("Stopping %s ...", self.cli_configuration.app_name)
+        result = self.orchestrator.stop(ctx.obj)
+
+        logger.debug("Running post-stop hook")
+        hooks.post_stop(ctx, result)
+
+        logger.info("Stop command finished with code [%i]", result.returncode)
+        sys.exit(result.returncode)
+
