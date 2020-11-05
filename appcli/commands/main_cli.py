@@ -183,4 +183,3 @@ class MainCli:
 
         logger.info("Shutdown command finished with code [%i]", result.returncode)
         sys.exit(result.returncode)
-
