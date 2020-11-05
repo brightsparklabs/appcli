@@ -77,35 +77,29 @@ class MainCli:
             logger.info("Start command finished with code [%i]", result.returncode)
             sys.exit(result.returncode)
 
-        @click.command(help="Stops the system.")
+        @click.command(help="Shuts down the system.")
         @click.option(
             "--force",
             is_flag=True,
-            help="Force stop even if validation checks fail.",
+            help="Force shutdown even if validation checks fail.",
         )
         @click.pass_context
+        def shutdown(ctx, force):
+            self.__shutdown(ctx, force)
+
+        @click.command(
+            help="Stops the system (deprecated - use shutdown).", hidden=True
+        )
+        @click.option("--force", is_flag=True)
+        @click.pass_context
         def stop(ctx, force):
-            hooks = self.cli_configuration.hooks
-
-            logger.debug("Running pre-stop hook")
-            hooks.pre_stop(ctx)
-
-            cli_context: CliContext = ctx.obj
-            self.__pre_stop_validation(cli_context, force=force)
-
-            logger.info("Stopping %s ...", configuration.app_name)
-            result = self.orchestrator.stop(ctx.obj)
-
-            logger.debug("Running post-stop hook")
-            hooks.post_stop(ctx, result)
-
-            logger.info("Stop command finished with code [%i]", result.returncode)
-            sys.exit(result.returncode)
+            self.__shutdown(ctx, force)
 
         # expose the cli commands
         self.commands = {
             "start": start,
             "stop": stop,
+            "shutdown": shutdown,
             "logs": self.orchestrator.get_logs_command(),
         }
 
@@ -152,21 +146,39 @@ class MainCli:
 
         logger.info("System configuration is valid")
 
-    def __pre_stop_validation(self, cli_context: CliContext, force: bool = False):
-        """Ensures the system is in a valid state for stop.
+    def __pre_shutdown_validation(self, cli_context: CliContext, force: bool = False):
+        """Ensures the system is in a valid state for shutdown.
 
         Args:
             cli_context (CliContext): the current cli context
             force (bool, optional): If True, only warns on validation failures, rather than exiting
         """
-        logger.info("Checking system configuration is valid before stopping ...")
+        logger.info("Checking system configuration is valid before shutting down ...")
 
         execute_validation_functions(
             cli_context=cli_context,
             must_succeed_checks=[
                 confirm_generated_config_dir_exists
-            ],  # Only block stopping the system on the generated config not existing
+            ],  # Only block shuting down the system on the generated config not existing
             force=force,
         )
 
         logger.info("System configuration is valid")
+
+    def __shutdown(self, ctx, force):
+        hooks = self.cli_configuration.hooks
+
+        logger.debug("Running pre-shutdown hook")
+        hooks.pre_shutdown(ctx)
+
+        cli_context: CliContext = ctx.obj
+        self.__pre_shutdown_validation(cli_context, force=force)
+
+        logger.info("Shutting down %s ...", self.cli_configuration.app_name)
+        result = self.orchestrator.shutdown(ctx.obj)
+
+        logger.debug("Running post-shutdown hook")
+        hooks.post_shutdown(ctx, result)
+
+        logger.info("Shutdown command finished with code [%i]", result.returncode)
+        sys.exit(result.returncode)

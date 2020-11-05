@@ -51,7 +51,7 @@ class Orchestrator:
         """
         raise NotImplementedError
 
-    def stop(self, cli_context: CliContext) -> CompletedProcess:
+    def shutdown(self, cli_context: CliContext) -> CompletedProcess:
         """
         Stops all Docker containers.
 
@@ -117,7 +117,7 @@ class DockerComposeOrchestrator(Orchestrator):
     def start(self, cli_context: CliContext) -> CompletedProcess:
         return self.__compose(cli_context, ("up", "-d"))
 
-    def stop(self, cli_context: CliContext) -> CompletedProcess:
+    def shutdown(self, cli_context: CliContext) -> CompletedProcess:
         return self.__compose(cli_context, ("down",))
 
     def get_logs_command(self):
@@ -212,7 +212,7 @@ class DockerSwarmOrchestrator(Orchestrator):
 
         return self.__docker_stack(cli_context, subcommand)
 
-    def stop(self, cli_context: CliContext) -> CompletedProcess:
+    def shutdown(self, cli_context: CliContext) -> CompletedProcess:
         return self.__docker_stack(cli_context, ("rm",))
 
     def get_logs_command(self):
