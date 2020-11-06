@@ -37,7 +37,8 @@ class UpgradeCli:
         self.cli_configuration: Configuration = configuration
 
         @click.command(
-            help="Upgrades the application configuration to work with the current application version (deprecated - use upgrage).", hidden=True
+            help="Upgrades the application configuration to work with the current application version (deprecated - use upgrage).",
+            hidden=True,
         )
         @click.pass_context
         def migrate(ctx):
@@ -51,10 +52,7 @@ class UpgradeCli:
             self.__upgrade(ctx)
 
         # expose the cli command
-        self.commands = {
-            "migrate": migrate,
-            "upgrade": upgrade
-        }
+        self.commands = {"migrate": migrate, "upgrade": upgrade}
 
     def __upgrade(self, ctx):
         cli_context: CliContext = ctx.obj
