@@ -37,6 +37,9 @@ class CliContext(NamedTuple):
     debug: bool
     """ Whether to print debug logs. """
 
+    non_tty: bool
+    """ Exclude tty specific commands from the launcher script. """
+
     # ---------------------------------
     # cli build data
     # ---------------------------------

@@ -125,6 +125,11 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         multiple=True,
         callback=extract_valid_environment_variable_names,
     )
+    @click.option(
+        "--non-tty",
+        help="Exclude tty specific commands from the launcher script.",
+        is_flag=True
+    )
     @click.pass_context
     def cli(
         ctx,
@@ -135,6 +140,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         docker_credentials_file,
         additional_data_dir,
         additional_env_var,
+        non_tty
     ):
         if debug:
             logger.info("Enabling debug logging")
@@ -149,6 +155,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             docker_credentials_file=docker_credentials_file,
             subcommand_args=ctx.obj,
             debug=debug,
+            non_tty=non_tty,
             app_name=APP_NAME,
             app_version=APP_VERSION,
             commands=default_commands,
