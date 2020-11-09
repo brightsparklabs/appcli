@@ -199,7 +199,7 @@ class DockerComposeOrchestrator(Orchestrator):
         cli_context: CliContext,
         command: Iterable[str],
     ):
-        return self.__compose(
+        return __execute_compose(
             cli_context,
             command,
             self.docker_compose_file,
@@ -211,44 +211,12 @@ class DockerComposeOrchestrator(Orchestrator):
         cli_context: CliContext,
         command: Iterable[str],
     ):
-        return self.__compose(
+        return __execute_compose(
             cli_context,
             command,
             self.docker_compose_oneshot_file,
             self.docker_compose_oneshot_override_directory,
         )
-
-    def __compose(
-        self,
-        cli_context: CliContext,
-        command: Iterable[str],
-        docker_compose_file: Path,
-        docker_compose_override_directory: Path,
-    ) -> CompletedProcess:
-        if docker_compose_file is None:
-            logger.error(
-                "Could not run docker-compose due to missing docker-compose file"
-            )
-            return CompletedProcess(args=None, returncode=1)
-
-        docker_compose_command = [
-            "docker-compose",
-            "--project-name",
-            cli_context.get_project_name(),
-        ]
-
-        compose_files = decrypt_files(
-            cli_context, docker_compose_file, docker_compose_override_directory
-        )
-        for compose_file in compose_files:
-            docker_compose_command.extend(("--file", str(compose_file)))
-
-        if command is not None:
-            docker_compose_command.extend(command)
-
-        logger.debug("Running [%s]", " ".join(docker_compose_command))
-        result = run(docker_compose_command)
-        return result
 
 
 class DockerSwarmOrchestrator(Orchestrator):
@@ -277,7 +245,7 @@ class DockerSwarmOrchestrator(Orchestrator):
 
     def start(self, cli_context: CliContext) -> CompletedProcess:
         subcommand = ["deploy"]
-        compose_files = decrypt_files(
+        compose_files = __decrypt_files(
             cli_context, self.docker_compose_file, self.docker_compose_override_files
         )
         for compose_file in compose_files:
@@ -342,41 +310,11 @@ class DockerSwarmOrchestrator(Orchestrator):
         cli_context: CliContext,
         command: Iterable[str],
     ):
-        return self.__compose(
+        return __execute_compose(
             cli_context,
             command,
             self.docker_compose_oneshot_file,
         )
-
-    def __compose(
-        self,
-        cli_context: CliContext,
-        command: Iterable[str],
-        docker_compose_file: Path,
-        docker_compose_override_files: Iterable[Path] = (),
-    ) -> CompletedProcess:
-        if docker_compose_file is None:
-            logger.error(
-                "Could not run docker-compose due to missing docker-compose file"
-            )
-            return CompletedProcess(args=None, returncode=1)
-
-        docker_compose_command = [
-            "docker-compose",
-            "--project-name",
-            cli_context.get_project_name(),
-        ]
-
-        compose_files = decrypt_files(
-            cli_context, docker_compose_file, docker_compose_override_files
-        )
-        for compose_file in compose_files:
-            docker_compose_command.extend(("--file", str(compose_file)))
-
-        docker_compose_command.extend(command)
-        logger.debug("Running [%s]", " ".join(docker_compose_command))
-        result = run(docker_compose_command)
-        return result
 
     def __exec_command(self, command: str) -> CompletedProcess:
         logger.debug("Running [%s]", " ".join(command))
@@ -384,11 +322,11 @@ class DockerSwarmOrchestrator(Orchestrator):
 
 
 # ------------------------------------------------------------------------------
-# PUBLIC METHODS
+# PRIVATE METHODS
 # ------------------------------------------------------------------------------
 
 
-def decrypt_files(
+def __decrypt_files(
     cli_context: CliContext,
     docker_compose_file: Path,
     docker_compose_override_directory: Path,
@@ -410,12 +348,12 @@ def decrypt_files(
     # decrypt files if key is available
     key_file = cli_context.get_key_file()
     decrypted_files = [
-        decrypt_file(encrypted_file, key_file) for encrypted_file in compose_files
+        __decrypt_file(encrypted_file, key_file) for encrypted_file in compose_files
     ]
     return decrypted_files
 
 
-def decrypt_file(encrypted_file: Path, key_file: Path):
+def __decrypt_file(encrypted_file: Path, key_file: Path):
     """
     Decrypts the specified file using the supplied key.
 
@@ -436,3 +374,43 @@ def decrypt_file(encrypted_file: Path, key_file: Path):
     decrypted_file: Path = Path(NamedTemporaryFile(delete=False).name)
     crypto.decrypt_values_in_file(encrypted_file, decrypted_file, key_file)
     return decrypted_file
+
+
+def __execute_compose(
+    cli_context: CliContext,
+    command: Iterable[str],
+    docker_compose_file: Path,
+    docker_compose_override_directory: Path,
+) -> CompletedProcess:
+    """Builds and executes a docker-compose command
+
+    Args:
+        cli_context (CliContext): the current cli context
+        command (Iterable[str]): the command to execute with docker-compose
+        docker_compose_file (Path): the path to the docker-compose file
+        docker_compose_override_directory (Path): the path to directory of docker-compose override files
+
+    Returns:
+    """
+    if docker_compose_file is None:
+        logger.error("Could not run docker-compose due to missing docker-compose file")
+        return CompletedProcess(args=None, returncode=1)
+
+    docker_compose_command = [
+        "docker-compose",
+        "--project-name",
+        cli_context.get_project_name(),
+    ]
+
+    compose_files = __decrypt_files(
+        cli_context, docker_compose_file, docker_compose_override_directory
+    )
+    for compose_file in compose_files:
+        docker_compose_command.extend(("--file", str(compose_file)))
+
+    if command is not None:
+        docker_compose_command.extend(command)
+
+    logger.debug("Running [%s]", " ".join(docker_compose_command))
+    result = run(docker_compose_command)
+    return result
