@@ -199,7 +199,7 @@ class DockerComposeOrchestrator(Orchestrator):
         cli_context: CliContext,
         command: Iterable[str],
     ):
-        return __execute_compose(
+        return execute_compose(
             cli_context,
             command,
             self.docker_compose_file,
@@ -211,7 +211,7 @@ class DockerComposeOrchestrator(Orchestrator):
         cli_context: CliContext,
         command: Iterable[str],
     ):
-        return __execute_compose(
+        return execute_compose(
             cli_context,
             command,
             self.docker_compose_oneshot_file,
@@ -245,7 +245,7 @@ class DockerSwarmOrchestrator(Orchestrator):
 
     def start(self, cli_context: CliContext) -> CompletedProcess:
         subcommand = ["deploy"]
-        compose_files = __decrypt_files(
+        compose_files = decrypt_files(
             cli_context, self.docker_compose_file, self.docker_compose_override_files
         )
         for compose_file in compose_files:
@@ -310,7 +310,7 @@ class DockerSwarmOrchestrator(Orchestrator):
         cli_context: CliContext,
         command: Iterable[str],
     ):
-        return __execute_compose(
+        return execute_compose(
             cli_context,
             command,
             self.docker_compose_oneshot_file,
@@ -322,11 +322,11 @@ class DockerSwarmOrchestrator(Orchestrator):
 
 
 # ------------------------------------------------------------------------------
-# PRIVATE METHODS
+# PUBLIC METHODS
 # ------------------------------------------------------------------------------
 
 
-def __decrypt_files(
+def decrypt_files(
     cli_context: CliContext,
     docker_compose_file: Path,
     docker_compose_override_directory: Path,
@@ -348,12 +348,12 @@ def __decrypt_files(
     # decrypt files if key is available
     key_file = cli_context.get_key_file()
     decrypted_files = [
-        __decrypt_file(encrypted_file, key_file) for encrypted_file in compose_files
+        decrypt_file(encrypted_file, key_file) for encrypted_file in compose_files
     ]
     return decrypted_files
 
 
-def __decrypt_file(encrypted_file: Path, key_file: Path):
+def decrypt_file(encrypted_file: Path, key_file: Path):
     """
     Decrypts the specified file using the supplied key.
 
@@ -376,7 +376,7 @@ def __decrypt_file(encrypted_file: Path, key_file: Path):
     return decrypted_file
 
 
-def __execute_compose(
+def execute_compose(
     cli_context: CliContext,
     command: Iterable[str],
     docker_compose_file: Path,
@@ -402,7 +402,7 @@ def __execute_compose(
         cli_context.get_project_name(),
     ]
 
-    compose_files = __decrypt_files(
+    compose_files = decrypt_files(
         cli_context, docker_compose_file, docker_compose_override_directory
     )
     for compose_file in compose_files:
