@@ -30,7 +30,7 @@ function main()
         --name {{ app_name }}_{{ cli_context.environment }}_launcher_$(date +%s) \
         --rm \
         --interactive \
-{% if not cli_context.non_tty %}
+{% if cli_context.tty %}
         --tty \
 {% endif %}
 {% if cli_context.docker_credentials_file %}

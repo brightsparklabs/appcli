@@ -37,8 +37,8 @@ class CliContext(NamedTuple):
     debug: bool
     """ Whether to print debug logs. """
 
-    non_tty: bool
-    """ Exclude tty specific commands from the launcher script. """
+    tty: bool
+    """ Enable a virtual terminal session within the launcher. Should be disabled when a terminal is not requred (e.g. cron entries). """
 
     # ---------------------------------
     # cli build data
