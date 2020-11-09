@@ -119,19 +119,27 @@ class DockerComposeOrchestrator(Orchestrator):
 
     def __init__(
         self,
-        docker_compose_file: Path,
-        docker_compose_override_directory: Path = None,
-        docker_compose_oneshot_file: Path = None,
-        docker_compose_oneshot_override_directory: Path = None,
+        docker_compose_file: Path = Path("docker-compose.yml"),
+        docker_compose_override_directory: Path = Path("docker-compose-overrides/"),
+        docker_compose_oneshot_file: Path = Path("docker-compose.oneshot.yml"),
+        docker_compose_oneshot_override_directory: Path = Path(
+            "docker-compose-oneshot-overrides/"
+        ),
     ):
         """
         Creates a new instance of an orchestrator for docker-compose-based applications.
 
         Args:
-            docker_compose_file (Path): TODO: FIX Path to a `docker-compose.yml` file for services relative to the generated configuration directory.
-            docker_compose_override_directory (Path, optional): TODO: FIX  Path to a directory containing any additional docker-compose override files relative to the generated configuration directory.
-            docker_compose_oneshot_file (Path): TODO: FIX  Path to a `docker-compose.yml` file relative to the generated configuration directory.
-            docker_compose_oneshot_override_directory TODO: FIX
+            docker_compose_file (Path): Path to a docker compose file containing long-running services. Path is relative
+                to the generated configuration directory.
+            docker_compose_override_directory (Path, optional): Path to a directory containing any additional
+                docker-compose override files. Overrides are applied in alphanumeric order of filename. Path is relative
+                to the generated configuration directory.
+            docker_compose_oneshot_file (Path): Path to a docker compose file containing short-lived oneshot containers.
+                Path is relative to the generated configuration directory.
+            docker_compose_oneshot_override_directory (Path): Path to a directory containing any additional
+                docker-compose override files for oneshot containers. Path is relative to the generated configuration
+                directory.
         """
         self.docker_compose_file = docker_compose_file
         self.docker_compose_override_directory = docker_compose_override_directory
@@ -226,28 +234,49 @@ class DockerSwarmOrchestrator(Orchestrator):
 
     def __init__(
         self,
-        docker_compose_file: Path,
-        docker_compose_oneshot_file: Path = None,
-        docker_compose_override_files: Iterable[
-            Path
-        ] = [],  # TODO: FIX. This should be a directory of files.
+        docker_compose_file: Path = Path("docker-compose.yml"),
+        docker_compose_override_directory: Path = Path("docker-compose-overrides/"),
+        docker_compose_oneshot_file: Path = Path("docker-compose.oneshot.yml"),
+        docker_compose_oneshot_override_directory: Path = Path(
+            "docker-compose-oneshot-overrides/"
+        ),
     ):
         """
-        Creates a new instance.
+        Creates a new instance of an orchestrator for docker swarm applications.
 
         Args:
-            docker_compose_file (Path): Path to a `docker-compose.yml` file relative to the generated configuration directory.
-            docker_compose_override_files (Iterable[Path], optional): Paths to any additional docker-compose override files relative to the generated configuration directory.
+            docker_compose_file (Path): Path to a docker compose file containing long-running services. Path is relative
+                to the generated configuration directory.
+            docker_compose_override_directory (Path, optional): Path to a directory containing any additional
+                docker-compose override files. Overrides are applied in alphanumeric order of filename. Path is relative
+                to the generated configuration directory.
+            docker_compose_oneshot_file (Path): Path to a docker compose file containing short-lived oneshot containers.
+                Path is relative to the generated configuration directory.
+            docker_compose_oneshot_override_directory (Path): Path to a directory containing any additional
+                docker-compose override files for oneshot containers. Path is relative to the generated configuration
+                directory.
         """
         self.docker_compose_file = docker_compose_file
+        self.docker_compose_override_directory = docker_compose_override_directory
         self.docker_compose_oneshot_file = docker_compose_oneshot_file
-        self.docker_compose_override_files = docker_compose_override_files
+        self.docker_compose_oneshot_override_directory = (
+            docker_compose_oneshot_override_directory
+        )
 
     def start(self, cli_context: CliContext) -> CompletedProcess:
         subcommand = ["deploy"]
-        compose_files = decrypt_files(
-            cli_context, self.docker_compose_file, self.docker_compose_override_files
+        compose_files = decrypt_docker_compose_files(
+            cli_context,
+            self.docker_compose_file,
+            self.docker_compose_override_directory,
         )
+        if len(compose_files) == 0:
+            logger.error(
+                "No valid docker compose files were found. Expected file [%s] or files in directory [%s]",
+                self.docker_compose_file,
+                self.docker_compose_override_directory,
+            )
+            return CompletedProcess(args=None, returncode=1)
         for compose_file in compose_files:
             subcommand.extend(("--compose-file", str(compose_file)))
 
@@ -314,6 +343,7 @@ class DockerSwarmOrchestrator(Orchestrator):
             cli_context,
             command,
             self.docker_compose_oneshot_file,
+            self.docker_compose_oneshot_override_directory,
         )
 
     def __exec_command(self, command: str) -> CompletedProcess:
@@ -326,24 +356,55 @@ class DockerSwarmOrchestrator(Orchestrator):
 # ------------------------------------------------------------------------------
 
 
-def decrypt_files(
+def decrypt_docker_compose_files(
     cli_context: CliContext,
-    docker_compose_file: Path,
-    docker_compose_override_directory: Path,
-):
-    compose_files = [docker_compose_file]
+    docker_compose_file_relative_path: Path,
+    docker_compose_override_directory_relative_path: Path,
+) -> List[Path]:
+    """Decrypt docker-compose and docker-compose override files.
 
-    if docker_compose_override_directory is not None:
-        docker_compose_override_files: List[str] = os.listdir(
-            docker_compose_override_directory
+    Args:
+        cli_context (CliContext): The current cli context.
+        docker_compose_file_relative_path (Path): The relative path to the docker-compose file. Path is relative to the
+            generated configuration directory.
+        docker_compose_override_directory_relative_path (Path): The relative path to a directory containing
+            docker-compose override files. Path is relative to the generated configuration directory.
+
+    Returns:
+        List[Path]: sorted list of absolute paths to decrypted docker-compose files. The first path is the decrypted
+            docker-compose file, and the rest of the paths are the alphanumerically sorted docker compose override
+            files in the docker compose override directory.
+    """
+
+    compose_files = []
+
+    if docker_compose_file_relative_path is not None:
+        docker_compose_file = cli_context.get_generated_configuration_dir().joinpath(
+            docker_compose_file_relative_path
         )
-        compose_files.extend(docker_compose_override_files)
+        if os.path.isfile(docker_compose_file):
+            compose_files.append(docker_compose_file)
 
-    # turn relative paths into absolute paths
-    compose_files = [
-        cli_context.get_generated_configuration_dir().joinpath(relative_path)
-        for relative_path in compose_files
-    ]
+    if docker_compose_override_directory_relative_path is not None:
+        docker_compose_override_directory = (
+            cli_context.get_generated_configuration_dir().joinpath(
+                docker_compose_override_directory_relative_path
+            )
+        )
+        if os.path.isdir(docker_compose_override_directory):
+            docker_compose_override_files: List[str] = [
+                os.path.join(docker_compose_override_directory, file)
+                for file in os.listdir(docker_compose_override_directory)
+                if os.path.isfile(os.path.join(docker_compose_override_directory, file))
+            ]
+
+            if len(docker_compose_override_files) > 0:
+                docker_compose_override_files.sort()
+                logger.debug(
+                    "Detected docker compose override files [%s]",
+                    docker_compose_override_files,
+                )
+                compose_files.extend(docker_compose_override_files)
 
     # decrypt files if key is available
     key_file = cli_context.get_key_file()
@@ -353,7 +414,7 @@ def decrypt_files(
     return decrypted_files
 
 
-def decrypt_file(encrypted_file: Path, key_file: Path):
+def decrypt_file(encrypted_file: Path, key_file: Path) -> Path:
     """
     Decrypts the specified file using the supplied key.
 
@@ -362,7 +423,7 @@ def decrypt_file(encrypted_file: Path, key_file: Path):
         key_file (Path): Key to use for decryption.
 
     Returns:
-        [type]: Path to the decrypted file.
+        Path: Path to the decrypted file.
     """
     if not key_file.is_file():
         logger.info(
@@ -379,32 +440,42 @@ def decrypt_file(encrypted_file: Path, key_file: Path):
 def execute_compose(
     cli_context: CliContext,
     command: Iterable[str],
-    docker_compose_file: Path,
-    docker_compose_override_directory: Path,
+    docker_compose_file_relative_path: Path,
+    docker_compose_override_directory_relative_path: Path,
 ) -> CompletedProcess:
-    """Builds and executes a docker-compose command
+    """Builds and executes a docker-compose command.
 
     Args:
-        cli_context (CliContext): the current cli context
-        command (Iterable[str]): the command to execute with docker-compose
-        docker_compose_file (Path): the path to the docker-compose file
-        docker_compose_override_directory (Path): the path to directory of docker-compose override files
+        cli_context (CliContext): The current cli context.
+        command (Iterable[str]): The command to execute with docker-compose.
+        docker_compose_file_relative_path (Path): The relative path to the docker-compose file. Path is relative to the
+            generated configuration directory.
+        docker_compose_override_directory_relative_path (Path): The relative path to a directory containing
+            docker-compose override files. Path is relative to the generated configuration directory.
 
     Returns:
+        CompletedProcess: The completed process and its exit code.
     """
-    if docker_compose_file is None:
-        logger.error("Could not run docker-compose due to missing docker-compose file")
-        return CompletedProcess(args=None, returncode=1)
-
     docker_compose_command = [
         "docker-compose",
         "--project-name",
         cli_context.get_project_name(),
     ]
 
-    compose_files = decrypt_files(
-        cli_context, docker_compose_file, docker_compose_override_directory
+    compose_files = decrypt_docker_compose_files(
+        cli_context,
+        docker_compose_file_relative_path,
+        docker_compose_override_directory_relative_path,
     )
+
+    if len(compose_files) == 0:
+        logger.error(
+            "No valid docker compose files were found. Expected file [%s] or files in directory [%s]",
+            docker_compose_file_relative_path,
+            docker_compose_override_directory_relative_path,
+        )
+        return CompletedProcess(args=None, returncode=1)
+
     for compose_file in compose_files:
         docker_compose_command.extend(("--file", str(compose_file)))
 
