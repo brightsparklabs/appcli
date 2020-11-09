@@ -9,13 +9,14 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
+import os
 import sys
 
 # standard libraries
 from pathlib import Path
 from subprocess import CompletedProcess, run
 from tempfile import NamedTemporaryFile
-from typing import Iterable
+from typing import Iterable, List
 
 # vendor libraries
 import click
@@ -119,19 +120,25 @@ class DockerComposeOrchestrator(Orchestrator):
     def __init__(
         self,
         docker_compose_file: Path,
+        docker_compose_override_directory: Path = None,
         docker_compose_oneshot_file: Path = None,
-        docker_compose_override_files: Iterable[Path] = [],
+        docker_compose_oneshot_override_directory: Path = None,
     ):
         """
-        Creates a new instance.
+        Creates a new instance of an orchestrator for docker-compose-based applications.
 
         Args:
-            docker_compose_file (Path): Path to a `docker-compose.yml` file relative to the generated configuration directory.
-            docker_compose_override_files (Iterable[Path], optional): Paths to any additional docker-compose override files relative to the generated configuration directory.
+            docker_compose_file (Path): TODO: FIX Path to a `docker-compose.yml` file for services relative to the generated configuration directory.
+            docker_compose_override_directory (Path, optional): TODO: FIX  Path to a directory containing any additional docker-compose override files relative to the generated configuration directory.
+            docker_compose_oneshot_file (Path): TODO: FIX  Path to a `docker-compose.yml` file relative to the generated configuration directory.
+            docker_compose_oneshot_override_directory TODO: FIX
         """
         self.docker_compose_file = docker_compose_file
+        self.docker_compose_override_directory = docker_compose_override_directory
         self.docker_compose_oneshot_file = docker_compose_oneshot_file
-        self.docker_compose_override_files = docker_compose_override_files
+        self.docker_compose_oneshot_override_directory = (
+            docker_compose_oneshot_override_directory
+        )
 
     def start(self, cli_context: CliContext) -> CompletedProcess:
         return self.__compose_service(cli_context, ("up", "-d"))
@@ -142,9 +149,9 @@ class DockerComposeOrchestrator(Orchestrator):
     def oneshot(
         self, cli_context: CliContext, service_name: str, extra_args: Iterable[str]
     ) -> CompletedProcess:
-        return self.__compose_oneshot(
-            cli_context, ["run", "--rm", service_name].extend(extra_args)
-        )
+        command = ["run", "--rm", service_name]
+        command.extend(extra_args)
+        return self.__compose_oneshot(cli_context, command)
 
     def get_logs_command(self):
         @click.command(
@@ -196,7 +203,7 @@ class DockerComposeOrchestrator(Orchestrator):
             cli_context,
             command,
             self.docker_compose_file,
-            self.docker_compose_override_files,
+            self.docker_compose_override_directory,
         )
 
     def __compose_oneshot(
@@ -208,6 +215,7 @@ class DockerComposeOrchestrator(Orchestrator):
             cli_context,
             command,
             self.docker_compose_oneshot_file,
+            self.docker_compose_oneshot_override_directory,
         )
 
     def __compose(
@@ -215,7 +223,7 @@ class DockerComposeOrchestrator(Orchestrator):
         cli_context: CliContext,
         command: Iterable[str],
         docker_compose_file: Path,
-        docker_compose_override_files: Iterable[Path] = (),
+        docker_compose_override_directory: Path,
     ) -> CompletedProcess:
         if docker_compose_file is None:
             logger.error(
@@ -230,12 +238,14 @@ class DockerComposeOrchestrator(Orchestrator):
         ]
 
         compose_files = decrypt_files(
-            cli_context, docker_compose_file, docker_compose_override_files
+            cli_context, docker_compose_file, docker_compose_override_directory
         )
         for compose_file in compose_files:
             docker_compose_command.extend(("--file", str(compose_file)))
 
-        docker_compose_command.extend(command)
+        if command is not None:
+            docker_compose_command.extend(command)
+
         logger.debug("Running [%s]", " ".join(docker_compose_command))
         result = run(docker_compose_command)
         return result
@@ -250,7 +260,9 @@ class DockerSwarmOrchestrator(Orchestrator):
         self,
         docker_compose_file: Path,
         docker_compose_oneshot_file: Path = None,
-        docker_compose_override_files: Iterable[Path] = [],
+        docker_compose_override_files: Iterable[
+            Path
+        ] = [],  # TODO: FIX. This should be a directory of files.
     ):
         """
         Creates a new instance.
@@ -379,10 +391,16 @@ class DockerSwarmOrchestrator(Orchestrator):
 def decrypt_files(
     cli_context: CliContext,
     docker_compose_file: Path,
-    docker_compose_override_files: Iterable[Path],
+    docker_compose_override_directory: Path,
 ):
     compose_files = [docker_compose_file]
-    compose_files.extend(docker_compose_override_files)
+
+    if docker_compose_override_directory is not None:
+        docker_compose_override_files: List[str] = os.listdir(
+            docker_compose_override_directory
+        )
+        compose_files.extend(docker_compose_override_files)
+
     # turn relative paths into absolute paths
     compose_files = [
         cli_context.get_generated_configuration_dir().joinpath(relative_path)
