@@ -392,8 +392,8 @@ def decrypt_docker_compose_files(
             )
         )
         if os.path.isdir(docker_compose_override_directory):
-            docker_compose_override_files: List[str] = [
-                os.path.join(docker_compose_override_directory, file)
+            docker_compose_override_files: List[Path] = [
+                Path(os.path.join(docker_compose_override_directory, file))
                 for file in os.listdir(docker_compose_override_directory)
                 if os.path.isfile(os.path.join(docker_compose_override_directory, file))
             ]
