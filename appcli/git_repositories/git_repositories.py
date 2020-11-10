@@ -166,7 +166,7 @@ class GitRepository:
             str: version of the current branch
         """
 
-        return self.repo.git.describe(tags=True,abbrev=0,always=True)
+        return self.repo.git.describe(tags=True, abbrev=0, always=True)
 
     def __initialise_new_repo(
         self, repo_path: Path, ignores: Iterable[str]
