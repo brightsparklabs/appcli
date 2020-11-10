@@ -57,7 +57,7 @@ METADATA_FILE_NAME = "metadata-configure-apply.json"
 
 
 class ConfigurationManager:
-    """Manages the configuration of the application. Handles initialisation, settings changes, migrating to new versions, etc."""
+    """Manages the configuration of the application. Handles initialisation, settings changes, migration to new versions, etc."""
 
     def __init__(self, cli_context: CliContext, configuration: Configuration):
         self.cli_context = cli_context
@@ -205,7 +205,7 @@ class ConfigurationManager:
             self.cli_configuration.seed_app_configuration_file
         ).get_all_variables()
 
-        migrated_variables = self.cli_configuration.hooks.migrated_variables(
+        migrated_variables = self.cli_configuration.hooks.migrate_variables(
             self.cli_context,
             current_variables,
             config_version,
