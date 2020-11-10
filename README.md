@@ -75,7 +75,7 @@ variables within the `settings.yml` file as described in the Installation sectio
                 docker_compose_task_override_directory = Path(
                     "docker-compose.tasks.override.d/"
                 ),
-                ),
+            ),
             mandatory_additional_data_dirs=["EXTRA_DATA",],
             mandatory_additional_env_variables=["ENV_VAR_2",],
         )
