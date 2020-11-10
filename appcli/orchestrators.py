@@ -44,7 +44,7 @@ class Orchestrator:
         Starts Docker containers.
 
         Args:
-            cli_context (CliContext): Context for this CLI run.
+            cli_context (CliContext): The current cli context.
             container (str, optional): Name of the container to start. Defaults to all containers.
 
         Returns:
@@ -57,7 +57,7 @@ class Orchestrator:
         Stops all Docker containers.
 
         Args:
-            cli_context (CliContext): Context for this CLI run.
+            cli_context (CliContext): The current cli context.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -72,7 +72,7 @@ class Orchestrator:
         upon completing a short-lived task.
 
         Args:
-            cli_context (CliContext): Context for this CLI run.
+            cli_context (CliContext): The current cli context.
             service_name (str): Name of the container to run.
             extra_args (Iterable[str]): Extra arguments to the oneshot command.
 
@@ -86,7 +86,7 @@ class Orchestrator:
         Retuns a click command which streams logs for Docker containers.
 
         Args:
-            cli_context (CliContext): Context for this CLI run.
+            cli_context (CliContext): The current cli context.
 
         Returns:
             click.Command: Command for streaming logs.
