@@ -22,9 +22,9 @@ The library exposes the following environment variables to the `docker-compose.y
   Docker daemon. Defaults to `production`.
 
 The `docker-compose.yml` can be templated by renaming to `docker-compose.yml.j2`, and setting
-variables within the `settings.yml` file as described in the Configuring section.
+variables within the `settings.yml` file as described in the Installation section.
 
-## Configuring
+## Installation
 
 ### Add the library to your python CLI application
 
@@ -178,159 +178,159 @@ main entrypoint to all appcli functions for managing your application.
 
 ## Usage
 
-This section details what commands and options are available. 
+This section details what commands and options are available.
 
-### Commands
+### Top-level Commands
 To be used in conjunction with your application `./myapp <command>` e.g. `./myapp start`
 
-Command | Description
--------------|-----------------------------------------------------------------
-configure     |Configures the application.
-encrypt       |Encrypts the specified string.
-init          |Initialises the application.
-launcher      |Outputs an appropriate launcher bash script.
-logs          |Prints logs from all services.
-migrate       |Migrates the configuration of the application to a newer version.
-orchestrator  |Perform docker orchestration
-shutdown      |Shuts down the system.
-start         |Starts the system.
+| Command      | Description                                                       |
+| ------------ | ----------------------------------------------------------------- |
+| configure    | Configures the application.                                       |
+| encrypt      | Encrypts the specified string.                                    |
+| init         | Initialises the application.                                      |
+| launcher     | Outputs an appropriate launcher bash script.                      |
+| logs         | Prints logs from all services.                                    |
+| migrate      | Migrates the configuration of the application to a newer version. |
+| orchestrator | Perform docker orchestration                                      |
+| shutdown     | Shuts down the system.                                            |
+| start        | Starts the system.                                                |
 
 ### Options
-Option &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| Description 
------------------------------------| ---------------------------------------------------------------------------------------------------------------------------- 
---debug                            | Enables debug level logging. 
--c, --configuration-dir PATH       | Directory containing configuration files. [This is required unless subcommand is one of: install.  
--d, --data-dir PATH                | Directory containing data p roduced/consumed by the system. This is required unless  subcommand is  one of: install. 
--t, --environment TEXT             | Deployment environment the system is running in. Defaults to `production`. 
--p, --docker-credentials-file PATH | Path to the Docker credentials file (config.json) on the host for connecting to private Docker registries. 
--a, --additional-data-dir TEXT     | Additional data directory to expose to launcher container. Can be specified multiple times. 
--e, --additional-env-var TEXT      | Additional environment variables to expose to launcher container. Can be specified multiple times. 
---tty, --no-tty                    | Enable a virtual terminal session within the launcher. Should be disabled when a terminal is not requred (e.g. cron entries). 
---help                             | Show the help message and exit. 
+| Option                             | Description                                                                                                                            |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| --debug                            | Enables debug level logging.                                                                                                           |
+| -c, --configuration-dir PATH       | Directory containing configuration files. [This is required unless subcommand is one of: install.                                      |
+| -d, --data-dir PATH                | Directory containing data p roduced/consumed by the system. This is required unless  subcommand is  one of: install.                   |
+| -t, --environment TEXT             | Deployment environment the system is running in. Defaults to `production`.                                                             |
+| -p, --docker-credentials-file PATH | Path to the Docker credentials file (config.json) on the host for connecting to private Docker registries.                             |
+| -a, --additional-data-dir TEXT     | Additional data directory to expose to launcher container. Can be specified multiple times.                                            |
+| -e, --additional-env-var TEXT      | Additional environment variables to expose to launcher container. Can be specified multiple times.                                     |
+| --tty/--no-tty                     | Enable a virtual terminal session within the launcher. Should be disabled when a terminal is not requred (e.g. cron entries, scripts). |
+| --help                             | Show the help message and exit.                                                                                                        |
 
+#### Command: `configure`
 
-#### Command: `configure` 
-Configures the application.  
+Configures the application.
 usage `./myapp configure [OPTIONS] COMMAND [ARGS]`
 
-Command   | Description
-----------|-----------------------------------------------------------------
-apply     |Applies the settings from the configuration.
-diff      |Get the differences between current and default configuration settings.
-get       |Reads a setting from the configuration.
-init      |Initialises the configuration directory.
-set       |Saves a setting to the configuration.
-template  |Configures the baseline templates.
+| Command  | Description                                                             |
+| -------- | ----------------------------------------------------------------------- |
+| apply    | Applies the settings from the configuration.                            |
+| diff     | Get the differences between current and default configuration settings. |
+| get      | Reads a setting from the configuration.                                 |
+| init     | Initialises the configuration directory.                                |
+| set      | Saves a setting to the configuration.                                   |
+| template | Configures the baseline templates.                                      |
 
-Option    | Description
-----------|-----------------------------------------------------------------
---help    | Show the help message and exit.
+| Option | Description                     |
+| ------ | ------------------------------- |
+| --help | Show the help message and exit. |
 
 
 #### Command: `encrypt`
-Encrypts the specified string.  
+Encrypts the specified string.
 usage `./myapp encrypt [OPTIONS] TEXT`
 
-Command | Description
--------------|-----------------------------------------------------------------
+| Command | Description |
+| ------- | ----------- |
 No commands available
 
-Option | Description
--------------|-----------------------------------------------------------------
---help    | Show the help message and exit.
+| Option | Description                     |
+| ------ | ------------------------------- |
+| --help | Show the help message and exit. |
 
 
 #### Command: `init`
-Initialises the application.  
+Initialises the application.
 usage `./myapp init [OPTIONS] COMMAND [ARGS]`
 
-Command | Description
--------------|-----------------------------------------------------------------
-keycloak | Initialises a Keycloak instance with BSL-specific initial configuration.
+| Command  | Description                                                              |
+| -------- | ------------------------------------------------------------------------ |
+| keycloak | Initialises a Keycloak instance with BSL-specific initial configuration. |
 
-Option | Description
--------------|-----------------------------------------------------------------
---help    | Show the help message and exit.
+| Option | Description                     |
+| ------ | ------------------------------- |
+| --help | Show the help message and exit. |
 
 #### Command: `launcher`
-Outputs an appropriate launcher bash script to stdout.  
+Outputs an appropriate launcher bash script to stdout.
 usage `./myapp launcher [OPTIONS]`
 
-Command | Description
--------------|-----------------------------------------------------------------
+| Command | Description |
+| ------- | ----------- |
 No commands available
 
-Option | Description
--------------|-----------------------------------------------------------------
---help    | Show the help message and exit.
+| Option | Description                     |
+| ------ | ------------------------------- |
+| --help | Show the help message and exit. |
 
 
 #### Command: `logs`
-Prints logs from all services (or the ones specified).  
+Prints logs from all services (or the ones specified).
 usage `./myapp logs [OPTIONS] [SERVICE]`
 
-Command | Description
--------------|-----------------------------------------------------------------
+| Command | Description |
+| ------- | ----------- |
 No commands available
 
-Option | Description
--------------|-----------------------------------------------------------------
---help    | Show the help message and exit.
+| Option | Description                     |
+| ------ | ------------------------------- |
+| --help | Show the help message and exit. |
 
 
 #### Command: `migrate`
-Migrates the application configuration to work with the current application version.  
+Migrates the application configuration to work with the current application version.
 usage `./myapp migrate [OPTIONS]`
 
-Command | Description
--------------|-----------------------------------------------------------------
+| Command | Description |
+| ------- | ----------- |
 No commands available
 
-Option | Description
--------------|-----------------------------------------------------------------
---help    | Show the help message and exit.
+| Option | Description                     |
+| ------ | ------------------------------- |
+| --help | Show the help message and exit. |
 
 
 #### Command: `orchestrator`
-Perform docker orchestration  
+Perform docker orchestration
 usage `./myapp orchestrator [OPTIONS] COMMAND [ARGS]`
 
-Command | Description
--------------|-----------------------------------------------------------------
-compose | Runs a docker compose command. 
-ps |      List the status of services
+| Command | Description                    |
+| ------- | ------------------------------ |
+| compose | Runs a docker compose command. |
+| ps      | List the status of services    |
 
-Option | Description
--------------|-----------------------------------------------------------------
---help | Show the help message and exit
+| Option | Description                    |
+| ------ | ------------------------------ |
+| --help | Show the help message and exit |
 
 
 #### Command: `shutdown`
-Shuts down the system.  
+Shuts down the system.
 usage `./myapp shutdown [OPTIONS]`
 
-Command | Description
--------------|-----------------------------------------------------------------
+| Command | Description |
+| ------- | ----------- |
 No commands available
 
-Option | Description
--------------|-----------------------------------------------------------------
---force  | Force shutdown even if validation checks fail.
---help   | Show this message and exit.
+| Option  | Description                                    |
+| ------- | ---------------------------------------------- |
+| --force | Force shutdown even if validation checks fail. |
+| --help  | Show this message and exit.                    |
 
 
 #### Command: `start`
-Starts the system.  
+Starts the system.
 usage `./myapp  start [OPTIONS]`
 
-Command | Description
--------------|-----------------------------------------------------------------
+| Command | Description |
+| ------- | ----------- |
 No commands available
 
-Option | Description
--------------|-----------------------------------------------------------------
---force  | Force start even if validation checks fail.
---help   | Show this message and exit.
+| Option  | Description                                 |
+| ------- | ------------------------------------------- |
+| --force | Force start even if validation checks fail. |
+| --help  | Show this message and exit.                 |
 
 
 

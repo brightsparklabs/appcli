@@ -127,7 +127,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     )
     @click.option(
         "--tty/--no-tty",
-        help="Enable a virtual terminal session within the launcher. Should be disabled when a terminal is not requred (e.g. cron entries).",
+        help="Enable a virtual terminal session within the launcher. Should be disabled when a terminal is not required (e.g. cron entries, scripts...).",
         default=True,
         is_flag=True,
     )
