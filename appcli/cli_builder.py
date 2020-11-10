@@ -125,12 +125,6 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         multiple=True,
         callback=extract_valid_environment_variable_names,
     )
-    @click.option(
-        "--tty/--no-tty",
-        help="Enable a virtual terminal session within the launcher. Should be disabled when a terminal is not required (e.g. cron entries, scripts...).",
-        default=True,
-        is_flag=True,
-    )
     @click.pass_context
     def cli(
         ctx,
@@ -141,7 +135,6 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         docker_credentials_file,
         additional_data_dir,
         additional_env_var,
-        tty,
     ):
         if debug:
             logger.info("Enabling debug logging")
@@ -156,7 +149,6 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             docker_credentials_file=docker_credentials_file,
             subcommand_args=ctx.obj,
             debug=debug,
-            tty=tty,
             app_name=APP_NAME,
             app_version=APP_VERSION,
             commands=default_commands,

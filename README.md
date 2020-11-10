@@ -196,17 +196,16 @@ To be used in conjunction with your application `./myapp <command>` e.g. `./myap
 | start        | Starts the system.                                                |
 
 ### Options
-| Option                             | Description                                                                                                                            |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| --debug                            | Enables debug level logging.                                                                                                           |
-| -c, --configuration-dir PATH       | Directory containing configuration files. [This is required unless subcommand is one of: install.                                      |
-| -d, --data-dir PATH                | Directory containing data p roduced/consumed by the system. This is required unless  subcommand is  one of: install.                   |
-| -t, --environment TEXT             | Deployment environment the system is running in. Defaults to `production`.                                                             |
-| -p, --docker-credentials-file PATH | Path to the Docker credentials file (config.json) on the host for connecting to private Docker registries.                             |
-| -a, --additional-data-dir TEXT     | Additional data directory to expose to launcher container. Can be specified multiple times.                                            |
-| -e, --additional-env-var TEXT      | Additional environment variables to expose to launcher container. Can be specified multiple times.                                     |
-| --tty/--no-tty                     | Enable a virtual terminal session within the launcher. Should be disabled when a terminal is not requred (e.g. cron entries, scripts). |
-| --help                             | Show the help message and exit.                                                                                                        |
+| Option                             | Description                                                                                                          |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| --debug                            | Enables debug level logging.                                                                                         |
+| -c, --configuration-dir PATH       | Directory containing configuration files. [This is required unless subcommand is one of: install.                    |
+| -d, --data-dir PATH                | Directory containing data p roduced/consumed by the system. This is required unless  subcommand is  one of: install. |
+| -t, --environment TEXT             | Deployment environment the system is running in. Defaults to `production`.                                           |
+| -p, --docker-credentials-file PATH | Path to the Docker credentials file (config.json) on the host for connecting to private Docker registries.           |
+| -a, --additional-data-dir TEXT     | Additional data directory to expose to launcher container. Can be specified multiple times.                          |
+| -e, --additional-env-var TEXT      | Additional environment variables to expose to launcher container. Can be specified multiple times.                   |
+| --help                             | Show the help message and exit.                                                                                      |
 
 #### Command: `configure`
 
@@ -333,6 +332,20 @@ No commands available
 | --help  | Show this message and exit.                 |
 
 
+
+### Usage within scripts and cron
+
+By default, the generated `appcli` launcher script will run the cli container with a virtual terminal session (tty).
+This may interfere with crontab entries or scripts that use the appcli launcher.
+
+To disable tty when running the launcher script, set `NO_TTY` environment variable to `true`.
+
+    NO_TTY=true ./myapp [...]
+
+or
+
+    export NO_TTY=true
+    ./myapp [...]
 
 ## Development
 
