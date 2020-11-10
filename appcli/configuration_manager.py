@@ -164,7 +164,7 @@ class ConfigurationManager:
         """Migrates the configuration version to the current application version
 
         Args:
-            ignore_variables_migration_structural_errors (bool, optional): If True, will ignore stuctural validation errors in the application-migrated variables. Defaults to False.
+            ignore_variables_migration_structural_errors (bool, optional): If True, will ignore structural validation errors in the application-migrated variables. Defaults to False.
         """
 
         self.__pre_migrate_validation(self.cli_context)
