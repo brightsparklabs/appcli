@@ -4,9 +4,13 @@ A library for adding CLI interfaces to applications in the brightSPARK Labs styl
 
 ## Overview
 
-This library can be leveraged to add a standardised CLI capability to applications to handle system
-lifecycle events (start, shutdown, configure, migrate, etc), and to run one-off commands within
-the appcli ecosystem (task).
+This library can be leveraged to add a standardised CLI capability to applications to:
+
+- handle system lifecycle events for services (`service [start|shutdown]`),
+- allow running arbitrary short-lived tasks (`task run`),
+- manage configuration (`configure`),
+- upgrade to a newer version of the application (`upgrade|migrate`),
+- and more...
 
 The CLI is designed to run within a Docker container and launch other Docker containers (i.e.
 Docker-in-Docker). This is generally managed via a `docker-compose.yml` file.
