@@ -250,11 +250,11 @@ class DockerSwarmOrchestrator(Orchestrator):
             docker_compose_override_directory (Path, optional): Path to a directory containing any additional
                 docker-compose override files. Overrides are applied in alphanumeric order of filename. Path is relative
                 to the generated configuration directory.
-            docker_compose_task_file (Path): Path to a docker compose file containing short-lived task containers.
-                Path is relative to the generated configuration directory.
+            docker_compose_task_file (Path): Path to a docker compose file containing services to be run as short-lived
+                tasks. Path is relative to the generated configuration directory.
             docker_compose_task_override_directory (Path): Path to a directory containing any additional
-                docker-compose override files for task containers. Path is relative to the generated configuration
-                directory.
+                docker-compose override files for services used as tasks. Path is relative to the generated
+                configuration directory.
         """
         self.docker_compose_file = docker_compose_file
         self.docker_compose_override_directory = docker_compose_override_directory
