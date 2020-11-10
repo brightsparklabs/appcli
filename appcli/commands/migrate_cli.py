@@ -37,14 +37,14 @@ class MigrateCli:
         self.cli_configuration: Configuration = configuration
 
         @click.command(
-            help="Migrates the application configuration to work with the current application version.",
+            help="Migrates the application configuration to work with the current application version. Alias of 'upgrade'.",
         )
         @click.pass_context
         def migrate(ctx):
             self.__migrate(ctx)
 
         @click.command(
-            help="Migrates the application configuration to work with the current application version.",
+            help="Upgrades the application configuration to work with the current application version. Alias of 'migrate'.",
         )
         @click.pass_context
         def upgrade(ctx):
