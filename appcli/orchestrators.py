@@ -431,7 +431,7 @@ def decrypt_file(encrypted_file: Path, key_file: Path) -> Path:
         )
         return encrypted_file
 
-    logger.info("Decrypting file [%s] using [%s].", str(encrypted_file), key_file)
+    logger.debug("Decrypting file [%s] using [%s].", str(encrypted_file), key_file)
     decrypted_file: Path = Path(NamedTemporaryFile(delete=False).name)
     crypto.decrypt_values_in_file(encrypted_file, decrypted_file, key_file)
     return decrypted_file

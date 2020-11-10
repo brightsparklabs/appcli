@@ -99,16 +99,17 @@ class MainCli:
             help="Runs a specified oneshot container.",
             context_settings=dict(ignore_unknown_options=True),
         )
-        @click.option(
-            "--force",
-            is_flag=True,
-            help="Force start even if validation checks fail.",
-        )
         @click.argument("service_name", required=True, type=click.STRING)
         @click.argument("extra_args", nargs=-1, type=click.UNPROCESSED)
         @click.pass_context
-        def oneshot(ctx, force, service_name, extra_args):
+        def oneshot(ctx, service_name, extra_args):
+            logger.info(
+                "Running oneshot service [%s] with args [%s] ...",
+                service_name,
+                extra_args,
+            )
             result = self.orchestrator.oneshot(ctx.obj, service_name, extra_args)
+            logger.info("Oneshot service finished with code [%i]", result.returncode)
             sys.exit(result.returncode)
 
         # expose the cli commands
