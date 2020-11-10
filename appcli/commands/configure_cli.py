@@ -25,7 +25,6 @@ from appcli.git_repositories.git_repositories import confirm_config_dir_exists
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
-from pprint import pprint
 
 # ------------------------------------------------------------------------------
 # CLASSES

@@ -2,7 +2,7 @@
 # # -*- coding: utf-8 -*-
 
 """
-The main (top-level) commands available when running the CLI.
+Commands for lifecycle management of application services.
 ________________________________________________________________________________
 
 Created by brightSPARK Labs
@@ -36,7 +36,7 @@ from appcli.models.configuration import Configuration
 # ------------------------------------------------------------------------------
 
 
-class MainCli:
+class ServiceCli:
 
     # --------------------------------------------------------------------------
     # CONSTRUCTOR
@@ -50,7 +50,19 @@ class MainCli:
         # PUBLIC METHODS
         # ----------------------------------------------------------------------
 
-        @click.command(help="Starts the system.")
+        @click.group(
+            invoke_without_command=True,
+            help="Lifecycle management commands for application services.",
+        )
+        @click.pass_context
+        def service(ctx):
+            if ctx.invoked_subcommand is not None:
+                # subcommand provided
+                return
+
+            click.echo(ctx.get_help())
+
+        @service.command(help="Starts all services.")
         @click.option(
             "--force",
             is_flag=True,
@@ -77,7 +89,7 @@ class MainCli:
             logger.info("Start command finished with code [%i]", result.returncode)
             sys.exit(result.returncode)
 
-        @click.command(help="Shuts down the system.")
+        @service.command(help="Shuts down all services.")
         @click.option(
             "--force",
             is_flag=True,
@@ -87,38 +99,20 @@ class MainCli:
         def shutdown(ctx, force):
             self.__shutdown(ctx, force)
 
-        @click.command(
-            help="Stops the system (deprecated - use shutdown).", hidden=True
+        @service.command(
+            help="Stops all services. Alias to 'shutdown' command.", hidden=True
         )
         @click.option("--force", is_flag=True)
         @click.pass_context
         def stop(ctx, force):
             self.__shutdown(ctx, force)
 
-        @click.command(
-            help="Runs a specified task container.",
-            context_settings=dict(ignore_unknown_options=True),
-        )
-        @click.argument("service_name", required=True, type=click.STRING)
-        @click.argument("extra_args", nargs=-1, type=click.UNPROCESSED)
-        @click.pass_context
-        def task(ctx, service_name, extra_args):
-            logger.info(
-                "Running task [%s] with args [%s] ...",
-                service_name,
-                extra_args,
-            )
-            result = self.orchestrator.task(ctx.obj, service_name, extra_args)
-            logger.info("Task service finished with code [%i]", result.returncode)
-            sys.exit(result.returncode)
+        # Add the 'logs' subcommand
+        service.add_command(self.orchestrator.get_logs_command())
 
         # expose the cli commands
         self.commands = {
-            "start": start,
-            "stop": stop,
-            "shutdown": shutdown,
-            "task": task,
-            "logs": self.orchestrator.get_logs_command(),
+            "service": service,
         }
 
         # create additional group if orchestrator has custom commands
