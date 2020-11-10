@@ -10,7 +10,6 @@ www.brightsparklabs.com
 """
 
 # standard library
-from appcli.variables_manager import VariablesManager
 import difflib
 
 # vendor libraries

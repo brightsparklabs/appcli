@@ -15,7 +15,6 @@ from appcli.variables_manager import VariablesManager
 # vendor libraries
 import click
 
-
 # local libraries
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
