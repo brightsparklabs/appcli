@@ -10,6 +10,7 @@ www.brightsparklabs.com
 """
 
 # standard library
+from appcli.variables_manager import VariablesManager
 import difflib
 
 # vendor libraries
@@ -24,6 +25,7 @@ from appcli.git_repositories.git_repositories import confirm_config_dir_exists
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
+from pprint import pprint
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -157,6 +159,25 @@ class ConfigureCli:
             ):
                 # remove superfluous \n characters added by unified_diff
                 print(line.rstrip())
+
+        @configure.command(
+            hidden=True,
+            help="Prints detailed information about the current configuration.",
+        )
+        @click.pass_context
+        def info(ctx):
+            cli_context: CliContext = ctx.obj
+            print("=== CLI CONTEXT ===")
+            pprint(cli_context)
+            print("=== CONFIGURATION ===")
+            pprint(self.cli_configuration)
+            print("=== ORCHESTRATOR CONFIGURATION ===")
+            pprint(vars(self.cli_configuration.orchestrator))
+
+            app_config_file = cli_context.get_app_configuration_file()
+            variables_manager = VariablesManager(app_config_file)
+            print("=== VARIABLES ===")
+            pprint(variables_manager.get_all_variables())
 
         # Add the 'template' subcommand
         configure.add_command(ConfigureTemplateCli(self.cli_configuration).command)
