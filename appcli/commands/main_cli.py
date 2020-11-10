@@ -96,20 +96,20 @@ class MainCli:
             self.__shutdown(ctx, force)
 
         @click.command(
-            help="Runs a specified oneshot container.",
+            help="Runs a specified task container.",
             context_settings=dict(ignore_unknown_options=True),
         )
         @click.argument("service_name", required=True, type=click.STRING)
         @click.argument("extra_args", nargs=-1, type=click.UNPROCESSED)
         @click.pass_context
-        def oneshot(ctx, service_name, extra_args):
+        def task(ctx, service_name, extra_args):
             logger.info(
-                "Running oneshot service [%s] with args [%s] ...",
+                "Running task [%s] with args [%s] ...",
                 service_name,
                 extra_args,
             )
-            result = self.orchestrator.oneshot(ctx.obj, service_name, extra_args)
-            logger.info("Oneshot service finished with code [%i]", result.returncode)
+            result = self.orchestrator.task(ctx.obj, service_name, extra_args)
+            logger.info("Task service finished with code [%i]", result.returncode)
             sys.exit(result.returncode)
 
         # expose the cli commands
@@ -117,7 +117,7 @@ class MainCli:
             "start": start,
             "stop": stop,
             "shutdown": shutdown,
-            "oneshot": oneshot,
+            "task": task,
             "logs": self.orchestrator.get_logs_command(),
         }
 

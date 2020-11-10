@@ -64,7 +64,7 @@ class Orchestrator:
         """
         raise NotImplementedError
 
-    def oneshot(
+    def task(
         self, cli_context: CliContext, service_name: str, extra_args: Iterable[str]
     ) -> CompletedProcess:
         """
@@ -74,7 +74,7 @@ class Orchestrator:
         Args:
             cli_context (CliContext): The current cli context.
             service_name (str): Name of the container to run.
-            extra_args (Iterable[str]): Extra arguments to the oneshot command.
+            extra_args (Iterable[str]): Extra arguments for running the container
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -120,10 +120,10 @@ class DockerComposeOrchestrator(Orchestrator):
     def __init__(
         self,
         docker_compose_file: Path = Path("docker-compose.yml"),
-        docker_compose_override_directory: Path = Path("docker-compose-overrides/"),
-        docker_compose_oneshot_file: Path = Path("docker-compose.oneshot.yml"),
-        docker_compose_oneshot_override_directory: Path = Path(
-            "docker-compose-oneshot-overrides/"
+        docker_compose_override_directory: Path = Path("docker-compose.override.d/"),
+        docker_compose_task_file: Path = Path("docker-compose.tasks.yml"),
+        docker_compose_task_override_directory: Path = Path(
+            "docker-compose.tasks.override.d/"
         ),
     ):
         """
@@ -135,17 +135,17 @@ class DockerComposeOrchestrator(Orchestrator):
             docker_compose_override_directory (Path, optional): Path to a directory containing any additional
                 docker-compose override files. Overrides are applied in alphanumeric order of filename. Path is relative
                 to the generated configuration directory.
-            docker_compose_oneshot_file (Path): Path to a docker compose file containing short-lived oneshot containers.
-                Path is relative to the generated configuration directory.
-            docker_compose_oneshot_override_directory (Path): Path to a directory containing any additional
-                docker-compose override files for oneshot containers. Path is relative to the generated configuration
-                directory.
+            docker_compose_task_file (Path): Path to a docker compose file containing services to be run as short-lived
+                tasks. Path is relative to the generated configuration directory.
+            docker_compose_task_override_directory (Path): Path to a directory containing any additional
+                docker-compose override files for services used as tasks. Path is relative to the generated
+                configuration directory.
         """
         self.docker_compose_file = docker_compose_file
         self.docker_compose_override_directory = docker_compose_override_directory
-        self.docker_compose_oneshot_file = docker_compose_oneshot_file
-        self.docker_compose_oneshot_override_directory = (
-            docker_compose_oneshot_override_directory
+        self.docker_compose_task_file = docker_compose_task_file
+        self.docker_compose_task_override_directory = (
+            docker_compose_task_override_directory
         )
 
     def start(self, cli_context: CliContext) -> CompletedProcess:
@@ -154,12 +154,12 @@ class DockerComposeOrchestrator(Orchestrator):
     def shutdown(self, cli_context: CliContext) -> CompletedProcess:
         return self.__compose_service(cli_context, ("down",))
 
-    def oneshot(
+    def task(
         self, cli_context: CliContext, service_name: str, extra_args: Iterable[str]
     ) -> CompletedProcess:
         command = ["run", "--rm", service_name]
         command.extend(extra_args)
-        return self.__compose_oneshot(cli_context, command)
+        return self.__compose_task(cli_context, command)
 
     def get_logs_command(self):
         @click.command(
@@ -214,7 +214,7 @@ class DockerComposeOrchestrator(Orchestrator):
             self.docker_compose_override_directory,
         )
 
-    def __compose_oneshot(
+    def __compose_task(
         self,
         cli_context: CliContext,
         command: Iterable[str],
@@ -222,8 +222,8 @@ class DockerComposeOrchestrator(Orchestrator):
         return execute_compose(
             cli_context,
             command,
-            self.docker_compose_oneshot_file,
-            self.docker_compose_oneshot_override_directory,
+            self.docker_compose_task_file,
+            self.docker_compose_task_override_directory,
         )
 
 
@@ -235,10 +235,10 @@ class DockerSwarmOrchestrator(Orchestrator):
     def __init__(
         self,
         docker_compose_file: Path = Path("docker-compose.yml"),
-        docker_compose_override_directory: Path = Path("docker-compose-overrides/"),
-        docker_compose_oneshot_file: Path = Path("docker-compose.oneshot.yml"),
-        docker_compose_oneshot_override_directory: Path = Path(
-            "docker-compose-oneshot-overrides/"
+        docker_compose_override_directory: Path = Path("docker-compose.override.d/"),
+        docker_compose_task_file: Path = Path("docker-compose.tasks.yml"),
+        docker_compose_task_override_directory: Path = Path(
+            "docker-compose.tasks.override.d/"
         ),
     ):
         """
@@ -250,17 +250,17 @@ class DockerSwarmOrchestrator(Orchestrator):
             docker_compose_override_directory (Path, optional): Path to a directory containing any additional
                 docker-compose override files. Overrides are applied in alphanumeric order of filename. Path is relative
                 to the generated configuration directory.
-            docker_compose_oneshot_file (Path): Path to a docker compose file containing short-lived oneshot containers.
+            docker_compose_task_file (Path): Path to a docker compose file containing short-lived task containers.
                 Path is relative to the generated configuration directory.
-            docker_compose_oneshot_override_directory (Path): Path to a directory containing any additional
-                docker-compose override files for oneshot containers. Path is relative to the generated configuration
+            docker_compose_task_override_directory (Path): Path to a directory containing any additional
+                docker-compose override files for task containers. Path is relative to the generated configuration
                 directory.
         """
         self.docker_compose_file = docker_compose_file
         self.docker_compose_override_directory = docker_compose_override_directory
-        self.docker_compose_oneshot_file = docker_compose_oneshot_file
-        self.docker_compose_oneshot_override_directory = (
-            docker_compose_oneshot_override_directory
+        self.docker_compose_task_file = docker_compose_task_file
+        self.docker_compose_task_override_directory = (
+            docker_compose_task_override_directory
         )
 
     def start(self, cli_context: CliContext) -> CompletedProcess:
@@ -285,10 +285,10 @@ class DockerSwarmOrchestrator(Orchestrator):
     def shutdown(self, cli_context: CliContext) -> CompletedProcess:
         return self.__docker_stack(cli_context, ("rm",))
 
-    def oneshot(
+    def task(
         self, cli_context: CliContext, service_name: str, extra_args: Iterable[str]
     ) -> CompletedProcess:
-        return self.__compose_oneshot(
+        return self.__compose_task(
             cli_context, ["run", "--rm", service_name].extend(extra_args)
         )
 
@@ -334,7 +334,7 @@ class DockerSwarmOrchestrator(Orchestrator):
         command.append(cli_context.get_project_name())
         return self.__exec_command(command)
 
-    def __compose_oneshot(
+    def __compose_task(
         self,
         cli_context: CliContext,
         command: Iterable[str],
@@ -342,8 +342,8 @@ class DockerSwarmOrchestrator(Orchestrator):
         return execute_compose(
             cli_context,
             command,
-            self.docker_compose_oneshot_file,
-            self.docker_compose_oneshot_override_directory,
+            self.docker_compose_task_file,
+            self.docker_compose_task_override_directory,
         )
 
     def __exec_command(self, command: str) -> CompletedProcess:
