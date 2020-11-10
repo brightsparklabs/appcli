@@ -194,7 +194,7 @@ class ConfigurationGitRepository(GitRepository):
 class GeneratedConfigurationGitRepository(GitRepository):
     def __init__(self, cli_context: CliContext):
         super().__init__(cli_context.get_generated_configuration_dir())
-        self.rename_current_branch(cli_context.app_version)
+        self.rename_current_branch(cli_context.app_conf_branch)
 
 
 # ------------------------------------------------------------------------------
