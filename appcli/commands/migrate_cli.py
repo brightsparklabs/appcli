@@ -2,9 +2,9 @@
 # # -*- coding: utf-8 -*-
 
 """
-The Upgrade command available when running the CLI.
+The migrate command available when running the CLI.
 
-Responsible for upgrading the application to a newer version.
+Responsible for migrating the application to a newer version.
 ________________________________________________________________________________
 
 Created by brightSPARK Labs
@@ -27,7 +27,7 @@ from appcli.models.configuration import Configuration
 # ------------------------------------------------------------------------------
 
 
-class UpgradeCli:
+class MigrateCli:
 
     # ------------------------------------------------------------------------------
     # CONSTRUCTOR
@@ -37,29 +37,28 @@ class UpgradeCli:
         self.cli_configuration: Configuration = configuration
 
         @click.command(
-            help="Upgrades the application configuration to work with the current application version (deprecated - use upgrage).",
-            hidden=True,
+            help="Migrates the application configuration to work with the current application version.",
         )
         @click.pass_context
         def migrate(ctx):
-            self.__upgrade(ctx)
+            self.__migrate(ctx)
 
         @click.command(
-            help="Upgrades the application configuration to work with the current application version.",
+            help="Migrates the application configuration to work with the current application version.",
         )
         @click.pass_context
         def upgrade(ctx):
-            self.__upgrade(ctx)
+            self.__migrate(ctx)
 
         # expose the cli command
         self.commands = {"migrate": migrate, "upgrade": upgrade}
 
-    def __upgrade(self, ctx):
+    def __migrate(self, ctx):
         cli_context: CliContext = ctx.obj
 
-        # Perform upgrade
+        # Perform migration
         ConfigurationManager(
             cli_context, self.cli_configuration
-        ).upgrade_configuration()
+        ).migrate_configuration()
 
-        logger.info("Upgrade complete.")
+        logger.info("Migration complete.")

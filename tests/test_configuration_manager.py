@@ -75,12 +75,12 @@ def test_apply_before_init(tmpdir):
     assert "Configuration does not exist" in pytest_wrapped_e.value.__cause__.code
 
 
-def test_upgrade_before_init(tmpdir):
+def test_migrate_before_init(tmpdir):
     conf_manager = create_conf_manager(tmpdir)
 
     with pytest.raises(SystemExit) as pytest_wrapped_e:
-        # Expect that we cannot upgrade on an uninitialised repo
-        conf_manager.upgrade_configuration()
+        # Expect that we cannot migrate on an uninitialised repo
+        conf_manager.migrate_configuration()
     assert pytest_wrapped_e.type == SystemExit
     assert pytest_wrapped_e.value.code == 1
     assert "Configuration does not exist" in pytest_wrapped_e.value.__cause__.code
@@ -117,42 +117,42 @@ def test_apply_workflow(tmpdir):
     confirm_generated_configuration_is_using_current_configuration(cli_context)
 
 
-def test_upgrade(tmpdir):
+def test_migration(tmpdir):
     cli_context_1 = create_cli_context(tmpdir, app_version="1.0.0")
     conf_manager_1 = create_conf_manager(tmpdir, cli_context_1)
 
     # Initialise and apply
     conf_manager_1.initialise_configuration()
-    conf_manager_1.apply_configuration_changes(message="testing test_upgrade")
+    conf_manager_1.apply_configuration_changes(message="testing test_migration")
 
     cli_context_2 = create_cli_context(tmpdir, app_version="2.0.0")
     conf_manager_2 = create_conf_manager(tmpdir, cli_context_2)
 
     # Expect no error
-    conf_manager_2.upgrade_configuration()
+    conf_manager_2.migrate_configuration()
 
     # TODO: Asserts on the git repo state?
-    # TODO: Asserts on upgrade varibles? Should pass in a upgrade hook function?
+    # TODO: Asserts on migrated varibles? Should pass in a migration hook function?
 
 
-def test_upgrade_same_version(tmpdir):
+def test_migration_same_version(tmpdir):
     cli_context = create_cli_context(tmpdir, app_version="1.0.0")
     conf_manager = create_conf_manager(tmpdir, cli_context)
 
     # Initialise and apply
     conf_manager.initialise_configuration()
     conf_manager.apply_configuration_changes(
-        message="testing test_upgrade_same_version"
+        message="testing test_migration_same_version"
     )
 
-    # Expect no error - upgrade doesn't throw an error if no upgrade is required
-    conf_manager.upgrade_configuration()
+    # Expect no error - migration doesn't throw an error if no migration is required
+    conf_manager.migrate_configuration()
 
     # TODO: Asserts on the git repo state?
 
 
 # TODO: Test where conf/data directories don't exist
-# TODO: Test deliberately failing Upgrades with upgrade function hooks
+# TODO: Test deliberately failing migrations with migration function hooks
 
 # ------------------------------------------------------------------------------
 # FIXTURES

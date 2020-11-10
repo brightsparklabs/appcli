@@ -57,7 +57,7 @@ METADATA_FILE_NAME = "metadata-configure-apply.json"
 
 
 class ConfigurationManager:
-    """Manages the configuration of the application. Handles initialisation, settings changes, upgrading to new versions, etc."""
+    """Manages the configuration of the application. Handles initialisation, settings changes, migrating to new versions, etc."""
 
     def __init__(self, cli_context: CliContext, configuration: Configuration):
         self.cli_context = cli_context
@@ -158,16 +158,16 @@ class ConfigurationManager:
 
         logger.debug("System configuration is valid for 'apply' function")
 
-    def upgrade_configuration(
-        self, ignore_variables_upgrade_structural_errors: bool = False
+    def migrate_configuration(
+        self, ignore_variables_migration_structural_errors: bool = False
     ):
-        """Upgrades the configuration version to the current application version
+        """Migrates the configuration version to the current application version
 
         Args:
-            ignore_variables_upgrade_structural_errors (bool, optional): If True, will ignore stuctural validation errors in the application-upgraded variables. Defaults to False.
+            ignore_variables_migration_structural_errors (bool, optional): If True, will ignore structural validation errors in the application-migrated variables. Defaults to False.
         """
 
-        self.__pre_upgrade_validation(self.cli_context)
+        self.__pre_migrate_validation(self.cli_context)
 
         config_repo: ConfigurationGitRepository = ConfigurationGitRepository(
             self.cli_context
@@ -175,15 +175,15 @@ class ConfigurationManager:
         config_version: str = config_repo.get_repository_version()
         app_version: str = self.cli_context.app_version
 
-        # If the configuration version matches the application version, no upgrade is required.
+        # If the configuration version matches the application version, no migration is required.
         if config_version == app_version:
             logger.info(
-                f"Upgrade not required. Config version [{config_version}] matches application version [{app_version}]"
+                f"Migration not required. Config version [{config_version}] matches application version [{app_version}]"
             )
             return
 
         logger.info(
-            f"Upgrade configuration version [{config_version}] to match application version [{app_version}]"
+            f"Migrating configuration version [{config_version}] to match application version [{app_version}]"
         )
 
         if config_repo.does_branch_exist(app_version):
@@ -193,19 +193,19 @@ class ConfigurationManager:
                 f"Version [{app_version}] of this application was previously installed. Rolling back to previous configuration. Manual remediation may be required."
             )
 
-            # Switch to that branch, no further upgrade steps will be taken. This is effectively a roll-back.
+            # Switch to that branch, no further migration steps will be taken. This is effectively a roll-back.
             config_repo.checkout_existing_branch(app_version)
             return
 
-        # Upgrade the current configuration variables
+        # Migrate the current configuration variables
         current_variables = self.get_variables_manager().get_all_variables()
 
-        # Compare Upgraded config to the 'clean config' of the new version, and make sure all variables have been set and are the same type.
+        # Compare migrated config to the 'clean config' of the new version, and make sure all variables have been set and are the same type.
         clean_new_version_variables = VariablesManager(
             self.cli_configuration.seed_app_configuration_file
         ).get_all_variables()
 
-        upgraded_variables = self.cli_configuration.hooks.upgrade_variables(
+        migrated_variables = self.cli_configuration.hooks.migrated_variables(
             self.cli_context,
             current_variables,
             config_version,
@@ -213,10 +213,10 @@ class ConfigurationManager:
         )
 
         if not self.cli_configuration.hooks.is_valid_variables(
-            self.cli_context, upgraded_variables, clean_new_version_variables
+            self.cli_context, migrated_variables, clean_new_version_variables
         ):
             error_and_exit(
-                "Upgraded variables did not pass application-specific variables validation function."
+                "Migrated variables did not pass application-specific variables validation function."
             )
 
         baseline_template_overrides_dir = (
@@ -251,21 +251,21 @@ class ConfigurationManager:
                 f"Configurable templates directory [{configurable_templates_dir}] is non-empty, please check for compatibility"
             )
 
-        # Write out 'upgraded' variables file
-        self.get_variables_manager().set_all_variables(upgraded_variables)
+        # Write out 'migrated' variables file
+        self.get_variables_manager().set_all_variables(migrated_variables)
 
         # Commit the new variables file
         config_repo.commit_changes(
-            f"Upgraded variables file from version [{config_version}] to version [{app_version}]"
+            f"Migrated variables file from version [{config_version}] to version [{app_version}]"
         )
 
-    def __pre_upgrade_validation(self, cli_context: CliContext):
-        """Ensures the system is in a valid state for upgrade.
+    def __pre_migrate_validation(self, cli_context: CliContext):
+        """Ensures the system is in a valid state for migration.
 
         Args:
             cli_context (CliContext): the current cli context
         """
-        logger.debug("Checking system configuration is valid before upgrade ...")
+        logger.debug("Checking system configuration is valid before migration ...")
 
         should_succeed_checks = []
 
@@ -288,7 +288,7 @@ class ConfigurationManager:
             should_succeed_checks=should_succeed_checks,
         )
 
-        logger.debug("System configuration is valid for upgrade.")
+        logger.debug("System configuration is valid for migration.")
 
     def get_variables_manager(self):
         app_config_file = self.cli_context.get_app_configuration_file()
