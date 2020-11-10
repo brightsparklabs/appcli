@@ -21,6 +21,7 @@ from tabulate import tabulate
 
 # local libraries
 from appcli.commands.configure_cli import ConfigureCli
+from appcli.commands.debug_cli import DebugCli
 from appcli.commands.encrypt_cli import EncryptCli
 from appcli.commands.init_cli import InitCli
 from appcli.commands.install_cli import InstallCli
@@ -60,6 +61,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     default_commands = {}
     for cli_class in (
         ConfigureCli,
+        DebugCli,
         EncryptCli,
         InitCli,
         InstallCli,
