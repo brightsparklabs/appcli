@@ -98,7 +98,7 @@ class GitRepository:
             str: the 'appcli-specific' version of this particular git repository, which aligns
                 with the version of the application.
         """
-        # Version is stored as a tag on the current branch
+        # Version is stored as part of the branch name, strip it from "deployment/<version>"
         branch_name: str = self.__get_current_branch_name()
         return branch_name.split("deployment/")[-1]
 
