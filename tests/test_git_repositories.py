@@ -9,17 +9,7 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-import os
-
-# standard libraries
-from pathlib import Path
-from unittest.mock import patch
-
-# vendor libraries
-import pytest
-
 # local libraries
-from appcli import CliContext, Configuration, DockerComposeOrchestrator
 from appcli.git_repositories.git_repositories import GitRepository
 
 # ------------------------------------------------------------------------------
