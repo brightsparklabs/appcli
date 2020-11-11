@@ -47,9 +47,6 @@ class CliContext(NamedTuple):
     app_version: str
     """ The application's version """
 
-    app_conf_branch: str
-    """ The application's config branch """
-
     commands: Dict
     """ Internal commands. """
 

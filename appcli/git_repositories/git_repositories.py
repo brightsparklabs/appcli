@@ -98,9 +98,11 @@ class GitRepository:
             str: the 'appcli-specific' version of this particular git repository, which aligns
                 with the version of the application.
         """
-        # Version is stored as part of the branch name, strip it from "deployment/<version>"
+        # Version is stored as part of the branch name, strip it by generating a blank 
+        # branch name and trimming that from the start of the current branch name
         branch_name: str = self.__get_current_branch_name()
-        return branch_name.split("deployment/")[-1]
+        branch_leading_characters = self.generate_branch_name("")
+        return branch_name.split(branch_leading_characters)[-1]
 
     def does_branch_exist(self, branch_name: str) -> bool:
         """Checks if a branch with a particular name exists
@@ -152,6 +154,17 @@ class GitRepository:
         self.repo.git.branch(m=branch_name)
         logger.debug(f"Renamed branch to [{branch_name}]")
 
+    def generate_branch_name(self, version="latest") -> str:
+        """Generate the name of the branch based on the 'appcli' naming convention and version number
+
+        Args:
+            version (str): The version number to use in the branch.
+        Returns:
+            str: name of the branch
+
+        """
+        return "deployment/" + version
+
     def __get_current_branch_name(self) -> str:
         """Get the name of the current branch
 
@@ -195,7 +208,7 @@ class ConfigurationGitRepository(GitRepository):
 class GeneratedConfigurationGitRepository(GitRepository):
     def __init__(self, cli_context: CliContext):
         super().__init__(cli_context.get_generated_configuration_dir())
-        self.rename_current_branch(cli_context.app_conf_branch)
+        self.rename_current_branch(self.generate_branch_name(cli_context.app_version))
 
 
 # ------------------------------------------------------------------------------

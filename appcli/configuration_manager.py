@@ -174,7 +174,7 @@ class ConfigurationManager:
         )
         config_version: str = config_repo.get_repository_version()
         app_version: str = self.cli_context.app_version
-        app_conf_branch: str = self.cli_context.app_conf_branch
+        app_conf_branch: str = config_repo.generate_branch_name(app_version)
 
         # If the configuration version matches the application version, no migration is required.
         if config_version == app_version:
@@ -300,7 +300,7 @@ class ConfigurationManager:
     ):
 
         app_version: str = self.cli_context.app_version
-        app_conf_branch: str = self.cli_context.app_conf_branch
+        app_conf_branch: str = config_repo.generate_branch_name(app_version)
 
         # Try to get an existing key
         path_to_key_file = self.cli_context.get_key_file()

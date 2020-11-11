@@ -176,7 +176,6 @@ def create_cli_context(tmpdir, app_version: str = "0.0.0") -> CliContext:
         debug=True,
         app_name=APP_NAME,
         app_version=app_version,
-        app_conf_branch=app_version,
         commands={},
     )
 

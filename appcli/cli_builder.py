@@ -52,7 +52,6 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     """
     APP_NAME = configuration.app_name.upper()
     APP_VERSION = os.environ.get("APP_VERSION", "latest")
-    APP_CONF_BRANCH = "deployment/" + APP_VERSION
 
     # --------------------------------------------------------------------------
     # CREATE_CLI: LOGIC
@@ -152,7 +151,6 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             debug=debug,
             app_name=APP_NAME,
             app_version=APP_VERSION,
-            app_conf_branch=APP_CONF_BRANCH,
             commands=default_commands,
         )
 
