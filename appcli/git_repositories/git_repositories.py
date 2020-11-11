@@ -100,9 +100,7 @@ class GitRepository:
         """
         # Version is stored as a tag on the current branch
         branch_name: str = self.__get_current_branch_name()
-        version: str = branch_name.split("deployment/")[-1]
-        print("version: " + version)
-        return version
+        return branch_name.split("deployment/")[-1]
 
     def does_branch_exist(self, branch_name: str) -> bool:
         """Checks if a branch with a particular name exists
