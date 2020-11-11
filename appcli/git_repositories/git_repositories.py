@@ -99,7 +99,10 @@ class GitRepository:
                 with the version of the application.
         """
         # Version is stored as a tag on the current branch
-        return self.__get_current_branch_last_tag()
+        branch_name: str = self.__get_current_branch_name()
+        version: str = branch_name.split("deployment/")[-1]
+        print("version: " + version)
+        return version
 
     def does_branch_exist(self, branch_name: str) -> bool:
         """Checks if a branch with a particular name exists
@@ -158,15 +161,6 @@ class GitRepository:
             str: name of the current branch
         """
         return self.repo.git.symbolic_ref("HEAD", short=True).replace("heads/", "")
-
-    def __get_current_branch_last_tag(self) -> str:
-        """Get the last tag for the current branch
-
-        returns:
-            str: version of the current branch
-        """
-
-        return self.repo.git.describe(tags=True, abbrev=0, always=True)
 
     def __initialise_new_repo(
         self, repo_path: Path, ignores: Iterable[str]
