@@ -98,7 +98,7 @@ class GitRepository:
             str: the 'appcli-specific' version of this particular git repository, which aligns
                 with the version of the application.
         """
-        # Version is stored as part of the branch name, strip it by generating a blank 
+        # Version is stored as part of the branch name, strip it by generating a blank
         # branch name and trimming that from the start of the current branch name
         branch_name: str = self.__get_current_branch_name()
         branch_leading_characters = self.generate_branch_name("")
