@@ -30,6 +30,8 @@ function main()
         --name {{ app_name }}_{{ cli_context.environment }}_launcher_$(date +%s) \
         --rm \
         --interactive \
+        --mount type="bind",source=$(which $EDITOR),target=$(which $EDITOR) \
+        --env "EDITOR"=$(which $EDITOR)\
         $( [[ "${NO_TTY}" != "true" ]] && echo "--tty") \
 {% if cli_context.docker_credentials_file %}
         --volume "{{ cli_context.docker_credentials_file }}:/root/.docker/config.json" \

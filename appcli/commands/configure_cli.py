@@ -11,6 +11,8 @@ www.brightsparklabs.com
 
 # standard library
 import difflib
+import os
+from subprocess import call
 
 # vendor libraries
 import click
@@ -157,6 +159,18 @@ class ConfigureCli:
             ):
                 # remove superfluous \n characters added by unified_diff
                 print(line.rstrip())
+
+        @configure.command(help="Open the settings file with the set editor")
+        @click.pass_context
+        def edit(ctx):
+            cli_context: CliContext = ctx.obj
+            EDITOR = os.environ.get("EDITOR")
+
+            if EDITOR is None:
+                logger.error("No EDITOR environment variable set")
+                return
+
+            call([EDITOR, cli_context.get_app_configuration_file()])
 
         # Add the 'template' subcommand
         configure.add_command(ConfigureTemplateCli(self.cli_configuration).command)
