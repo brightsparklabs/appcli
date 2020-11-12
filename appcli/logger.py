@@ -20,7 +20,7 @@ import coloredlogs
 # ------------------------------------------------------------------------------
 
 LOGGER_FORMAT = "%(asctime)s %(levelname)s: %(message)s"
-LOGGER_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S %Z"
+LOGGER_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 logger = logging.getLogger(__name__)
 logger.propagate = False
 coloredlogs.install(logger=logger, fmt=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
