@@ -29,8 +29,6 @@ class DebugCli:
     def __init__(self, configuration: Configuration):
         self.cli_configuration: Configuration = configuration
 
-        self.app_name = self.cli_configuration.app_name
-
         # ------------------------------------------------------------------------------
         # CLI METHODS
         # ------------------------------------------------------------------------------
@@ -47,7 +45,7 @@ class DebugCli:
             click.echo(ctx.get_help())
 
         @debug.command(
-            help="Prints debug information about the current cli context, configuration, and settings.",
+            help="Prints debug information about the current CLI context, configuration, and settings.",
         )
         @click.pass_context
         def info(ctx):

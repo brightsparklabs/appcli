@@ -178,7 +178,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
 
         # For the `installer`/`launcher` commands, no further output/checks required.
         if ctx.invoked_subcommand in ("launcher", "install"):
-            # Don't execute this function any further, continue to run subcommand with the current cli context
+            # Don't execute this function any further, continue to run subcommand with the current CLI context
             return
 
         check_docker_socket()
@@ -222,7 +222,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             )
 
     def run():
-        """Run the entry-point click cli command"""
+        """Run the entry-point click CLI command"""
         cli(  # pylint: disable=no-value-for-parameter,unexpected-keyword-arg
             prog_name=configuration.app_name
         )

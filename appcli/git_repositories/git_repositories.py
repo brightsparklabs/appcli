@@ -207,7 +207,7 @@ def confirm_config_dir_exists(cli_context: CliContext):
     If this fails, it will raise a general Exception with the error message.
 
     Args:
-        cli_context (CliContext): the current cli context
+        cli_context (CliContext): The current CLI context.
 
     Raises:
         Exception: Raised if the configuration repository does *not* exist.
@@ -223,7 +223,7 @@ def confirm_config_dir_not_exists(cli_context: CliContext):
     If this fails, it will raise a general Exception with the error message.
 
     Args:
-        cli_context (CliContext): the current cli context
+        cli_context (CliContext): The current CLI context.
 
     Raises:
         Exception: Raised if the configuration repository exists.
@@ -239,7 +239,7 @@ def confirm_generated_config_dir_exists(cli_context: CliContext):
     If this fails, it will raise a general Exception with the error message.
 
     Args:
-        cli_context (CliContext): the current cli context
+        cli_context (CliContext): The current CLI context.
 
     Raises:
         Exception: Raised if the generated configuration repository does not exist.
@@ -255,7 +255,7 @@ def confirm_config_dir_exists_and_is_not_dirty(cli_context: CliContext):
     If this fails, it will raise a general Exception with the error message.
 
     Args:
-        cli_context (CliContext): the current cli context
+        cli_context (CliContext): The current CLI context.
 
     Raises:
         Exception: Raised if the configuration repository has been modified and not 'applied'.
@@ -273,7 +273,7 @@ def confirm_generated_config_dir_exists_and_is_not_dirty(cli_context: CliContext
     If this fails, it will raise a general Exception with the error message.
 
     Args:
-        cli_context (CliContext): the current cli context
+        cli_context (CliContext): The current CLI context.
 
     Raises:
         Exception: Raised if the generated configuration repository has been manually modified and not checked in.
@@ -293,7 +293,7 @@ def confirm_config_version_matches_app_version(cli_context: CliContext):
     If this fails, it will raise a general Exception with the error message.
 
     Args:
-        cli_context (CliContext): the current cli context
+        cli_context (CliContext): The current CLI context.
 
     Raises:
         Exception: Raised if the configuration repository version doesn't match the application version.
@@ -314,7 +314,7 @@ def confirm_not_on_master_branch(cli_context: CliContext):
     """Confirm that the configuration repository is not currently on the master branch.
 
     Args:
-        cli_context (CliContext): the current cli context
+        cli_context (CliContext): The current CLI context.
     """
     confirm_config_dir_exists(cli_context)
     config_repo: ConfigurationGitRepository = ConfigurationGitRepository(cli_context)

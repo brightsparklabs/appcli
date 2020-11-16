@@ -67,7 +67,7 @@ class TaskCli:
             logger.info("Task service finished with code [%i]", result.returncode)
             sys.exit(result.returncode)
 
-        # expose the cli commands
+        # expose the CLI commands
         self.commands = {
             "task": task,
         }

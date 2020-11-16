@@ -6,11 +6,11 @@ A library for adding CLI interfaces to applications in the brightSPARK Labs styl
 
 This library can be leveraged to add a standardised CLI capability to applications to:
 
-- handle system lifecycle events for services (`service [start|shutdown]`),
-- allow running arbitrary short-lived tasks (`task run`),
-- manage configuration (`configure`),
-- upgrade to a newer version of the application (`upgrade|migrate`),
-- and more...
+- Handle system lifecycle events for services (`service [start|shutdown]`).
+- Allow running arbitrary short-lived tasks (`task run`).
+- Manage configuration (`configure`).
+- Upgrade to a newer version of the application (`upgrade|migrate`).
+- And more.
 
 The CLI is designed to run within a Docker container and launch other Docker containers (i.e.
 Docker-in-Docker). This is generally managed via a `docker-compose.yml` file.
@@ -194,30 +194,29 @@ This section details what commands and options are available.
 
 To be used in conjunction with your application `./myapp <command>` e.g. `./myapp start`
 
-| Command      | Description                                                                          |
-| ------------ | ------------------------------------------------------------------------------------ |
-| configure    | Configures the application.                                                          |
-| encrypt      | Encrypts the specified string.                                                       |
-| init         | Initialises the application.                                                         |
-| launcher     | Outputs an appropriate launcher bash script.                                         |
-| migrate      | Migrates the configuration of the application to a newer version.                    |
-| orchestrator | Perform docker orchestration                                                         |
-| service      | Lifecycle management commands for application services.                              |
-| task         | Commands for application tasks.                                                      |
-| upgrade      | Upgrades the application configuration to work with the current application version. |
+| Command      | Description                                                       |
+| ------------ | ----------------------------------------------------------------- |
+| configure    | Configures the application.                                       |
+| encrypt      | Encrypts the specified string.                                    |
+| init         | Initialises the application.                                      |
+| launcher     | Outputs an appropriate launcher bash script.                      |
+| migrate      | Migrates the configuration of the application to a newer version. |
+| orchestrator | Perform docker orchestration                                      |
+| service      | Lifecycle management commands for application services.           |
+| task         | Commands for application tasks.                                   |
 
 ### Options
 
-| Option                             | Description                                                                                                        |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| --debug                            | Enables debug level logging.                                                                                       |
-| -c, --configuration-dir PATH       | Directory containing configuration files. [This is required unless subcommand is one of: install.                  |
-| -d, --data-dir PATH                | Directory containing data p roduced/consumed by the system. This is required unless subcommand is one of: install. |
-| -t, --environment TEXT             | Deployment environment the system is running in. Defaults to `production`.                                         |
-| -p, --docker-credentials-file PATH | Path to the Docker credentials file (config.json) on the host for connecting to private Docker registries.         |
-| -a, --additional-data-dir TEXT     | Additional data directory to expose to launcher container. Can be specified multiple times.                        |
-| -e, --additional-env-var TEXT      | Additional environment variables to expose to launcher container. Can be specified multiple times.                 |
-| --help                             | Show the help message and exit.                                                                                    |
+| Option                             | Description                                                                                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| --debug                            | Enables debug level logging.                                                                                        |
+| -c, --configuration-dir PATH       | Directory containing configuration files. [This is required unless subcommand is one of: `install`.                 |
+| -d, --data-dir PATH                | Directory containing data produced/consumed by the system. This is required unless subcommand is one of: `install`. |
+| -t, --environment TEXT             | Deployment environment the system is running in. Defaults to `production`.                                          |
+| -p, --docker-credentials-file PATH | Path to the Docker credentials file (config.json) on the host for connecting to private Docker registries.          |
+| -a, --additional-data-dir TEXT     | Additional data directory to expose to launcher container. Can be specified multiple times.                         |
+| -e, --additional-env-var TEXT      | Additional environment variables to expose to launcher container. Can be specified multiple times.                  |
+| --help                             | Show the help message and exit.                                                                                     |
 
 #### Command: `configure`
 
@@ -282,7 +281,7 @@ No commands available
 
 #### Command: `migrate`
 
-Migrates the application configuration to work with the current application version. Currently aliased with 'upgrade'.
+Migrates the application configuration to work with the current application version.
 usage `./myapp migrate [OPTIONS]`
 
 | Command | Description |
@@ -334,24 +333,9 @@ usage `./myapp task [OPTIONS] COMMAND [ARGS]`
 | ------ | ------------------------------- |
 | --help | Show the help message and exit. |
 
-#### Command: `upgrade`
-
-Upgrades the application configuration to work with the current application version. Currently aliased with 'migrate'.
-usage `./myapp upgrade [OPTIONS]`
-
-| Command | Description |
-| ------- | ----------- |
-
-
-No commands available
-
-| Option | Description                     |
-| ------ | ------------------------------- |
-| --help | Show the help message and exit. |
-
 ### Usage within scripts and cron
 
-By default, the generated `appcli` launcher script will run the cli container with a virtual terminal session (tty).
+By default, the generated `appcli` launcher script will run the CLI container with a virtual terminal session (tty).
 This may interfere with crontab entries or scripts that use the appcli launcher.
 
 To disable tty when running the launcher script, set `NO_TTY` environment variable to `true`.

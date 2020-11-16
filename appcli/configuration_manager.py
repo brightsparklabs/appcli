@@ -80,7 +80,7 @@ class ConfigurationManager:
         """Ensures the system is in a valid state for 'configure init'.
 
         Args:
-            cli_context (CliContext): the current cli context
+            cli_context (CliContext): The current CLI context.
         """
         logger.debug("Checking system configuration is valid before initialising ...")
 
@@ -96,8 +96,8 @@ class ConfigurationManager:
         """Applies the current configuration settings to templates to generate application files.
 
         Args:
-            message (str): the message associated with the changes this applies
-            force (bool): If True, only warns on validation failures, rather than exiting
+            message (str): The message associated with the changes this applies.
+            force (bool): If True, only warns on validation failures, rather than exiting.
         """
 
         self.__pre_apply_validation(self.cli_context, force)
@@ -118,8 +118,8 @@ class ConfigurationManager:
         """Ensures the system is in a valid state to do an 'apply' on the configuration
 
         Args:
-            cli_context (CliContext): the current cli context
-            force (bool, optional): If True, only warns on validation failures, rather than exiting
+            cli_context (CliContext): The current CLI context.
+            force (bool, optional): If True, only warns on validation failures, rather than exiting.
         """
         logger.debug("Checking system configuration is valid before 'apply' ...")
 
@@ -263,7 +263,7 @@ class ConfigurationManager:
         """Ensures the system is in a valid state for migration.
 
         Args:
-            cli_context (CliContext): the current cli context
+            cli_context (CliContext): The current CLI context.
         """
         logger.debug("Checking system configuration is valid before migration ...")
 
@@ -678,7 +678,7 @@ def get_generated_configuration_metadata_file(cli_context: CliContext) -> Path:
     """Get the path to the generated configuration's metadata file
 
     Args:
-        cli_context (CliContext): the current cli context
+        cli_context (CliContext): The current CLI context.
 
     Returns:
         Path: the path to the metadata file
@@ -694,7 +694,7 @@ def confirm_generated_configuration_is_using_current_configuration(
     If this fails, it will raise a general Exception with the error message.
 
     Args:
-        cli_context (CliContext): the current cli context
+        cli_context (CliContext): The current CLI context.
 
     Raises:
         Exception: Raised if metadata file not found, or generated config is out of sync with config.

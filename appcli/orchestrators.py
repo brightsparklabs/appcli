@@ -44,7 +44,7 @@ class Orchestrator:
         Starts Docker containers.
 
         Args:
-            cli_context (CliContext): The current cli context.
+            cli_context (CliContext): The current CLI context.
             container (str, optional): Name of the container to start. Defaults to all containers.
 
         Returns:
@@ -57,7 +57,7 @@ class Orchestrator:
         Stops all Docker containers.
 
         Args:
-            cli_context (CliContext): The current cli context.
+            cli_context (CliContext): The current CLI context.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -72,7 +72,7 @@ class Orchestrator:
         upon completing a short-lived task.
 
         Args:
-            cli_context (CliContext): The current cli context.
+            cli_context (CliContext): The current CLI context.
             service_name (str): Name of the container to run.
             extra_args (Iterable[str]): Extra arguments for running the container
 
@@ -83,10 +83,10 @@ class Orchestrator:
 
     def get_logs_command(self) -> click.Command:
         """
-        Retuns a click command which streams logs for Docker containers.
+        Returns a click command which streams logs for Docker containers.
 
         Args:
-            cli_context (CliContext): The current cli context.
+            cli_context (CliContext): The current CLI context.
 
         Returns:
             click.Command: Command for streaming logs.
@@ -364,7 +364,7 @@ def decrypt_docker_compose_files(
     """Decrypt docker-compose and docker-compose override files.
 
     Args:
-        cli_context (CliContext): The current cli context.
+        cli_context (CliContext): The current CLI context.
         docker_compose_file_relative_path (Path): The relative path to the docker-compose file. Path is relative to the
             generated configuration directory.
         docker_compose_override_directory_relative_path (Path): The relative path to a directory containing
@@ -446,7 +446,7 @@ def execute_compose(
     """Builds and executes a docker-compose command.
 
     Args:
-        cli_context (CliContext): The current cli context.
+        cli_context (CliContext): The current CLI context.
         command (Iterable[str]): The command to execute with docker-compose.
         docker_compose_file_relative_path (Path): The relative path to the docker-compose file. Path is relative to the
             generated configuration directory.

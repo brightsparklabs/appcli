@@ -62,7 +62,7 @@ class InstallCli:
             default=default_install_dir,
         )
         @click.pass_context
-        # NOTE: Hide the cli command as end users should not run it manually
+        # NOTE: Hide the CLI command as end users should not run it manually
         def install(ctx, install_dir: Path):
             logger.info("Generating installer script ...")
 
@@ -106,5 +106,5 @@ class InstallCli:
                     f"Could not generate file from template. The configuration file is likely missing a setting: {e}"
                 )
 
-        # expose the cli command
+        # expose the CLI command
         self.commands = {"install": install}

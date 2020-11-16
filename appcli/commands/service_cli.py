@@ -99,9 +99,7 @@ class ServiceCli:
         def shutdown(ctx, force):
             self.__shutdown(ctx, force)
 
-        @service.command(
-            help="Stops all services. Alias to 'shutdown' command.", hidden=True
-        )
+        @service.command(help="Stops all services.", hidden=True)
         @click.option("--force", is_flag=True)
         @click.pass_context
         def stop(ctx, force):
@@ -110,7 +108,7 @@ class ServiceCli:
         # Add the 'logs' subcommand
         service.add_command(self.orchestrator.get_logs_command())
 
-        # expose the cli commands
+        # expose the CLI commands
         self.commands = {
             "service": service,
         }
@@ -132,8 +130,8 @@ class ServiceCli:
         """Ensures the system is in a valid state for startup.
 
         Args:
-            cli_context (CliContext): the current cli context
-            force (bool, optional): If True, only warns on validation failures, rather than exiting
+            cli_context (CliContext): The current CLI context.
+            force (bool, optional): If True, only warns on validation failures, rather than exiting.
         """
         logger.info("Checking system configuration is valid before starting ...")
 
@@ -162,8 +160,8 @@ class ServiceCli:
         """Ensures the system is in a valid state for shutdown.
 
         Args:
-            cli_context (CliContext): the current cli context
-            force (bool, optional): If True, only warns on validation failures, rather than exiting
+            cli_context (CliContext): The current CLI context.
+            force (bool, optional): If True, only warns on validation failures, rather than exiting.
         """
         logger.info("Checking system configuration is valid before shutting down ...")
 
