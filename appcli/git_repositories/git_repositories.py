@@ -26,6 +26,8 @@ from appcli.models.cli_context import CliContext
 
 BASE_BRANCH_NAME: str = "master"
 
+BRANCH_NAME_FORMAT: str = "deployment/{version}"
+
 # ------------------------------------------------------------------------------
 # PUBLIC CLASSES
 # ------------------------------------------------------------------------------
@@ -163,7 +165,7 @@ class GitRepository:
             str: name of the branch
 
         """
-        return "deployment/" + version
+        return BRANCH_NAME_FORMAT.format(version=version)
 
     def __get_current_branch_name(self) -> str:
         """Get the name of the current branch

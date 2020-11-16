@@ -174,7 +174,6 @@ class ConfigurationManager:
         )
         config_version: str = config_repo.get_repository_version()
         app_version: str = self.cli_context.app_version
-        app_conf_branch: str = config_repo.generate_branch_name(app_version)
 
         # If the configuration version matches the application version, no migration is required.
         if config_version == app_version:
@@ -187,7 +186,8 @@ class ConfigurationManager:
             f"Migrating configuration version [{config_version}] to match application version [{app_version}]"
         )
 
-        if config_repo.does_branch_exist(app_conf_branch):
+        app_version_branch: str = config_repo.generate_branch_name(app_version)
+        if config_repo.does_branch_exist(app_version_branch):
             # If the branch already exists, then this version has previously been installed.
 
             logger.warning(
@@ -195,7 +195,7 @@ class ConfigurationManager:
             )
 
             # Switch to that branch, no further migration steps will be taken. This is effectively a roll-back.
-            config_repo.checkout_existing_branch(app_conf_branch)
+            config_repo.checkout_existing_branch(app_version_branch)
             return
 
         # Migrate the current configuration variables
@@ -300,7 +300,7 @@ class ConfigurationManager:
     ):
 
         app_version: str = self.cli_context.app_version
-        app_conf_branch: str = config_repo.generate_branch_name(app_version)
+        app_version_branch: str = config_repo.generate_branch_name(app_version)
 
         # Try to get an existing key
         path_to_key_file = self.cli_context.get_key_file()
@@ -309,7 +309,7 @@ class ConfigurationManager:
             key_file_contents = path_to_key_file.read_bytes()
 
         # Create a new branch for this current application version
-        config_repo.checkout_new_branch_from_master(app_conf_branch)
+        config_repo.checkout_new_branch_from_master(app_version_branch)
 
         # If the keyfile already exists, re-use it across branches. Otherwise create a new keyfile.
         if key_file_contents:
