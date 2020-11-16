@@ -220,6 +220,7 @@ usage `./myapp configure [OPTIONS] COMMAND [ARGS]`
 | init     | Initialises the configuration directory.                                |
 | set      | Saves a setting to the configuration.                                   |
 | template | Configures the baseline templates.                                      |
+| edit     | Open the settings file for editing with vim-tiny.                       |
 
 | Option | Description                     |
 | ------ | ------------------------------- |

@@ -11,6 +11,7 @@ www.brightsparklabs.com
 
 # standard library
 import difflib
+import subprocess
 
 # vendor libraries
 import click
@@ -157,6 +158,14 @@ class ConfigureCli:
             ):
                 # remove superfluous \n characters added by unified_diff
                 print(line.rstrip())
+
+        @configure.command(help="Open the settings file for editing with vim-tiny.")
+        @click.pass_context
+        def edit(ctx):
+            cli_context: CliContext = ctx.obj
+            EDITOR = "vim.tiny"
+
+            subprocess.run([EDITOR, cli_context.get_app_configuration_file()])
 
         # Add the 'template' subcommand
         configure.add_command(ConfigureTemplateCli(self.cli_configuration).command)
