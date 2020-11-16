@@ -85,5 +85,5 @@ class LauncherCli:
                     f"Could not generate file from template. The configuration file is likely missing a setting: {e}"
                 )
 
-        # expose the cli command
+        # expose the CLI command
         self.commands = {"launcher": launcher}

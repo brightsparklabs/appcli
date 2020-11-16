@@ -2,7 +2,7 @@
 # # -*- coding: utf-8 -*-
 
 """
-The main (top-level) commands available when running the CLI.
+Commands for lifecycle management of application services.
 ________________________________________________________________________________
 
 Created by brightSPARK Labs
@@ -36,7 +36,7 @@ from appcli.models.configuration import Configuration
 # ------------------------------------------------------------------------------
 
 
-class MainCli:
+class ServiceCli:
 
     # --------------------------------------------------------------------------
     # CONSTRUCTOR
@@ -50,7 +50,19 @@ class MainCli:
         # PUBLIC METHODS
         # ----------------------------------------------------------------------
 
-        @click.command(help="Starts the system.")
+        @click.group(
+            invoke_without_command=True,
+            help="Lifecycle management commands for application services.",
+        )
+        @click.pass_context
+        def service(ctx):
+            if ctx.invoked_subcommand is not None:
+                # subcommand provided
+                return
+
+            click.echo(ctx.get_help())
+
+        @service.command(help="Starts all services.")
         @click.option(
             "--force",
             is_flag=True,
@@ -77,7 +89,7 @@ class MainCli:
             logger.info("Start command finished with code [%i]", result.returncode)
             sys.exit(result.returncode)
 
-        @click.command(help="Shuts down the system.")
+        @service.command(help="Shuts down all services.")
         @click.option(
             "--force",
             is_flag=True,
@@ -87,20 +99,18 @@ class MainCli:
         def shutdown(ctx, force):
             self.__shutdown(ctx, force)
 
-        @click.command(
-            help="Stops the system (deprecated - use shutdown).", hidden=True
-        )
+        @service.command(help="Stops all services.", hidden=True)
         @click.option("--force", is_flag=True)
         @click.pass_context
         def stop(ctx, force):
             self.__shutdown(ctx, force)
 
-        # expose the cli commands
+        # Add the 'logs' subcommand
+        service.add_command(self.orchestrator.get_logs_command())
+
+        # expose the CLI commands
         self.commands = {
-            "start": start,
-            "stop": stop,
-            "shutdown": shutdown,
-            "logs": self.orchestrator.get_logs_command(),
+            "service": service,
         }
 
         # create additional group if orchestrator has custom commands
@@ -120,8 +130,8 @@ class MainCli:
         """Ensures the system is in a valid state for startup.
 
         Args:
-            cli_context (CliContext): the current cli context
-            force (bool, optional): If True, only warns on validation failures, rather than exiting
+            cli_context (CliContext): The current CLI context.
+            force (bool, optional): If True, only warns on validation failures, rather than exiting.
         """
         logger.info("Checking system configuration is valid before starting ...")
 
@@ -150,8 +160,8 @@ class MainCli:
         """Ensures the system is in a valid state for shutdown.
 
         Args:
-            cli_context (CliContext): the current cli context
-            force (bool, optional): If True, only warns on validation failures, rather than exiting
+            cli_context (CliContext): The current CLI context.
+            force (bool, optional): If True, only warns on validation failures, rather than exiting.
         """
         logger.info("Checking system configuration is valid before shutting down ...")
 

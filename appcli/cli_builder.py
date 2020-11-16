@@ -21,12 +21,14 @@ from tabulate import tabulate
 
 # local libraries
 from appcli.commands.configure_cli import ConfigureCli
+from appcli.commands.debug_cli import DebugCli
 from appcli.commands.encrypt_cli import EncryptCli
 from appcli.commands.init_cli import InitCli
 from appcli.commands.install_cli import InstallCli
 from appcli.commands.launcher_cli import LauncherCli
-from appcli.commands.main_cli import MainCli
 from appcli.commands.migrate_cli import MigrateCli
+from appcli.commands.service_cli import ServiceCli
+from appcli.commands.task_cli import TaskCli
 from appcli.functions import error_and_exit, extract_valid_environment_variable_names
 from appcli.logger import enable_debug_logging, logger
 from appcli.models.cli_context import CliContext
@@ -60,12 +62,14 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     default_commands = {}
     for cli_class in (
         ConfigureCli,
+        DebugCli,
         EncryptCli,
         InitCli,
         InstallCli,
         LauncherCli,
-        MainCli,
         MigrateCli,
+        ServiceCli,
+        TaskCli,
     ):
         commands = cli_class(configuration).commands
         default_commands.update(**commands)
@@ -174,7 +178,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
 
         # For the `installer`/`launcher` commands, no further output/checks required.
         if ctx.invoked_subcommand in ("launcher", "install"):
-            # Don't execute this function any further, continue to run subcommand with the current cli context
+            # Don't execute this function any further, continue to run subcommand with the current CLI context
             return
 
         check_docker_socket()
@@ -218,7 +222,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             )
 
     def run():
-        """Run the entry-point click cli command"""
+        """Run the entry-point click CLI command"""
         cli(  # pylint: disable=no-value-for-parameter,unexpected-keyword-arg
             prog_name=configuration.app_name
         )

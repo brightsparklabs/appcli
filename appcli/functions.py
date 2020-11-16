@@ -61,7 +61,7 @@ def extract_valid_environment_variable_names(
     and to check that the names are appropriate for bash
 
     Args:
-        ctx (click.Context): current cli context
+        ctx (click.Context): current CLI context
         param (click.Option): the option parameter to validate
         values (click.Tuple): the values passed to the option, could be multiple
     """
@@ -101,7 +101,7 @@ def execute_validation_functions(
     All the 'Must' and 'Should' checks (taking into account 'force') need to succeed in order for this validation to be successful.
 
     Args:
-        cli_context (CliContext): the current cli context
+        cli_context (CliContext): The current CLI context.
         must_succeed_checks (Iterable[Callable[[click.Context], None]], optional): The check functions to run which must not raise any exceptions
             in order for the validation to succeed.
         should_succeed_checks (Iterable[Callable[[click.Context], None]], optional): The check functions to run, which may raise exceptions. If
@@ -153,7 +153,7 @@ def _run_checks(
     """Runs a set of functions which either return None or raises an Exception. Returns all Exception error messages.
 
     Args:
-        cli_context (CliContext): the current context of the cli
+        cli_context (CliContext): the current context of the CLI
         checks (Iterable[Callable[[click.Context], None]]): a set of functions to try running
 
     Returns:

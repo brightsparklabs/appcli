@@ -181,7 +181,7 @@ class ConfigureCli:
         """Ensures the system is in a valid state for 'configure get'.
 
         Args:
-            cli_context (CliContext): the current cli context
+            cli_context (CliContext): The current CLI context.
         """
         logger.info("Checking system configuration is valid before 'configure get' ...")
 

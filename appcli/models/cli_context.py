@@ -10,7 +10,7 @@ class CliContext(NamedTuple):
     """ Shared context from a run of the CLI. """
 
     # ---------------------------------
-    # data passed in when cli invoked on the command line
+    # data passed in when CLI invoked on the command line
     # ---------------------------------
 
     configuration_dir: Path
@@ -38,7 +38,7 @@ class CliContext(NamedTuple):
     """ Whether to print debug logs. """
 
     # ---------------------------------
-    # cli build data
+    # CLI build data
     # ---------------------------------
 
     app_name: str
