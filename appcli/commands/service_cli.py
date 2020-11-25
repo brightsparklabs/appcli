@@ -180,7 +180,7 @@ class ServiceCli:
         logger.info("System configuration is valid")
 
     def __shutdown(self, ctx: Context, force: bool = False, service_name: str = None):
-        """Shutdown service(s) with the orchestrator.
+        """Shutdown service(s) using the orchestrator.
 
         Args:
             ctx (Context): Click Context for current CLI.
