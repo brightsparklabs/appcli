@@ -39,25 +39,30 @@ class Orchestrator:
         NotImplementedError: If any of these methods are called directly.
     """
 
-    def start(self, cli_context: CliContext, container: str = ()) -> CompletedProcess:
+    def start(
+        self, cli_context: CliContext, service_name: str = None
+    ) -> CompletedProcess:
         """
-        Starts Docker containers.
+        Starts Docker containers (services). Optionally accepts a single service name to start.
 
         Args:
             cli_context (CliContext): The current CLI context.
-            container (str, optional): Name of the container to start. Defaults to all containers.
+            service_name (str, optional): Name of the service to start. If not provided, starts all services.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
         """
         raise NotImplementedError
 
-    def shutdown(self, cli_context: CliContext) -> CompletedProcess:
+    def shutdown(
+        self, cli_context: CliContext, service_name: str = None
+    ) -> CompletedProcess:
         """
-        Stops all Docker containers.
+        Stops Docker containers (services). Optionally accepts a single service name to shutdown.
 
         Args:
             cli_context (CliContext): The current CLI context.
+            container (str, optional): Name of the service to shutdown. If not provided, shuts down all services.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -148,10 +153,22 @@ class DockerComposeOrchestrator(Orchestrator):
             docker_compose_task_override_directory
         )
 
-    def start(self, cli_context: CliContext) -> CompletedProcess:
-        return self.__compose_service(cli_context, ("up", "-d"))
+    def start(
+        self, cli_context: CliContext, service_name: str = None
+    ) -> CompletedProcess:
+        command = ["up", "-d"]
+        if service_name:
+            command.append(service_name)
+        return self.__compose_service(cli_context, tuple(command))
 
-    def shutdown(self, cli_context: CliContext) -> CompletedProcess:
+    def shutdown(
+        self, cli_context: CliContext, service_name: str = None
+    ) -> CompletedProcess:
+        if service_name is not None:
+            # We cannot use the 'down' command as it removes more than just the specified service (by design).
+            # https://github.com/docker/compose/issues/5420
+            # `-fsv` flags mean forcibly stop the container before removing, and delete attached anonymous volumes
+            return self.__compose_service(cli_context, ("rm", "-fsv", service_name))
         return self.__compose_service(cli_context, ("down",))
 
     def task(
@@ -263,7 +280,16 @@ class DockerSwarmOrchestrator(Orchestrator):
             docker_compose_task_override_directory
         )
 
-    def start(self, cli_context: CliContext) -> CompletedProcess:
+    def start(
+        self, cli_context: CliContext, service_name: str = None
+    ) -> CompletedProcess:
+        if service_name is not None:
+            logger.error(
+                "Docker Swarm orchestrator cannot start individual services. Attempted to start [%s].",
+                service_name,
+            )
+            return CompletedProcess(args=None, returncode=1)
+
         subcommand = ["deploy"]
         compose_files = decrypt_docker_compose_files(
             cli_context,
@@ -282,7 +308,16 @@ class DockerSwarmOrchestrator(Orchestrator):
 
         return self.__docker_stack(cli_context, subcommand)
 
-    def shutdown(self, cli_context: CliContext) -> CompletedProcess:
+    def shutdown(
+        self, cli_context: CliContext, service_name: str = None
+    ) -> CompletedProcess:
+        if service_name is not None:
+            logger.error(
+                "Docker Swarm orchestrator cannot stop individual services. Attempted to shutdown [%s].",
+                service_name,
+            )
+            return CompletedProcess(args=None, returncode=1)
+
         return self.__docker_stack(cli_context, ("rm",))
 
     def task(

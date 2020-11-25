@@ -14,6 +14,7 @@ import sys
 
 # vendor libraries
 import click
+from click.core import Context
 
 from appcli.configuration_manager import (
     confirm_generated_config_dir_exists,
@@ -62,14 +63,15 @@ class ServiceCli:
 
             click.echo(ctx.get_help())
 
-        @service.command(help="Starts all services.")
+        @service.command(help="Starts services.")
         @click.option(
             "--force",
             is_flag=True,
             help="Force start even if validation checks fail.",
         )
+        @click.argument("service_name", required=False, type=click.STRING)
         @click.pass_context
-        def start(ctx, force):
+        def start(ctx, force, service_name):
             hooks = self.cli_configuration.hooks
 
             # TODO: run self.cli_configuration.hooks.is_valid_variables() to confirm variables are valid
@@ -81,7 +83,7 @@ class ServiceCli:
             self.__pre_start_validation(cli_context, force=force)
 
             logger.info("Starting %s ...", configuration.app_name)
-            result = self.orchestrator.start(ctx.obj)
+            result = self.orchestrator.start(ctx.obj, service_name)
 
             logger.debug("Running post-start hook")
             hooks.post_start(ctx, result)
@@ -89,21 +91,23 @@ class ServiceCli:
             logger.info("Start command finished with code [%i]", result.returncode)
             sys.exit(result.returncode)
 
-        @service.command(help="Shuts down all services.")
+        @service.command(help="Shuts down services.")
         @click.option(
             "--force",
             is_flag=True,
             help="Force shutdown even if validation checks fail.",
         )
+        @click.argument("service_name", required=False, type=click.STRING)
         @click.pass_context
-        def shutdown(ctx, force):
-            self.__shutdown(ctx, force)
+        def shutdown(ctx, force, service_name):
+            self.__shutdown(ctx, force, service_name)
 
-        @service.command(help="Stops all services.", hidden=True)
+        @service.command(help="Stops services.", hidden=True)
         @click.option("--force", is_flag=True)
+        @click.argument("service_name", required=False, type=click.STRING)
         @click.pass_context
-        def stop(ctx, force):
-            self.__shutdown(ctx, force)
+        def stop(ctx, force, service_name):
+            self.__shutdown(ctx, force, service_name)
 
         # Add the 'logs' subcommand
         service.add_command(self.orchestrator.get_logs_command())
@@ -175,7 +179,15 @@ class ServiceCli:
 
         logger.info("System configuration is valid")
 
-    def __shutdown(self, ctx, force):
+    def __shutdown(self, ctx: Context, force: bool = False, service_name: str = None):
+        """Shutdown service(s) with the orchestrator.
+
+        Args:
+            ctx (Context): Click Context for current CLI.
+            force (bool, optional): If True, forcibly shuts down service(s). Defaults to False.
+            service_name (str, optional): The name of the service to shutdown. If not provided, will shut down all
+                services.
+        """
         hooks = self.cli_configuration.hooks
 
         logger.debug("Running pre-shutdown hook")
@@ -185,7 +197,7 @@ class ServiceCli:
         self.__pre_shutdown_validation(cli_context, force=force)
 
         logger.info("Shutting down %s ...", self.cli_configuration.app_name)
-        result = self.orchestrator.shutdown(ctx.obj)
+        result = self.orchestrator.shutdown(ctx.obj, service_name)
 
         logger.debug("Running post-shutdown hook")
         hooks.post_shutdown(ctx, result)
