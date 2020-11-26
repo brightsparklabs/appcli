@@ -2,7 +2,7 @@
 # # -*- coding: utf-8 -*-
 
 """
-The main (top-level) commands available when running the CLI.
+Commands for lifecycle management of application services.
 ________________________________________________________________________________
 
 Created by brightSPARK Labs
@@ -14,6 +14,7 @@ import sys
 
 # vendor libraries
 import click
+from click.core import Context
 
 from appcli.configuration_manager import (
     confirm_generated_config_dir_exists,
@@ -36,7 +37,7 @@ from appcli.models.configuration import Configuration
 # ------------------------------------------------------------------------------
 
 
-class MainCli:
+class ServiceCli:
 
     # --------------------------------------------------------------------------
     # CONSTRUCTOR
@@ -50,14 +51,27 @@ class MainCli:
         # PUBLIC METHODS
         # ----------------------------------------------------------------------
 
-        @click.command(help="Starts the system.")
+        @click.group(
+            invoke_without_command=True,
+            help="Lifecycle management commands for application services.",
+        )
+        @click.pass_context
+        def service(ctx):
+            if ctx.invoked_subcommand is not None:
+                # subcommand provided
+                return
+
+            click.echo(ctx.get_help())
+
+        @service.command(help="Starts services.")
         @click.option(
             "--force",
             is_flag=True,
             help="Force start even if validation checks fail.",
         )
+        @click.argument("service_name", required=False, type=click.STRING)
         @click.pass_context
-        def start(ctx, force):
+        def start(ctx, force, service_name):
             hooks = self.cli_configuration.hooks
 
             # TODO: run self.cli_configuration.hooks.is_valid_variables() to confirm variables are valid
@@ -69,7 +83,7 @@ class MainCli:
             self.__pre_start_validation(cli_context, force=force)
 
             logger.info("Starting %s ...", configuration.app_name)
-            result = self.orchestrator.start(ctx.obj)
+            result = self.orchestrator.start(ctx.obj, service_name)
 
             logger.debug("Running post-start hook")
             hooks.post_start(ctx, result)
@@ -77,36 +91,30 @@ class MainCli:
             logger.info("Start command finished with code [%i]", result.returncode)
             sys.exit(result.returncode)
 
-        @click.command(help="Stops the system.")
+        @service.command(help="Shuts down services.")
         @click.option(
             "--force",
             is_flag=True,
-            help="Force stop even if validation checks fail.",
+            help="Force shutdown even if validation checks fail.",
         )
+        @click.argument("service_name", required=False, type=click.STRING)
         @click.pass_context
-        def stop(ctx, force):
-            hooks = self.cli_configuration.hooks
+        def shutdown(ctx, force, service_name):
+            self.__shutdown(ctx, force, service_name)
 
-            logger.debug("Running pre-stop hook")
-            hooks.pre_stop(ctx)
+        @service.command(help="Stops services.", hidden=True)
+        @click.option("--force", is_flag=True)
+        @click.argument("service_name", required=False, type=click.STRING)
+        @click.pass_context
+        def stop(ctx, force, service_name):
+            self.__shutdown(ctx, force, service_name)
 
-            cli_context: CliContext = ctx.obj
-            self.__pre_stop_validation(cli_context, force=force)
+        # Add the 'logs' subcommand
+        service.add_command(self.orchestrator.get_logs_command())
 
-            logger.info("Stopping %s ...", configuration.app_name)
-            result = self.orchestrator.stop(ctx.obj)
-
-            logger.debug("Running post-stop hook")
-            hooks.post_stop(ctx, result)
-
-            logger.info("Stop command finished with code [%i]", result.returncode)
-            sys.exit(result.returncode)
-
-        # expose the cli commands
+        # expose the CLI commands
         self.commands = {
-            "start": start,
-            "stop": stop,
-            "logs": self.orchestrator.get_logs_command(),
+            "service": service,
         }
 
         # create additional group if orchestrator has custom commands
@@ -126,8 +134,8 @@ class MainCli:
         """Ensures the system is in a valid state for startup.
 
         Args:
-            cli_context (CliContext): the current cli context
-            force (bool, optional): If True, only warns on validation failures, rather than exiting
+            cli_context (CliContext): The current CLI context.
+            force (bool, optional): If True, only warns on validation failures, rather than exiting.
         """
         logger.info("Checking system configuration is valid before starting ...")
 
@@ -152,21 +160,47 @@ class MainCli:
 
         logger.info("System configuration is valid")
 
-    def __pre_stop_validation(self, cli_context: CliContext, force: bool = False):
-        """Ensures the system is in a valid state for stop.
+    def __pre_shutdown_validation(self, cli_context: CliContext, force: bool = False):
+        """Ensures the system is in a valid state for shutdown.
 
         Args:
-            cli_context (CliContext): the current cli context
-            force (bool, optional): If True, only warns on validation failures, rather than exiting
+            cli_context (CliContext): The current CLI context.
+            force (bool, optional): If True, only warns on validation failures, rather than exiting.
         """
-        logger.info("Checking system configuration is valid before stopping ...")
+        logger.info("Checking system configuration is valid before shutting down ...")
 
         execute_validation_functions(
             cli_context=cli_context,
             must_succeed_checks=[
                 confirm_generated_config_dir_exists
-            ],  # Only block stopping the system on the generated config not existing
+            ],  # Only block shuting down the system on the generated config not existing
             force=force,
         )
 
         logger.info("System configuration is valid")
+
+    def __shutdown(self, ctx: Context, force: bool = False, service_name: str = None):
+        """Shutdown service(s) using the orchestrator.
+
+        Args:
+            ctx (Context): Click Context for current CLI.
+            force (bool, optional): If True, forcibly shuts down service(s). Defaults to False.
+            service_name (str, optional): The name of the service to shutdown. If not provided, will shut down all
+                services.
+        """
+        hooks = self.cli_configuration.hooks
+
+        logger.debug("Running pre-shutdown hook")
+        hooks.pre_shutdown(ctx)
+
+        cli_context: CliContext = ctx.obj
+        self.__pre_shutdown_validation(cli_context, force=force)
+
+        logger.info("Shutting down %s ...", self.cli_configuration.app_name)
+        result = self.orchestrator.shutdown(ctx.obj, service_name)
+
+        logger.debug("Running post-shutdown hook")
+        hooks.post_shutdown(ctx, result)
+
+        logger.info("Shutdown command finished with code [%i]", result.returncode)
+        sys.exit(result.returncode)

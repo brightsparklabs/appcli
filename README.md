@@ -4,8 +4,13 @@ A library for adding CLI interfaces to applications in the brightSPARK Labs styl
 
 ## Overview
 
-This library can be leveraged to add a standardised CLI capability to applications to handle system
-lifecycle events (start, stop, configure, migrate, etc).
+This library can be leveraged to add a standardised CLI capability to applications to:
+
+- Handle system lifecycle events for services (`service [start|shutdown]`).
+- Allow running arbitrary short-lived tasks (`task run`).
+- Manage configuration (`configure`).
+- Upgrade to a newer version of the application (`upgrade|migrate`).
+- And more.
 
 The CLI is designed to run within a Docker container and launch other Docker containers (i.e.
 Docker-in-Docker). This is generally managed via a `docker-compose.yml` file.
@@ -22,9 +27,9 @@ The library exposes the following environment variables to the `docker-compose.y
   Docker daemon. Defaults to `production`.
 
 The `docker-compose.yml` can be templated by renaming to `docker-compose.yml.j2`, and setting
-variables within the `settings.yml` file as described in the Usage section.
+variables within the `settings.yml` file as described in the Installation section.
 
-## Usage
+## Installation
 
 ### Add the library to your python CLI application
 
@@ -64,7 +69,12 @@ variables within the `settings.yml` file as described in the Usage section.
             baseline_templates_dir=Path(BASE_DIR, 'resources/templates/baseline'),
             configurable_templates_dir=Path(BASE_DIR, 'resource/templates/configurable'),
             orchestrator=appcli.DockerComposeOrchestrator(
-              Path('docker-compose.yml')
+                docker_compose_file = Path("docker-compose.yml"),
+                docker_compose_override_directory = Path("docker-compose.override.d/"),
+                docker_compose_task_file = Path("docker-compose.tasks.yml"),
+                docker_compose_task_override_directory = Path(
+                    "docker-compose.tasks.override.d/"
+                ),
             ),
             mandatory_additional_data_dirs=["EXTRA_DATA",],
             mandatory_additional_env_variables=["ENV_VAR_2",],
@@ -175,6 +185,168 @@ Where:
 The installation script will generate a launcher script for controlling the application. The script
 location will be printed out when running the install script. This script should now be used as the
 main entrypoint to all appcli functions for managing your application.
+
+## Usage
+
+This section details what commands and options are available.
+
+### Top-level Commands
+
+To be used in conjunction with your application `./myapp <command>` e.g. `./myapp configure init`
+
+| Command      | Description                                                       |
+| ------------ | ----------------------------------------------------------------- |
+| configure    | Configures the application.                                       |
+| encrypt      | Encrypts the specified string.                                    |
+| init         | Initialises the application.                                      |
+| launcher     | Outputs an appropriate launcher bash script.                      |
+| migrate      | Migrates the configuration of the application to a newer version. |
+| orchestrator | Perform docker orchestration                                      |
+| service      | Lifecycle management commands for application services.           |
+| task         | Commands for application tasks.                                   |
+
+### Options
+
+| Option                             | Description                                                                                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| --debug                            | Enables debug level logging.                                                                                        |
+| -c, --configuration-dir PATH       | Directory containing configuration files. [This is required unless subcommand is one of: `install`.                 |
+| -d, --data-dir PATH                | Directory containing data produced/consumed by the system. This is required unless subcommand is one of: `install`. |
+| -t, --environment TEXT             | Deployment environment the system is running in. Defaults to `production`.                                          |
+| -p, --docker-credentials-file PATH | Path to the Docker credentials file (config.json) on the host for connecting to private Docker registries.          |
+| -a, --additional-data-dir TEXT     | Additional data directory to expose to launcher container. Can be specified multiple times.                         |
+| -e, --additional-env-var TEXT      | Additional environment variables to expose to launcher container. Can be specified multiple times.                  |
+| --help                             | Show the help message and exit.                                                                                     |
+
+#### Command: `configure`
+
+Configures the application.
+usage `./myapp configure [OPTIONS] COMMAND [ARGS]`
+
+| Command  | Description                                                                                                               |
+| -------- | ------------------------------------------------------------------------------------------------------------------------- |
+| apply    | Applies the settings from the configuration.                                                                              |
+| diff     | Get the differences between current and default configuration settings.                                                   |
+| get      | Reads a setting from the configuration.                                                                                   |
+| init     | Initialises the configuration directory.                                                                                  |
+| set      | Saves a setting to the configuration. Allows setting the type of value with option `--type`, and defaults to string type. |
+| template | Configures the baseline templates.                                                                                        |
+| edit     | Open the settings file for editing with vim-tiny.                                                                         |
+
+| Option | Description                     |
+| ------ | ------------------------------- |
+| --help | Show the help message and exit. |
+
+#### Command: `encrypt`
+
+Encrypts the specified string.
+usage `./myapp encrypt [OPTIONS] TEXT`
+
+| Command | Description |
+| ------- | ----------- |
+
+
+No commands available
+
+| Option | Description                     |
+| ------ | ------------------------------- |
+| --help | Show the help message and exit. |
+
+#### Command: `init`
+
+Initialises the application.
+usage `./myapp init [OPTIONS] COMMAND [ARGS]`
+
+| Command  | Description                                                              |
+| -------- | ------------------------------------------------------------------------ |
+| keycloak | Initialises a Keycloak instance with BSL-specific initial configuration. |
+
+| Option | Description                     |
+| ------ | ------------------------------- |
+| --help | Show the help message and exit. |
+
+#### Command: `launcher`
+
+Outputs an appropriate launcher bash script to stdout.
+usage `./myapp launcher [OPTIONS]`
+
+| Command | Description |
+| ------- | ----------- |
+
+
+No commands available
+
+| Option | Description                     |
+| ------ | ------------------------------- |
+| --help | Show the help message and exit. |
+
+#### Command: `migrate`
+
+Migrates the application configuration to work with the current application version.
+usage `./myapp migrate [OPTIONS]`
+
+| Command | Description |
+| ------- | ----------- |
+
+
+No commands available
+
+| Option | Description                     |
+| ------ | ------------------------------- |
+| --help | Show the help message and exit. |
+
+#### Command: `orchestrator`
+
+Perform tasks defined by the orchestrator.
+usage `./myapp orchestrator [OPTIONS] COMMAND [ARGS]`
+
+All commands are defined within the orchestrators themselves. Run `./myapp orchestrator` to list available commands.
+
+| Option | Description                    |
+| ------ | ------------------------------ |
+| --help | Show the help message and exit |
+
+#### Command: `service`
+
+Runs application services. These are the long-running services which should only exit on command.
+usage `./myapp service [OPTIONS] COMMAND [ARGS]`
+
+| Command  | Description                                                                               |
+| -------- | ----------------------------------------------------------------------------------------- |
+| logs     | Prints logs from all services.                                                            |
+| shutdown | Shuts down the system. If a service name is provided, shuts down the single service only. |
+| start    | Starts the system. If a service name is provided, starts the single service only.         |
+
+| Option | Description                     |
+| ------ | ------------------------------- |
+| --help | Show the help message and exit. |
+
+#### Command: `task`
+
+Runs application tasks. These are short-lived services which should exit when the task is complete.
+usage `./myapp task [OPTIONS] COMMAND [ARGS]`
+
+| Command | Description                        |
+| ------- | ---------------------------------- |
+| run     | Runs a specified application task. |
+
+| Option | Description                     |
+| ------ | ------------------------------- |
+| --help | Show the help message and exit. |
+
+### Usage within scripts and cron
+
+By default, the generated `appcli` launcher script will run the CLI container with a virtual terminal session (tty).
+This may interfere with crontab entries or scripts that use the appcli launcher.
+
+To disable tty when running the launcher script, set `NO_TTY` environment variable to `true`.
+
+    NO_TTY=true ./myapp [...]
+
+or
+
+    export NO_TTY=true
+    ./myapp [...]
 
 ## Development
 

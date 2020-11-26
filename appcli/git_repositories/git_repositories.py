@@ -26,6 +26,8 @@ from appcli.models.cli_context import CliContext
 
 BASE_BRANCH_NAME: str = "master"
 
+BRANCH_NAME_FORMAT: str = "deployment/{version}"
+
 # ------------------------------------------------------------------------------
 # PUBLIC CLASSES
 # ------------------------------------------------------------------------------
@@ -98,8 +100,11 @@ class GitRepository:
             str: the 'appcli-specific' version of this particular git repository, which aligns
                 with the version of the application.
         """
-        # Version is stored as the branch name
-        return self.__get_current_branch_name()
+        # Version is stored as part of the branch name, strip it by generating a blank
+        # branch name and trimming that from the start of the current branch name
+        branch_name: str = self.__get_current_branch_name()
+        branch_leading_characters = self.generate_branch_name("")
+        return branch_name.split(branch_leading_characters)[-1]
 
     def does_branch_exist(self, branch_name: str) -> bool:
         """Checks if a branch with a particular name exists
@@ -151,6 +156,17 @@ class GitRepository:
         self.repo.git.branch(m=branch_name)
         logger.debug(f"Renamed branch to [{branch_name}]")
 
+    def generate_branch_name(self, version="latest") -> str:
+        """Generate the name of the branch based on the 'appcli' naming convention and version number
+
+        Args:
+            version (str): The version number to use in the branch.
+        Returns:
+            str: name of the branch
+
+        """
+        return BRANCH_NAME_FORMAT.format(version=version)
+
     def __get_current_branch_name(self) -> str:
         """Get the name of the current branch
 
@@ -194,7 +210,7 @@ class ConfigurationGitRepository(GitRepository):
 class GeneratedConfigurationGitRepository(GitRepository):
     def __init__(self, cli_context: CliContext):
         super().__init__(cli_context.get_generated_configuration_dir())
-        self.rename_current_branch(cli_context.app_version)
+        self.rename_current_branch(self.generate_branch_name(cli_context.app_version))
 
 
 # ------------------------------------------------------------------------------
@@ -207,7 +223,7 @@ def confirm_config_dir_exists(cli_context: CliContext):
     If this fails, it will raise a general Exception with the error message.
 
     Args:
-        cli_context (CliContext): the current cli context
+        cli_context (CliContext): The current CLI context.
 
     Raises:
         Exception: Raised if the configuration repository does *not* exist.
@@ -223,7 +239,7 @@ def confirm_config_dir_not_exists(cli_context: CliContext):
     If this fails, it will raise a general Exception with the error message.
 
     Args:
-        cli_context (CliContext): the current cli context
+        cli_context (CliContext): The current CLI context.
 
     Raises:
         Exception: Raised if the configuration repository exists.
@@ -239,7 +255,7 @@ def confirm_generated_config_dir_exists(cli_context: CliContext):
     If this fails, it will raise a general Exception with the error message.
 
     Args:
-        cli_context (CliContext): the current cli context
+        cli_context (CliContext): The current CLI context.
 
     Raises:
         Exception: Raised if the generated configuration repository does not exist.
@@ -255,7 +271,7 @@ def confirm_config_dir_exists_and_is_not_dirty(cli_context: CliContext):
     If this fails, it will raise a general Exception with the error message.
 
     Args:
-        cli_context (CliContext): the current cli context
+        cli_context (CliContext): The current CLI context.
 
     Raises:
         Exception: Raised if the configuration repository has been modified and not 'applied'.
@@ -273,7 +289,7 @@ def confirm_generated_config_dir_exists_and_is_not_dirty(cli_context: CliContext
     If this fails, it will raise a general Exception with the error message.
 
     Args:
-        cli_context (CliContext): the current cli context
+        cli_context (CliContext): The current CLI context.
 
     Raises:
         Exception: Raised if the generated configuration repository has been manually modified and not checked in.
@@ -293,7 +309,7 @@ def confirm_config_version_matches_app_version(cli_context: CliContext):
     If this fails, it will raise a general Exception with the error message.
 
     Args:
-        cli_context (CliContext): the current cli context
+        cli_context (CliContext): The current CLI context.
 
     Raises:
         Exception: Raised if the configuration repository version doesn't match the application version.
@@ -314,7 +330,7 @@ def confirm_not_on_master_branch(cli_context: CliContext):
     """Confirm that the configuration repository is not currently on the master branch.
 
     Args:
-        cli_context (CliContext): the current cli context
+        cli_context (CliContext): The current CLI context.
     """
     confirm_config_dir_exists(cli_context)
     config_repo: ConfigurationGitRepository = ConfigurationGitRepository(cli_context)

@@ -11,6 +11,7 @@ www.brightsparklabs.com
 
 # standard library
 import difflib
+import subprocess
 
 # vendor libraries
 import click
@@ -24,6 +25,7 @@ from appcli.git_repositories.git_repositories import confirm_config_dir_exists
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
+from appcli.string_transformer import StringTransformer
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -123,18 +125,29 @@ class ConfigureCli:
             print(configuration.get_variables_manager().get_variable(setting))
 
         @configure.command(help="Saves a setting to the configuration.")
+        @click.option(
+            "-t",
+            "--type",
+            type=click.Choice(StringTransformer.get_types()),
+            default=StringTransformer.get_string_transformer_type(),
+        )
         @click.argument("setting")
         @click.argument("value")
         @click.pass_context
-        def set(ctx, setting, value):
+        def set(ctx, type, setting, value):
             cli_context: CliContext = ctx.obj
 
             # Validate environment
             self.__pre_configure_get_and_set_validation(cli_context)
 
+            # Transform input value as type
+            transformed_value = StringTransformer.transform(value, type)
+
             # Set settings value
             configuration = ConfigurationManager(cli_context, self.cli_configuration)
-            configuration.get_variables_manager().set_variable(setting, value)
+            configuration.get_variables_manager().set_variable(
+                setting, transformed_value
+            )
 
         @configure.command(
             help="Get the differences between current and default configuration settings."
@@ -158,6 +171,14 @@ class ConfigureCli:
                 # remove superfluous \n characters added by unified_diff
                 print(line.rstrip())
 
+        @configure.command(help="Open the settings file for editing with vim-tiny.")
+        @click.pass_context
+        def edit(ctx):
+            cli_context: CliContext = ctx.obj
+            EDITOR = "vim.tiny"
+
+            subprocess.run([EDITOR, cli_context.get_app_configuration_file()])
+
         # Add the 'template' subcommand
         configure.add_command(ConfigureTemplateCli(self.cli_configuration).command)
 
@@ -172,7 +193,7 @@ class ConfigureCli:
         """Ensures the system is in a valid state for 'configure get'.
 
         Args:
-            cli_context (CliContext): the current cli context
+            cli_context (CliContext): The current CLI context.
         """
         logger.info("Checking system configuration is valid before 'configure get' ...")
 

@@ -80,7 +80,7 @@ class ConfigurationManager:
         """Ensures the system is in a valid state for 'configure init'.
 
         Args:
-            cli_context (CliContext): the current cli context
+            cli_context (CliContext): The current CLI context.
         """
         logger.debug("Checking system configuration is valid before initialising ...")
 
@@ -96,8 +96,8 @@ class ConfigurationManager:
         """Applies the current configuration settings to templates to generate application files.
 
         Args:
-            message (str): the message associated with the changes this applies
-            force (bool): If True, only warns on validation failures, rather than exiting
+            message (str): The message associated with the changes this applies.
+            force (bool): If True, only warns on validation failures, rather than exiting.
         """
 
         self.__pre_apply_validation(self.cli_context, force)
@@ -118,8 +118,8 @@ class ConfigurationManager:
         """Ensures the system is in a valid state to do an 'apply' on the configuration
 
         Args:
-            cli_context (CliContext): the current cli context
-            force (bool, optional): If True, only warns on validation failures, rather than exiting
+            cli_context (CliContext): The current CLI context.
+            force (bool, optional): If True, only warns on validation failures, rather than exiting.
         """
         logger.debug("Checking system configuration is valid before 'apply' ...")
 
@@ -164,7 +164,7 @@ class ConfigurationManager:
         """Migrates the configuration version to the current application version
 
         Args:
-            ignore_variables_migration_structural_errors (bool, optional): If True, will ignore stuctural validation errors in the application-migrated variables. Defaults to False.
+            ignore_variables_migration_structural_errors (bool, optional): If True, will ignore structural validation errors in the application-migrated variables. Defaults to False.
         """
 
         self.__pre_migrate_validation(self.cli_context)
@@ -186,7 +186,8 @@ class ConfigurationManager:
             f"Migrating configuration version [{config_version}] to match application version [{app_version}]"
         )
 
-        if config_repo.does_branch_exist(app_version):
+        app_version_branch: str = config_repo.generate_branch_name(app_version)
+        if config_repo.does_branch_exist(app_version_branch):
             # If the branch already exists, then this version has previously been installed.
 
             logger.warning(
@@ -194,7 +195,7 @@ class ConfigurationManager:
             )
 
             # Switch to that branch, no further migration steps will be taken. This is effectively a roll-back.
-            config_repo.checkout_existing_branch(app_version)
+            config_repo.checkout_existing_branch(app_version_branch)
             return
 
         # Migrate the current configuration variables
@@ -263,7 +264,7 @@ class ConfigurationManager:
         """Ensures the system is in a valid state for migration.
 
         Args:
-            cli_context (CliContext): the current cli context
+            cli_context (CliContext): The current CLI context.
         """
         logger.debug("Checking system configuration is valid before migration ...")
 
@@ -299,6 +300,7 @@ class ConfigurationManager:
     ):
 
         app_version: str = self.cli_context.app_version
+        app_version_branch: str = config_repo.generate_branch_name(app_version)
 
         # Try to get an existing key
         path_to_key_file = self.cli_context.get_key_file()
@@ -307,7 +309,7 @@ class ConfigurationManager:
             key_file_contents = path_to_key_file.read_bytes()
 
         # Create a new branch for this current application version
-        config_repo.checkout_new_branch_from_master(app_version)
+        config_repo.checkout_new_branch_from_master(app_version_branch)
 
         # If the keyfile already exists, re-use it across branches. Otherwise create a new keyfile.
         if key_file_contents:
@@ -678,7 +680,7 @@ def get_generated_configuration_metadata_file(cli_context: CliContext) -> Path:
     """Get the path to the generated configuration's metadata file
 
     Args:
-        cli_context (CliContext): the current cli context
+        cli_context (CliContext): The current CLI context.
 
     Returns:
         Path: the path to the metadata file
@@ -694,7 +696,7 @@ def confirm_generated_configuration_is_using_current_configuration(
     If this fails, it will raise a general Exception with the error message.
 
     Args:
-        cli_context (CliContext): the current cli context
+        cli_context (CliContext): The current CLI context.
 
     Raises:
         Exception: Raised if metadata file not found, or generated config is out of sync with config.

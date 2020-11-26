@@ -54,5 +54,5 @@ class EncryptCli:
             result = cipher.encrypt(text)
             print(result)
 
-        # expose the cli command
+        # expose the CLI command
         self.commands = {"encrypt": encrypt}

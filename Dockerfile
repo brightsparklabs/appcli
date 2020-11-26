@@ -22,6 +22,7 @@ RUN \
     && apt-get update \
     && apt-get -y install \
         git \
+        vim-tiny \
         # docker requirements
         apt-transport-https \
         ca-certificates \
