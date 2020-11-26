@@ -27,13 +27,13 @@ def test_transform_to_string():
 
 
 def test_transform_to_boolean():
-    assert transform_boolean("True") == True
-    assert transform_boolean("yes") == True
-    assert transform_boolean("Y") == True
+    assert transform_boolean("True") is True
+    assert transform_boolean("yes") is True
+    assert transform_boolean("Y") is True
 
-    assert transform_boolean("FALSE") == False
-    assert transform_boolean("No") == False
-    assert transform_boolean("n") == False
+    assert transform_boolean("FALSE") is False
+    assert transform_boolean("No") is False
+    assert transform_boolean("n") is False
 
     with pytest.raises(Exception):
         # Expect that we cannot transform an empty string to a boolean

@@ -11,6 +11,17 @@ The changelog is applicable from version `1.0.0` onwards.
 ## [Unreleased]
 
 ---
+## [1.1.1] - (26/11/2020)
+
+### Added
+
+- Added TravisCI build status badge to the README.
+
+### Fixed
+
+- Fixed failing linting in `1.1.0`.
+
+---
 
 ## [1.1.0] - (26/11/2020)
 
