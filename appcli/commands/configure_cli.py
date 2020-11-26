@@ -10,6 +10,7 @@ www.brightsparklabs.com
 """
 
 # standard library
+from appcli.string_parser import StringParser
 import difflib
 import subprocess
 
@@ -124,18 +125,27 @@ class ConfigureCli:
             print(configuration.get_variables_manager().get_variable(setting))
 
         @configure.command(help="Saves a setting to the configuration.")
+        @click.option(
+            "-t",
+            "--type",
+            type=click.Choice(StringParser.get_types()),
+            default=StringParser.get_string_parser_type(),
+        )
         @click.argument("setting")
         @click.argument("value")
         @click.pass_context
-        def set(ctx, setting, value):
+        def set(ctx, type, setting, value):
             cli_context: CliContext = ctx.obj
 
             # Validate environment
             self.__pre_configure_get_and_set_validation(cli_context)
 
+            # Parse input value as type
+            parsed_value = StringParser.parse(value, type)
+
             # Set settings value
             configuration = ConfigurationManager(cli_context, self.cli_configuration)
-            configuration.get_variables_manager().set_variable(setting, value)
+            configuration.get_variables_manager().set_variable(setting, parsed_value)
 
         @configure.command(
             help="Get the differences between current and default configuration settings."
