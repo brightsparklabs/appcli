@@ -25,6 +25,7 @@ from appcli.git_repositories.git_repositories import confirm_config_dir_exists
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
+from appcli.string_transformer import StringTransformer
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -124,18 +125,29 @@ class ConfigureCli:
             print(configuration.get_variables_manager().get_variable(setting))
 
         @configure.command(help="Saves a setting to the configuration.")
+        @click.option(
+            "-t",
+            "--type",
+            type=click.Choice(StringTransformer.get_types()),
+            default=StringTransformer.get_string_transformer_type(),
+        )
         @click.argument("setting")
         @click.argument("value")
         @click.pass_context
-        def set(ctx, setting, value):
+        def set(ctx, type, setting, value):
             cli_context: CliContext = ctx.obj
 
             # Validate environment
             self.__pre_configure_get_and_set_validation(cli_context)
 
+            # Transform input value as type
+            transformed_value = StringTransformer.transform(value, type)
+
             # Set settings value
             configuration = ConfigurationManager(cli_context, self.cli_configuration)
-            configuration.get_variables_manager().set_variable(setting, value)
+            configuration.get_variables_manager().set_variable(
+                setting, transformed_value
+            )
 
         @configure.command(
             help="Get the differences between current and default configuration settings."
