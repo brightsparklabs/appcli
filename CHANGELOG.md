@@ -10,6 +10,9 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ## [Unreleased]
 
+---
+## [1.1.1] - (26/11/2020)
+
 ### Added
 
 - Added TravisCI build status badge to the README.
