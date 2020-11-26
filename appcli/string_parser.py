@@ -50,7 +50,7 @@ class StringParser:
     def parse(value: str, type: str) -> any:
         """Parse a string to a supported type.
 
-        For example, parse "12345" as an "int" (integer).
+        For example, parse "12345" as an "int", returns the integer value 12345.
 
         Args:
             value (str): Value to parse.
