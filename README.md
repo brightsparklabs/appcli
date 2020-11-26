@@ -192,7 +192,7 @@ This section details what commands and options are available.
 
 ### Top-level Commands
 
-To be used in conjunction with your application `./myapp <command>` e.g. `./myapp start`
+To be used in conjunction with your application `./myapp <command>` e.g. `./myapp configure init`
 
 | Command      | Description                                                       |
 | ------------ | ----------------------------------------------------------------- |
@@ -311,11 +311,11 @@ All commands are defined within the orchestrators themselves. Run `./myapp orche
 Runs application services. These are the long-running services which should only exit on command.
 usage `./myapp service [OPTIONS] COMMAND [ARGS]`
 
-| Command  | Description                    |
-| -------- | ------------------------------ |
-| logs     | Prints logs from all services. |
-| shutdown | Shuts down the system.         |
-| start    | Starts the system.             |
+| Command  | Description                                                                               |
+| -------- | ----------------------------------------------------------------------------------------- |
+| logs     | Prints logs from all services.                                                            |
+| shutdown | Shuts down the system. If a service name is provided, shuts down the single service only. |
+| start    | Starts the system. If a service name is provided, starts the single service only.         |
 
 | Option | Description                     |
 | ------ | ------------------------------- |
