@@ -1,0 +1,50 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+
+The changelog is applicable from version `1.0.0` onwards.
+
+---
+
+## [Unreleased]
+
+---
+
+## [1.1.0] - (26/11/2020)
+
+### Added
+
+- [#33](https://github.com/brightsparklabs/appcli/issues/33) Added support for 'tasks', and renamed existing capability to 'services'.
+- [#20](https://github.com/brightsparklabs/appcli/issues/20) Added ability to specify docker-compose override directories for services and tasks.
+- [#32](https://github.com/brightsparklabs/appcli/issues/32) Added ability to disable `--tty` when using launcher script.
+- [#37](https://github.com/brightsparklabs/appcli/issues/37) Added `configure edit` command to open settings file in `vim-tiny`.
+- [#56](https://github.com/brightsparklabs/appcli/issues/56) Allow `service start` and `service shutdown` to stop individual services for docker-compose orchestrator.
+- [#23](https://github.com/brightsparklabs/appcli/issues/23) Allow `configure set` to specify type of value. Supports str, int, float, and bool.
+- [#36](https://github.com/brightsparklabs/appcli/issues/36) Added `service shutdown` command as an alias of `service stop`.
+- [#35](https://github.com/brightsparklabs/appcli/issues/35) Added `upgrade` command as an alias of `migrate`.
+- Added hidden `debug info` command to print out some debugging information about the current application and appcli configuration.
+
+### Changed
+
+- [#49](https://github.com/brightsparklabs/appcli/issues/49) Log messages now include timezone.
+- [#26](https://github.com/brightsparklabs/appcli/issues/26) Various enhancements to the README.
+
+[Commits](https://github.com/brightsparklabs/appcli/compare/1.0.1...1.1.0)
+
+---
+
+## [1.0.1] - (08/10/2020)
+
+### Added
+
+- Add option to allow insecure SSL connections during Keycloak initialisation with `init keycloak` command.
+
+[Commits](https://github.com/brightsparklabs/appcli/compare/1.0.0...1.0.1)
+
+---
+
+## [1.0.0] - (07/10/2020)
+
+*No changelog for this release.*
