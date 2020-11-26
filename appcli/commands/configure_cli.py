@@ -10,7 +10,6 @@ www.brightsparklabs.com
 """
 
 # standard library
-from appcli.string_parser import StringParser
 import difflib
 import subprocess
 
@@ -26,6 +25,7 @@ from appcli.git_repositories.git_repositories import confirm_config_dir_exists
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
+from appcli.string_transformer import StringTransformer
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -128,8 +128,8 @@ class ConfigureCli:
         @click.option(
             "-t",
             "--type",
-            type=click.Choice(StringParser.get_types()),
-            default=StringParser.get_string_parser_type(),
+            type=click.Choice(StringTransformer.get_types()),
+            default=StringTransformer.get_string_transformer_type(),
         )
         @click.argument("setting")
         @click.argument("value")
@@ -140,12 +140,14 @@ class ConfigureCli:
             # Validate environment
             self.__pre_configure_get_and_set_validation(cli_context)
 
-            # Parse input value as type
-            parsed_value = StringParser.parse(value, type)
+            # Transform input value as type
+            transformed_value = StringTransformer.transform(value, type)
 
             # Set settings value
             configuration = ConfigurationManager(cli_context, self.cli_configuration)
-            configuration.get_variables_manager().set_variable(setting, parsed_value)
+            configuration.get_variables_manager().set_variable(
+                setting, transformed_value
+            )
 
         @configure.command(
             help="Get the differences between current and default configuration settings."
