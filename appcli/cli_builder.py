@@ -10,6 +10,7 @@ www.brightsparklabs.com
 """
 
 # standard libraries
+from appcli.configuration.configuration_strategy import ConfigurationStrategyFactory
 import os
 import sys
 from pathlib import Path
@@ -175,6 +176,15 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             error_and_exit(
                 "Could not set desired environment. Please ensure specified environment variables are set."
             )
+
+        conf_dir_strategy = ConfigurationStrategyFactory.get_strategy()
+
+        # TODO: Deal with the fact that '--force' is on the subcommands
+        command_allowed = conf_dir_strategy.is_command_allowed(
+            command=(ctx.invoked_subcommand, *ctx.obj.subcommand_args), force=False
+        )
+        if not command_allowed:
+            sys.exit(1)
 
         # For the `installer`/`launcher` commands, no further output/checks required.
         if ctx.invoked_subcommand in ("launcher", "install"):
