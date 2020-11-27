@@ -184,7 +184,9 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             command=(ctx.invoked_subcommand, *ctx.obj.subcommand_args), force=False
         )
         if not command_allowed:
-            sys.exit(1)
+            logger.error("Command not allowed.")
+            # TODO: Uncomment once the factory returns something that always disallows configure init
+            # sys.exit(1)
 
         # For the `installer`/`launcher` commands, no further output/checks required.
         if ctx.invoked_subcommand in ("launcher", "install"):
