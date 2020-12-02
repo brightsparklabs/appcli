@@ -12,6 +12,7 @@ www.brightsparklabs.com
 """
 
 # standard library
+from appcli.commands.commands import AppcliCommand
 from pathlib import Path
 
 # vendor libraries
@@ -43,8 +44,10 @@ class EncryptCli:
         @click.argument("text")
         @click.pass_context
         def encrypt(ctx, text: str):
-
             cli_context: CliContext = ctx.obj
+            cli_context.configuration_state.verify_command_allowed(
+                AppcliCommand.ENCRYPT
+            )
             key_file: Path = cli_context.get_key_file()
             if not key_file.is_file():
                 logger.info("Creating encryption key at [%s]", key_file)

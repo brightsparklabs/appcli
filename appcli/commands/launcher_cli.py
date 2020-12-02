@@ -12,6 +12,8 @@ www.brightsparklabs.com
 """
 
 # standard library
+from appcli.commands.commands import AppcliCommand
+from appcli.models.cli_context import CliContext
 import datetime
 import importlib.resources as pkg_resources
 import os
@@ -51,6 +53,11 @@ class LauncherCli:
         @click.command(help="Outputs an appropriate launcher bash script to stdout.")
         @click.pass_context
         def launcher(ctx):
+            cli_context: CliContext = ctx.obj
+            cli_context.configuration_state.verify_command_allowed(
+                AppcliCommand.LAUNCHER
+            )
+
             logger.info("Generating launcher script ...")
 
             # Get the template from the appcli package

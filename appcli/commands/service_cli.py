@@ -10,6 +10,7 @@ www.brightsparklabs.com
 """
 
 # standard libraries
+from appcli.commands.commands import AppcliCommand
 import sys
 
 # vendor libraries
@@ -72,14 +73,16 @@ class ServiceCli:
         @click.argument("service_name", required=False, type=click.STRING)
         @click.pass_context
         def start(ctx, force, service_name):
-            hooks = self.cli_configuration.hooks
+            cli_context: CliContext = ctx.obj
+            cli_context.configuration_state.verify_command_allowed(
+                AppcliCommand.SERVICE_START, force
+            )
 
-            # TODO: run self.cli_configuration.hooks.is_valid_variables() to confirm variables are valid
+            hooks = self.cli_configuration.hooks
 
             logger.debug("Running pre-start hook")
             hooks.pre_start(ctx)
 
-            cli_context: CliContext = ctx.obj
             self.__pre_start_validation(cli_context, force=force)
 
             logger.info("Starting %s ...", configuration.app_name)
@@ -188,12 +191,16 @@ class ServiceCli:
             service_name (str, optional): The name of the service to shutdown. If not provided, will shut down all
                 services.
         """
+        cli_context: CliContext = ctx.obj
+        cli_context.configuration_state.verify_command_allowed(
+            AppcliCommand.SERVICE_SHUTDOWN, force
+        )
+
         hooks = self.cli_configuration.hooks
 
         logger.debug("Running pre-shutdown hook")
         hooks.pre_shutdown(ctx)
 
-        cli_context: CliContext = ctx.obj
         self.__pre_shutdown_validation(cli_context, force=force)
 
         logger.info("Shutting down %s ...", self.cli_configuration.app_name)

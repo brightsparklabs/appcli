@@ -10,6 +10,7 @@ www.brightsparklabs.com
 """
 
 # standard library
+from appcli.commands.commands import AppcliCommand
 import difflib
 import subprocess
 
@@ -54,9 +55,12 @@ class ConfigureCli:
         @configure.command(help="Initialises the configuration directory.")
         @click.pass_context
         def init(ctx):
-            print_header(f"Seeding configuration directory for {self.app_name}")
-
             cli_context: CliContext = ctx.obj
+            cli_context.configuration_state.verify_command_allowed(
+                AppcliCommand.CONFIGURE_INIT
+            )
+
+            print_header(f"Seeding configuration directory for {self.app_name}")
 
             # Run pre-hooks
             hooks = self.cli_configuration.hooks
@@ -91,6 +95,9 @@ class ConfigureCli:
         @click.pass_context
         def apply(ctx, message, force):
             cli_context: CliContext = ctx.obj
+            cli_context.configuration_state.verify_command_allowed(
+                AppcliCommand.CONFIGURE_APPLY
+            )
 
             # TODO: run self.cli_configuration.hooks.is_valid_variables() to confirm variables are valid
 
@@ -116,6 +123,9 @@ class ConfigureCli:
         @click.pass_context
         def get(ctx, setting):
             cli_context: CliContext = ctx.obj
+            cli_context.configuration_state.verify_command_allowed(
+                AppcliCommand.CONFIGURE_GET
+            )
 
             # Validate environment
             self.__pre_configure_get_and_set_validation(cli_context)
@@ -136,6 +146,9 @@ class ConfigureCli:
         @click.pass_context
         def set(ctx, type, setting, value):
             cli_context: CliContext = ctx.obj
+            cli_context.configuration_state.verify_command_allowed(
+                AppcliCommand.CONFIGURE_SET
+            )
 
             # Validate environment
             self.__pre_configure_get_and_set_validation(cli_context)
@@ -155,6 +168,9 @@ class ConfigureCli:
         @click.pass_context
         def diff(ctx):
             cli_context: CliContext = ctx.obj
+            cli_context.configuration_state.verify_command_allowed(
+                AppcliCommand.CONFIGURE_DIFF
+            )
 
             default_settings_file = self.cli_configuration.seed_app_configuration_file
             current_settings_file = cli_context.get_app_configuration_file()
@@ -175,6 +191,9 @@ class ConfigureCli:
         @click.pass_context
         def edit(ctx):
             cli_context: CliContext = ctx.obj
+            cli_context.configuration_state.verify_command_allowed(
+                AppcliCommand.CONFIGURE_EDIT
+            )
             EDITOR = "vim.tiny"
 
             subprocess.run([EDITOR, cli_context.get_app_configuration_file()])

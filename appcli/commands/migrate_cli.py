@@ -14,6 +14,7 @@ www.brightsparklabs.com
 # standard library
 
 # vendor libraries
+from appcli.commands.commands import AppcliCommand
 import click
 
 # local libraries
@@ -56,6 +57,7 @@ class MigrateCli:
 
     def __migrate(self, ctx):
         cli_context: CliContext = ctx.obj
+        cli_context.configuration_state.verify_command_allowed(AppcliCommand.MIGRATE)
 
         # Perform migration
         ConfigurationManager(

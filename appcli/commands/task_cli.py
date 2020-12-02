@@ -10,6 +10,8 @@ www.brightsparklabs.com
 """
 
 # standard libraries
+from appcli.commands.commands import AppcliCommand
+from appcli.models.cli_context import CliContext
 import sys
 
 # vendor libraries
@@ -58,6 +60,10 @@ class TaskCli:
         @click.argument("extra_args", nargs=-1, type=click.UNPROCESSED)
         @click.pass_context
         def run(ctx, service_name, extra_args):
+            cli_context: CliContext = ctx.obj
+            cli_context.configuration_state.verify_command_allowed(
+                AppcliCommand.TASK_RUN
+            )
             logger.info(
                 "Running task [%s] with args [%s] ...",
                 service_name,

@@ -2,11 +2,19 @@
 # # -*- coding: utf-8 -*-
 
 # standard libraries
+from appcli.configuration.configuration_state import (
+    ConfigurationState,
+    ConfigurationStateFactory,
+)
 from pathlib import Path
-from typing import Dict, Iterable, NamedTuple, Tuple
+from typing import Dict, Iterable, Tuple
+from dataclasses import dataclass, field
+
+from appcli.logger import logger
 
 
-class CliContext(NamedTuple):
+@dataclass
+class CliContext:
     """ Shared context from a run of the CLI. """
 
     # ---------------------------------
@@ -36,6 +44,17 @@ class CliContext(NamedTuple):
 
     debug: bool
     """ Whether to print debug logs. """
+
+    configuration_state: ConfigurationState = field(init=False)
+    """ The conf state """
+
+    def __post_init__(self):
+        self.configuration_state: ConfigurationState = (
+            ConfigurationStateFactory.get_state(
+                self.configuration_dir, self.get_generated_configuration_dir()
+            )
+        )
+        logger.debug(f"Built configuration state [{self.configuration_state}]")
 
     # ---------------------------------
     # CLI build data
@@ -68,6 +87,8 @@ class CliContext(NamedTuple):
         Returns:
             Path: directory of generated configuration
         """
+        if self.configuration_dir is None:
+            return None
         return self.configuration_dir.joinpath(".generated")
 
     def get_configuration_metadata_dir(self) -> Path:

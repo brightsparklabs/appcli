@@ -10,6 +10,7 @@ www.brightsparklabs.com
 """
 
 # standard library
+from appcli.commands.commands import AppcliCommand
 from appcli.variables_manager import VariablesManager
 
 # vendor libraries
@@ -50,6 +51,9 @@ class DebugCli:
         @click.pass_context
         def info(ctx):
             cli_context: CliContext = ctx.obj
+            cli_context.configuration_state.verify_command_allowed(
+                AppcliCommand.DEBUG_INFO
+            )
             app_config_file = cli_context.get_app_configuration_file()
             variables_manager = VariablesManager(app_config_file)
 

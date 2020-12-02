@@ -10,6 +10,7 @@ www.brightsparklabs.com
 """
 
 # standard library
+from appcli.commands.commands import AppcliCommand
 import difflib
 import filecmp
 import glob
@@ -55,6 +56,10 @@ class ConfigureTemplateCli:
         @template.command(help="Lists all baseline templates.")
         @click.pass_context
         def ls(ctx):
+            cli_context: CliContext = ctx.obj
+            cli_context.configuration_state.verify_command_allowed(
+                AppcliCommand.CONFIGURE_TEMPLATE_LS
+            )
             baseline_templates_dir = self.cli_configuration.baseline_templates_dir
 
             # Get the relative path of all files within the seed templates directory
@@ -67,6 +72,10 @@ class ConfigureTemplateCli:
         @click.argument("template")
         @click.pass_context
         def get(ctx, template):
+            cli_context: CliContext = ctx.obj
+            cli_context.configuration_state.verify_command_allowed(
+                AppcliCommand.CONFIGURE_TEMPLATE_GET
+            )
             baseline_templates_dir = self.cli_configuration.baseline_templates_dir
 
             template_file_path = Path(os.path.join(baseline_templates_dir, template))
@@ -85,6 +94,9 @@ class ConfigureTemplateCli:
         @click.pass_context
         def override(ctx, template, force):
             cli_context: CliContext = ctx.obj
+            cli_context.configuration_state.verify_command_allowed(
+                AppcliCommand.CONFIGURE_TEMPLATE_OVERRIDE
+            )
             baseline_templates_dir = self.cli_configuration.baseline_templates_dir
 
             template_file_path = Path(os.path.join(baseline_templates_dir, template))
@@ -111,6 +123,9 @@ class ConfigureTemplateCli:
         @click.pass_context
         def diff(ctx):
             cli_context: CliContext = ctx.obj
+            cli_context.configuration_state.verify_command_allowed(
+                AppcliCommand.CONFIGURE_TEMPLATE_DIFF
+            )
             baseline_templates_dir = self.cli_configuration.baseline_templates_dir
             override_templates_dir = cli_context.get_baseline_template_overrides_dir()
 
