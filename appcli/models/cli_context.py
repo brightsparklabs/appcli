@@ -7,14 +7,12 @@ from appcli.configuration.configuration_state import (
     ConfigurationStateFactory,
 )
 from pathlib import Path
-from typing import Dict, Iterable, Tuple
-from dataclasses import dataclass, field
+from typing import Dict, Iterable, NamedTuple, Tuple
 
 from appcli.logger import logger
 
 
-@dataclass
-class CliContext:
+class CliContext(NamedTuple):
     """ Shared context from a run of the CLI. """
 
     # ---------------------------------
