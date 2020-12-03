@@ -80,9 +80,11 @@ class InstallCli:
             environment: str = cli_context.environment
             target_install_dir: Path = install_dir / environment
             if cli_context.configuration_dir is None:
-                cli_context.configuration_dir = target_install_dir / "conf"
+                cli_context = cli_context._replace(
+                    configuration_dir=target_install_dir / "conf"
+                )
             if cli_context.data_dir is None:
-                cli_context.data_dir = target_install_dir / "data"
+                cli_context = cli_context._replace(data_dir=target_install_dir / "data")
             render_variables = {
                 "cli_context": cli_context,
                 "configuration": self.configuration,
