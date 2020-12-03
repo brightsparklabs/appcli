@@ -82,22 +82,16 @@ class ServiceCli:
             sys.exit(result.returncode)
 
         @service.command(help="Shuts down services.")
-        @click.option(
-            "--force",
-            is_flag=True,
-            help="Force shutdown even if validation checks fail.",
-        )
         @click.argument("service_name", required=False, type=click.STRING)
         @click.pass_context
-        def shutdown(ctx, force, service_name):
-            self.__shutdown(ctx, force, service_name)
+        def shutdown(ctx, service_name):
+            self.__shutdown(ctx, service_name)
 
         @service.command(help="Stops services.", hidden=True)
-        @click.option("--force", is_flag=True)
         @click.argument("service_name", required=False, type=click.STRING)
         @click.pass_context
-        def stop(ctx, force, service_name):
-            self.__shutdown(ctx, force, service_name)
+        def stop(ctx, service_name):
+            self.__shutdown(ctx, service_name)
 
         # Add the 'logs' subcommand
         service.add_command(self.orchestrator.get_logs_command())
@@ -124,7 +118,7 @@ class ServiceCli:
                 orchestrator.add_command(command)
             self.commands.update({"orchestrator": orchestrator})
 
-    def __shutdown(self, ctx: Context, force: bool = False, service_name: str = None):
+    def __shutdown(self, ctx: Context, service_name: str = None):
         """Shutdown service(s) using the orchestrator.
 
         Args:
@@ -135,7 +129,7 @@ class ServiceCli:
         """
         cli_context: CliContext = ctx.obj
         cli_context.configuration_state.verify_command_allowed(
-            AppcliCommand.SERVICE_SHUTDOWN, force
+            AppcliCommand.SERVICE_SHUTDOWN
         )
 
         hooks = self.cli_configuration.hooks
