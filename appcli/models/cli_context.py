@@ -63,6 +63,12 @@ class CliContext:
     # ---------------------------------
 
     def get_configuration_state(self) -> ConfigurationState:
+        """Gets the state of the configuration, for use in validating whether
+        a command can be used or not.
+
+        Returns:
+            ConfigurationState: The state of the configuration.
+        """
         configuration_state: ConfigurationState = ConfigurationStateFactory.get_state(
             self.configuration_dir,
             self.get_generated_configuration_dir(),
