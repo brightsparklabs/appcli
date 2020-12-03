@@ -10,7 +10,6 @@ www.brightsparklabs.com
 """
 
 # standard libraries
-import os
 from appcli.git_repositories.git_repositories import (
     ConfigurationGitRepository,
     GeneratedConfigurationGitRepository,

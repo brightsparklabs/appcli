@@ -10,7 +10,6 @@ www.brightsparklabs.com
 """
 
 # standard libraries
-from appcli.configuration.configuration_state import ConfigurationStateFactory
 import os
 import sys
 from pathlib import Path

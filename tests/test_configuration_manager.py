@@ -66,7 +66,7 @@ def test_initialise_on_initialised_repo(tmpdir):
 
 def test_apply_before_init(tmpdir):
     conf_manager = create_conf_manager(tmpdir)
-    with pytest.raises(git.InvalidGitRepositoryError) as pytest_wrapped_e:
+    with pytest.raises(git.InvalidGitRepositoryError):
         # Expect that we cannot apply on an uninitialised repo
         conf_manager.apply_configuration_changes(message="some message")
 

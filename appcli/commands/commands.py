@@ -26,8 +26,8 @@ class AppcliCommand(Enum):
 
     SERVICE_START = auto()
     SERVICE_SHUTDOWN = auto()
-    SERVICE_LOGS = auto()  # TODO: Deal with... Comes from the orchestrator...
+    SERVICE_LOGS = auto()
 
     TASK_RUN = auto()
 
-    ORCHESTRATOR = auto()  # TODO: Do we need to do something with this?
+    ORCHESTRATOR = auto()
