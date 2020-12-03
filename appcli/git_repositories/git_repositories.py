@@ -10,6 +10,7 @@ www.brightsparklabs.com
 """
 
 # standard library
+import os
 from pathlib import Path
 from typing import Iterable
 
@@ -66,6 +67,9 @@ class GitRepository:
         repo.index.commit("[autocommit] Initialised repository", author=self.actor)
 
     def repo_exists(self) -> bool:
+        if not os.path.isdir(self.repo_path):
+            return False
+
         try:
             git.Repo(self.repo_path)
             return True
@@ -204,6 +208,11 @@ class GitRepository:
 
     def get_repo_path(self):
         return self.repo_path
+
+    def get_commit_count(self) -> int:
+        """Get the total number of commits on this repo"""
+        repo = self.__get_repo()
+        return repo.git.rev_list(("--all", "--count"))
 
     def __get_repo(self) -> git.Repo:
         return git.Repo(self.repo_path)

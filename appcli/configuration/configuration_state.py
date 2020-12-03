@@ -49,7 +49,7 @@ class ConfigurationState:
 
 class ConfigurationStateFactory:
     def get_state(
-        configuration_dir: Path, generated_configuration_dir: Path
+        configuration_dir: Path, generated_configuration_dir: Path, app_version: str
     ) -> ConfigurationState:
         if configuration_dir is None:
             return NoDirectoryProvidedConfigurationState()
@@ -60,12 +60,10 @@ class ConfigurationStateFactory:
             generated_configuration_dir
         )
 
-        if (not os.path.isdir(configuration_dir)) or (not config_repo.repo_exists()):
+        if not config_repo.repo_exists():
             return UninitialisedConfigurationState()
 
-        if (not os.path.isdir(generated_configuration_dir)) or (
-            not gen_config_repo.repo_exists()
-        ):
+        if not gen_config_repo.repo_exists():
             return UnappliedConfigurationState()
 
         if config_repo.is_dirty():
@@ -80,17 +78,15 @@ class ConfigurationStateFactory:
             # Gen Dirty
             return DirtyGenConfigurationState()
 
-        return CleanConfigurationState()
+        if gen_config_repo.get_commit_count() > 1:
+            return InvalidConfigurationState(
+                f"Generated repository [{gen_config_repo.get_repo_path()}] has extra untracked git commits."
+            )
 
-        # TODO: Other things to check...
-        # pre-apply:
-        #   confirm_not_on_master_branch,
-        #   confirm_config_version_matches_app_version,
-        # pre-migrate:
-        #   confirm_generated_configuration_is_using_current_configuration
-        #   - check this by the metadata file...
-        # pre-start:
-        #   confirm_config_version_matches_app_version
+        if config_repo.get_repository_version() != app_version:
+            return RequiresMigrationConfigurationState()
+
+        return CleanConfigurationState()
 
 
 class NoDirectoryProvidedConfigurationState(ConfigurationState):
@@ -253,12 +249,50 @@ class DirtyConfAndGenConfigurationState(ConfigurationState):
         super().__init__(cannot_run, cannot_run_unless_forced)
 
 
+class RequiresMigrationConfigurationState(ConfigurationState):
+    """Represents the state where configuration version doesn't align with the application version."""
+
+    def __init__(self, conf_version: str, app_version: str) -> None:
+
+        default_error_message = (
+            "Application requires migration. "
+            f"Configuration version [{conf_version}], Application version [{app_version}]."
+        )
+
+        # Disallow all commands as we aren't sure what commands might no longer be valid during migration.
+        cannot_run = {
+            AppcliCommand.CONFIGURE_INIT: "Cannot initialise an existing configuration.",
+            AppcliCommand.CONFIGURE_APPLY: default_error_message,
+            AppcliCommand.CONFIGURE_GET: default_error_message,
+            AppcliCommand.CONFIGURE_SET: default_error_message,
+            AppcliCommand.CONFIGURE_DIFF: default_error_message,
+            AppcliCommand.CONFIGURE_EDIT: default_error_message,
+            AppcliCommand.CONFIGURE_TEMPLATE_LS: default_error_message,
+            AppcliCommand.CONFIGURE_TEMPLATE_GET: default_error_message,
+            AppcliCommand.CONFIGURE_TEMPLATE_OVERRIDE: default_error_message,
+            AppcliCommand.CONFIGURE_TEMPLATE_DIFF: default_error_message,
+            AppcliCommand.DEBUG_INFO: default_error_message,
+            AppcliCommand.ENCRYPT: default_error_message,
+            AppcliCommand.INSTALL: "Cannot install over the top of existing application.",
+            AppcliCommand.LAUNCHER: default_error_message,
+            AppcliCommand.MIGRATE: default_error_message,
+            AppcliCommand.SERVICE_START: default_error_message,
+            AppcliCommand.SERVICE_SHUTDOWN: default_error_message,
+            AppcliCommand.SERVICE_LOGS: default_error_message,
+            AppcliCommand.TASK_RUN: default_error_message,
+            AppcliCommand.ORCHESTRATOR: default_error_message,
+        }
+        cannot_run_unless_forced = {}
+
+        super().__init__(cannot_run, cannot_run_unless_forced)
+
+
 class InvalidConfigurationState(ConfigurationState):
     """Represents the state where configuration is invalid and incompatible with appcli."""
 
     def __init__(self, error: str) -> None:
 
-        default_error_message = f"Invalid configuration state. {error}"
+        default_error_message = f"Invalid configuration state, this error must be rectified before continuing. {error}"
 
         cannot_run = {
             AppcliCommand.CONFIGURE_INIT: default_error_message,
