@@ -1,3 +1,14 @@
+#!/usr/bin/env python3
+# # -*- coding: utf-8 -*-
+
+"""
+Enum representing all appcli commands.
+________________________________________________________________________________
+
+Created by brightSPARK Labs
+www.brightsparklabs.com
+"""
+
 from enum import Enum, auto
 
 

@@ -52,7 +52,6 @@ class ConfigurationStateFactory:
     ) -> ConfigurationState:
         if configuration_dir is None:
             return NoDirectoryProvidedConfigurationState()
-        # TODO: Impl all the states and logic to get those states
 
         config_repo = ConfigurationGitRepository(configuration_dir)
         gen_config_repo = GeneratedConfigurationGitRepository(
@@ -62,29 +61,26 @@ class ConfigurationStateFactory:
         if not config_repo.repo_exists():
             return UninitialisedConfigurationState()
 
+        conf_version = config_repo.get_repository_version()
+        if conf_version != app_version:
+            error_message = f"Application requires migration. Configuration version [{conf_version}], Application version [{app_version}]."
+            return InvalidConfigurationState(error_message)
+
         if not gen_config_repo.repo_exists():
             return UnappliedConfigurationState()
 
         if config_repo.is_dirty():
-            # Conf dirty
             if gen_config_repo.is_dirty():
-                # Conf and Gen dirty
                 return DirtyConfAndGenConfigurationState()
             return DirtyConfConfigurationState()
 
-        # Conf clean
         if gen_config_repo.is_dirty():
-            # Gen Dirty
             return DirtyGenConfigurationState()
 
         if gen_config_repo.get_commit_count() > 1:
             return InvalidConfigurationState(
                 f"Generated repository [{gen_config_repo.get_repo_path()}] has extra untracked git commits."
             )
-
-        conf_version = config_repo.get_repository_version()
-        if conf_version != app_version:
-            return RequiresMigrationConfigurationState(conf_version, app_version)
 
         return CleanConfigurationState()
 
@@ -245,44 +241,6 @@ class DirtyConfAndGenConfigurationState(ConfigurationState):
             AppcliCommand.TASK_RUN: "Cannot run task with dirty generated configuration. Run 'configure apply'.",
             AppcliCommand.ORCHESTRATOR: "Cannot run orchestrator tasks with dirty generated configuration. Run 'configure apply'.",
         }
-
-        super().__init__(cannot_run, cannot_run_unless_forced)
-
-
-class RequiresMigrationConfigurationState(ConfigurationState):
-    """Represents the state where configuration version doesn't align with the application version."""
-
-    def __init__(self, conf_version: str, app_version: str) -> None:
-
-        default_error_message = (
-            "Application requires migration. "
-            f"Configuration version [{conf_version}], Application version [{app_version}]."
-        )
-
-        # Disallow all commands as we aren't sure what commands might no longer be valid during migration.
-        cannot_run = {
-            AppcliCommand.CONFIGURE_INIT: "Cannot initialise an existing configuration.",
-            AppcliCommand.CONFIGURE_APPLY: default_error_message,
-            AppcliCommand.CONFIGURE_GET: default_error_message,
-            AppcliCommand.CONFIGURE_SET: default_error_message,
-            AppcliCommand.CONFIGURE_DIFF: default_error_message,
-            AppcliCommand.CONFIGURE_EDIT: default_error_message,
-            AppcliCommand.CONFIGURE_TEMPLATE_LS: default_error_message,
-            AppcliCommand.CONFIGURE_TEMPLATE_GET: default_error_message,
-            AppcliCommand.CONFIGURE_TEMPLATE_OVERRIDE: default_error_message,
-            AppcliCommand.CONFIGURE_TEMPLATE_DIFF: default_error_message,
-            AppcliCommand.DEBUG_INFO: default_error_message,
-            AppcliCommand.ENCRYPT: default_error_message,
-            AppcliCommand.INSTALL: "Cannot install over the top of existing application.",
-            AppcliCommand.LAUNCHER: default_error_message,
-            AppcliCommand.MIGRATE: default_error_message,
-            AppcliCommand.SERVICE_START: default_error_message,
-            AppcliCommand.SERVICE_SHUTDOWN: default_error_message,
-            AppcliCommand.SERVICE_LOGS: default_error_message,
-            AppcliCommand.TASK_RUN: default_error_message,
-            AppcliCommand.ORCHESTRATOR: default_error_message,
-        }
-        cannot_run_unless_forced = {}
 
         super().__init__(cannot_run, cannot_run_unless_forced)
 
