@@ -95,7 +95,7 @@ class ConfigureTemplateCli:
         def override(ctx, template, force):
             cli_context: CliContext = ctx.obj
             cli_context.configuration_state.verify_command_allowed(
-                AppcliCommand.CONFIGURE_TEMPLATE_OVERRIDE
+                AppcliCommand.CONFIGURE_TEMPLATE_OVERRIDE, force
             )
             baseline_templates_dir = self.cli_configuration.baseline_templates_dir
 

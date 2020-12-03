@@ -10,13 +10,17 @@ www.brightsparklabs.com
 """
 
 # standard libraries
-# from appcli.functions import error_and_exit
-from dataclasses import dataclass
+import os
+from appcli.git_repositories.git_repositories import (
+    ConfigurationGitRepository,
+    GeneratedConfigurationGitRepository,
+)
 from pathlib import Path
 
 # vendor libraries
 
 # local libraries
+from appcli.functions import error_and_exit
 from appcli.logger import logger
 from appcli.commands.commands import AppcliCommand
 
@@ -32,33 +36,53 @@ class ConfigurationState:
 
     def verify_command_allowed(self, command: AppcliCommand, force: bool = False):
         if command in self.cannot_run:
-            # TODO: Use error_and_exit once circular dep is gone
-            # error_and_exit(self.cannot_run[command])
-            logger.error(self.cannot_run[command])
-            raise SystemExit(1) from SystemExit(self.cannot_run[command])
+            error_and_exit(self.cannot_run[command])
         if command in self.cannot_run_unless_forced and not force:
-            # TODO: Use error_and_exit once circular dep is gone
-            # error_and_exit(self.cannot_run_unless_forced[command])
-            logger.error(
-                f"{self.cannot_run_unless_forced[command]} If this command supports it, use '--force' to ignore error."
+            error_and_exit(
+                f"{self.cannot_run_unless_forced[command]}"
+                " If this command supports it, use '--force' to ignore error."
             )
-            raise SystemExit(1) from SystemExit(self.cannot_run_unless_forced[command])
-        # TODO: swap to debug message
-        logger.error(
-            f"Allowed command [{command}] with current state [{self}], where force is [{force}]."
+        logger.debug(
+            f"Allowed command [{command}] with current configuration state [{self}], where force is [{force}]."
         )
 
 
 class ConfigurationStateFactory:
     def get_state(
-        configuration_dir: Path, generated_configuration_path: Path
+        configuration_dir: Path, generated_configuration_dir: Path
     ) -> ConfigurationState:
         if configuration_dir is None:
             return NoDirectoryProvidedConfigurationState()
         # TODO: Impl all the states and logic to get those states
-        return AllowAllConfigurationState()
-        # return CleanConfigurationState()
 
+        config_repo = ConfigurationGitRepository(configuration_dir)
+        gen_config_repo = GeneratedConfigurationGitRepository(
+            generated_configuration_dir
+        )
+
+        if (not os.path.isdir(configuration_dir)) or (not config_repo.repo_exists()):
+            return UninitialisedConfigurationState()
+
+        if (not os.path.isdir(generated_configuration_dir)) or (
+            not gen_config_repo.repo_exists()
+        ):
+            return UnappliedConfigurationState()
+
+        if config_repo.is_dirty():
+            # Conf dirty
+            if gen_config_repo.is_dirty():
+                # Conf and Gen dirty
+                return DirtyConfAndGenConfigurationState()
+            return DirtyConfConfigurationState()
+
+        # Conf clean
+        if gen_config_repo.is_dirty():
+            # Gen Dirty
+            return DirtyGenConfigurationState()
+
+        return CleanConfigurationState()
+
+        # TODO: Other things to check...
         # pre-apply:
         #   confirm_not_on_master_branch,
         #   confirm_config_version_matches_app_version,
@@ -67,17 +91,6 @@ class ConfigurationStateFactory:
         #   - check this by the metadata file...
         # pre-start:
         #   confirm_config_version_matches_app_version
-
-
-class AllowAllConfigurationState(ConfigurationState):
-    """TESTING. REMOVE."""
-
-    def __init__(self) -> None:
-
-        cannot_run = {}
-        cannot_run_unless_forced = {}
-
-        super().__init__(cannot_run, cannot_run_unless_forced)
 
 
 class NoDirectoryProvidedConfigurationState(ConfigurationState):
@@ -141,6 +154,25 @@ class UninitialisedConfigurationState(ConfigurationState):
             AppcliCommand.SERVICE_LOGS: default_error_message,
             AppcliCommand.TASK_RUN: default_error_message,
             AppcliCommand.ORCHESTRATOR: default_error_message,
+        }
+        cannot_run_unless_forced = {}
+
+        super().__init__(cannot_run, cannot_run_unless_forced)
+
+
+class UnappliedConfigurationState(ConfigurationState):
+    """Represents the state where configuration hasn't been applied yet, i.e. the generated configuration doesn't exist."""
+
+    def __init__(self) -> None:
+
+        cannot_run = {
+            AppcliCommand.CONFIGURE_INIT: "Cannot initialise an existing configuration.",
+            AppcliCommand.INSTALL: "Cannot install over the top of existing application.",
+            AppcliCommand.SERVICE_START: "Cannot start services due to missing generated configuration. Run 'configure apply'.",
+            AppcliCommand.SERVICE_SHUTDOWN: "Cannot stop services due to missing generated configuration. Run 'configure apply'.",
+            AppcliCommand.SERVICE_LOGS: "Cannot get service logs due to missing generated configuration. Run 'configure apply'.",
+            AppcliCommand.TASK_RUN: "Cannot run tasks due to missing generated configuration. Run 'configure apply'.",
+            AppcliCommand.ORCHESTRATOR: "Cannot run orchestrator commands due to missing generated configuration. Run 'configure apply'.",
         }
         cannot_run_unless_forced = {}
 
@@ -224,9 +256,9 @@ class DirtyConfAndGenConfigurationState(ConfigurationState):
 class InvalidConfigurationState(ConfigurationState):
     """Represents the state where configuration is invalid and incompatible with appcli."""
 
-    def __init__(self) -> None:
+    def __init__(self, error: str) -> None:
 
-        default_error_message = "Invalid configuration state."
+        default_error_message = f"Invalid configuration state. {error}"
 
         cannot_run = {
             AppcliCommand.CONFIGURE_INIT: default_error_message,

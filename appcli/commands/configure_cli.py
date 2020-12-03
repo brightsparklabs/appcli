@@ -95,7 +95,7 @@ class ConfigureCli:
         def apply(ctx, message, force):
             cli_context: CliContext = ctx.obj
             cli_context.configuration_state.verify_command_allowed(
-                AppcliCommand.CONFIGURE_APPLY
+                AppcliCommand.CONFIGURE_APPLY, force
             )
 
             # Run pre-hooks

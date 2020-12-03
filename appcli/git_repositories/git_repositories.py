@@ -18,7 +18,6 @@ import git
 
 # local libraries
 from appcli.logger import logger
-from appcli.models.cli_context import CliContext
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
@@ -220,13 +219,13 @@ class GitRepository:
 
 
 class ConfigurationGitRepository(GitRepository):
-    def __init__(self, cli_context: CliContext):
+    def __init__(self, configuration_dir: Path):
         super().__init__(
-            cli_context.configuration_dir,
+            configuration_dir,
             [".generated*", ".metadata*"],
         )
 
 
 class GeneratedConfigurationGitRepository(GitRepository):
-    def __init__(self, cli_context: CliContext):
-        super().__init__(cli_context.get_generated_configuration_dir())
+    def __init__(self, generated_configuration_dir: Path):
+        super().__init__(generated_configuration_dir)

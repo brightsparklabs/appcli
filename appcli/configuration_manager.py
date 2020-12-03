@@ -55,10 +55,12 @@ class ConfigurationManager:
     def __init__(self, cli_context: CliContext, configuration: Configuration):
         self.cli_context = cli_context
         self.config_repo: ConfigurationGitRepository = ConfigurationGitRepository(
-            cli_context
+            cli_context.configuration_dir
         )
         self.generated_config_repo: GeneratedConfigurationGitRepository = (
-            GeneratedConfigurationGitRepository(cli_context)
+            GeneratedConfigurationGitRepository(
+                cli_context.get_generated_configuration_dir()
+            )
         )
         self.cli_configuration: Configuration = configuration
 
