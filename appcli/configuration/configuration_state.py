@@ -56,7 +56,28 @@ class ConfigurationStateFactory:
         if configuration_dir is None:
             return NoDirectoryProvidedConfigurationState()
         # TODO: Impl all the states and logic to get those states
-        return CleanConfigurationState()
+        return AllowAllConfigurationState()
+        # return CleanConfigurationState()
+
+        # pre-apply:
+        #   confirm_not_on_master_branch,
+        #   confirm_config_version_matches_app_version,
+        # pre-migrate:
+        #   confirm_generated_configuration_is_using_current_configuration
+        #   - check this by the metadata file...
+        # pre-start:
+        #   confirm_config_version_matches_app_version
+
+
+class AllowAllConfigurationState(ConfigurationState):
+    """TESTING. REMOVE."""
+
+    def __init__(self) -> None:
+
+        cannot_run = {}
+        cannot_run_unless_forced = {}
+
+        super().__init__(cannot_run, cannot_run_unless_forced)
 
 
 class NoDirectoryProvidedConfigurationState(ConfigurationState):

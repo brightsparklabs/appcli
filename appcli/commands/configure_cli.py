@@ -21,8 +21,7 @@ from appcli.commands.configure_template_cli import ConfigureTemplateCli
 
 # local libraries
 from appcli.configuration_manager import ConfigurationManager
-from appcli.functions import execute_validation_functions, print_header
-from appcli.git_repositories.git_repositories import confirm_config_dir_exists
+from appcli.functions import print_header
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
@@ -99,8 +98,6 @@ class ConfigureCli:
                 AppcliCommand.CONFIGURE_APPLY
             )
 
-            # TODO: run self.cli_configuration.hooks.is_valid_variables() to confirm variables are valid
-
             # Run pre-hooks
             hooks = self.cli_configuration.hooks
             logger.debug("Running pre-configure apply hook")
@@ -110,7 +107,7 @@ class ConfigureCli:
             logger.debug("Applying configuration")
             ConfigurationManager(
                 cli_context, self.cli_configuration
-            ).apply_configuration_changes(message, force=force)
+            ).apply_configuration_changes(message)
 
             # Run post-hooks
             logger.debug("Running post-configure apply hook")
@@ -127,12 +124,9 @@ class ConfigureCli:
                 AppcliCommand.CONFIGURE_GET
             )
 
-            # Validate environment
-            self.__pre_configure_get_and_set_validation(cli_context)
-
             # Get settings value and print
             configuration = ConfigurationManager(cli_context, self.cli_configuration)
-            print(configuration.get_variables_manager().get_variable(setting))
+            print(configuration.get_variable(setting))
 
         @configure.command(help="Saves a setting to the configuration.")
         @click.option(
@@ -150,17 +144,13 @@ class ConfigureCli:
                 AppcliCommand.CONFIGURE_SET
             )
 
-            # Validate environment
-            self.__pre_configure_get_and_set_validation(cli_context)
-
             # Transform input value as type
             transformed_value = StringTransformer.transform(value, type)
 
             # Set settings value
             configuration = ConfigurationManager(cli_context, self.cli_configuration)
-            configuration.get_variables_manager().set_variable(
-                setting, transformed_value
-            )
+            configuration.set_variable(setting, transformed_value)
+            logger.debug(f"Successfully set variable [{setting}] to [{value}].")
 
         @configure.command(
             help="Get the differences between current and default configuration settings."
@@ -203,25 +193,3 @@ class ConfigureCli:
 
         # Expose the commands
         self.commands = {"configure": configure}
-
-    # ------------------------------------------------------------------------------
-    # PRIVATE METHODS
-    # ------------------------------------------------------------------------------
-
-    def __pre_configure_get_and_set_validation(self, cli_context: CliContext):
-        """Ensures the system is in a valid state for 'configure get'.
-
-        Args:
-            cli_context (CliContext): The current CLI context.
-        """
-        logger.info("Checking system configuration is valid before 'configure get' ...")
-
-        # Block if the config dir doesn't exist as there's nothing to get or set
-        must_succeed_checks = [confirm_config_dir_exists]
-
-        execute_validation_functions(
-            cli_context=cli_context,
-            must_succeed_checks=must_succeed_checks,
-        )
-
-        logger.info("System configuration is valid")
