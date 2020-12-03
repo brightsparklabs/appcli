@@ -45,19 +45,6 @@ class CliContext:
     debug: bool
     """ Whether to print debug logs. """
 
-    configuration_state: ConfigurationState = field(init=False)
-    """ The conf state """
-
-    def __post_init__(self):
-        self.configuration_state: ConfigurationState = (
-            ConfigurationStateFactory.get_state(
-                self.configuration_dir,
-                self.get_generated_configuration_dir(),
-                self.app_version,
-            )
-        )
-        logger.debug(f"Built configuration state [{self.configuration_state}]")
-
     # ---------------------------------
     # CLI build data
     # ---------------------------------
@@ -75,7 +62,14 @@ class CliContext:
     # derived data
     # ---------------------------------
 
-    # TODO: Should these also all become 'immutable' properties? Probably....
+    def get_configuration_state(self) -> ConfigurationState:
+        configuration_state: ConfigurationState = ConfigurationStateFactory.get_state(
+            self.configuration_dir,
+            self.get_generated_configuration_dir(),
+            self.app_version,
+        )
+        logger.debug(f"Derived configuration state [{self.get_configuration_state()}]")
+        return configuration_state
 
     def get_key_file(self) -> Path:
         """Get the location of the key file for decrypting secrets

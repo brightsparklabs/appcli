@@ -66,7 +66,7 @@ class InstallCli:
         # NOTE: Hide the CLI command as end users should not run it manually
         def install(ctx, install_dir: Path):
             cli_context: CliContext = ctx.obj
-            cli_context.configuration_state.verify_command_allowed(
+            cli_context.get_configuration_state().verify_command_allowed(
                 AppcliCommand.INSTALL
             )
             logger.info("Generating installer script ...")

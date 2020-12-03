@@ -57,7 +57,9 @@ class MigrateCli:
 
     def __migrate(self, ctx):
         cli_context: CliContext = ctx.obj
-        cli_context.configuration_state.verify_command_allowed(AppcliCommand.MIGRATE)
+        cli_context.get_configuration_state().verify_command_allowed(
+            AppcliCommand.MIGRATE
+        )
 
         # Perform migration
         ConfigurationManager(

@@ -54,7 +54,7 @@ class LauncherCli:
         @click.pass_context
         def launcher(ctx):
             cli_context: CliContext = ctx.obj
-            cli_context.configuration_state.verify_command_allowed(
+            cli_context.get_configuration_state().verify_command_allowed(
                 AppcliCommand.LAUNCHER
             )
 

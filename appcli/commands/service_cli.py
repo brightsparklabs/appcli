@@ -63,7 +63,7 @@ class ServiceCli:
         @click.pass_context
         def start(ctx, force, service_name):
             cli_context: CliContext = ctx.obj
-            cli_context.configuration_state.verify_command_allowed(
+            cli_context.get_configuration_state().verify_command_allowed(
                 AppcliCommand.SERVICE_START, force
             )
 
@@ -109,7 +109,7 @@ class ServiceCli:
             @click.pass_context
             def orchestrator(ctx):
                 cli_context: CliContext = ctx.obj
-                cli_context.configuration_state.verify_command_allowed(
+                cli_context.get_configuration_state().verify_command_allowed(
                     AppcliCommand.ORCHESTRATOR
                 )
                 pass
@@ -128,7 +128,7 @@ class ServiceCli:
                 services.
         """
         cli_context: CliContext = ctx.obj
-        cli_context.configuration_state.verify_command_allowed(
+        cli_context.get_configuration_state().verify_command_allowed(
             AppcliCommand.SERVICE_SHUTDOWN
         )
 

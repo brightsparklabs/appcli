@@ -188,7 +188,7 @@ class DockerComposeOrchestrator(Orchestrator):
         @click.argument("service", nargs=-1, type=click.UNPROCESSED)
         def logs(ctx, service):
             cli_context: CliContext = ctx.obj
-            cli_context.configuration_state.verify_command_allowed(
+            cli_context.get_configuration_state().verify_command_allowed(
                 AppcliCommand.SERVICE_LOGS
             )
             subcommand = ["logs", "--follow"]
@@ -340,7 +340,7 @@ class DockerSwarmOrchestrator(Orchestrator):
         @click.argument("service", type=click.STRING)
         def logs(ctx, service):
             cli_context: CliContext = ctx.obj
-            cli_context.configuration_state.verify_command_allowed(
+            cli_context.get_configuration_state().verify_command_allowed(
                 AppcliCommand.SERVICE_LOGS
             )
             command = ["docker", "service", "logs", "--follow"]

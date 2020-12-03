@@ -45,7 +45,7 @@ class EncryptCli:
         @click.pass_context
         def encrypt(ctx, text: str):
             cli_context: CliContext = ctx.obj
-            cli_context.configuration_state.verify_command_allowed(
+            cli_context.get_configuration_state().verify_command_allowed(
                 AppcliCommand.ENCRYPT
             )
             key_file: Path = cli_context.get_key_file()

@@ -51,7 +51,7 @@ class DebugCli:
         @click.pass_context
         def info(ctx):
             cli_context: CliContext = ctx.obj
-            cli_context.configuration_state.verify_command_allowed(
+            cli_context.get_configuration_state().verify_command_allowed(
                 AppcliCommand.DEBUG_INFO
             )
             app_config_file = cli_context.get_app_configuration_file()
