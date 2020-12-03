@@ -72,7 +72,7 @@ class CliContext(NamedTuple):
             self.get_generated_configuration_dir(),
             self.app_version,
         )
-        logger.debug(f"Derived configuration state [{self.get_configuration_state()}]")
+        logger.debug(f"Derived configuration state [{configuration_state}]")
         return configuration_state
 
     def get_key_file(self) -> Path:
