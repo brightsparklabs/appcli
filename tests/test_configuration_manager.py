@@ -31,8 +31,6 @@ APP_NAME = "test_app"
 # TESTS
 # ------------------------------------------------------------------------------
 
-# TODO: Fix
-
 
 def test_initialise(tmpdir):
     conf_manager = create_conf_manager(tmpdir)
