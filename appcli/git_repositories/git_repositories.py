@@ -10,6 +10,7 @@ www.brightsparklabs.com
 """
 
 # standard library
+from appcli.functions import error_and_exit
 import os
 from pathlib import Path
 from typing import Iterable
@@ -46,7 +47,7 @@ class GitRepository:
         logger.debug("Initialising repository at [%s] ...", self.repo_path)
 
         if self.repo_exists():
-            raise Exception(
+            error_and_exit(
                 f"Cannot 'git init'. Git repo already exists at [{self.repo_path}]."
             )
 
@@ -212,7 +213,8 @@ class GitRepository:
     def get_commit_count(self) -> int:
         """Get the total number of commits on this repo"""
         repo = self.__get_repo()
-        return repo.git.rev_list(("--all", "--count"))
+        count = repo.git.rev_list(("--all", "--count"))
+        return int(count)
 
     def __get_repo(self) -> git.Repo:
         return git.Repo(self.repo_path)

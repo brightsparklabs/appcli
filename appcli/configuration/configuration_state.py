@@ -83,8 +83,9 @@ class ConfigurationStateFactory:
                 f"Generated repository [{gen_config_repo.get_repo_path()}] has extra untracked git commits."
             )
 
-        if config_repo.get_repository_version() != app_version:
-            return RequiresMigrationConfigurationState()
+        conf_version = config_repo.get_repository_version()
+        if conf_version != app_version:
+            return RequiresMigrationConfigurationState(conf_version, app_version)
 
         return CleanConfigurationState()
 
