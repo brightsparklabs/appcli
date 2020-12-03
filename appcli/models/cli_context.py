@@ -81,6 +81,8 @@ class CliContext(NamedTuple):
         Returns:
             Path: location of the key file
         """
+        if self.configuration_dir is None:
+            return None
         return Path(self.configuration_dir, "key")
 
     def get_generated_configuration_dir(self) -> Path:
@@ -99,6 +101,8 @@ class CliContext(NamedTuple):
         Returns:
             Path: directory of application metadata
         """
+        if self.configuration_dir is None:
+            return None
         return self.configuration_dir.joinpath(".metadata")
 
     def get_app_configuration_file(self) -> Path:
@@ -107,6 +111,8 @@ class CliContext(NamedTuple):
         Returns:
             Path: location of the configuration file
         """
+        if self.configuration_dir is None:
+            return None
         return self.configuration_dir.joinpath("settings.yml")
 
     def get_baseline_template_overrides_dir(self) -> Path:
@@ -115,6 +121,8 @@ class CliContext(NamedTuple):
         Returns:
             Path: directory of configuration template overrides
         """
+        if self.configuration_dir is None:
+            return None
         return self.configuration_dir.joinpath("overrides")
 
     def get_configurable_templates_dir(self) -> Path:
@@ -125,6 +133,8 @@ class CliContext(NamedTuple):
         Returns:
             Path: directory of configurable templates
         """
+        if self.configuration_dir is None:
+            return None
         return self.configuration_dir.joinpath("templates")
 
     def get_project_name(self) -> str:
