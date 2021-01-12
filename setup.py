@@ -56,7 +56,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "click==7.1.2",
-        "coloredlogs==14.0",
+        "coloredlogs==15.0",
         "GitPython==3.1.7",
         "jinja2==2.11.2",
         "python-dotenv==0.14.0",
