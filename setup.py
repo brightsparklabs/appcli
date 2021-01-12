@@ -62,7 +62,7 @@ setup(
         "python-dotenv==0.14.0",
         "python-keycloak==0.22.0",
         "pycryptodome==3.9.8",
-        "ruamel-yaml==0.16.10",
+        "ruamel-yaml==0.16.12",
         "tabulate==0.8.7",
     ],
     extras_require={"dev": ["black", "flake8", "isort", "pytest"]},
