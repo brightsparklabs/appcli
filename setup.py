@@ -60,7 +60,7 @@ setup(
         "GitPython==3.1.7",
         "jinja2==2.11.2",
         "python-dotenv==0.14.0",
-        "python-keycloak==0.22.0",
+        "python-keycloak==0.24.0",
         "pycryptodome==3.9.8",
         "ruamel-yaml==0.16.10",
         "tabulate==0.8.7",
