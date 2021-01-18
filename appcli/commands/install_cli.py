@@ -82,6 +82,9 @@ class InstallCli:
             if cli_context.data_dir is None:
                 cli_context = cli_context._replace(data_dir=target_install_dir / "data")
 
+            if cli_context.backup_dir is None:
+                cli_context = cli_context._replace(backup_dir=target_install_dir / "backup")
+
             render_variables = {
                 "cli_context": cli_context,
                 "configuration": self.configuration,

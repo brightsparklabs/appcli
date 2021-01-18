@@ -19,6 +19,9 @@ class CliContext(NamedTuple):
     data_dir: Path
     """ Directory to use for persistent data storage. """
 
+    backup_dir: Path
+    """ Directory to store backups in. """
+
     additional_data_dirs: Iterable[Tuple[str, Path]]
     """ Additional directories to use for persistent data storage. """
 

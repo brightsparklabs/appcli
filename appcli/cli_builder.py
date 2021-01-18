@@ -29,6 +29,7 @@ from appcli.commands.launcher_cli import LauncherCli
 from appcli.commands.migrate_cli import MigrateCli
 from appcli.commands.service_cli import ServiceCli
 from appcli.commands.task_cli import TaskCli
+from appcli.commands.recovery_cli import RecoveryCli
 from appcli.functions import error_and_exit, extract_valid_environment_variable_names
 from appcli.logger import enable_debug_logging, logger
 from appcli.models.cli_context import CliContext
@@ -70,6 +71,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         MigrateCli,
         ServiceCli,
         TaskCli,
+        RecoveryCli,
     ):
         commands = cli_class(configuration).commands
         default_commands.update(**commands)
@@ -129,6 +131,14 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         multiple=True,
         callback=extract_valid_environment_variable_names,
     )
+    @click.option(
+        "--backup-dir",
+        "-d",
+        help="Directory containing backups of the system.",
+        type=Path,
+        cls=NotRequiredOn,
+        not_required_on=("install"),
+    )
     @click.pass_context
     def cli(
         ctx,
@@ -139,6 +149,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         docker_credentials_file,
         additional_data_dir,
         additional_env_var,
+        backup_dir,
     ):
         if debug:
             logger.info("Enabling debug logging")
@@ -156,6 +167,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             app_name=APP_NAME,
             app_version=APP_VERSION,
             commands=default_commands,
+            backup_dir=backup_dir,
         )
 
         if ctx.invoked_subcommand is None:
@@ -192,6 +204,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
                 f"{ctx.obj.get_generated_configuration_dir()}",
             ],
             ["Data directory", f"{ctx.obj.data_dir}"],
+            ["Backup directory", f"{ctx.obj.backup_dir}"],
             ["Environment", f"{ctx.obj.environment}"],
         ]
 
@@ -239,11 +252,13 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         ENV_VAR_CONFIG_DIR = f"{APP_NAME}_CONFIG_DIR"
         ENV_VAR_GENERATED_CONFIG_DIR = f"{APP_NAME}_GENERATED_CONFIG_DIR"
         ENV_VAR_DATA_DIR = f"{APP_NAME}_DATA_DIR"
+        ENV_VAR_BACKUP_DIR = f"{APP_NAME}_BACKUP_DIR"
         ENV_VAR_ENVIRONMENT = f"{APP_NAME}_ENVIRONMENT"
         launcher_set_mandatory_env_vars = [
             ENV_VAR_CONFIG_DIR,
             ENV_VAR_GENERATED_CONFIG_DIR,
             ENV_VAR_DATA_DIR,
+            ENV_VAR_BACKUP_DIR,
             ENV_VAR_ENVIRONMENT,
         ]
 

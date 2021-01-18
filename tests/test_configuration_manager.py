@@ -164,11 +164,14 @@ def create_cli_context(tmpdir, app_version: str = "0.0.0") -> CliContext:
     conf_dir.mkdir(exist_ok=True)
     data_dir = Path(tmpdir, "data")
     data_dir.mkdir(exist_ok=True)
+    backup_dir = Path(tmpdir, "backup")
+    backup_dir.mkdir(exist_ok=True)
 
     return CliContext(
         configuration_dir=conf_dir,
         data_dir=data_dir,
         additional_data_dirs=None,
+        backup_dir=backup_dir,
         additional_env_variables=None,
         environment="test",
         docker_credentials_file=None,
