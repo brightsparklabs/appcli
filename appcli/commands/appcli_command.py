@@ -3,12 +3,22 @@
 
 """
 Enum representing all appcli commands.
+
+Certain appcli commands cannot be run, or must be forced to run, when the
+configuration directory is in specific states. This enum is used to represent
+appcli commmands to allow the code to determine if the command can be run or
+not.
+
+For any appcli command that requires the configuration directory to be in
+specific state to run, update this enum if the command is added, deleted, or
+modified.
 ________________________________________________________________________________
 
 Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
+# standard libraries
 from enum import Enum, auto
 
 

@@ -18,7 +18,7 @@ import subprocess
 import click
 
 # local libraries
-from appcli.commands.commands import AppcliCommand
+from appcli.commands.appcli_command import AppcliCommand
 from appcli.commands.configure_template_cli import ConfigureTemplateCli
 from appcli.configuration_manager import ConfigurationManager
 from appcli.functions import print_header
@@ -26,6 +26,13 @@ from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
 from appcli.string_transformer import StringTransformer
+
+# ------------------------------------------------------------------------------
+# CONSTANTS
+# ------------------------------------------------------------------------------
+
+# editor for the 'configure edit' command
+CONFIGURE_EDIT_EDITOR = "vim.tiny"
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -94,6 +101,9 @@ class ConfigureCli:
         @click.pass_context
         def apply(ctx, message, force):
             cli_context: CliContext = ctx.obj
+
+            # We require the '--force' option to allow forcibly applying and
+            # overwriting existing modified generated configuration.
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.CONFIGURE_APPLY, force
             )
@@ -177,16 +187,19 @@ class ConfigureCli:
                 # remove superfluous \n characters added by unified_diff
                 print(line.rstrip())
 
-        @configure.command(help="Open the settings file for editing with vim-tiny.")
+        @configure.command(
+            help=f"Open the settings file for editing with '{CONFIGURE_EDIT_EDITOR}'."
+        )
         @click.pass_context
         def edit(ctx):
             cli_context: CliContext = ctx.obj
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.CONFIGURE_EDIT
             )
-            EDITOR = "vim.tiny"
 
-            subprocess.run([EDITOR, cli_context.get_app_configuration_file()])
+            subprocess.run(
+                [CONFIGURE_EDIT_EDITOR, cli_context.get_app_configuration_file()]
+            )
 
         # Add the 'template' subcommand
         configure.add_command(ConfigureTemplateCli(self.cli_configuration).command)

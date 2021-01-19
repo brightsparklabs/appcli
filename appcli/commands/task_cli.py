@@ -16,7 +16,7 @@ import sys
 import click
 
 # local libraries
-from appcli.commands.commands import AppcliCommand
+from appcli.commands.appcli_command import AppcliCommand
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration

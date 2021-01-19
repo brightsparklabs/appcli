@@ -18,7 +18,7 @@ from pathlib import Path
 import click
 
 # local libraries
-from appcli.commands.commands import AppcliCommand
+from appcli.commands.appcli_command import AppcliCommand
 from appcli.crypto import crypto
 from appcli.crypto.cipher import Cipher
 from appcli.logger import logger

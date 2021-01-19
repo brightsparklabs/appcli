@@ -13,7 +13,7 @@ www.brightsparklabs.com
 from pathlib import Path
 
 # local libraries
-from appcli.commands.commands import AppcliCommand
+from appcli.commands.appcli_command import AppcliCommand
 from appcli.functions import error_and_exit
 from appcli.git_repositories.git_repositories import (
     ConfigurationGitRepository,
@@ -27,6 +27,15 @@ from appcli.logger import logger
 
 
 class ConfigurationDirState:
+    """The state of the configuration directory.
+
+    This is the base class from which all the different 'state' classes of the
+    configuration directory will inherit.
+
+    e.g. The 'state' class representing the configuration directory is
+    CleanConfigurationDirState.
+    """
+
     def __init__(self, cannot_run, cannot_run_unless_forced) -> None:
         self.cannot_run = cannot_run
         self.cannot_run_unless_forced = cannot_run_unless_forced

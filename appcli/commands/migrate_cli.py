@@ -15,7 +15,7 @@ www.brightsparklabs.com
 import click
 
 # local libraries
-from appcli.commands.commands import AppcliCommand
+from appcli.commands.appcli_command import AppcliCommand
 from appcli.configuration_manager import ConfigurationManager
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext

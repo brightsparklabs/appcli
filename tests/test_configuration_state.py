@@ -13,7 +13,7 @@ www.brightsparklabs.com
 import pytest
 
 # local libraries
-from appcli.commands.commands import AppcliCommand
+from appcli.commands.appcli_command import AppcliCommand
 from appcli.configuration.configuration_dir_state import (
     CleanConfigurationDirState,
     ConfigurationDirState,
