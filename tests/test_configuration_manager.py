@@ -13,12 +13,11 @@ www.brightsparklabs.com
 from pathlib import Path
 
 # vendor libraries
-import pytest
 import git
-
-from appcli import CliContext, Configuration, DockerComposeOrchestrator
+import pytest
 
 # local libraries
+from appcli import CliContext, Configuration, DockerComposeOrchestrator
 from appcli.configuration_manager import ConfigurationManager
 
 # ------------------------------------------------------------------------------

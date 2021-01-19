@@ -10,7 +10,6 @@ www.brightsparklabs.com
 """
 
 # standard library
-from appcli.commands.commands import AppcliCommand
 import difflib
 import filecmp
 import glob
@@ -22,6 +21,7 @@ from pathlib import Path
 import click
 
 # local libraries
+from appcli.commands.commands import AppcliCommand
 from appcli.functions import error_and_exit
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
@@ -57,7 +57,7 @@ class ConfigureTemplateCli:
         @click.pass_context
         def ls(ctx):
             cli_context: CliContext = ctx.obj
-            cli_context.get_configuration_state().verify_command_allowed(
+            cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.CONFIGURE_TEMPLATE_LS
             )
             baseline_templates_dir = self.cli_configuration.baseline_templates_dir
@@ -73,7 +73,7 @@ class ConfigureTemplateCli:
         @click.pass_context
         def get(ctx, template):
             cli_context: CliContext = ctx.obj
-            cli_context.get_configuration_state().verify_command_allowed(
+            cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.CONFIGURE_TEMPLATE_GET
             )
             baseline_templates_dir = self.cli_configuration.baseline_templates_dir
@@ -94,7 +94,7 @@ class ConfigureTemplateCli:
         @click.pass_context
         def override(ctx, template, force):
             cli_context: CliContext = ctx.obj
-            cli_context.get_configuration_state().verify_command_allowed(
+            cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.CONFIGURE_TEMPLATE_OVERRIDE, force
             )
             baseline_templates_dir = self.cli_configuration.baseline_templates_dir
@@ -123,7 +123,7 @@ class ConfigureTemplateCli:
         @click.pass_context
         def diff(ctx):
             cli_context: CliContext = ctx.obj
-            cli_context.get_configuration_state().verify_command_allowed(
+            cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.CONFIGURE_TEMPLATE_DIFF
             )
             baseline_templates_dir = self.cli_configuration.baseline_templates_dir

@@ -9,17 +9,17 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
+
 # standard library
-from appcli.commands.commands import AppcliCommand
 import difflib
 import subprocess
 
 # vendor libraries
 import click
 
-from appcli.commands.configure_template_cli import ConfigureTemplateCli
-
 # local libraries
+from appcli.commands.commands import AppcliCommand
+from appcli.commands.configure_template_cli import ConfigureTemplateCli
 from appcli.configuration_manager import ConfigurationManager
 from appcli.functions import print_header
 from appcli.logger import logger
@@ -55,7 +55,7 @@ class ConfigureCli:
         @click.pass_context
         def init(ctx):
             cli_context: CliContext = ctx.obj
-            cli_context.get_configuration_state().verify_command_allowed(
+            cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.CONFIGURE_INIT
             )
 
@@ -94,7 +94,7 @@ class ConfigureCli:
         @click.pass_context
         def apply(ctx, message, force):
             cli_context: CliContext = ctx.obj
-            cli_context.get_configuration_state().verify_command_allowed(
+            cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.CONFIGURE_APPLY, force
             )
 
@@ -120,7 +120,7 @@ class ConfigureCli:
         @click.pass_context
         def get(ctx, setting):
             cli_context: CliContext = ctx.obj
-            cli_context.get_configuration_state().verify_command_allowed(
+            cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.CONFIGURE_GET
             )
 
@@ -140,7 +140,7 @@ class ConfigureCli:
         @click.pass_context
         def set(ctx, type, setting, value):
             cli_context: CliContext = ctx.obj
-            cli_context.get_configuration_state().verify_command_allowed(
+            cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.CONFIGURE_SET
             )
 
@@ -158,7 +158,7 @@ class ConfigureCli:
         @click.pass_context
         def diff(ctx):
             cli_context: CliContext = ctx.obj
-            cli_context.get_configuration_state().verify_command_allowed(
+            cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.CONFIGURE_DIFF
             )
 
@@ -181,7 +181,7 @@ class ConfigureCli:
         @click.pass_context
         def edit(ctx):
             cli_context: CliContext = ctx.obj
-            cli_context.get_configuration_state().verify_command_allowed(
+            cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.CONFIGURE_EDIT
             )
             EDITOR = "vim.tiny"

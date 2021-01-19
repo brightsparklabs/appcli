@@ -10,7 +10,6 @@ www.brightsparklabs.com
 """
 
 # standard libraries
-from appcli.commands.commands import AppcliCommand
 import sys
 
 # vendor libraries
@@ -18,6 +17,7 @@ import click
 from click.core import Context
 
 # local libraries
+from appcli.commands.commands import AppcliCommand
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
@@ -63,7 +63,7 @@ class ServiceCli:
         @click.pass_context
         def start(ctx, force, service_name):
             cli_context: CliContext = ctx.obj
-            cli_context.get_configuration_state().verify_command_allowed(
+            cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.SERVICE_START, force
             )
 
@@ -109,7 +109,7 @@ class ServiceCli:
             @click.pass_context
             def orchestrator(ctx):
                 cli_context: CliContext = ctx.obj
-                cli_context.get_configuration_state().verify_command_allowed(
+                cli_context.get_configuration_dir_state().verify_command_allowed(
                     AppcliCommand.ORCHESTRATOR
                 )
                 pass
@@ -128,7 +128,7 @@ class ServiceCli:
                 services.
         """
         cli_context: CliContext = ctx.obj
-        cli_context.get_configuration_state().verify_command_allowed(
+        cli_context.get_configuration_dir_state().verify_command_allowed(
             AppcliCommand.SERVICE_SHUTDOWN
         )
 

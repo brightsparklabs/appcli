@@ -10,15 +10,15 @@ www.brightsparklabs.com
 """
 
 # standard libraries
-from appcli.commands.commands import AppcliCommand
-from appcli.models.cli_context import CliContext
 import sys
 
 # vendor libraries
 import click
 
 # local libraries
+from appcli.commands.commands import AppcliCommand
 from appcli.logger import logger
+from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
 
 # ------------------------------------------------------------------------------
@@ -61,7 +61,7 @@ class TaskCli:
         @click.pass_context
         def run(ctx, service_name, extra_args):
             cli_context: CliContext = ctx.obj
-            cli_context.get_configuration_state().verify_command_allowed(
+            cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.TASK_RUN
             )
             logger.info(

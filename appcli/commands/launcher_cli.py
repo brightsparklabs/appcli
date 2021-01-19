@@ -12,8 +12,6 @@ www.brightsparklabs.com
 """
 
 # standard library
-from appcli.commands.commands import AppcliCommand
-from appcli.models.cli_context import CliContext
 import datetime
 import importlib.resources as pkg_resources
 import os
@@ -24,8 +22,10 @@ from jinja2 import StrictUndefined, Template
 
 # local libraries
 from appcli import templates
+from appcli.commands.commands import AppcliCommand
 from appcli.functions import error_and_exit
 from appcli.logger import logger
+from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
 
 # ------------------------------------------------------------------------------
@@ -54,7 +54,7 @@ class LauncherCli:
         @click.pass_context
         def launcher(ctx):
             cli_context: CliContext = ctx.obj
-            cli_context.get_configuration_state().verify_command_allowed(
+            cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.LAUNCHER
             )
 

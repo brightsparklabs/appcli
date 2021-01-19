@@ -2,13 +2,14 @@
 # # -*- coding: utf-8 -*-
 
 # standard libraries
-from appcli.configuration.configuration_state import (
-    ConfigurationState,
-    ConfigurationStateFactory,
-)
 from pathlib import Path
 from typing import Dict, Iterable, NamedTuple, Tuple
 
+# local libraries
+from appcli.configuration.configuration_dir_state import (
+    ConfigurationDirState,
+    ConfigurationDirStateFactory,
+)
 from appcli.logger import logger
 
 
@@ -60,20 +61,22 @@ class CliContext(NamedTuple):
     # derived data
     # ---------------------------------
 
-    def get_configuration_state(self) -> ConfigurationState:
+    def get_configuration_dir_state(self) -> ConfigurationDirState:
         """Gets the state of the configuration, for use in validating whether
         a command can be used or not.
 
         Returns:
-            ConfigurationState: The state of the configuration.
+            ConfigurationDirState: The state of the configuration.
         """
-        configuration_state: ConfigurationState = ConfigurationStateFactory.get_state(
-            self.configuration_dir,
-            self.get_generated_configuration_dir(),
-            self.app_version,
+        configuration_dir_state: ConfigurationDirState = (
+            ConfigurationDirStateFactory.get_state(
+                self.configuration_dir,
+                self.get_generated_configuration_dir(),
+                self.app_version,
+            )
         )
-        logger.debug(f"Derived configuration state [{configuration_state}]")
-        return configuration_state
+        logger.debug(f"Derived configuration state [{configuration_dir_state}]")
+        return configuration_dir_state
 
     def get_key_file(self) -> Path:
         """Get the location of the key file for decrypting secrets

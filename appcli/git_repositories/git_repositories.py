@@ -10,7 +10,6 @@ www.brightsparklabs.com
 """
 
 # standard library
-from appcli.functions import error_and_exit
 import os
 from pathlib import Path
 from typing import Iterable
@@ -19,6 +18,7 @@ from typing import Iterable
 import git
 
 # local libraries
+from appcli.functions import error_and_exit
 from appcli.logger import logger
 
 # ------------------------------------------------------------------------------

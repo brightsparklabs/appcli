@@ -12,13 +12,13 @@ www.brightsparklabs.com
 """
 
 # standard library
-from appcli.commands.commands import AppcliCommand
 from pathlib import Path
 
 # vendor libraries
 import click
 
 # local libraries
+from appcli.commands.commands import AppcliCommand
 from appcli.crypto import crypto
 from appcli.crypto.cipher import Cipher
 from appcli.logger import logger
@@ -45,7 +45,7 @@ class EncryptCli:
         @click.pass_context
         def encrypt(ctx, text: str):
             cli_context: CliContext = ctx.obj
-            cli_context.get_configuration_state().verify_command_allowed(
+            cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.ENCRYPT
             )
             key_file: Path = cli_context.get_key_file()

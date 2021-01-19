@@ -2,7 +2,7 @@
 # # -*- coding: utf-8 -*-
 
 """
-States of the configuration directory.
+States that the configuration directory can be in.
 ________________________________________________________________________________
 
 Created by brightSPARK Labs
@@ -10,25 +10,23 @@ www.brightsparklabs.com
 """
 
 # standard libraries
+from pathlib import Path
+
+# local libraries
+from appcli.commands.commands import AppcliCommand
+from appcli.functions import error_and_exit
 from appcli.git_repositories.git_repositories import (
     ConfigurationGitRepository,
     GeneratedConfigurationGitRepository,
 )
-from pathlib import Path
-
-# vendor libraries
-
-# local libraries
-from appcli.functions import error_and_exit
 from appcli.logger import logger
-from appcli.commands.commands import AppcliCommand
 
 # ------------------------------------------------------------------------------
 # CLASSES
 # ------------------------------------------------------------------------------
 
 
-class ConfigurationState:
+class ConfigurationDirState:
     def __init__(self, cannot_run, cannot_run_unless_forced) -> None:
         self.cannot_run = cannot_run
         self.cannot_run_unless_forced = cannot_run_unless_forced
@@ -46,12 +44,12 @@ class ConfigurationState:
         )
 
 
-class ConfigurationStateFactory:
+class ConfigurationDirStateFactory:
     def get_state(
         configuration_dir: Path, generated_configuration_dir: Path, app_version: str
-    ) -> ConfigurationState:
+    ) -> ConfigurationDirState:
         if configuration_dir is None:
-            return NoDirectoryProvidedConfigurationState()
+            return NoDirectoryProvidedConfigurationDirState()
 
         config_repo = ConfigurationGitRepository(configuration_dir)
         gen_config_repo = GeneratedConfigurationGitRepository(
@@ -59,33 +57,33 @@ class ConfigurationStateFactory:
         )
 
         if not config_repo.repo_exists():
-            return UninitialisedConfigurationState()
+            return UninitialisedConfigurationDirState()
 
         conf_version = config_repo.get_repository_version()
         if conf_version != app_version:
             error_message = f"Application requires migration. Configuration version [{conf_version}], Application version [{app_version}]."
-            return InvalidConfigurationState(error_message)
+            return InvalidConfigurationDirState(error_message)
 
         if not gen_config_repo.repo_exists():
-            return UnappliedConfigurationState()
+            return UnappliedConfigurationDirState()
 
         if config_repo.is_dirty():
             if gen_config_repo.is_dirty():
-                return DirtyConfAndGenConfigurationState()
-            return DirtyConfConfigurationState()
+                return DirtyConfAndGenConfigurationDirState()
+            return DirtyConfConfigurationDirState()
 
         if gen_config_repo.is_dirty():
-            return DirtyGenConfigurationState()
+            return DirtyGenConfigurationDirState()
 
         if gen_config_repo.get_commit_count() > 1:
-            return InvalidConfigurationState(
+            return InvalidConfigurationDirState(
                 f"Generated repository [{gen_config_repo.get_repo_path()}] has extra untracked git commits."
             )
 
-        return CleanConfigurationState()
+        return CleanConfigurationDirState()
 
 
-class NoDirectoryProvidedConfigurationState(ConfigurationState):
+class NoDirectoryProvidedConfigurationDirState(ConfigurationDirState):
     """Represents the state where appcli doesn't know the path to configuration dir."""
 
     def __init__(self) -> None:
@@ -120,7 +118,7 @@ class NoDirectoryProvidedConfigurationState(ConfigurationState):
         super().__init__(cannot_run, cannot_run_unless_forced)
 
 
-class UninitialisedConfigurationState(ConfigurationState):
+class UninitialisedConfigurationDirState(ConfigurationDirState):
     """Represents the state where config directory hasn't been initialised."""
 
     def __init__(self) -> None:
@@ -152,7 +150,7 @@ class UninitialisedConfigurationState(ConfigurationState):
         super().__init__(cannot_run, cannot_run_unless_forced)
 
 
-class UnappliedConfigurationState(ConfigurationState):
+class UnappliedConfigurationDirState(ConfigurationDirState):
     """Represents the state where configuration hasn't been applied yet, i.e. the generated configuration doesn't exist."""
 
     def __init__(self) -> None:
@@ -171,7 +169,7 @@ class UnappliedConfigurationState(ConfigurationState):
         super().__init__(cannot_run, cannot_run_unless_forced)
 
 
-class CleanConfigurationState(ConfigurationState):
+class CleanConfigurationDirState(ConfigurationDirState):
     """Represents the state where config and generated directories both exist
     and are in a clean state.
     """
@@ -186,7 +184,7 @@ class CleanConfigurationState(ConfigurationState):
         super().__init__(cannot_run, cannot_run_unless_forced)
 
 
-class DirtyConfConfigurationState(ConfigurationState):
+class DirtyConfConfigurationDirState(ConfigurationDirState):
     """Represents the state where config directory is dirty."""
 
     def __init__(self) -> None:
@@ -205,7 +203,7 @@ class DirtyConfConfigurationState(ConfigurationState):
         super().__init__(cannot_run, cannot_run_unless_forced)
 
 
-class DirtyGenConfigurationState(ConfigurationState):
+class DirtyGenConfigurationDirState(ConfigurationDirState):
     """Represents the state where generated directory is dirty."""
 
     def __init__(self) -> None:
@@ -225,7 +223,7 @@ class DirtyGenConfigurationState(ConfigurationState):
         super().__init__(cannot_run, cannot_run_unless_forced)
 
 
-class DirtyConfAndGenConfigurationState(ConfigurationState):
+class DirtyConfAndGenConfigurationDirState(ConfigurationDirState):
     """Represents the state where both the conf and generated directory are dirty."""
 
     def __init__(self) -> None:
@@ -245,7 +243,7 @@ class DirtyConfAndGenConfigurationState(ConfigurationState):
         super().__init__(cannot_run, cannot_run_unless_forced)
 
 
-class InvalidConfigurationState(ConfigurationState):
+class InvalidConfigurationDirState(ConfigurationDirState):
     """Represents the state where configuration is invalid and incompatible with appcli."""
 
     def __init__(self, error: str) -> None:

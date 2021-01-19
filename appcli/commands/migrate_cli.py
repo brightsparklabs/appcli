@@ -11,13 +11,11 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-# standard library
-
 # vendor libraries
-from appcli.commands.commands import AppcliCommand
 import click
 
 # local libraries
+from appcli.commands.commands import AppcliCommand
 from appcli.configuration_manager import ConfigurationManager
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
@@ -57,7 +55,7 @@ class MigrateCli:
 
     def __migrate(self, ctx):
         cli_context: CliContext = ctx.obj
-        cli_context.get_configuration_state().verify_command_allowed(
+        cli_context.get_configuration_dir_state().verify_command_allowed(
             AppcliCommand.MIGRATE
         )
 
