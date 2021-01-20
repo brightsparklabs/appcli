@@ -27,13 +27,10 @@ from appcli.logger import logger
 
 
 class ConfigurationDirState:
-    """The state of the configuration directory.
+    """The state of the configuration directory. This encapsulates both the 'conf' and 'generated' git-managed
+    directories.
 
-    This is the base class from which all the different 'state' classes of the
-    configuration directory will inherit.
-
-    e.g. The 'state' class representing the configuration directory is
-    CleanConfigurationDirState.
+    This is the base class from which all the different 'state' classes of the configuration directory will inherit.
     """
 
     def __init__(self, cannot_run, cannot_run_unless_forced) -> None:
@@ -54,6 +51,8 @@ class ConfigurationDirState:
 
 
 class ConfigurationDirStateFactory:
+    """Factory class to get the current ConfigurationDirState state class"""
+
     def get_state(
         configuration_dir: Path, generated_configuration_dir: Path, app_version: str
     ) -> ConfigurationDirState:
@@ -93,7 +92,7 @@ class ConfigurationDirStateFactory:
 
 
 class NoDirectoryProvidedConfigurationDirState(ConfigurationDirState):
-    """Represents the state where appcli doesn't know the path to configuration dir."""
+    """Represents the configuration dir state where appcli doesn't know the path to configuration dir."""
 
     def __init__(self) -> None:
 
@@ -128,7 +127,7 @@ class NoDirectoryProvidedConfigurationDirState(ConfigurationDirState):
 
 
 class UninitialisedConfigurationDirState(ConfigurationDirState):
-    """Represents the state where config directory hasn't been initialised."""
+    """Represents the configuration dir state where config directory hasn't been initialised."""
 
     def __init__(self) -> None:
 
@@ -160,7 +159,8 @@ class UninitialisedConfigurationDirState(ConfigurationDirState):
 
 
 class UnappliedConfigurationDirState(ConfigurationDirState):
-    """Represents the state where configuration hasn't been applied yet, i.e. the generated configuration doesn't exist."""
+    """Represents the configuration dir state where configuration hasn't been applied yet, i.e. the generated
+    configuration doesn't exist."""
 
     def __init__(self) -> None:
 
@@ -179,9 +179,8 @@ class UnappliedConfigurationDirState(ConfigurationDirState):
 
 
 class CleanConfigurationDirState(ConfigurationDirState):
-    """Represents the state where config and generated directories both exist
-    and are in a clean state.
-    """
+    """Represents the configuration dir state where config and generated directories both exist and are in a clean
+    state."""
 
     def __init__(self) -> None:
         cannot_run = {
@@ -194,7 +193,7 @@ class CleanConfigurationDirState(ConfigurationDirState):
 
 
 class DirtyConfConfigurationDirState(ConfigurationDirState):
-    """Represents the state where config directory is dirty."""
+    """Represents the configuration dir state where config directory is dirty."""
 
     def __init__(self) -> None:
 
@@ -213,7 +212,7 @@ class DirtyConfConfigurationDirState(ConfigurationDirState):
 
 
 class DirtyGenConfigurationDirState(ConfigurationDirState):
-    """Represents the state where generated directory is dirty."""
+    """Represents the configuration dir state where generated directory is dirty."""
 
     def __init__(self) -> None:
 
@@ -233,7 +232,7 @@ class DirtyGenConfigurationDirState(ConfigurationDirState):
 
 
 class DirtyConfAndGenConfigurationDirState(ConfigurationDirState):
-    """Represents the state where both the conf and generated directory are dirty."""
+    """Represents the configuration dir state where both the conf and generated directory are dirty."""
 
     def __init__(self) -> None:
 
@@ -253,7 +252,7 @@ class DirtyConfAndGenConfigurationDirState(ConfigurationDirState):
 
 
 class InvalidConfigurationDirState(ConfigurationDirState):
-    """Represents the state where configuration is invalid and incompatible with appcli."""
+    """Represents the configuration dir state where configuration is invalid and incompatible with appcli."""
 
     def __init__(self, error: str) -> None:
 
