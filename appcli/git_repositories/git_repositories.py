@@ -43,7 +43,8 @@ class GitRepository:
         self.ignores = ignores
 
     def initialise_git_repo(self):
-        # Initialise the git repository, create .gitignore if required, and commit the initial files
+        """ Initialise the git repository, create .gitignore if required, and commit the initial files"""
+
         logger.debug("Initialising repository at [%s] ...", self.repo_path)
 
         if self.repo_exists():
@@ -68,6 +69,11 @@ class GitRepository:
         repo.index.commit("[autocommit] Initialised repository", author=self.actor)
 
     def repo_exists(self) -> bool:
+        """Determines if the repository exists.
+
+        Returns:
+            bool: True if the git repository exists, otherwise False.
+        """
         if not os.path.isdir(self.repo_path):
             return False
 
@@ -172,19 +178,19 @@ class GitRepository:
             untracked_files (bool, optional): Whether the check includes untracked files. Defaults to False.
 
         Returns:
-            [bool]: True if repository is considered dirty, False otherwise.
+            bool: True if repository is considered dirty, False otherwise.
         """
         repo = self.__get_repo()
         return repo.is_dirty(untracked_files=untracked_files)
 
     def get_current_commit_hash(self):
-        """Get the commit hash of the current commit"""
+        """Get the commit hash of the current commit
+
+        Returns:
+            str: Commit hash of the current commit.
+        """
         repo = self.__get_repo()
         return repo.git.rev_parse("HEAD")
-
-    def get_diff_to_tag(self, tag: str, diff_dir: str = ""):
-        repo = self.__get_repo()
-        return repo.git.diff(f"tags/{tag}", f"{diff_dir}")
 
     def rename_current_branch(self, branch_name: str):
         """Renames the current branch
