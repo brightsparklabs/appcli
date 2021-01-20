@@ -11,6 +11,8 @@ www.brightsparklabs.com
 
 # standard libraries
 from pathlib import Path
+from typing import Iterable
+from collections import defaultdict
 
 # vendor libraries
 import git
@@ -119,27 +121,10 @@ class NoDirectoryProvidedConfigurationDirState(ConfigurationDirState):
             "No configuration directory provided to appcli. Run 'install'."
         )
 
-        cannot_run = {
-            AppcliCommand.CONFIGURE_INIT: default_error_message,
-            AppcliCommand.CONFIGURE_APPLY: default_error_message,
-            AppcliCommand.CONFIGURE_GET: default_error_message,
-            AppcliCommand.CONFIGURE_SET: default_error_message,
-            AppcliCommand.CONFIGURE_DIFF: default_error_message,
-            AppcliCommand.CONFIGURE_EDIT: default_error_message,
-            AppcliCommand.CONFIGURE_TEMPLATE_LS: default_error_message,
-            AppcliCommand.CONFIGURE_TEMPLATE_GET: default_error_message,
-            AppcliCommand.CONFIGURE_TEMPLATE_OVERRIDE: default_error_message,
-            AppcliCommand.CONFIGURE_TEMPLATE_DIFF: default_error_message,
-            AppcliCommand.DEBUG_INFO: default_error_message,
-            AppcliCommand.ENCRYPT: default_error_message,
-            AppcliCommand.LAUNCHER: default_error_message,
-            AppcliCommand.MIGRATE: default_error_message,
-            AppcliCommand.SERVICE_START: default_error_message,
-            AppcliCommand.SERVICE_SHUTDOWN: default_error_message,
-            AppcliCommand.SERVICE_LOGS: default_error_message,
-            AppcliCommand.TASK_RUN: default_error_message,
-            AppcliCommand.ORCHESTRATOR: default_error_message,
-        }
+        cannot_run = get_cannot_run_from_allowed_commands(
+            [AppcliCommand.INSTALL],
+            default_error_message,
+        )
         cannot_run_unless_forced = {}
 
         super().__init__(cannot_run, cannot_run_unless_forced)
@@ -152,26 +137,10 @@ class UninitialisedConfigurationDirState(ConfigurationDirState):
 
         default_error_message = "Cannot run command against uninitialised application. Run 'configure init'."
 
-        cannot_run = {
-            AppcliCommand.CONFIGURE_APPLY: default_error_message,
-            AppcliCommand.CONFIGURE_GET: default_error_message,
-            AppcliCommand.CONFIGURE_SET: default_error_message,
-            AppcliCommand.CONFIGURE_DIFF: default_error_message,
-            AppcliCommand.CONFIGURE_EDIT: default_error_message,
-            AppcliCommand.CONFIGURE_TEMPLATE_LS: default_error_message,
-            AppcliCommand.CONFIGURE_TEMPLATE_GET: default_error_message,
-            AppcliCommand.CONFIGURE_TEMPLATE_OVERRIDE: default_error_message,
-            AppcliCommand.CONFIGURE_TEMPLATE_DIFF: default_error_message,
-            AppcliCommand.DEBUG_INFO: default_error_message,
-            AppcliCommand.ENCRYPT: default_error_message,
-            AppcliCommand.INSTALL: default_error_message,
-            AppcliCommand.MIGRATE: default_error_message,
-            AppcliCommand.SERVICE_START: default_error_message,
-            AppcliCommand.SERVICE_SHUTDOWN: default_error_message,
-            AppcliCommand.SERVICE_LOGS: default_error_message,
-            AppcliCommand.TASK_RUN: default_error_message,
-            AppcliCommand.ORCHESTRATOR: default_error_message,
-        }
+        cannot_run = get_cannot_run_from_allowed_commands(
+            [AppcliCommand.CONFIGURE_INIT, AppcliCommand.LAUNCHER],
+            default_error_message,
+        )
         cannot_run_unless_forced = {}
 
         super().__init__(cannot_run, cannot_run_unless_forced)
@@ -277,28 +246,28 @@ class InvalidConfigurationDirState(ConfigurationDirState):
 
         default_error_message = f"Invalid configuration state, this error must be rectified before continuing. {error}"
 
-        cannot_run = {
-            AppcliCommand.CONFIGURE_INIT: default_error_message,
-            AppcliCommand.CONFIGURE_APPLY: default_error_message,
-            AppcliCommand.CONFIGURE_GET: default_error_message,
-            AppcliCommand.CONFIGURE_SET: default_error_message,
-            AppcliCommand.CONFIGURE_DIFF: default_error_message,
-            AppcliCommand.CONFIGURE_EDIT: default_error_message,
-            AppcliCommand.CONFIGURE_TEMPLATE_LS: default_error_message,
-            AppcliCommand.CONFIGURE_TEMPLATE_GET: default_error_message,
-            AppcliCommand.CONFIGURE_TEMPLATE_OVERRIDE: default_error_message,
-            AppcliCommand.CONFIGURE_TEMPLATE_DIFF: default_error_message,
-            AppcliCommand.DEBUG_INFO: default_error_message,
-            AppcliCommand.ENCRYPT: default_error_message,
-            AppcliCommand.INSTALL: default_error_message,
-            AppcliCommand.LAUNCHER: default_error_message,
-            AppcliCommand.MIGRATE: default_error_message,
-            AppcliCommand.SERVICE_START: default_error_message,
-            AppcliCommand.SERVICE_SHUTDOWN: default_error_message,
-            AppcliCommand.SERVICE_LOGS: default_error_message,
-            AppcliCommand.TASK_RUN: default_error_message,
-            AppcliCommand.ORCHESTRATOR: default_error_message,
-        }
+        cannot_run = get_cannot_run_from_allowed_commands([], default_error_message)
         cannot_run_unless_forced = {}
 
         super().__init__(cannot_run, cannot_run_unless_forced)
+
+
+def get_cannot_run_from_allowed_commands(
+    allowed_commands: Iterable[AppcliCommand], error_message: str
+) -> dict:
+    """Given an Iterable of allowed appcli commands, generates the dict of disallowed commands.
+
+    Args:
+        allowed_commands (Iterable[AppcliCommand]): Allowed commands.
+        error_message (str): Error message for disallowed commands.
+
+    Returns:
+        dict: [description]
+    """
+
+    disallowed_commands = dict(defaultdict.fromkeys(list(AppcliCommand), error_message))
+
+    for command in allowed_commands:
+        disallowed_commands.pop(command, None)
+
+    return disallowed_commands
