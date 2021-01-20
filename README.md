@@ -159,6 +159,7 @@ The above will use the following defaults:
 - `install-dir` => `/opt/brightsparklabs/${APP_NAME}/production/`.
 - `configuration-dir` => `/opt/brightsparklabs/${APP_NAME}/production/conf/`.
 - `data-dir` => `/opt/brightsparklabs/${APP_NAME}/production/data/`.
+- `backup-dir` => `/opt/brightsparklabs/${APP_NAME}/production/backup/`.
 
 You can modify any of the above if desired. E.g.
 
@@ -198,14 +199,17 @@ To be used in conjunction with your application `./myapp <command>` e.g. `./myap
 
 | Command      | Description                                                       |
 | ------------ | ----------------------------------------------------------------- |
+| backup       | Create a backup of application data and configuration.            |
 | configure    | Configures the application.                                       |
 | encrypt      | Encrypts the specified string.                                    |
 | init         | Initialises the application.                                      |
 | launcher     | Outputs an appropriate launcher bash script.                      |
 | migrate      | Migrates the configuration of the application to a newer version. |
 | orchestrator | Perform docker orchestration                                      |
+| restore      | Restore a backup of application data and configuration.           |
 | service      | Lifecycle management commands for application services.           |
 | task         | Commands for application tasks.                                   |
+| view-backups | View a list of available backups.                                 |
 
 ### Options
 
@@ -219,6 +223,21 @@ To be used in conjunction with your application `./myapp <command>` e.g. `./myap
 | -a, --additional-data-dir TEXT     | Additional data directory to expose to launcher container. Can be specified multiple times.                         |
 | -e, --additional-env-var TEXT      | Additional environment variables to expose to launcher container. Can be specified multiple times.                  |
 | --help                             | Show the help message and exit.                                                                                     |
+
+#### Command: `backup`
+
+Creates a backup `.tgz` file in the configured backup folder that contains all application and configuration data.
+usage `./myapp backup`
+
+| Command | Description |
+| ------- | ----------- |
+
+
+No commands available
+
+| Option | Description                     |
+| ------ | ------------------------------- |
+| --help | Show the help message and exit. |
 
 #### Command: `configure`
 
@@ -308,6 +327,21 @@ All commands are defined within the orchestrators themselves. Run `./myapp orche
 | ------ | ------------------------------ |
 | --help | Show the help message and exit |
 
+#### Command: `backup`
+
+Restores a specified backup `.tgz` file from the configured backup folder.
+usage `./myapp restore BACKUP_FILE`
+
+| Command | Description |
+| ------- | ----------- |
+
+
+No commands available
+
+| Option | Description                     |
+| ------ | ------------------------------- |
+| --help | Show the help message and exit. |
+
 #### Command: `service`
 
 Runs application services. These are the long-running services which should only exit on command.
@@ -331,6 +365,21 @@ usage `./myapp task [OPTIONS] COMMAND [ARGS]`
 | Command | Description                        |
 | ------- | ---------------------------------- |
 | run     | Runs a specified application task. |
+
+| Option | Description                     |
+| ------ | ------------------------------- |
+| --help | Show the help message and exit. |
+
+#### Command: `view-backups`
+
+View a list of all backups in the configured backup folder.
+usage `./myapp view-backups`
+
+| Command | Description |
+| ------- | ----------- |
+
+
+No commands available
 
 | Option | Description                     |
 | ------ | ------------------------------- |
