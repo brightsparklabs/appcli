@@ -10,9 +10,9 @@ www.brightsparklabs.com
 """
 
 # standard libraries
+from collections import defaultdict
 from pathlib import Path
 from typing import Iterable
-from collections import defaultdict
 
 # vendor libraries
 import git
@@ -38,16 +38,16 @@ class ConfigurationDirState:
     This is the base class from which all the different 'state' classes of the configuration directory will inherit.
     """
 
-    def __init__(self, cannot_run, cannot_run_unless_forced) -> None:
-        self.cannot_run = cannot_run
-        self.cannot_run_unless_forced = cannot_run_unless_forced
+    def __init__(self, disallowed_command, disallowed_command_unless_forced) -> None:
+        self.disallowed_command = disallowed_command
+        self.disallowed_command_unless_forced = disallowed_command_unless_forced
 
     def verify_command_allowed(self, command: AppcliCommand, force: bool = False):
-        if command in self.cannot_run:
-            error_and_exit(self.cannot_run[command])
-        if command in self.cannot_run_unless_forced and not force:
+        if command in self.disallowed_command:
+            error_and_exit(self.disallowed_command[command])
+        if command in self.disallowed_command_unless_forced and not force:
             error_and_exit(
-                f"{self.cannot_run_unless_forced[command]}"
+                f"{self.disallowed_command_unless_forced[command]}"
                 " If this command supports it, use '--force' to ignore error."
             )
         logger.debug(
@@ -121,13 +121,13 @@ class NoDirectoryProvidedConfigurationDirState(ConfigurationDirState):
             "No configuration directory provided to appcli. Run 'install'."
         )
 
-        cannot_run = get_cannot_run_from_allowed_commands(
+        disallowed_command = get_disallowed_command_from_allowed_commands(
             [AppcliCommand.INSTALL],
             default_error_message,
         )
-        cannot_run_unless_forced = {}
+        disallowed_command_unless_forced = {}
 
-        super().__init__(cannot_run, cannot_run_unless_forced)
+        super().__init__(disallowed_command, disallowed_command_unless_forced)
 
 
 class UninitialisedConfigurationDirState(ConfigurationDirState):
@@ -137,13 +137,13 @@ class UninitialisedConfigurationDirState(ConfigurationDirState):
 
         default_error_message = "Cannot run command against uninitialised application. Run 'configure init'."
 
-        cannot_run = get_cannot_run_from_allowed_commands(
+        disallowed_command = get_disallowed_command_from_allowed_commands(
             [AppcliCommand.CONFIGURE_INIT, AppcliCommand.LAUNCHER],
             default_error_message,
         )
-        cannot_run_unless_forced = {}
+        disallowed_command_unless_forced = {}
 
-        super().__init__(cannot_run, cannot_run_unless_forced)
+        super().__init__(disallowed_command, disallowed_command_unless_forced)
 
 
 class UnappliedConfigurationDirState(ConfigurationDirState):
@@ -152,7 +152,7 @@ class UnappliedConfigurationDirState(ConfigurationDirState):
 
     def __init__(self) -> None:
 
-        cannot_run = {
+        disallowed_command = {
             AppcliCommand.CONFIGURE_INIT: "Cannot initialise an existing configuration.",
             AppcliCommand.INSTALL: "Cannot install over the top of existing application.",
             AppcliCommand.SERVICE_START: "Cannot start services due to missing generated configuration. Run 'configure apply'.",
@@ -161,9 +161,9 @@ class UnappliedConfigurationDirState(ConfigurationDirState):
             AppcliCommand.TASK_RUN: "Cannot run tasks due to missing generated configuration. Run 'configure apply'.",
             AppcliCommand.ORCHESTRATOR: "Cannot run orchestrator commands due to missing generated configuration. Run 'configure apply'.",
         }
-        cannot_run_unless_forced = {}
+        disallowed_command_unless_forced = {}
 
-        super().__init__(cannot_run, cannot_run_unless_forced)
+        super().__init__(disallowed_command, disallowed_command_unless_forced)
 
 
 class CleanConfigurationDirState(ConfigurationDirState):
@@ -171,13 +171,13 @@ class CleanConfigurationDirState(ConfigurationDirState):
     state."""
 
     def __init__(self) -> None:
-        cannot_run = {
+        disallowed_command = {
             AppcliCommand.CONFIGURE_INIT: "Cannot initialise an existing configuration.",
             AppcliCommand.INSTALL: "Cannot install over the top of existing application.",
         }
-        cannot_run_unless_forced = {}
+        disallowed_command_unless_forced = {}
 
-        super().__init__(cannot_run, cannot_run_unless_forced)
+        super().__init__(disallowed_command, disallowed_command_unless_forced)
 
 
 class DirtyConfConfigurationDirState(ConfigurationDirState):
@@ -185,18 +185,18 @@ class DirtyConfConfigurationDirState(ConfigurationDirState):
 
     def __init__(self) -> None:
 
-        cannot_run = {
+        disallowed_command = {
             AppcliCommand.CONFIGURE_INIT: "Cannot initialise an existing configuration.",
             AppcliCommand.INSTALL: "Cannot install over the top of existing application.",
             AppcliCommand.MIGRATE: "Cannot migrate with a dirty configuration. Run 'configure apply'.",
         }
-        cannot_run_unless_forced = {
+        disallowed_command_unless_forced = {
             AppcliCommand.SERVICE_START: "Cannot start with dirty configuration. Run 'configure apply'.",
             AppcliCommand.TASK_RUN: "Cannot run task with dirty configuration. Run 'configure apply'.",
             AppcliCommand.ORCHESTRATOR: "Cannot run orchestrator tasks with dirty configuration. Run 'configure apply'.",
         }
 
-        super().__init__(cannot_run, cannot_run_unless_forced)
+        super().__init__(disallowed_command, disallowed_command_unless_forced)
 
 
 class DirtyGenConfigurationDirState(ConfigurationDirState):
@@ -204,19 +204,19 @@ class DirtyGenConfigurationDirState(ConfigurationDirState):
 
     def __init__(self) -> None:
 
-        cannot_run = {
+        disallowed_command = {
             AppcliCommand.CONFIGURE_INIT: "Cannot initialise an existing configuration.",
             AppcliCommand.INSTALL: "Cannot install over the top of existing application.",
             AppcliCommand.MIGRATE: "Cannot migrate with a dirty generated configuration. Run 'configure apply'.",
         }
-        cannot_run_unless_forced = {
+        disallowed_command_unless_forced = {
             AppcliCommand.CONFIGURE_APPLY: "Cannot 'configure apply' over a dirty generated directory as it will overwrite existing modifications.",
             AppcliCommand.SERVICE_START: "Cannot start service with dirty generated configuration. Run 'configure apply'.",
             AppcliCommand.TASK_RUN: "Cannot run task with dirty generated configuration. Run 'configure apply'.",
             AppcliCommand.ORCHESTRATOR: "Cannot run orchestrator tasks with dirty generated configuration. Run 'configure apply'.",
         }
 
-        super().__init__(cannot_run, cannot_run_unless_forced)
+        super().__init__(disallowed_command, disallowed_command_unless_forced)
 
 
 class DirtyConfAndGenConfigurationDirState(ConfigurationDirState):
@@ -224,19 +224,19 @@ class DirtyConfAndGenConfigurationDirState(ConfigurationDirState):
 
     def __init__(self) -> None:
 
-        cannot_run = {
+        disallowed_command = {
             AppcliCommand.CONFIGURE_INIT: "Cannot initialise an existing configuration.",
             AppcliCommand.INSTALL: "Cannot install over the top of existing application.",
             AppcliCommand.MIGRATE: "Cannot migrate with a dirty generated configuration. Run 'configure apply'.",
         }
-        cannot_run_unless_forced = {
+        disallowed_command_unless_forced = {
             AppcliCommand.CONFIGURE_APPLY: "Cannot 'configure apply' over a dirty generated directory as it will overwrite existing modifications.",
             AppcliCommand.SERVICE_START: "Cannot start service with dirty generated configuration. Run 'configure apply'.",
             AppcliCommand.TASK_RUN: "Cannot run task with dirty generated configuration. Run 'configure apply'.",
             AppcliCommand.ORCHESTRATOR: "Cannot run orchestrator tasks with dirty generated configuration. Run 'configure apply'.",
         }
 
-        super().__init__(cannot_run, cannot_run_unless_forced)
+        super().__init__(disallowed_command, disallowed_command_unless_forced)
 
 
 class InvalidConfigurationDirState(ConfigurationDirState):
@@ -246,13 +246,15 @@ class InvalidConfigurationDirState(ConfigurationDirState):
 
         default_error_message = f"Invalid configuration state, this error must be rectified before continuing. {error}"
 
-        cannot_run = get_cannot_run_from_allowed_commands([], default_error_message)
-        cannot_run_unless_forced = {}
+        disallowed_command = get_disallowed_command_from_allowed_commands(
+            [], default_error_message
+        )
+        disallowed_command_unless_forced = {}
 
-        super().__init__(cannot_run, cannot_run_unless_forced)
+        super().__init__(disallowed_command, disallowed_command_unless_forced)
 
 
-def get_cannot_run_from_allowed_commands(
+def get_disallowed_command_from_allowed_commands(
     allowed_commands: Iterable[AppcliCommand], error_message: str
 ) -> dict:
     """Given an Iterable of allowed appcli commands, generates the dict of disallowed commands.
