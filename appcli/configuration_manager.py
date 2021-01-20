@@ -57,18 +57,15 @@ class ConfigurationManager:
         self.config_repo: ConfigurationGitRepository = ConfigurationGitRepository(
             cli_context.configuration_dir
         )
-        self.generated_config_repo: GeneratedConfigurationGitRepository = (
-            GeneratedConfigurationGitRepository(
-                cli_context.get_generated_configuration_dir()
-            )
-        )
         self.cli_configuration: Configuration = configuration
 
     def initialise_configuration(self):
         """Initialises the configuration repository"""
 
-        # Initialise the repository
-        self.config_repo.initialise_git_repo()
+        if not self.config_repo.is_repo_on_master_branch():
+            error_and_exit(
+                "Cannot initialise configuration, repo is not on master branch."
+            )
 
         # Populate with new configuration
         self.__create_new_configuration_branch_and_files()
@@ -80,6 +77,9 @@ class ConfigurationManager:
             message (str): The message associated with the changes this applies.
         """
 
+        if self.config_repo.is_repo_on_master_branch():
+            error_and_exit("Cannot apply configuration, repo is on master branch.")
+
         # Commit changes to the configuration repository
         self.config_repo.commit_changes(message)
 
@@ -88,6 +88,10 @@ class ConfigurationManager:
 
     def migrate_configuration(self):
         """Migrates the configuration version to the current application version"""
+
+        if self.config_repo.is_repo_on_master_branch():
+            error_and_exit("Cannot migrate, repo is on master branch.")
+
         config_version: str = self.config_repo.get_repository_version()
         app_version: str = self.cli_context.app_version
 
@@ -306,11 +310,14 @@ class ConfigurationManager:
         # Generate the metadata file
         self.__generate_configuration_metadata_file()
 
-        # Put the generated config repo under version control
-        self.generated_config_repo.initialise_git_repo()
+        # By re-instantiating the 'GeneratedConfigurationGitRepository', we put
+        # the generated config repo under version control.
+        generated_config_repo = GeneratedConfigurationGitRepository(
+            self.cli_context.get_generated_configuration_dir()
+        )
 
         logger.debug(
-            f"Generated configuration at [{self.generated_config_repo.get_repo_path()}]"
+            f"Generated configuration at [{generated_config_repo.get_repo_path()}]"
         )
 
     def __apply_templates_from_directory(

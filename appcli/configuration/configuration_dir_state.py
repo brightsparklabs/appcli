@@ -12,6 +12,9 @@ www.brightsparklabs.com
 # standard libraries
 from pathlib import Path
 
+# vendor libraries
+import git
+
 # local libraries
 from appcli.commands.appcli_command import AppcliCommand
 from appcli.functions import error_and_exit
@@ -59,21 +62,21 @@ class ConfigurationDirStateFactory:
         if configuration_dir is None:
             return NoDirectoryProvidedConfigurationDirState()
 
+        if not ConfigurationDirStateFactory.__is_git_repo(configuration_dir):
+            return UninitialisedConfigurationDirState()
+
+        if not ConfigurationDirStateFactory.__is_git_repo(generated_configuration_dir):
+            return UnappliedConfigurationDirState()
+
         config_repo = ConfigurationGitRepository(configuration_dir)
         gen_config_repo = GeneratedConfigurationGitRepository(
             generated_configuration_dir
         )
 
-        if not config_repo.repo_exists():
-            return UninitialisedConfigurationDirState()
-
         conf_version = config_repo.get_repository_version()
         if conf_version != app_version:
             error_message = f"Application requires migration. Configuration version [{conf_version}], Application version [{app_version}]."
             return InvalidConfigurationDirState(error_message)
-
-        if not gen_config_repo.repo_exists():
-            return UnappliedConfigurationDirState()
 
         if config_repo.is_dirty():
             if gen_config_repo.is_dirty():
@@ -89,6 +92,22 @@ class ConfigurationDirStateFactory:
             )
 
         return CleanConfigurationDirState()
+
+    def __is_git_repo(path: Path):
+        """Checks if the directory at the path is a git repository.
+
+        Args:
+            path (Path): Path to test.
+
+        Returns:
+            bool: True if the directory exists and is a git repo. Otherwise False.
+        """
+        try:
+            # If this doesn't raise an Exception, a git repo exists at this path.
+            git.Repo(path)
+            return True
+        except (git.InvalidGitRepositoryError, git.exc.NoSuchPathError):
+            return False
 
 
 class NoDirectoryProvidedConfigurationDirState(ConfigurationDirState):

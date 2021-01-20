@@ -42,15 +42,20 @@ class GitRepository:
         self.repo_path = repo_path
         self.ignores = ignores
 
-    def initialise_git_repo(self):
-        """ Initialise the git repository, create .gitignore if required, and commit the initial files"""
+        self.repo = (
+            git.Repo(self.repo_path)
+            if self.__repo_exists()
+            else self.__initialise_git_repo()
+        )
+
+    def __initialise_git_repo(self):
+        """Initialise the git repository, create .gitignore if required, and commit the initial files
+
+        Returns:
+            git.Repo: The newly-created git repository
+        """
 
         logger.debug("Initialising repository at [%s] ...", self.repo_path)
-
-        if self.repo_exists():
-            error_and_exit(
-                f"Cannot 'git init'. Git repo already exists at [{self.repo_path}]."
-            )
 
         # git init, and write to the .gitignore file
         repo = git.Repo.init(self.repo_path)
@@ -67,8 +72,9 @@ class GitRepository:
         repo.git.add(".gitignore")
         repo.git.add("*")
         repo.index.commit("[autocommit] Initialised repository", author=self.actor)
+        return repo
 
-    def repo_exists(self) -> bool:
+    def __repo_exists(self) -> bool:
         """Determines if the repository exists.
 
         Returns:
@@ -93,24 +99,22 @@ class GitRepository:
             bool: True if a commit was made, otherwise False.
 
         """
-        repo = self.__get_repo()
-
         # If the repo isn't dirty, don't commit
-        if not repo.is_dirty(untracked_files=True):
+        if not self.repo.is_dirty(untracked_files=True):
             logger.debug(
                 "No changes found in repository [%s], no commit was made.",
-                repo.working_dir,
+                self.repo.working_dir,
             )
             return False
 
         logger.debug(
             "Changes found in repository [%s], making new commit.",
-            repo.working_dir,
+            self.repo.working_dir,
         )
 
-        repo.git.add(".gitignore")
-        repo.git.add("*")
-        repo.index.commit(message, author=self.actor)
+        self.repo.git.add(".gitignore")
+        self.repo.git.add("*")
+        self.repo.index.commit(message, author=self.actor)
         return True
 
     def checkout_new_branch_from_master(self, branch_name: str):
@@ -119,9 +123,12 @@ class GitRepository:
         Args:
             branch_name (str): name of the new branch
         """
-        repo = self.__get_repo()
+
+        if self.does_branch_exist(branch_name):
+            error_and_exit(f"Cannot create new branch {branch_name}. Already exists.")
+
         self.checkout_existing_branch("master")
-        repo.git.checkout("HEAD", b=branch_name)
+        self.repo.git.checkout("HEAD", b=branch_name)
 
     def checkout_existing_branch(self, branch_name: str):
         """Checkout an existing branch
@@ -129,8 +136,7 @@ class GitRepository:
         Args:
             branch_name (str): name of the branch to checkout to
         """
-        repo = self.__get_repo()
-        repo.git.checkout(branch_name)
+        self.repo.git.checkout(branch_name)
 
     def get_repository_version(self) -> str:
         """Get the nominal 'version' associated with this git repository. This is not a 'git'
@@ -155,9 +161,8 @@ class GitRepository:
         Returns:
             bool: True if the branch exists, otherwise false
         """
-        repo = self.__get_repo()
         try:
-            repo.git.show_ref(f"refs/heads/{branch_name}", verify=True, quiet=True)
+            self.repo.git.show_ref(f"refs/heads/{branch_name}", verify=True, quiet=True)
             return True
         except Exception:
             return False
@@ -168,8 +173,7 @@ class GitRepository:
         Args:
             tag_name (str): the tagname to use in the tag
         """
-        repo = self.__get_repo()
-        repo.git.tag(tag_name)
+        self.repo.git.tag(tag_name)
 
     def is_dirty(self, untracked_files: bool = False):
         """Tests if the repository is dirty or not. True if dirty, False if not.
@@ -180,8 +184,7 @@ class GitRepository:
         Returns:
             bool: True if repository is considered dirty, False otherwise.
         """
-        repo = self.__get_repo()
-        return repo.is_dirty(untracked_files=untracked_files)
+        return self.repo.is_dirty(untracked_files=untracked_files)
 
     def get_current_commit_hash(self):
         """Get the commit hash of the current commit
@@ -189,8 +192,7 @@ class GitRepository:
         Returns:
             str: Commit hash of the current commit.
         """
-        repo = self.__get_repo()
-        return repo.git.rev_parse("HEAD")
+        return self.repo.git.rev_parse("HEAD")
 
     def rename_current_branch(self, branch_name: str):
         """Renames the current branch
@@ -198,8 +200,7 @@ class GitRepository:
         Args:
             branch_name (str): the new branch name
         """
-        repo = self.__get_repo()
-        repo.git.branch(m=branch_name)
+        self.repo.git.branch(m=branch_name)
         logger.debug(f"Renamed branch to [{branch_name}]")
 
     def generate_branch_name(self, version="latest") -> str:
@@ -218,12 +219,11 @@ class GitRepository:
 
     def get_commit_count(self) -> int:
         """Get the total number of commits on this repo"""
-        repo = self.__get_repo()
-        count = repo.git.rev_list(("--all", "--count"))
+        count = self.repo.git.rev_list(("--all", "--count"))
         return int(count)
 
-    def __get_repo(self) -> git.Repo:
-        return git.Repo(self.repo_path)
+    def is_repo_on_master_branch(self) -> bool:
+        return self.__get_current_branch_name() == "master"
 
     def __get_current_branch_name(self) -> str:
         """Get the name of the current branch
@@ -231,8 +231,7 @@ class GitRepository:
         Returns:
             str: name of the current branch
         """
-        repo = self.__get_repo()
-        return repo.git.symbolic_ref("HEAD", short=True).replace("heads/", "")
+        return self.repo.git.symbolic_ref("HEAD", short=True).replace("heads/", "")
 
 
 class ConfigurationGitRepository(GitRepository):

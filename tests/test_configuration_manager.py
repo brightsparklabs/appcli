@@ -13,7 +13,6 @@ www.brightsparklabs.com
 from pathlib import Path
 
 # vendor libraries
-import git
 import pytest
 
 # local libraries
@@ -63,17 +62,21 @@ def test_initialise_on_initialised_repo(tmpdir):
 
 def test_apply_before_init(tmpdir):
     conf_manager = create_conf_manager(tmpdir)
-    with pytest.raises(git.InvalidGitRepositoryError):
-        # Expect that we cannot apply on an uninitialised repo
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
         conf_manager.apply_configuration_changes(message="some message")
+    assert pytest_wrapped_e.type == SystemExit
+    assert pytest_wrapped_e.value.code == 1
 
 
 def test_migrate_before_init(tmpdir):
     conf_manager = create_conf_manager(tmpdir)
 
-    with pytest.raises(git.InvalidGitRepositoryError):
-        # Expect that we cannot migrate on an uninitialised repo
+    with pytest.raises(
+        SystemExit
+    ) as pytest_wrapped_e:  # Expect that we cannot migrate on an uninitialised repo
         conf_manager.migrate_configuration()
+    assert pytest_wrapped_e.type == SystemExit
+    assert pytest_wrapped_e.value.code == 1
 
 
 def test_apply_workflow(tmpdir):
