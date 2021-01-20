@@ -10,6 +10,7 @@ www.brightsparklabs.com
 """
 
 # standard library
+import os
 from pathlib import Path
 from typing import Iterable
 
@@ -17,8 +18,8 @@ from typing import Iterable
 import git
 
 # local libraries
+from appcli.functions import error_and_exit
 from appcli.logger import logger
-from appcli.models.cli_context import CliContext
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
@@ -38,14 +39,55 @@ class GitRepository:
 
     def __init__(self, repo_path: Path, ignores: Iterable[str] = []):
         self.actor: git.Actor = git.Actor("appcli", "root@localhost")
+        self.repo_path = repo_path
+        self.ignores = ignores
 
-        # Get or create repo at this path to ensure it exists
+        self.repo = (
+            git.Repo(self.repo_path)
+            if self.__repo_exists()
+            else self.__initialise_git_repo()
+        )
+
+    def __initialise_git_repo(self):
+        """Initialise the git repository, create .gitignore if required, and commit the initial files
+
+        Returns:
+            git.Repo: The newly-created git repository
+        """
+
+        logger.debug("Initialising repository at [%s] ...", self.repo_path)
+
+        # git init, and write to the .gitignore file
+        repo = git.Repo.init(self.repo_path)
+        logger.debug("Initialised repository at [%s]", repo.working_dir)
+
+        gitignore_path = self.repo_path.joinpath(".gitignore")
+        with open(gitignore_path, "w") as ignore_file:
+            for ignore in self.ignores:
+                ignore_file.write(f"{ignore}\n")
+        logger.debug(
+            f"Created .gitignore at [{gitignore_path}] with ignores: [%s]", self.ignores
+        )
+
+        repo.git.add(".gitignore")
+        repo.git.add("*")
+        repo.index.commit("[autocommit] Initialised repository", author=self.actor)
+        return repo
+
+    def __repo_exists(self) -> bool:
+        """Determines if the repository exists.
+
+        Returns:
+            bool: True if the git repository exists, otherwise False.
+        """
+        if not os.path.isdir(self.repo_path):
+            return False
+
         try:
-            repo = git.Repo(repo_path)
+            git.Repo(self.repo_path)
+            return True
         except git.InvalidGitRepositoryError:
-            repo = self.__initialise_new_repo(repo_path, ignores)
-
-        self.repo = repo
+            return False
 
     def commit_changes(self, message: str) -> bool:
         """Commit the existing changes to the git repository
@@ -81,6 +123,10 @@ class GitRepository:
         Args:
             branch_name (str): name of the new branch
         """
+
+        if self.does_branch_exist(branch_name):
+            error_and_exit(f"Cannot create new branch {branch_name}. Already exists.")
+
         self.checkout_existing_branch("master")
         self.repo.git.checkout("HEAD", b=branch_name)
 
@@ -136,16 +182,17 @@ class GitRepository:
             untracked_files (bool, optional): Whether the check includes untracked files. Defaults to False.
 
         Returns:
-            [bool]: True if repository is considered dirty, False otherwise.
+            bool: True if repository is considered dirty, False otherwise.
         """
         return self.repo.is_dirty(untracked_files=untracked_files)
 
     def get_current_commit_hash(self):
-        """Get the commit hash of the current commit"""
-        return self.repo.git.rev_parse("HEAD")
+        """Get the commit hash of the current commit
 
-    def get_diff_to_tag(self, tag: str, diff_dir: str = ""):
-        return self.repo.git.diff(f"tags/{tag}", f"{diff_dir}")
+        Returns:
+            str: Commit hash of the current commit.
+        """
+        return self.repo.git.rev_parse("HEAD")
 
     def rename_current_branch(self, branch_name: str):
         """Renames the current branch
@@ -167,6 +214,17 @@ class GitRepository:
         """
         return BRANCH_NAME_FORMAT.format(version=version)
 
+    def get_repo_path(self):
+        return self.repo_path
+
+    def get_commit_count(self) -> int:
+        """Get the total number of commits on this repo"""
+        count = self.repo.git.rev_list(("--all", "--count"))
+        return int(count)
+
+    def is_repo_on_master_branch(self) -> bool:
+        return self.__get_current_branch_name() == "master"
+
     def __get_current_branch_name(self) -> str:
         """Get the name of the current branch
 
@@ -175,190 +233,15 @@ class GitRepository:
         """
         return self.repo.git.symbolic_ref("HEAD", short=True).replace("heads/", "")
 
-    def __initialise_new_repo(
-        self, repo_path: Path, ignores: Iterable[str]
-    ) -> git.Repo:
-        # Initialise the git repository, create .gitignore if required, and commit the initial files
-        logger.debug("Initialising repository at [%s] ...", repo_path)
-
-        # git init, and write to the .gitignore file
-        repo = git.Repo.init(repo_path)
-        logger.debug("Initialised repository at [%s]", repo.working_dir)
-
-        gitignore_path = repo_path.joinpath(".gitignore")
-        with open(gitignore_path, "w") as ignore_file:
-            for ignore in ignores:
-                ignore_file.write(f"{ignore}\n")
-        logger.debug(
-            f"Created .gitignore at [{gitignore_path}] with ignores: [%s]", ignores
-        )
-
-        repo.git.add(".gitignore")
-        repo.git.add("*")
-        repo.index.commit("[autocommit] Initialised repository", author=self.actor)
-        return repo
-
 
 class ConfigurationGitRepository(GitRepository):
-    def __init__(self, cli_context: CliContext):
+    def __init__(self, configuration_dir: Path):
         super().__init__(
-            cli_context.configuration_dir,
+            configuration_dir,
             [".generated*", ".metadata*"],
         )
 
 
 class GeneratedConfigurationGitRepository(GitRepository):
-    def __init__(self, cli_context: CliContext):
-        super().__init__(cli_context.get_generated_configuration_dir())
-        self.rename_current_branch(self.generate_branch_name(cli_context.app_version))
-
-
-# ------------------------------------------------------------------------------
-# PUBLIC FUNCTIONS
-# ------------------------------------------------------------------------------
-
-
-def confirm_config_dir_exists(cli_context: CliContext):
-    """Confirm that the configuration repository exists.
-    If this fails, it will raise a general Exception with the error message.
-
-    Args:
-        cli_context (CliContext): The current CLI context.
-
-    Raises:
-        Exception: Raised if the configuration repository does *not* exist.
-    """
-    if not __is_git_repo(cli_context.configuration_dir):
-        raise Exception(
-            f"Configuration does not exist at [{cli_context.configuration_dir}]. Please run `configure init`."
-        )
-
-
-def confirm_config_dir_not_exists(cli_context: CliContext):
-    """Confirm that the configuration repository does *not* exist.
-    If this fails, it will raise a general Exception with the error message.
-
-    Args:
-        cli_context (CliContext): The current CLI context.
-
-    Raises:
-        Exception: Raised if the configuration repository exists.
-    """
-    if __is_git_repo(cli_context.configuration_dir):
-        raise Exception(
-            f"Configuration already exists at [{cli_context.configuration_dir}]."
-        )
-
-
-def confirm_generated_config_dir_exists(cli_context: CliContext):
-    """Confirm that the generated configuration repository exists.
-    If this fails, it will raise a general Exception with the error message.
-
-    Args:
-        cli_context (CliContext): The current CLI context.
-
-    Raises:
-        Exception: Raised if the generated configuration repository does not exist.
-    """
-    if not __is_git_repo(cli_context.get_generated_configuration_dir()):
-        raise Exception(
-            f"Generated configuration does not exist at [{cli_context.get_generated_configuration_dir()}]. Please run `configure apply`."
-        )
-
-
-def confirm_config_dir_exists_and_is_not_dirty(cli_context: CliContext):
-    """Confirm that the configuration repository has not been modified and not 'applied'.
-    If this fails, it will raise a general Exception with the error message.
-
-    Args:
-        cli_context (CliContext): The current CLI context.
-
-    Raises:
-        Exception: Raised if the configuration repository has been modified and not 'applied'.
-    """
-    confirm_config_dir_exists(cli_context)
-    config_repo: ConfigurationGitRepository = ConfigurationGitRepository(cli_context)
-    if config_repo.is_dirty(untracked_files=True):
-        raise Exception(
-            f"Configuration at [{config_repo.repo.working_dir}]] contains changes which have not been applied. Please run `configure apply`."
-        )
-
-
-def confirm_generated_config_dir_exists_and_is_not_dirty(cli_context: CliContext):
-    """Confirm that the generated configuration repository has not been manually modified and not checked-in.
-    If this fails, it will raise a general Exception with the error message.
-
-    Args:
-        cli_context (CliContext): The current CLI context.
-
-    Raises:
-        Exception: Raised if the generated configuration repository has been manually modified and not checked in.
-    """
-    confirm_generated_config_dir_exists(cli_context)
-    generated_config_repo: GeneratedConfigurationGitRepository = (
-        GeneratedConfigurationGitRepository(cli_context)
-    )
-    if generated_config_repo.is_dirty(untracked_files=False):
-        raise Exception(
-            f"Generated configuration at [{generated_config_repo.repo.working_dir}] has been manually modified."
-        )
-
-
-def confirm_config_version_matches_app_version(cli_context: CliContext):
-    """Confirm that the configuration repository version matches the application version.
-    If this fails, it will raise a general Exception with the error message.
-
-    Args:
-        cli_context (CliContext): The current CLI context.
-
-    Raises:
-        Exception: Raised if the configuration repository version doesn't match the application version.
-    """
-    confirm_config_dir_exists(cli_context)
-    config_repo: ConfigurationGitRepository = ConfigurationGitRepository(cli_context)
-    config_version: str = config_repo.get_repository_version()
-
-    app_version: str = cli_context.app_version
-
-    if config_version != app_version:
-        raise Exception(
-            f"Configuration at [{config_repo.repo.working_dir}] is using version [{config_version}] which is incompatible with current application version [{app_version}]. Migrate to this application version using 'migrate'."
-        )
-
-
-def confirm_not_on_master_branch(cli_context: CliContext):
-    """Confirm that the configuration repository is not currently on the master branch.
-
-    Args:
-        cli_context (CliContext): The current CLI context.
-    """
-    confirm_config_dir_exists(cli_context)
-    config_repo: ConfigurationGitRepository = ConfigurationGitRepository(cli_context)
-    config_version: str = config_repo.get_repository_version()
-
-    if config_version == "master":
-        raise Exception(
-            f"Configuration at [{config_repo.repo.working_dir}] is on the master branch."
-        )
-
-
-# ------------------------------------------------------------------------------
-# PRIVATE FUNCTIONS
-# ------------------------------------------------------------------------------
-
-
-def __is_git_repo(path: Path) -> bool:
-    """Checks if a given path contains a git repo or not
-
-    Args:
-        path (Path): the path to test
-
-    Returns:
-        bool: True if this path contains a git repo at it's base, otherwise False.
-    """
-    try:
-        git.Repo(path=path)
-    except git.InvalidGitRepositoryError:
-        return False
-    else:
-        return True
+    def __init__(self, generated_configuration_dir: Path):
+        super().__init__(generated_configuration_dir)

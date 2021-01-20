@@ -18,6 +18,7 @@ from pathlib import Path
 import click
 
 # local libraries
+from appcli.commands.appcli_command import AppcliCommand
 from appcli.crypto import crypto
 from appcli.crypto.cipher import Cipher
 from appcli.logger import logger
@@ -43,8 +44,10 @@ class EncryptCli:
         @click.argument("text")
         @click.pass_context
         def encrypt(ctx, text: str):
-
             cli_context: CliContext = ctx.obj
+            cli_context.get_configuration_dir_state().verify_command_allowed(
+                AppcliCommand.ENCRYPT
+            )
             key_file: Path = cli_context.get_key_file()
             if not key_file.is_file():
                 logger.info("Creating encryption key at [%s]", key_file)

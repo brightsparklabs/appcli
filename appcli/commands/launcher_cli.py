@@ -22,8 +22,10 @@ from jinja2 import StrictUndefined, Template
 
 # local libraries
 from appcli import templates
+from appcli.commands.appcli_command import AppcliCommand
 from appcli.functions import error_and_exit
 from appcli.logger import logger
+from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
 
 # ------------------------------------------------------------------------------
@@ -51,6 +53,11 @@ class LauncherCli:
         @click.command(help="Outputs an appropriate launcher bash script to stdout.")
         @click.pass_context
         def launcher(ctx):
+            cli_context: CliContext = ctx.obj
+            cli_context.get_configuration_dir_state().verify_command_allowed(
+                AppcliCommand.LAUNCHER
+            )
+
             logger.info("Generating launcher script ...")
 
             # Get the template from the appcli package
