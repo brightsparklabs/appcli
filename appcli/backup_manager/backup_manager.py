@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # # -*- coding: utf-8 -*-
 
+# standard libraries
+from pathlib import Path
 
 # local libraries
 from appcli.backup_manager.remote_strategy import AwsS3Strategy
@@ -11,7 +13,7 @@ class RemoteStrategyFactory:
 
 
     @staticmethod
-    def get_strategy(backup_config):
+    def get_strategy(backup_config, key_file: Path):
         strategies = {
             "S3": AwsS3Strategy
         }
@@ -29,8 +31,7 @@ class RemoteStrategyFactory:
 
         for backup in backups:
             cl = strategies.get(backup['type'], lambda: "Invalid remote strategy")
-            cl(backup)
             
-            backup_strategies.append(cl(backup))
+            backup_strategies.append(cl(backup, key_file))
 
         return backup_strategies

@@ -67,10 +67,9 @@ class BackupManagerCli:
             Decrypt stack-settings.yml 
                 See Call crypto.decrypt
                 and orchestrators.decrypt_file
+                -cypher error
 
             Move localbackup from this file into backup_manager.py
-
-            Add tags to s3 strategy
 
             commit stack-settings.yml file to teraflow
 
@@ -83,6 +82,8 @@ class BackupManagerCli:
             Update readme
 
             Better handling of invalid strategy
+
+            Linting
 
             """
 
@@ -112,6 +113,8 @@ class BackupManagerCli:
         def remote_backup(ctx):
             cli_context: CliContext = ctx.obj
 
+            key_file = cli_context.get_key_file()
+
             # Get settings value and print
             configuration = ConfigurationManager(cli_context, self.cli_configuration)
             stack_variables_manager = configuration.get_stack_variables_manager()
@@ -121,7 +124,7 @@ class BackupManagerCli:
 
             stack_variables = stack_variables_manager.get_all_variables()
 
-            remote_strategies = RemoteStrategyFactory.get_strategy(stack_variables['backup'])
+            remote_strategies = RemoteStrategyFactory.get_strategy(stack_variables['backup'], key_file)
 
             for backup_strategy in remote_strategies:
                 backup_strategy.backup(backup_filename)
