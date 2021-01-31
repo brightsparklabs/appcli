@@ -64,7 +64,8 @@ setup(
         "pycryptodome==3.9.8",
         "ruamel-yaml==0.16.10",
         "tabulate==0.8.7",
-        "python-dateutil==2.8.1"
+        "python-dateutil==2.8.1",
+        "boto3==1.16.62"
     ],
     extras_require={"dev": ["black", "flake8", "isort", "pytest"]},
 )

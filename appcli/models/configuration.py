@@ -72,6 +72,11 @@ class Configuration(NamedTuple):
     templates to generate the final configuration files.
     """
 
+    stack_configuration_file: Path
+    """
+
+    """
+
     baseline_templates_dir: Path
     """
     Directory containing the baseline set of jinja2 templates used to generate the final

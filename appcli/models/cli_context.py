@@ -89,6 +89,14 @@ class CliContext(NamedTuple):
         """
         return self.configuration_dir.joinpath("settings.yml")
 
+    def get_stack_configuration_file(self) -> Path:
+        """Get the location of the configuration file
+
+        Returns:
+            Path: location of the configuration file
+        """
+        return self.configuration_dir.joinpath("stack-settings.yml")
+
     def get_baseline_template_overrides_dir(self) -> Path:
         """Get the directory of the configuration template overrides
 

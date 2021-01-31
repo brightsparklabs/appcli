@@ -295,6 +295,11 @@ class ConfigurationManager:
         app_config_file = self.cli_context.get_app_configuration_file()
         return VariablesManager(app_config_file)
 
+    def get_stack_variables_manager(self):
+        stack_config_file = self.cli_context.get_stack_configuration_file()
+        return VariablesManager(stack_config_file)
+
+
     def __create_new_configuration_branch_and_files(
         self, config_repo: ConfigurationGitRepository
     ):
@@ -345,6 +350,13 @@ class ConfigurationManager:
         )
         os.makedirs(target_app_configuration_file.parent, exist_ok=True)
         shutil.copy2(seed_app_configuration_file, target_app_configuration_file)
+
+        stack_configuration_file = self.cli_configuration.stack_configuration_file
+        target_stack_configuration_file = self.cli_context.get_stack_configuration_file()
+        # Copy in the stack configuration file
+        if stack_configuration_file.is_file():
+            shutil.copy2(stack_configuration_file, target_stack_configuration_file)
+
 
         # Create the configurable templates directory
         logger.info("Copying configurable templates ...")

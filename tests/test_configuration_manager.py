@@ -43,6 +43,9 @@ def test_initialise(tmpdir):
     # Check the variables file has been copied
     assert Path(tmpdir, "conf/settings.yml").exists()
 
+    # Check the backup config file has been copied
+    assert Path(tmpdir, "conf/stack-settings.yml").exists()
+
     # Check the key has been generated
     assert Path(tmpdir, "conf/key").exists()
 

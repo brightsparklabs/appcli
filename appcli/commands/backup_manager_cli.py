@@ -29,23 +29,21 @@ from appcli.functions import execute_validation_functions
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
+from appcli.configuration_manager import ConfigurationManager
+from appcli.backup_manager.backup_manager import RemoteStrategyFactory
+
+
 
 # ------------------------------------------------------------------------------
 # CLASSES
 # ------------------------------------------------------------------------------
 
 
-class RecoveryCli:
+class BackupManagerCli:
 
     # --------------------------------------------------------------------------
     # CONSTRUCTOR
     # --------------------------------------------------------------------------
-
-
-    #TODO
-    #comments
-    #readme
-    #tests
 
     def __init__(self, configuration: Configuration):
 
@@ -61,6 +59,33 @@ class RecoveryCli:
             hooks = self.cli_configuration.hooks
 
             hooks.pre_backup(ctx)
+
+            """ 
+            TODO:
+            Handle when stack-settings is not present
+
+            Decrypt stack-settings.yml 
+                See Call crypto.decrypt
+                and orchestrators.decrypt_file
+
+            Move localbackup from this file into backup_manager.py
+
+            Add tags to s3 strategy
+
+            commit stack-settings.yml file to teraflow
+
+            Implement glob ignore list
+
+            Implement frequency logic (similar to cron)
+
+            Comments everywhere
+
+            Update readme
+
+            Better handling of invalid strategy
+
+            """
+
             backup_filename = self.__backup(ctx)
             hooks.post_backup(ctx, backup_filename)
 
@@ -82,11 +107,33 @@ class RecoveryCli:
             self.__view_backups(ctx)
             hooks.view_backups(ctx)
 
+        @click.command(help="View a list of available backups.")
+        @click.pass_context
+        def remote_backup(ctx):
+            cli_context: CliContext = ctx.obj
+
+            # Get settings value and print
+            configuration = ConfigurationManager(cli_context, self.cli_configuration)
+            stack_variables_manager = configuration.get_stack_variables_manager()
+
+            backup_filename = self.__backup(ctx)
+
+
+            stack_variables = stack_variables_manager.get_all_variables()
+
+            remote_strategies = RemoteStrategyFactory.get_strategy(stack_variables['backup'])
+
+            for backup_strategy in remote_strategies:
+                backup_strategy.backup(backup_filename)
+
+        
+
         # Expose the commands
         self.commands = {
             "backup":backup,
             "restore":restore,
-            "view_backups":view_backups
+            "view_backups":view_backups,
+            "remote_backup":remote_backup
         }
 
     def __restore(self, ctx, backup_filename):
