@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 # # -*- coding: utf-8 -*-
 
+"""
+Remote backup strategy classes.
+________________________________________________________________________________
+
+Created by brightSPARK Labs
+www.brightsparklabs.com
+"""
+
 # standard libraries
 import os
 from pathlib import Path
@@ -18,6 +26,12 @@ from botocore.exceptions import ClientError
 
 
 class RemoteStrategy:
+    """
+    Base class for a remote backup strategy. 
+    """
+    # --------------------------------------------------------------------------
+    # CONSTRUCTOR
+    # --------------------------------------------------------------------------    
     def __init__(self, conf, key_file: Path):
         self.name = conf['name']
         self.type = conf['type']
@@ -25,10 +39,20 @@ class RemoteStrategy:
         self.configuration = conf['configuration']
         self.key_file = key_file
 
+    # ------------------------------------------------------------------------------
+    # PUBLIC METHODS
+    # ------------------------------------------------------------------------------
     def backup():
         pass
     
 class AwsS3Strategy(RemoteStrategy):
+    """
+    Remote backup strategy for pushing a backup to an S3 bucket.
+    Implements RemoteStrategy.
+    """
+    # --------------------------------------------------------------------------
+    # CONSTRUCTOR
+    # --------------------------------------------------------------------------    
     def __init__(self, conf, key_file: Path):
         super().__init__(conf, key_file)
 
@@ -47,6 +71,9 @@ class AwsS3Strategy(RemoteStrategy):
         self.s3_bucket_path = self.configuration['s3_bucket_path']
         self.s3_tags = self.configuration['tags']
 
+    # --------------------------------------------------------------------------
+    # OVERRIDE: RemoteStrategy
+    # --------------------------------------------------------------------------    
 
     def backup(self, backup_filename):
         logger.info(f"Initiating the S3 backup '{self.name}'.")
@@ -60,7 +87,7 @@ class AwsS3Strategy(RemoteStrategy):
             response = s3.upload_file(backup_filename, 
                 self.s3_bucket, 
                 self.s3_bucket_path + "/" + os.path.basename(backup_filename), 
-                # Tagging accepts a url like encoded string of tags.
+                # `Tagging` accepts a url like encoded string of tags.
                 # i.e "key1=value1&key2=value2&..."
                 ExtraArgs={'Tagging': urllib.parse.urlencode(self.s3_tags)} 
             )
