@@ -106,6 +106,13 @@ Stack variables can be set within the `stack-settings.yml` file as described in 
 
 ### Backup and restore application configuration and data
 Backup and restore functionality can be configured in a `backup` block in`stack-settings.yml` 
+The available variables for the backup block is:
+| variable      | Description                                                                                                |
+| ------------- | ---------------------------------------------------------------------------------------------------------- |
+| numberOfBackupsToKeep | The number of local backups to keep. A rolling deletion strategy is used to remove the oldest backups once this number has been reached. Set this value to `0` to never delete a backup.                         |
+| ignoreList            | The ignore list is a list of glob patterns used to specify what files to exclude from the backup.  |
+| remote                | Defines all remote backups.                                                                        |
+
 
     # filename: stack-settings.yml
 
@@ -132,12 +139,7 @@ The available variables for every remote backup strategy are are:
 | ------------- | --------------------------------------------------------------------------- |
 | name          | A name or description used to describe this backup.                         |
 | type          | The type of this backup, must match an implemented remote backup strategy.  |
-| frequency     | A cron like pattern that appcli will check before taking a backup. 
-Pattern is `* * *` `day_of_month month day_of_week` with `day_of_week` starting with monday = 0. 
-`*` is a wildcard that is always matched.
-        e.g. <br />
-        `* * *` Will always run. <br />
-        `* * 0` Will only run on Mondays                                                      |
+| frequency     | A cron like pattern that appcli will check before taking a backup. Pattern is `* * *` `day_of_month month day_of_week` with `day_of_week` starting with monday = 0. `*` is a wildcard that is always matched. e.g. <br /> `* * *` Will always run. <br />  `* * 0` Will only run on Mondays                                                      |
 | configuration | Custom configuration block that is specific to each remote backup strategy. |
 
 ##### S3 backup
