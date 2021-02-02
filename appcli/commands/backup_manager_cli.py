@@ -7,7 +7,7 @@ Commands for backup and restoration of application configuration and data.
 Responsible for creating local backups, remote (offsite) backups and restoring from a local backup.
 Pulls configuration from `stack-settings.yml`
 If no `backup` section is present in the configuration a local backup is still taken with nothing excluded and rolling backup deletion dissabled.
-See the README for further details on backup configuration. 
+See the README for further details on backup configuration.
 _______________________________________________________________________________
 
 Created by brightSPARK Labs
@@ -17,10 +17,9 @@ www.brightsparklabs.com
 # vendor libraries
 import click
 
+# local libraries
 from appcli.backup_manager.backup_manager import BackupManager, RemoteStrategyFactory
 from appcli.configuration_manager import ConfigurationManager
-
-# local libraries
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
 
@@ -43,7 +42,9 @@ class BackupManagerCli:
         # PUBLIC METHODS
         # ------------------------------------------------------------------------------
 
-        @click.command(help="Create a backup of application data and configuration. Will also execute any remote strategies configured.")
+        @click.command(
+            help="Create a backup of application data and configuration. Will also execute any remote strategies configured."
+        )
         @click.pass_context
         def backup(ctx):
             cli_context: CliContext = ctx.obj

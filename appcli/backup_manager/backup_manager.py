@@ -10,14 +10,14 @@ www.brightsparklabs.com
 """
 
 
-# standard libraries
-from pathlib import Path
-import re
 import os
+import re
 import shutil
 import tarfile
 from datetime import datetime, timezone
 
+# standard libraries
+from pathlib import Path
 
 # vendor libraries
 import dateutil.parser
@@ -273,9 +273,9 @@ class BackupManager:
         return f"{app_name.upper()}_{now.isoformat()}.tgz"
 
     def __rolling_backup_deletion(self, app_name, backup_dir):
-        """Delete old backups, will only keep the most recent backups. 
+        """Delete old backups, will only keep the most recent backups.
         The number of backups to keep is specified in the stack settings configuration file.
-        Any files in the backup directory that do not match the filename pattern will be excluded 
+        Any files in the backup directory that do not match the filename pattern will be excluded
         from deletion and will not count towards the number of backups to keep
 
         Args:
@@ -288,10 +288,13 @@ class BackupManager:
             f"Removing old backups - retaining at least the last [{self.number_of_backups_to_retain}] backups ..."
         )
 
-        # Filter out anything in the backup directory that is not an expected backup, 
+        # Filter out anything in the backup directory that is not an expected backup,
         # we only want to delete backups that match our expected filename.
         full_backup_directory = os.listdir(backup_dir)
-        regex_pattern = re.compile(app_name.upper() + "_\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d+([+-][0-2]\d:[0-5]\d|Z).tgz")
+        regex_pattern = re.compile(
+            app_name.upper()
+            + "_\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d+([+-][0-2]\d:[0-5]\d|Z).tgz"
+        )
         backup_files = [x for x in full_backup_directory if re.match(regex_pattern, x)]
 
         # Sort the backups by the DateTime specified in the filename.
@@ -301,7 +304,7 @@ class BackupManager:
             reverse=True,
         )
         backups_to_delete = backup_dir_files[
-            self.number_of_backups_to_retain - 1:
+            self.number_of_backups_to_retain - 1 :
         ]  # -1 as we're 0 indexed
         for backup_to_delete in backups_to_delete:
             backup_file: Path = Path(os.path.join(backup_dir, backup_to_delete))
