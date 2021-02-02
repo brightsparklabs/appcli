@@ -18,7 +18,7 @@ from pathlib import Path
 import boto3
 from botocore.exceptions import ClientError
 
-#from appcli.crypto.cipher import Cipher
+from appcli.crypto.cipher import Cipher
 
 # local libraries
 from appcli.logger import logger
@@ -58,18 +58,13 @@ class AwsS3Strategy(RemoteStrategy):
     def __init__(self, conf, key_file: Path):
         super().__init__(conf, key_file)
 
-        # cipher = Cipher(self.key_file)
+        cipher = Cipher(self.key_file)
 
         self.s3_bucket = self.configuration["bucket_name"]
-        # self.s3_access_key = cipher.decrypt(self.configuration['access_key'])
-        # self.s3_secret_key = cipher.decrypt(self.configuration['secret_key'])
-        # giving invalid mac
-        #  File "/usr/local/lib/python3.8/site-packages/Crypto/Cipher/_mode_gcm.py", line 508, in verify
-        #   raise ValueError("MAC check failed")
-        # ValueError: MAC check failed
+        # Both the access_key and secret_key should be encrypted, decrypt them.
+        self.s3_access_key = cipher.decrypt(self.configuration['access_key'])
+        self.s3_secret_key = cipher.decrypt(self.configuration['secret_key'])
 
-        self.s3_access_key = self.configuration["access_key"]
-        self.s3_secret_key = self.configuration["secret_key"]
         self.s3_bucket_path = self.configuration["s3_bucket_path"]
         self.s3_tags = self.configuration["tags"]
 
