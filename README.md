@@ -31,6 +31,8 @@ The library exposes the following environment variables to the `docker-compose.y
 The `docker-compose.yml` can be templated by renaming to `docker-compose.yml.j2`, and setting
 variables within the `settings.yml` file as described in the Installation section.
 
+Stack variables can be set within the `stack-settings.yml` file as described in the `Build configuration template directories` section.
+
 ## Installation
 
 ### Add the library to your python CLI application
@@ -95,11 +97,80 @@ variables within the `settings.yml` file as described in the Installation sectio
 
 - Store any Jinja2 variable definitions you wish to use in your configuration
   template files in `resources/settings.yml`.
+- Store any appcli stack specific variables in `resources/stack-settings.yml`.
 - Store your `docker-compose.yml`/`docker-compose.yml.j2` file in `resources/templates/baseline/`.
 - Configuration files (Jinja2 compatible templates or otherwise) can be stored in one
   of two locations:
   - `resources/templates/baseline` - for templates which the end user **is not** expected to modify.
   - `resources/templates/configurable` - for templates which the end user is expected to modify.
+
+### Backup and restore application configuration and data
+Backup and restore functionality can be configured in a `backup` block in`stack-settings.yml` 
+
+    # filename: stack-settings.yml
+
+    backup:
+        numberOfBackupsToKeep: 0 
+        ignoreList: 
+        remote:
+
+#### Ignore lists
+The `ignoreList` list in `stack-settings.yml` can contain a list of glob patterns, if any of these patterns match a files full path it will be excluded from the backup. The following example will exclude any file in a directory that ends with `metastore`.
+
+    # filename: stack-settings.yml
+        
+    backup:
+        numberOfBackupsToKeep: 0 
+        ignoreList: 
+            - "*metastore/*"
+        remote:
+
+#### Remote backup strategies 
+Appcli supports storing backups in S3 buckets and can be extended to support other remote backup strategies. 
+The available variables for every remote backup strategy are are:
+| variable      | Description                                                                 |
+| ------------- | --------------------------------------------------------------------------- |
+| name          | A name or description used to describe this backup.                         |
+| type          | The type of this backup, must match an implemented remote backup strategy.  |
+| frequency     | A cron like pattern that appcli will check before taking a backup. 
+Pattern is `* * *` `day_of_month month day_of_week` with `day_of_week` starting with monday = 0. 
+`*` is a wildcard that is always matched.
+        e.g. <br />
+        `* * *` Will always run. <br />
+        `* * 0` Will only run on Mondays                                                      |
+| configuration | Custom configuration block that is specific to each remote backup strategy. |
+
+##### S3 backup
+To enable S3 backup add a list item to the `remote` section of `stack-settings.yml` with a `type` of `S3`.
+The available variables for an S3 backup are:
+| variable       | Description                                               |
+| -------------- | --------------------------------------------------------- |
+| bucket_name    | The name of the bucket to upload to.                      |
+| access_key     | The public access key for the account to upload under. This value must be encrypted, this can be done by passing the access key to `./myapp encrypt my_access_key` and setting the value returned into `stack-settings.yml`.   |
+| secret_key     | The private access key for the account to upload under. This value must be encrypted, this can be done by passing the secret key to `./myapp encrypt my_secret_key` and setting the value returned into `stack-settings.yml`.    |
+| s3_bucket_path | The path to upload the backup to.                         |
+| tags           | Key value pairs of tags to set on the backup object.      |
+
+    # filename: stack-settings.yml
+
+    backup:
+        numberOfBackupsToKeep: 0 
+        ignoreList: 
+            - "*metastore/*"
+        remote:
+        - name: "weekly_S3"
+            type: "S3"
+            frequency: "* * *"
+            configuration:
+                bucket_name: "aws.s3.bucket"
+                access_key: 
+                    enc:id=1:encrypted_text":end
+                secret_key: 
+                    enc:id=1:encrypted_text":end
+                s3_bucket_path: "bucket/path"
+                tags:
+                    frequency: "weekly"
+                    type: "data"
 
 ### Define a container for your CLI application
 
