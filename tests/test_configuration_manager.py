@@ -202,6 +202,7 @@ def create_conf_manager(tmpdir, cli_context: CliContext = None) -> Configuration
         baseline_templates_dir=Path(BASE_DIR, "resources/templates/baseline"),
         configurable_templates_dir=Path(BASE_DIR, "resources/templates/configurable"),
         orchestrator=DockerComposeOrchestrator("cli/docker-compose.yml", []),
+        stack_configuration_file=Path(BASE_DIR, "resources/test_tack_settings.yml"),
     )
 
     return ConfigurationManager(cli_context, configuration)

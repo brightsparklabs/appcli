@@ -9,8 +9,7 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-# standard library
-from appcli.variables_manager import VariablesManager
+from pprint import pprint
 
 # vendor libraries
 import click
@@ -18,7 +17,9 @@ import click
 # local libraries
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
-from pprint import pprint
+
+# standard library
+from appcli.variables_manager import VariablesManager
 
 # ------------------------------------------------------------------------------
 # CLASSES

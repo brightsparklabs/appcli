@@ -12,27 +12,15 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-# standard libraries
-import sys
-from datetime import datetime, timedelta, timezone
-import os
-from pathlib import Path
-
-
 # vendor libraries
 import click
-from click.core import Context
 
+from appcli.backup_manager.backup_manager import BackupManager, RemoteStrategyFactory
+from appcli.configuration_manager import ConfigurationManager
 
 # local libraries
-from appcli.functions import execute_validation_functions
-from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
-from appcli.configuration_manager import ConfigurationManager
-from appcli.backup_manager.backup_manager import RemoteStrategyFactory, BackupManager
-
-
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -60,19 +48,15 @@ class BackupManagerCli:
 
             hooks.pre_backup(ctx)
 
-            """ 
+            """
             TODO:
 
 
-            Decrypt stack-settings.yml 
+            Decrypt stack-settings.yml
 
             commit stack-settings.yml file to teraflow
 
             Update readme
-
-            Better handling of invalid strategy
-
-            Linting
 
             """
 
@@ -85,7 +69,9 @@ class BackupManagerCli:
             backup_filename = backup_manager.backup(ctx)
 
             # Get any remote backup strategies.
-            remote_strategies = RemoteStrategyFactory.get_strategy(backup_manager, key_file)
+            remote_strategies = RemoteStrategyFactory.get_strategy(
+                backup_manager, key_file
+            )
 
             # Execute each of the remote backup strategies with the local backup file.
             for backup_strategy in remote_strategies:
@@ -101,10 +87,7 @@ class BackupManagerCli:
 
             hooks.pre_restore(ctx, backup_file)
 
-
             cli_context: CliContext = ctx.obj
-            key_file = cli_context.get_key_file()
-
 
             backup_manager = self.__create_backup_manager(cli_context)
             backup_manager.restore(ctx, backup_file)
@@ -118,21 +101,18 @@ class BackupManagerCli:
 
             cli_context: CliContext = ctx.obj
 
-            key_file = cli_context.get_key_file()
-
             backup_manager = self.__create_backup_manager(cli_context)
             backup_manager.view_backups(ctx)
 
             hooks.view_backups(ctx)
-        
 
         # Expose the commands
         self.commands = {
-            "backup":backup,
-            "restore":restore,
-            "view_backups":view_backups
+            "backup": backup,
+            "restore": restore,
+            "view_backups": view_backups,
         }
-    
+
     def __create_backup_manager(self, cli_context):
         # Get the settings from the `stack-settings` file
         configuration = ConfigurationManager(cli_context, self.cli_configuration)
@@ -140,6 +120,4 @@ class BackupManagerCli:
         stack_variables = stack_variables_manager.get_all_variables()
 
         # Create our BackupManager from the settings
-        return  BackupManager(stack_variables)
-
-
+        return BackupManager(stack_variables)
