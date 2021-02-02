@@ -63,18 +63,10 @@ class BackupManagerCli:
             """ 
             TODO:
 
-            Handle when stack-settings is not present
 
             Decrypt stack-settings.yml 
-                See Call crypto.decrypt
-                and orchestrators.decrypt_file
-                -cypher error
 
             commit stack-settings.yml file to teraflow
-
-            Implement frequency logic (similar to cron)
-
-            Comments everywhere
 
             Update readme
 
@@ -87,21 +79,17 @@ class BackupManagerCli:
             cli_context: CliContext = ctx.obj
             key_file = cli_context.get_key_file()
 
-            # Get settings value and print
-            configuration = ConfigurationManager(cli_context, self.cli_configuration)
-            stack_variables_manager = configuration.get_stack_variables_manager()
+            backup_manager = self.__create_backup_manager(cli_context)
 
-
-            stack_variables = stack_variables_manager.get_all_variables()
-
-            backup_manager = BackupManager(stack_variables)
-
+            # Create a local backup
             backup_filename = backup_manager.backup(ctx)
 
-            remote_strategies = RemoteStrategyFactory.get_strategy(stack_variables['backup'], key_file)
+            # Get any remote backup strategies.
+            remote_strategies = RemoteStrategyFactory.get_strategy(backup_manager, key_file)
 
-            #for backup_strategy in remote_strategies:
-            #    backup_strategy.backup(backup_filename)
+            # Execute each of the remote backup strategies with the local backup file.
+            for backup_strategy in remote_strategies:
+                backup_strategy.backup(backup_filename)
 
             hooks.post_backup(ctx, backup_filename)
 
@@ -115,19 +103,10 @@ class BackupManagerCli:
 
 
             cli_context: CliContext = ctx.obj
-
             key_file = cli_context.get_key_file()
 
 
-            # Get settings value and print
-            configuration = ConfigurationManager(cli_context, self.cli_configuration)
-            stack_variables_manager = configuration.get_stack_variables_manager()
-
-
-            stack_variables = stack_variables_manager.get_all_variables()
-
-
-            backup_manager = BackupManager(stack_variables)
+            backup_manager = self.__create_backup_manager(cli_context)
             backup_manager.restore(ctx, backup_file)
 
             hooks.post_restore(ctx, backup_file)
@@ -141,14 +120,7 @@ class BackupManagerCli:
 
             key_file = cli_context.get_key_file()
 
-            # Get settings value and print
-            configuration = ConfigurationManager(cli_context, self.cli_configuration)
-            stack_variables_manager = configuration.get_stack_variables_manager()
-
-
-            stack_variables = stack_variables_manager.get_all_variables()
-
-            backup_manager = BackupManager(stack_variables)
+            backup_manager = self.__create_backup_manager(cli_context)
             backup_manager.view_backups(ctx)
 
             hooks.view_backups(ctx)
@@ -160,5 +132,14 @@ class BackupManagerCli:
             "restore":restore,
             "view_backups":view_backups
         }
+    
+    def __create_backup_manager(self, cli_context):
+        # Get the settings from the `stack-settings` file
+        configuration = ConfigurationManager(cli_context, self.cli_configuration)
+        stack_variables_manager = configuration.get_stack_variables_manager()
+        stack_variables = stack_variables_manager.get_all_variables()
+
+        # Create our BackupManager from the settings
+        return  BackupManager(stack_variables)
 
 

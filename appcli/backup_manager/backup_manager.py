@@ -35,13 +35,12 @@ class BackupManager:
 
     # --------------------------------------------------------------------------
     # CONSTRUCTOR
-    # --------------------------------------------------------------------------    
+    # --------------------------------------------------------------------------
     def __init__(self, stack_variables):
         self.backup_variables = stack_variables.get('backup', {})
 
         self.number_of_backups_to_retain = self.backup_variables.get('numberOfBackupsToKeep', 0)
         self.ignore_list = self.backup_variables.get('ignoreList', [])
-
         self.remote_strategy_config = self.backup_variables.get('remote', {})
 
     # ------------------------------------------------------------------------------
@@ -287,25 +286,66 @@ class RemoteStrategyFactory:
     Factory for getting all remote strategies that match the config
     """
     @staticmethod
-    def get_strategy(backup_config, key_file: Path):
+    def get_strategy(backup_manager, key_file: Path):
         strategies = {
             "S3": AwsS3Strategy
         }
 
-        #double check backup_config is a dictionary
-
-        backups_to_keep = backup_config['numberOfBackupsToKeep']
-        ignore_list = backup_config['ignoreList']
-        backups = backup_config['remote']
-
-        
-
         backup_strategies = []
 
-        for backup in backups:
+        for backup in backup_manager.remote_strategy_config:
             cl = strategies.get(backup['type'], lambda: "Invalid remote strategy")
-            
-            backup_strategies.append(cl(backup, key_file))
+
+            if isinstance(cl, str):
+                Logger.error(f"No remote backup strategies found for type {backup['type']}")
+
+            strategy = cl(backup, key_file)
+
+            if RemoteStrategyFactory.__frequency_check(strategy.frequency):
+                backup_strategies.append(strategy)
 
         return backup_strategies
+
+
+    def __frequency_check(frequency):
+        """
+        Check if today matches the pseudo cron `frequency`.
+        Frequency format is `* * *`:
+        First `*` is the day of the month.
+        Second `*` is the month.
+        Third `*` is the day of the week starting with monday=0.
+        `*` is a wildcard that is always matched.
+        e.g. 
+        `* * *` Will always return True.
+        `* * 0` Will only return True on Mondays.
+
+        Args:
+            frequency: str. A frequency string that is checked to see if a backup should occur today.
+        Returns:
+            True if today matches the frequency, False if it does not.
+        """
+        if not len(frequency) == 5:
+            return False
+
+        toReturn = True
+
+        day_of_month = frequency[0]
+        month = frequency[2]
+        day_of_week = frequency[4]
+
+        today = datetime.today()
+
+        if day_of_month.isnumeric():
+            if not int(day_of_month) == today.day:
+                toReturn =  False
+
+        if month.isnumeric():
+            if not int(month) == today.month:
+                toReturn =  False
+
+        if day_of_week.isnumeric(): 
+            if not int(day_of_week) == today.weekday():
+                toReturn =  False
+
+        return toReturn
         
