@@ -62,8 +62,8 @@ class AwsS3Strategy(RemoteStrategy):
 
         self.s3_bucket = self.configuration["bucket_name"]
         # Both the access_key and secret_key should be encrypted, decrypt them.
-        self.s3_access_key = cipher.decrypt(self.configuration['access_key'])
-        self.s3_secret_key = cipher.decrypt(self.configuration['secret_key'])
+        self.s3_access_key = cipher.decrypt(self.configuration["access_key"])
+        self.s3_secret_key = cipher.decrypt(self.configuration["secret_key"])
 
         self.s3_bucket_path = self.configuration["s3_bucket_path"]
         self.s3_tags = self.configuration["tags"]

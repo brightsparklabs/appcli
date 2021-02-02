@@ -9,13 +9,15 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
+
+# standard libraries
+from pathlib import Path
+import re
 import os
 import shutil
 import tarfile
 from datetime import datetime, timezone
 
-# standard libraries
-from pathlib import Path
 
 # vendor libraries
 import dateutil.parser
@@ -97,7 +99,11 @@ class BackupManager:
 
         logger.info("Taking backup ...")
 
-        tar_filter = self.__glob_tar_filter if isinstance(self.ignore_list, list) else (lambda tarinfo : tarinfo)
+        tar_filter = (
+            self.__glob_tar_filter
+            if isinstance(self.ignore_list, list)
+            else (lambda tarinfo: tarinfo)
+        )
 
         with tarfile.open(backup_name, "w:gz") as tar:
             logger.info(f"Backing up [{data_dir}] ...")
@@ -267,7 +273,10 @@ class BackupManager:
         return f"{app_name.upper()}_{now.isoformat()}.tgz"
 
     def __rolling_backup_deletion(self, app_name, backup_dir):
-        """Delete old backups, will only keep the last 7 backups organized by the date listed in the filename.
+        """Delete old backups, will only keep the most recent backups. 
+        The number of backups to keep is specified in the stack settings configuration file.
+        Any files in the backup directory that do not match the filename pattern will be excluded 
+        from deletion and will not count towards the number of backups to keep
 
         Args:
             app_name: str. The application name to be used in the naming of the tgz file.
@@ -278,8 +287,16 @@ class BackupManager:
         logger.info(
             f"Removing old backups - retaining at least the last [{self.number_of_backups_to_retain}] backups ..."
         )
+
+        # Filter out anything in the backup directory that is not an expected backup, 
+        # we only want to delete backups that match our expected filename.
+        full_backup_directory = os.listdir(backup_dir)
+        regex_pattern = re.compile(app_name.upper() + "_\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d+([+-][0-2]\d:[0-5]\d|Z).tgz")
+        backup_files = [x for x in full_backup_directory if re.match(regex_pattern, x)]
+
+        # Sort the backups by the DateTime specified in the filename.
         backup_dir_files = sorted(
-            os.listdir(backup_dir),
+            backup_files,
             key=lambda x: self.__parse_datetime_from_filename(x, app_name),
             reverse=True,
         )

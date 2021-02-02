@@ -6,7 +6,8 @@ Commands for backup and restoration of application configuration and data.
 
 Responsible for creating local backups, remote (offsite) backups and restoring from a local backup.
 Pulls configuration from `stack-settings.yml`
-If no `backup` section is present in the configuration a local backup is still taken with nothing excluded and rolling backup deletion dissabled. 
+If no `backup` section is present in the configuration a local backup is still taken with nothing excluded and rolling backup deletion dissabled.
+See the README for further details on backup configuration. 
 _______________________________________________________________________________
 
 Created by brightSPARK Labs
@@ -42,7 +43,7 @@ class BackupManagerCli:
         # PUBLIC METHODS
         # ------------------------------------------------------------------------------
 
-        @click.command(help="Create a backup of application data and configuration.")
+        @click.command(help="Create a backup of application data and configuration. Will also execute any remote strategies configured.")
         @click.pass_context
         def backup(ctx):
             cli_context: CliContext = ctx.obj
@@ -62,7 +63,6 @@ class BackupManagerCli:
             for backup_strategy in remote_strategies:
                 backup_strategy.backup(backup_filename)
 
-
         @click.command(help="Restore a backup of application data and configuration.")
         @click.argument("backup_file")
         @click.pass_context
@@ -70,6 +70,7 @@ class BackupManagerCli:
             cli_context: CliContext = ctx.obj
 
             backup_manager = self.__create_backup_manager(cli_context)
+
             backup_manager.restore(ctx, backup_file)
 
         @click.command(help="View a list of available backups.")
@@ -79,8 +80,8 @@ class BackupManagerCli:
             cli_context: CliContext = ctx.obj
 
             backup_manager = self.__create_backup_manager(cli_context)
-            backup_manager.view_backups(ctx)
 
+            backup_manager.view_backups(ctx)
 
         # Expose the commands
         self.commands = {
@@ -90,10 +91,15 @@ class BackupManagerCli:
         }
 
     def __create_backup_manager(self, cli_context):
+        """
+        Create a BackupManager object from the `backup` section of the stack settings configuration file.
+
+        Returns:
+            A BackupManager object that contains backup configuration.
+        """
         # Get the settings from the `stack-settings` file
         configuration = ConfigurationManager(cli_context, self.cli_configuration)
         stack_variables = configuration.get_stack_variable("backup")
-        #stack_variables = stack_variables_manager.get_all_variables()
 
         # Create our BackupManager from the settings
         return BackupManager(stack_variables)

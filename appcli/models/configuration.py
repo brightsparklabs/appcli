@@ -46,6 +46,7 @@ class Hooks(NamedTuple):
     post_configure_apply: Callable[[click.Context], None] = lambda x: None
     """ Optional. Hook function to run after running 'configure apply'. """
 
+
 class Configuration(NamedTuple):
     """ Configuration for building the CLI. """
 

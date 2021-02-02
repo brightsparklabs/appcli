@@ -190,7 +190,6 @@ class ConfigurationManager:
         """Get the variables manager for the current configuration"""
         return VariablesManager(self.cli_context.get_app_configuration_file())
 
-
     def get_stack_variable(self, variable: str):
         return self.__get_stack_variables_manager().get_variable(variable)
 
