@@ -16,7 +16,9 @@ import sys
 import click
 
 # local libraries
+from appcli.commands.appcli_command import AppcliCommand
 from appcli.logger import logger
+from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
 
 # ------------------------------------------------------------------------------
@@ -58,6 +60,10 @@ class TaskCli:
         @click.argument("extra_args", nargs=-1, type=click.UNPROCESSED)
         @click.pass_context
         def run(ctx, service_name, extra_args):
+            cli_context: CliContext = ctx.obj
+            cli_context.get_configuration_dir_state().verify_command_allowed(
+                AppcliCommand.TASK_RUN
+            )
             logger.info(
                 "Running task [%s] with args [%s] ...",
                 service_name,

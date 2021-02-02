@@ -15,13 +15,9 @@ from pathlib import Path
 # vendor libraries
 import pytest
 
-from appcli import CliContext, Configuration, DockerComposeOrchestrator
-
 # local libraries
-from appcli.configuration_manager import (
-    ConfigurationManager,
-    confirm_generated_configuration_is_using_current_configuration,
-)
+from appcli import CliContext, Configuration, DockerComposeOrchestrator
+from appcli.configuration_manager import ConfigurationManager
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
@@ -65,28 +61,25 @@ def test_initialise_on_initialised_repo(tmpdir):
         conf_manager.initialise_configuration()
     assert pytest_wrapped_e.type == SystemExit
     assert pytest_wrapped_e.value.code == 1
-    assert "Configuration already exists" in pytest_wrapped_e.value.__cause__.code
 
 
 def test_apply_before_init(tmpdir):
     conf_manager = create_conf_manager(tmpdir)
     with pytest.raises(SystemExit) as pytest_wrapped_e:
-        # Expect that we cannot apply on an uninitialised repo
         conf_manager.apply_configuration_changes(message="some message")
     assert pytest_wrapped_e.type == SystemExit
     assert pytest_wrapped_e.value.code == 1
-    assert "Configuration does not exist" in pytest_wrapped_e.value.__cause__.code
 
 
 def test_migrate_before_init(tmpdir):
     conf_manager = create_conf_manager(tmpdir)
 
-    with pytest.raises(SystemExit) as pytest_wrapped_e:
-        # Expect that we cannot migrate on an uninitialised repo
+    with pytest.raises(
+        SystemExit
+    ) as pytest_wrapped_e:  # Expect that we cannot migrate on an uninitialised repo
         conf_manager.migrate_configuration()
     assert pytest_wrapped_e.type == SystemExit
     assert pytest_wrapped_e.value.code == 1
-    assert "Configuration does not exist" in pytest_wrapped_e.value.__cause__.code
 
 
 def test_apply_workflow(tmpdir):
@@ -97,13 +90,12 @@ def test_apply_workflow(tmpdir):
     conf_manager.initialise_configuration()
 
     # Set a variable
-    variables_manager = conf_manager.get_variables_manager()
     password_variable_path = "test.identity.password"
     new_password = "securepassword1"
-    variables_manager.set_variable(password_variable_path, new_password)
+    conf_manager.set_variable(password_variable_path, new_password)
 
     # Assert that the variable was set
-    assert variables_manager.get_variable(password_variable_path) == new_password
+    assert conf_manager.get_variable(password_variable_path) == new_password
 
     # Apply the configuration
     commit_message = "test commit message"
@@ -115,9 +107,6 @@ def test_apply_workflow(tmpdir):
     assert Path(tmpdir, "conf/.generated/password_file").read_text() == new_password
     assert Path(tmpdir, "conf/.generated/baseline_file.txt").exists()
     assert Path(tmpdir, "conf/.generated/nesting/nested_baseline_file.py").exists()
-
-    # This should not raise an exception
-    confirm_generated_configuration_is_using_current_configuration(cli_context)
 
 
 def test_migration(tmpdir):
@@ -189,7 +178,7 @@ def create_cli_context(tmpdir, app_version: str = "0.0.0") -> CliContext:
 def create_conf_manager(tmpdir, cli_context: CliContext = None) -> ConfigurationManager:
 
     # If not supplied, create default CliContext.
-    if not cli_context:
+    if cli_context is None:
         cli_context = create_cli_context(tmpdir)
 
     # directory containing this script

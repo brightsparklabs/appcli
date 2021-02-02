@@ -45,17 +45,6 @@ class Hooks(NamedTuple):
     """ Optional. Hook function to run before running 'configure apply'. """
     post_configure_apply: Callable[[click.Context], None] = lambda x: None
     """ Optional. Hook function to run after running 'configure apply'. """
-    pre_backup: Callable[[click.Context], None] = lambda x: None
-    """ Optional. Hook function to run before running 'backup'. """
-    post_backup: Callable[[click.Context, str], None] = lambda x, y: None
-    """ Optional. Hook function to run after 'backup'. `str` is the full path of the generated backup file"""
-    pre_restore: Callable[[click.Context, str], None] = lambda x, y: None
-    """ Optional. Hook function to run before running 'restore <backup_file>'. """
-    post_restore: Callable[[click.Context, str], None] = lambda x, y: None
-    """ Optional. Hook function to run after running 'restore <backup_file>'. """
-    view_backups: Callable[[click.Context], None] = lambda x: None
-    """ Optional. Hook function to run after finding local backups with 'view_backups'. """
-
 
 class Configuration(NamedTuple):
     """ Configuration for building the CLI. """

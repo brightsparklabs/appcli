@@ -35,7 +35,12 @@ class BackupManager:
     # CONSTRUCTOR
     # --------------------------------------------------------------------------
     def __init__(self, stack_variables):
-        self.backup_variables = stack_variables.get("backup", {})
+
+        if not isinstance(stack_variables, dict):
+            logger.error("stack settings did not have a `backup` configuration block.")
+            self.backup_variables = {}
+        else:
+            self.backup_variables = stack_variables
 
         self.number_of_backups_to_retain = self.backup_variables.get(
             "numberOfBackupsToKeep", 0
@@ -91,19 +96,22 @@ class BackupManager:
             self.__rolling_backup_deletion(cli_context.app_name, backup_dir)
 
         logger.info("Taking backup ...")
+
+        tar_filter = self.__glob_tar_filter if isinstance(self.ignore_list, list) else (lambda tarinfo : tarinfo)
+
         with tarfile.open(backup_name, "w:gz") as tar:
             logger.info(f"Backing up [{data_dir}] ...")
             tar.add(
                 data_dir,
                 arcname=os.path.basename(data_dir),
-                filter=self.__glob_tar_filter,
+                filter=tar_filter,
             )
 
             logger.info(f"Backing up [{conf_dir}] ...")
             tar.add(
                 conf_dir,
                 arcname=os.path.basename(conf_dir),
-                filter=self.__glob_tar_filter,
+                filter=tar_filter,
             )
 
         logger.info("Backup completed")
@@ -119,6 +127,9 @@ class BackupManager:
         Returns:
             The TarInfo object if we want to include it in the tgz, return None if we want to skip this file.
         """
+        if not isinstance(self.ignore_list):
+            return tarinfo
+
         if any((Path(tarinfo.name).match(glob)) for glob in self.ignore_list):
             return None
         else:

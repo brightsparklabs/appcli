@@ -9,6 +9,7 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
+
 # standard library
 import difflib
 import subprocess
@@ -16,16 +17,22 @@ import subprocess
 # vendor libraries
 import click
 
-from appcli.commands.configure_template_cli import ConfigureTemplateCli
-
 # local libraries
+from appcli.commands.appcli_command import AppcliCommand
+from appcli.commands.configure_template_cli import ConfigureTemplateCli
 from appcli.configuration_manager import ConfigurationManager
-from appcli.functions import execute_validation_functions, print_header
-from appcli.git_repositories.git_repositories import confirm_config_dir_exists
+from appcli.functions import print_header
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
 from appcli.string_transformer import StringTransformer
+
+# ------------------------------------------------------------------------------
+# CONSTANTS
+# ------------------------------------------------------------------------------
+
+# editor for the 'configure edit' command
+CONFIGURE_EDIT_EDITOR = "vim.tiny"
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -54,9 +61,12 @@ class ConfigureCli:
         @configure.command(help="Initialises the configuration directory.")
         @click.pass_context
         def init(ctx):
-            print_header(f"Seeding configuration directory for {self.app_name}")
-
             cli_context: CliContext = ctx.obj
+            cli_context.get_configuration_dir_state().verify_command_allowed(
+                AppcliCommand.CONFIGURE_INIT
+            )
+
+            print_header(f"Seeding configuration directory for {self.app_name}")
 
             # Run pre-hooks
             hooks = self.cli_configuration.hooks
@@ -92,7 +102,11 @@ class ConfigureCli:
         def apply(ctx, message, force):
             cli_context: CliContext = ctx.obj
 
-            # TODO: run self.cli_configuration.hooks.is_valid_variables() to confirm variables are valid
+            # We require the '--force' option to allow forcibly applying and
+            # overwriting existing modified generated configuration.
+            cli_context.get_configuration_dir_state().verify_command_allowed(
+                AppcliCommand.CONFIGURE_APPLY, force
+            )
 
             # Run pre-hooks
             hooks = self.cli_configuration.hooks
@@ -103,7 +117,7 @@ class ConfigureCli:
             logger.debug("Applying configuration")
             ConfigurationManager(
                 cli_context, self.cli_configuration
-            ).apply_configuration_changes(message, force=force)
+            ).apply_configuration_changes(message)
 
             # Run post-hooks
             logger.debug("Running post-configure apply hook")
@@ -116,13 +130,13 @@ class ConfigureCli:
         @click.pass_context
         def get(ctx, setting):
             cli_context: CliContext = ctx.obj
-
-            # Validate environment
-            self.__pre_configure_get_and_set_validation(cli_context)
+            cli_context.get_configuration_dir_state().verify_command_allowed(
+                AppcliCommand.CONFIGURE_GET
+            )
 
             # Get settings value and print
             configuration = ConfigurationManager(cli_context, self.cli_configuration)
-            print(configuration.get_variables_manager().get_variable(setting))
+            print(configuration.get_variable(setting))
 
         @configure.command(help="Saves a setting to the configuration.")
         @click.option(
@@ -136,18 +150,17 @@ class ConfigureCli:
         @click.pass_context
         def set(ctx, type, setting, value):
             cli_context: CliContext = ctx.obj
-
-            # Validate environment
-            self.__pre_configure_get_and_set_validation(cli_context)
+            cli_context.get_configuration_dir_state().verify_command_allowed(
+                AppcliCommand.CONFIGURE_SET
+            )
 
             # Transform input value as type
             transformed_value = StringTransformer.transform(value, type)
 
             # Set settings value
             configuration = ConfigurationManager(cli_context, self.cli_configuration)
-            configuration.get_variables_manager().set_variable(
-                setting, transformed_value
-            )
+            configuration.set_variable(setting, transformed_value)
+            logger.debug(f"Successfully set variable [{setting}] to [{value}].")
 
         @configure.command(
             help="Get the differences between current and default configuration settings."
@@ -155,6 +168,9 @@ class ConfigureCli:
         @click.pass_context
         def diff(ctx):
             cli_context: CliContext = ctx.obj
+            cli_context.get_configuration_dir_state().verify_command_allowed(
+                AppcliCommand.CONFIGURE_DIFF
+            )
 
             default_settings_file = self.cli_configuration.seed_app_configuration_file
             current_settings_file = cli_context.get_app_configuration_file()
@@ -171,38 +187,22 @@ class ConfigureCli:
                 # remove superfluous \n characters added by unified_diff
                 print(line.rstrip())
 
-        @configure.command(help="Open the settings file for editing with vim-tiny.")
+        @configure.command(
+            help=f"Open the settings file for editing with '{CONFIGURE_EDIT_EDITOR}'."
+        )
         @click.pass_context
         def edit(ctx):
             cli_context: CliContext = ctx.obj
-            EDITOR = "vim.tiny"
+            cli_context.get_configuration_dir_state().verify_command_allowed(
+                AppcliCommand.CONFIGURE_EDIT
+            )
 
-            subprocess.run([EDITOR, cli_context.get_app_configuration_file()])
+            subprocess.run(
+                [CONFIGURE_EDIT_EDITOR, cli_context.get_app_configuration_file()]
+            )
 
         # Add the 'template' subcommand
         configure.add_command(ConfigureTemplateCli(self.cli_configuration).command)
 
         # Expose the commands
         self.commands = {"configure": configure}
-
-    # ------------------------------------------------------------------------------
-    # PRIVATE METHODS
-    # ------------------------------------------------------------------------------
-
-    def __pre_configure_get_and_set_validation(self, cli_context: CliContext):
-        """Ensures the system is in a valid state for 'configure get'.
-
-        Args:
-            cli_context (CliContext): The current CLI context.
-        """
-        logger.info("Checking system configuration is valid before 'configure get' ...")
-
-        # Block if the config dir doesn't exist as there's nothing to get or set
-        must_succeed_checks = [confirm_config_dir_exists]
-
-        execute_validation_functions(
-            cli_context=cli_context,
-            must_succeed_checks=must_succeed_checks,
-        )
-
-        logger.info("System configuration is valid")
