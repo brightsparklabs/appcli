@@ -28,7 +28,8 @@ class Hooks(NamedTuple):
     ] = lambda w, x, y: True
     """ Validate a Dict of variables are valid for use in the current application version.
       Args are: CLI context, [Dict of the variables to validate], and [Dict of the current version's clean variables]. Returns
-      True if the Dict to validate is valid for the application at the current version. """
+      True if the Dict to validate is valid for the application at the current version.
+      Default is to always pass validation."""
     pre_start: Callable[[click.Context], None] = lambda x: None
     """ Optional. Hook function to run before running 'start'. """
     post_start: Callable[[click.Context, CompletedProcess], None] = lambda x, y: None
