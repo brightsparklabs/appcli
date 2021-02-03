@@ -142,9 +142,22 @@ The available variables for every remote backup strategy are:
 | frequency     | A cron like pattern that appcli will check before taking a backup. Pattern is `* * *` `day_of_month month day_of_week` with `day_of_week` starting at monday = 0. `*` is a wildcard that is always matched. e.g. <br /> `* * *` Will always run. <br />  `* * 0` Will only run on Mondays                                                      |
 | configuration | Custom configuration block that is specific to each remote backup strategy. |
 
+    # filename: stack-settings.yml
+
+    backup:
+        numberOfBackupsToKeep: 0 
+        ignoreList: 
+            - "*metastore/*"
+        remote:
+        - name: "daily_S3"
+            type: "S3"
+            frequency: "* * *"
+            configuration:
+
+
 ##### S3 backup
 To enable S3 backup add a list item to the `remote` section of `stack-settings.yml` with a `type` of `S3`.
-The available variables for an S3 backup are:
+The available configuration variables for an S3 backup are:
 | variable       | Description                                               |
 | -------------- | --------------------------------------------------------- |
 | bucket_name    | The name of the bucket to upload to.                      |

@@ -64,7 +64,8 @@ class Configuration(NamedTuple):
 
     stack_configuration_file: Path
     """
-
+    Path to the stack configuration file which contains variables which are used to
+    configure the stack.
     """
 
     baseline_templates_dir: Path

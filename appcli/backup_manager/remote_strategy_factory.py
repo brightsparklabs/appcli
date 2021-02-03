@@ -30,14 +30,16 @@ class RemoteStrategyFactory:
         backup_strategies = []
 
         for backup in backup_manager.remote_strategy_config:
-            cl = strategies.get(backup["type"], lambda: "Invalid remote strategy")
+            strategy_class = strategies.get(
+                backup["type"], lambda: "Invalid remote strategy"
+            )
 
-            if isinstance(cl, str):
+            if isinstance(strategy_class, str):
                 logger.error(
                     f"No remote backup strategies found for type {backup['type']}"
                 )
 
-            strategy = cl(backup, key_file)
+            strategy = strategy_class(backup, key_file)
 
             if RemoteStrategyFactory.__frequency_check(strategy.frequency):
                 backup_strategies.append(strategy)

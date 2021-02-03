@@ -18,9 +18,8 @@ from pathlib import Path
 import boto3
 from botocore.exceptions import ClientError
 
-from appcli.crypto.cipher import Cipher
-
 # local libraries
+from appcli.crypto.cipher import Cipher
 from appcli.logger import logger
 
 

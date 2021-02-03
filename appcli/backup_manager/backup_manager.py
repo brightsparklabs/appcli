@@ -19,6 +19,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 # local libraries
+from appcli.backup_manager.remote_strategy_factory import RemoteStrategyFactory
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 
@@ -31,7 +32,7 @@ class BackupManager:
     # --------------------------------------------------------------------------
     # CONSTRUCTOR
     # --------------------------------------------------------------------------
-    def __init__(self, stack_variables):
+    def __init__(self, stack_variables, key_file):
 
         if not isinstance(stack_variables, dict):
             logger.error("stack settings did not have a `backup` configuration block.")
@@ -44,10 +45,15 @@ class BackupManager:
         )
         self.ignore_list = self.backup_variables.get("ignoreList", [])
         self.remote_strategy_config = self.backup_variables.get("remote", {})
+        self.key_file = key_file
 
     # ------------------------------------------------------------------------------
     # PUBLIC METHODS
     # ------------------------------------------------------------------------------
+
+    def getRemoteStrategies(self):
+        return RemoteStrategyFactory.get_strategy(self, self.key_file)
+
     def backup(self, ctx, number_of_backups_to_retain=-1):
         """Create a backup `.tgz` file that contains application data and configuration.
         Will shutdown the application and generate a backup containing CliContext.obj.data_dir and CliContext.obj.configuration_dir.
@@ -69,7 +75,7 @@ class BackupManager:
             ctx.invoke(services_cli.commands["shutdown"])
         except SystemExit:
             # At completion, the invoked command tries to exit the script, so we have to catch
-            # the SystemExit
+            # the SystemExit.
             pass
 
         backup_dir: Path = cli_context.backup_dir
@@ -166,7 +172,7 @@ class BackupManager:
             ctx.invoke(services_cli.commands["shutdown"])
         except SystemExit:
             # At completion, the invoked command tries to exit the script, so we have to catch
-            # the SystemExit
+            # the SystemExit.
             pass
 
         # Perform a backup of the existing application config and data.
@@ -176,7 +182,7 @@ class BackupManager:
         )  # 0 ensures we don't accidentally delete our backup
         logger.info(f"Backup generated before restore was: {restore_backup_name}")
 
-        # Clear the existing folders that will be populated from the backup
+        # Clear the existing folders that will be populated from the backup.
         # Each of these is mounted, deleting them may result in "Device or resource busy"
         # so we clear their contents instead.
         # Clear the `data` directory.
@@ -213,7 +219,7 @@ class BackupManager:
                 elif os.path.isdir(file_path):
                     shutil.rmtree(file_path)
             except Exception as e:
-                logger.error("Failed to delete %s. Reason: %s" % (file_path, e))
+                logger.error(f"Failed to delete {file_path}. Reason: {e}")
 
         # Extract conf and data directories from the tar.
         try:
@@ -222,7 +228,7 @@ class BackupManager:
                 tar.extractall(data_dir, members=self.__members(tar, "data/"))
 
         except Exception as e:
-            logger.error(f"Failed to extract backup - {e}")
+            logger.error(f"Failed to extract backup. Reason: {e}")
 
         logger.info("Restore complete.")
 
@@ -241,7 +247,7 @@ class BackupManager:
                 yield member
 
     def view_backups(self, ctx):
-        """Display a list of available backups that were found in the backup folder"""
+        """Display a list of available backups that were found in the backup folder."""
         cli_context: CliContext = ctx.obj
         logger.info("Displaying all available backups.")
 
@@ -256,13 +262,13 @@ class BackupManager:
             print(backup)
 
     def __create_backup_filename(self, app_name):
-        """Generate the filename of the backup .tgz file
-           Format is "<APP_NAME>_<datetime.now>.tgz"
+        """Generate the filename of the backup .tgz file.
+           Format is "<APP_NAME>_<datetime.now>.tgz".
 
         Args:
             app_name: str. The application name to be used in the naming of the tgz file.
         Returns:
-            The formatted .tgz filename
+            The formatted .tgz filename.
         """
         now: datetime = datetime.now(timezone.utc).replace(microsecond=0)
         return f"{app_name.upper()}_{now.isoformat()}.tgz"
@@ -271,7 +277,7 @@ class BackupManager:
         """Delete old backups, will only keep the most recent backups.
         The number of backups to keep is specified in the stack settings configuration file.
         Any files in the backup directory that do not match the filename pattern will be excluded
-        from deletion and will not count towards the number of backups to keep
+        from deletion and will not count towards the number of backups to keep.
 
         Args:
             app_name: str. The application name to be used in the naming of the tgz file.
@@ -284,7 +290,7 @@ class BackupManager:
         )
 
         # Filter out anything in the backup directory that is not an expected backup,
-        # we only want to delete backups that match our expected filename.
+        # We only want to delete backups that match our expected filename.
         full_backup_directory = os.listdir(backup_dir)
         regex_pattern = re.compile(
             app_name.upper()

@@ -19,7 +19,6 @@ import click
 
 # local libraries
 from appcli.backup_manager.backup_manager import BackupManager
-from appcli.backup_manager.remote_strategy_factory import RemoteStrategyFactory
 from appcli.configuration_manager import ConfigurationManager
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
@@ -49,7 +48,6 @@ class BackupManagerCli:
         @click.pass_context
         def backup(ctx):
             cli_context: CliContext = ctx.obj
-            key_file = cli_context.get_key_file()
 
             backup_manager = self.__create_backup_manager(cli_context)
 
@@ -57,9 +55,7 @@ class BackupManagerCli:
             backup_filename = backup_manager.backup(ctx)
 
             # Get any remote backup strategies.
-            remote_strategies = RemoteStrategyFactory.get_strategy(
-                backup_manager, key_file
-            )
+            remote_strategies = backup_manager.getRemoteStrategies()
 
             # Execute each of the remote backup strategies with the local backup file.
             for backup_strategy in remote_strategies:
@@ -85,7 +81,7 @@ class BackupManagerCli:
 
             backup_manager.view_backups(ctx)
 
-        # Expose the commands
+        # Expose the commands.
         self.commands = {
             "backup": backup,
             "restore": restore,
@@ -99,9 +95,12 @@ class BackupManagerCli:
         Returns:
             A BackupManager object that contains backup configuration.
         """
-        # Get the settings from the `stack-settings` file
+        # Get the settings from the `stack-settings` file.
         configuration = ConfigurationManager(cli_context, self.cli_configuration)
         stack_variables = configuration.get_stack_variable("backup")
 
-        # Create our BackupManager from the settings
-        return BackupManager(stack_variables)
+        # Get the key file for decoding any encoded values.
+        key_file = cli_context.get_key_file()
+
+        # Create our BackupManager from the settings.
+        return BackupManager(stack_variables, key_file)
