@@ -18,7 +18,8 @@ www.brightsparklabs.com
 import click
 
 # local libraries
-from appcli.backup_manager.backup_manager import BackupManager, RemoteStrategyFactory
+from appcli.backup_manager.backup_manager import BackupManager
+from appcli.backup_manager.remote_strategy_factory import RemoteStrategyFactory
 from appcli.configuration_manager import ConfigurationManager
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration

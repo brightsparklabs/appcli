@@ -134,12 +134,12 @@ The `ignoreList` list in `stack-settings.yml` can contain a list of glob pattern
 
 #### Remote backup strategies 
 Appcli supports storing backups in S3 buckets and can be extended to support other remote backup strategies. 
-The available variables for every remote backup strategy are are:
+The available variables for every remote backup strategy are:
 | variable      | Description                                                                 |
 | ------------- | --------------------------------------------------------------------------- |
 | name          | A name or description used to describe this backup.                         |
 | type          | The type of this backup, must match an implemented remote backup strategy.  |
-| frequency     | A cron like pattern that appcli will check before taking a backup. Pattern is `* * *` `day_of_month month day_of_week` with `day_of_week` starting with monday = 0. `*` is a wildcard that is always matched. e.g. <br /> `* * *` Will always run. <br />  `* * 0` Will only run on Mondays                                                      |
+| frequency     | A cron like pattern that appcli will check before taking a backup. Pattern is `* * *` `day_of_month month day_of_week` with `day_of_week` starting at monday = 0. `*` is a wildcard that is always matched. e.g. <br /> `* * *` Will always run. <br />  `* * 0` Will only run on Mondays                                                      |
 | configuration | Custom configuration block that is specific to each remote backup strategy. |
 
 ##### S3 backup
@@ -299,7 +299,7 @@ To be used in conjunction with your application `./myapp <command>` e.g. `./myap
 
 #### Command: `backup`
 
-Creates a backup `.tgz` file in the configured backup folder that contains all application and configuration data.
+Creates a backup `.tgz` file in the configured backup folder that contains all application and configuration data. Will also trigger any remote backup strategies set in configuration. 
 usage `./myapp backup`
 
 | Command | Description |
@@ -400,7 +400,7 @@ All commands are defined within the orchestrators themselves. Run `./myapp orche
 | ------ | ------------------------------ |
 | --help | Show the help message and exit |
 
-#### Command: `backup`
+#### Command: `restore`
 
 Restores a specified backup `.tgz` file from the configured backup folder.
 usage `./myapp restore BACKUP_FILE`
