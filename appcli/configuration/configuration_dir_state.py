@@ -67,18 +67,18 @@ class ConfigurationDirStateFactory:
         if not ConfigurationDirStateFactory.__is_git_repo(configuration_dir):
             return UninitialisedConfigurationDirState()
 
-        if not ConfigurationDirStateFactory.__is_git_repo(generated_configuration_dir):
-            return UnappliedConfigurationDirState()
-
         config_repo = ConfigurationGitRepository(configuration_dir)
-        gen_config_repo = GeneratedConfigurationGitRepository(
-            generated_configuration_dir
-        )
 
         conf_version = config_repo.get_repository_version()
         if conf_version != app_version:
             error_message = f"Application requires migration. Configuration version [{conf_version}], Application version [{app_version}]."
-            return InvalidConfigurationDirState(error_message)
+            return RequiresMigrationConfigurationDirState(error_message)
+
+        if not ConfigurationDirStateFactory.__is_git_repo(generated_configuration_dir):
+            return UnappliedConfigurationDirState()
+        gen_config_repo = GeneratedConfigurationGitRepository(
+            generated_configuration_dir
+        )
 
         if config_repo.is_dirty():
             if gen_config_repo.is_dirty():
@@ -235,6 +235,19 @@ class DirtyConfAndGenConfigurationDirState(ConfigurationDirState):
             AppcliCommand.TASK_RUN: "Cannot run task with dirty generated configuration. Run 'configure apply'.",
             AppcliCommand.ORCHESTRATOR: "Cannot run orchestrator tasks with dirty generated configuration. Run 'configure apply'.",
         }
+
+        super().__init__(disallowed_command, disallowed_command_unless_forced)
+
+
+class RequiresMigrationConfigurationDirState(ConfigurationDirState):
+    """Represents the configuration dir state where configuration and application versions are misaligned."""
+
+    def __init__(self, error: str) -> None:
+
+        disallowed_command = get_disallowed_command_from_allowed_commands(
+            [AppcliCommand.MIGRATE], error
+        )
+        disallowed_command_unless_forced = {}
 
         super().__init__(disallowed_command, disallowed_command_unless_forced)
 
