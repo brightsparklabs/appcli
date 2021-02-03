@@ -25,7 +25,7 @@ class Hooks(NamedTuple):
      function is used."""
     is_valid_variables: Callable[
         [click.Context, Dict, Dict], bool
-    ] = lambda w, x, y: is_matching_dict_structure(x, y)
+    ] = lambda w, x, y: True
     """ Validate a Dict of variables are valid for use in the current application version.
       Args are: CLI context, [Dict of the variables to validate], and [Dict of the current version's clean variables]. Returns
       True if the Dict to validate is valid for the application at the current version. """
@@ -109,6 +109,11 @@ class Configuration(NamedTuple):
 def is_matching_dict_structure(dict_to_validate: Dict, clean_dict: Dict):
     """Validate the structure of a Dict against another Dict. Recursively checks the keys and
     types of the values match for all Dicts in the base Dict, relative to the clean dict.
+
+    TODO: (Github issue #77) This should be used as the default function for
+    `Hooks.is_valid_variables` however it was causing us some migration issues.
+    This function and subfunction(s) need more error logging to describe why it fails,
+    and we need to fix it to make it more reliable.
 
     Args:
         dict_to_validate (Dict): the dict to validate
