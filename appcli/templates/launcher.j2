@@ -29,7 +29,7 @@ function main()
     docker run \
         --name {{ app_name }}_{{ cli_context.environment }}_launcher_$(date +%s) \
         --rm \
-        --interactive \
+        $( [[ "${NO_INTERACTIVE}" != "true" ]] && echo "--interactive") \
         $( [[ "${NO_TTY}" != "true" ]] && echo "--tty") \
 {% if cli_context.docker_credentials_file %}
         --volume "{{ cli_context.docker_credentials_file }}:/root/.docker/config.json" \
