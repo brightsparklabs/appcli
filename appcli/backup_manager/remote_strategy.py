@@ -11,41 +11,36 @@ www.brightsparklabs.com
 
 # standard libraries
 import os
-import urllib.parse
-from pathlib import Path
 import time
-
-
+import urllib.parse
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Optional
 
 # vendor libraries
 import boto3
-from botocore.exceptions import ClientError
-from tabulate import tabulate
-from dataclasses import dataclass, field
-from typing import List, Optional
-from dataclasses_json import dataclass_json
 import cronex
-
-
+from botocore.exceptions import ClientError
+from dataclasses_json import dataclass_json
+from tabulate import tabulate
 
 # local libraries
 from appcli.crypto.cipher import Cipher
 from appcli.logger import logger
-#from appcli.backup_manager.remote_strategy_factory import RemoteStrategyFactory
 
+# from appcli.backup_manager.remote_strategy_factory import RemoteStrategyFactory
 
 
 @dataclass_json
 @dataclass
 class RemoteBackup:
-    """
+    """"""
 
-    """
     strategy_type: str
     name: Optional[str] = ""
     frequency: Optional[str] = "* * *"
     configuration: Optional[dict] = field(default_factory=dict)
-    #key_file: field(default_factory=Path)
+    # key_file: field(default_factory=Path)
 
     # ------------------------------------------------------------------------------
     # PUBLIC METHODS
@@ -53,26 +48,31 @@ class RemoteBackup:
     def backup(self, backup_filename, key_file):
         self.strategy.backup(backup_filename, key_file)
 
-    #def __post_init__(self):
-        #calls remote_strategy_factory
+    # def __post_init__(self):
+    # calls remote_strategy_factory
     #    self.strategy = RemoteStrategyFactory.get_strategy(self.strategy_type, self.configuration)
 
     def should_run(self):
 
         # Our configuration is just the last 3 values of a cron pattern, prepend hour/minute as wild-cards.
         frequency = f"* * {self.frequency}"
-        try: 
+        try:
             job = cronex.CronExpression(frequency)
         except ValueError as e:
-            logger.error(f"Frequency for remote strategy [{self.name}] is not valid [{self.frequency}]")
+            logger.error(
+                f"Frequency for remote strategy [{self.name}] is not valid [{self.frequency}]. [{e}]"
+            )
             return False
 
         return job.check_trigger(time.gmtime(time.time())[:5])
 
-class RemoteBackupStrategy:
 
+class RemoteBackupStrategy:
     def backup(self, backup_filename: Path, key_file: Path):
-        raise NotImplementedError("The backup method has not been overridden by the derived strategy class.")
+        raise NotImplementedError(
+            "The backup method has not been overridden by the derived strategy class."
+        )
+
 
 @dataclass_json
 @dataclass
@@ -131,4 +131,6 @@ class AwsS3Strategy(RemoteBackupStrategy):
             )
         except ClientError as e:
             # Wrap the ClientError with the bucket name.
-            raise ClientError(f"Failed to upload backup to bucket {self.bucket_name} - {e}")
+            raise ClientError(
+                f"Failed to upload backup to bucket {self.bucket_name} - {e}"
+            )

@@ -14,17 +14,16 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-# vendor libraries
-import click
-from botocore.exceptions import ClientError
-
 # standard libraries
 import traceback
 
+# vendor libraries
+import click
+
+from appcli.backup_manager.backup_manager import BackupManager
 
 # local libraries
 from appcli.commands.appcli_command import AppcliCommand
-from appcli.backup_manager.backup_manager import BackupManager
 from appcli.configuration_manager import ConfigurationManager
 from appcli.functions import error_and_exit
 from appcli.logger import logger
@@ -81,10 +80,11 @@ class BackupManagerCli:
             # Execute each of the remote backup strategies with the local backup file.
             for backup_strategy in remote_strategies:
                 try:
-                    pass
-                    #backup_strategy.backup(backup_filename, key_file)
+                    backup_strategy.backup(backup_filename, key_file)
                 except Exception as e:
-                    logger.error(f"Error while executing remote strategy [{backup_strategy.name}] - {e}")
+                    logger.error(
+                        f"Error while executing remote strategy [{backup_strategy.name}] - {e}"
+                    )
                     logger.debug(traceback.print_exc())
 
         @click.command(help="Restore a backup of application data and configuration.")
@@ -144,13 +144,10 @@ class BackupManagerCli:
         try:
             stack_variables = configuration.get_stack_variable(BACKUP)
         except KeyError as e:
-            error_and_exit(f"No backup key found in stack settings.")
+            error_and_exit(f"No backup key found in stack settings. [{e}]")
 
         if stack_variables is None:
-            error_and_exit(f"Backup key in stack settings was empty.")
-
-        # Get the key file for decoding any encoded values.
-        key_file = cli_context.get_key_file()
+            error_and_exit("Backup key in stack settings was empty.")
 
         # Create our BackupManager from the settings.
         return BackupManager.from_dict(stack_variables)

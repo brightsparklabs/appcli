@@ -9,13 +9,8 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-# standard libraries
-from datetime import datetime
-from pathlib import Path
-
 # local libraries
-from appcli.backup_manager.remote_strategy import RemoteBackupStrategy, AwsS3Strategy
-from appcli.logger import logger
+from appcli.backup_manager.remote_strategy import AwsS3Strategy, RemoteBackupStrategy
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
@@ -36,7 +31,9 @@ class RemoteStrategyFactory:
         strategy_class = STRATEGIES.get(remote_type, None)
 
         if strategy_class is None:
-            raise TypeError(f"No remote backup strategies found for type {backup['type']}")
+            raise TypeError(
+                f"No remote backup strategies found for type [{remote_type}]"
+            )
 
         # Instantiate the strategy class and return that instance.
         return strategy_class.from_dict(configuration)

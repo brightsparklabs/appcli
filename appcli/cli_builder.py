@@ -19,7 +19,6 @@ from typing import Dict, Iterable
 import click
 from tabulate import tabulate
 
-
 # local libraries
 from appcli.commands.backup_manager_cli import BackupManagerCli
 from appcli.commands.configure_cli import ConfigureCli

@@ -32,7 +32,7 @@ from appcli.configuration.configuration_dir_state import (
 
 def test_no_state():
     """When the conf and generated dirs aren't provided, the only valid command is to install."""
-    state = ConfigurationDirStateFactory.get_state(None, None, "1.0.0")
+    state = ConfigurationDirStateFactory.get_state(None, None, "1.0.0", None)
     isinstance(state, NoDirectoryProvidedConfigurationDirState)
 
     state.verify_command_allowed(AppcliCommand.INSTALL)

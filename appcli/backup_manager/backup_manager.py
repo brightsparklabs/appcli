@@ -10,29 +10,25 @@ www.brightsparklabs.com
 """
 
 
-
-# vendor libraries
-import cronex
-from dataclasses import dataclass, field
-from typing import List, Optional
-from dataclasses_json import dataclass_json
-
 # standard libraries
 import os
-import re
 import shutil
 import tarfile
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
-import time
 from pathlib import Path
+from tarfile import TarInfo
+from typing import List, Optional
+
+# vendor libraries
+from dataclasses_json import dataclass_json
 
 # local libraries
+from appcli.backup_manager.remote_strategy import RemoteBackup
 from appcli.backup_manager.remote_strategy_factory import RemoteStrategyFactory
-from appcli.backup_manager.remote_strategy import RemoteBackup, RemoteBackupStrategy
 from appcli.functions import error_and_exit
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
-
 
 
 @dataclass_json
@@ -41,11 +37,10 @@ class BackupManager:
     """
     Utility class which contains methods for local backup/restoration of application configuration and data.
     """
+
     backup_limit: Optional[int] = 0
     ignore_list: Optional[List[str]] = field(default_factory=list)
     remote: Optional[List[RemoteBackup]] = field(default_factory=list)
-    #key_file: field(default_factory=Path)
-
 
     # ------------------------------------------------------------------------------
     # PUBLIC METHODS
@@ -54,14 +49,15 @@ class BackupManager:
     def get_remote_strategies(self):
 
         backup_strategies = []
-        
+
         for backup in self.remote:
 
             try:
-                # strategy = RemoteStrategyFactory.get_strategy(backup)
                 strategy = RemoteBackup.from_dict(backup)
 
-                strategy.strategy = RemoteStrategyFactory.get_strategy(strategy.strategy_type, strategy.configuration)
+                strategy.strategy = RemoteStrategyFactory.get_strategy(
+                    strategy.strategy_type, strategy.configuration
+                )
                 strategy.strategy.name = strategy.name
 
                 if strategy.should_run():
@@ -138,7 +134,7 @@ class BackupManager:
 
         return backup_name
 
-    def __glob_tar_filter(self, tarinfo: "TarInfo"):
+    def __glob_tar_filter(self, tarinfo: TarInfo):
         """
         Filter function for excluding files from the tgz if their full path matches any glob patterns set in the config.
 
@@ -232,7 +228,6 @@ class BackupManager:
                     shutil.rmtree(file_path)
             except Exception as e:
                 logger.error(f"Failed to delete {file_path}. Reason: {e}")
-
 
     def __members(self, tf, subfolder: str):
         """Helper function for extracting folders from a tar ball.
