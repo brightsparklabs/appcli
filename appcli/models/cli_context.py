@@ -5,6 +5,13 @@
 from pathlib import Path
 from typing import Dict, Iterable, NamedTuple, Tuple
 
+# local libraries
+from appcli.configuration.configuration_dir_state import (
+    ConfigurationDirState,
+    ConfigurationDirStateFactory,
+)
+from appcli.logger import logger
+
 
 class CliContext(NamedTuple):
     """ Shared context from a run of the CLI. """
@@ -53,6 +60,31 @@ class CliContext(NamedTuple):
     # ---------------------------------
     # derived data
     # ---------------------------------
+
+    def get_configuration_dir_state(self) -> ConfigurationDirState:
+        """Gets the state of the configuration, for use in validating whether
+        a command can be used or not.
+
+        Returns:
+            ConfigurationDirState: The state of the configuration.
+        """
+
+        try:
+            generated_configuration_dir = self.get_generated_configuration_dir()
+        except AttributeError:
+            # If configuration_dir is None (like when we do an 'install'), then this raises AttributeError exception.
+            # We cannot determine the generated_configuration_dir, so set it to None.
+            generated_configuration_dir = None
+
+        configuration_dir_state: ConfigurationDirState = (
+            ConfigurationDirStateFactory.get_state(
+                self.configuration_dir,
+                generated_configuration_dir,
+                self.app_version,
+            )
+        )
+        logger.debug(f"Derived configuration state [{configuration_dir_state}]")
+        return configuration_dir_state
 
     def get_key_file(self) -> Path:
         """Get the location of the key file for decrypting secrets

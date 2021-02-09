@@ -29,7 +29,7 @@ function main()
     docker run \
         --name {{ app_name }}_{{ cli_context.environment }}_launcher_$(date +%s) \
         --rm \
-        --interactive \
+        $( [[ "${NO_INTERACTIVE}" != "true" ]] && echo "--interactive") \
         $( [[ "${NO_TTY}" != "true" ]] && echo "--tty") \
 {% if cli_context.docker_credentials_file %}
         --volume "{{ cli_context.docker_credentials_file }}:/root/.docker/config.json" \
@@ -42,6 +42,7 @@ function main()
         --volume "{{ path }}:{{ path }}" \
 {% endfor %}
         --volume /var/run/docker.sock:/var/run/docker.sock \
+        --env APP_NAME="{{ app_name }}" \
         --env {{ app_name }}_CONFIG_DIR="${MOUNTED_CONFIG_DIR}" \
         --volume "${MOUNTED_CONFIG_DIR}:${MOUNTED_CONFIG_DIR}" \
         --env {{ app_name }}_GENERATED_CONFIG_DIR="${MOUNTED_GENERATED_CONFIG_DIR}" \

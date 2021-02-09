@@ -24,6 +24,7 @@ from jinja2 import StrictUndefined, Template
 
 # local libraries
 from appcli import templates
+from appcli.commands.appcli_command import AppcliCommand
 from appcli.functions import error_and_exit
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
@@ -64,6 +65,10 @@ class InstallCli:
         @click.pass_context
         # NOTE: Hide the CLI command as end users should not run it manually
         def install(ctx, install_dir: Path):
+            cli_context: CliContext = ctx.obj
+            cli_context.get_configuration_dir_state().verify_command_allowed(
+                AppcliCommand.INSTALL
+            )
             logger.info("Generating installer script ...")
 
             # Get the template from the appcli package
@@ -72,7 +77,6 @@ class InstallCli:
             )
             logger.debug(f"Read template file [{INSTALLER_TEMPLATE_FILENAME}]")
 
-            cli_context: CliContext = ctx.obj
             environment: str = cli_context.environment
             target_install_dir: Path = install_dir / environment
             if cli_context.configuration_dir is None:
@@ -81,7 +85,6 @@ class InstallCli:
                 )
             if cli_context.data_dir is None:
                 cli_context = cli_context._replace(data_dir=target_install_dir / "data")
-
             render_variables = {
                 "cli_context": cli_context,
                 "configuration": self.configuration,

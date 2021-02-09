@@ -9,10 +9,9 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
+# standard libraries
 import os
 import sys
-
-# standard libraries
 from pathlib import Path
 from subprocess import CompletedProcess, run
 from tempfile import NamedTemporaryFile
@@ -22,6 +21,7 @@ from typing import Iterable, List
 import click
 
 # local libraries
+from appcli.commands.appcli_command import AppcliCommand
 from appcli.crypto import crypto
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
@@ -186,7 +186,10 @@ class DockerComposeOrchestrator(Orchestrator):
         @click.pass_context
         @click.argument("service", nargs=-1, type=click.UNPROCESSED)
         def logs(ctx, service):
-            cli_context = ctx.obj
+            cli_context: CliContext = ctx.obj
+            cli_context.get_configuration_dir_state().verify_command_allowed(
+                AppcliCommand.SERVICE_LOGS
+            )
             subcommand = ["logs", "--follow"]
             subcommand.extend(service)
             result = self.__compose_service(cli_context, subcommand)
@@ -335,7 +338,10 @@ class DockerSwarmOrchestrator(Orchestrator):
         @click.pass_context
         @click.argument("service", type=click.STRING)
         def logs(ctx, service):
-            cli_context = ctx.obj
+            cli_context: CliContext = ctx.obj
+            cli_context.get_configuration_dir_state().verify_command_allowed(
+                AppcliCommand.SERVICE_LOGS
+            )
             command = ["docker", "service", "logs", "--follow"]
             command.append(f"{cli_context.get_project_name()}_{service}")
             result = self.__exec_command(command)
