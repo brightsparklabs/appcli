@@ -19,9 +19,9 @@ from typing import Dict, Iterable
 import click
 from tabulate import tabulate
 
-from appcli.commands.backup_manager_cli import BackupManagerCli
 
 # local libraries
+from appcli.commands.backup_manager_cli import BackupManagerCli
 from appcli.commands.configure_cli import ConfigureCli
 from appcli.commands.debug_cli import DebugCli
 from appcli.commands.encrypt_cli import EncryptCli
@@ -134,7 +134,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     )
     @click.option(
         "--backup-dir",
-        "-d",
+        "-b",
         help="Directory containing backups of the system.",
         type=Path,
         cls=NotRequiredOn,

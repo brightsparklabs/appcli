@@ -1,4 +1,4 @@
 backup:
-  numberOfBackupsToKeep: 0 
-  ignoreList: 
+  backup_limit: 0 
+  ignore_list: 
     - "*metastore/*"

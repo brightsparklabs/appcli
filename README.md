@@ -97,7 +97,7 @@ Stack variables can be set within the `stack-settings.yml` file as described in 
 
 - Store any Jinja2 variable definitions you wish to use in your configuration
   template files in `resources/settings.yml`.
-- Store any appcli stack specific variables in `resources/stack-settings.yml`.
+- Store any appcli stack specific keys in `resources/stack-settings.yml`.
 - Store your `docker-compose.yml`/`docker-compose.yml.j2` file in `resources/templates/baseline/`.
 - Configuration files (Jinja2 compatible templates or otherwise) can be stored in one
   of two locations:
@@ -105,87 +105,99 @@ Stack variables can be set within the `stack-settings.yml` file as described in 
   - `resources/templates/configurable` - for templates which the end user is expected to modify.
 
 ### Backup and restore application configuration and data
+
 Backup and restore functionality can be configured in a `backup` block in`stack-settings.yml` 
-The available variables for the backup block is:
-| variable      | Description                                                                                                |
+The available keys for the backup block is:
+| key           | Description                                                                                                |
 | ------------- | ---------------------------------------------------------------------------------------------------------- |
-| numberOfBackupsToKeep | The number of local backups to keep. A rolling deletion strategy is used to remove the oldest backups once this number has been reached. Set this value to `0` to never delete a backup.                         |
-| ignoreList            | The ignore list is a list of glob patterns used to specify what files to exclude from the backup.  |
+| backup_limit | The number of local backups to keep. A rolling deletion strategy is used to remove the oldest backups once this number has been reached. Set this value to `0` to keep all backups.                         |
+| ignore_list           | The ignore list is a list of glob patterns used to specify what files to exclude from the backup.  |
 | remote                | Defines all remote backups.                                                                        |
 
 
     # filename: stack-settings.yml
 
     backup:
-        numberOfBackupsToKeep: 0 
-        ignoreList: 
+        backup_limit: 0 
+        ignore_list: 
         remote:
 
 #### Ignore lists
-The `ignoreList` list in `stack-settings.yml` can contain a list of glob patterns, if any of these patterns match a files full path it will be excluded from the backup. The following example will exclude any file in a directory that ends with `metastore`.
+
+The `ignore_list` list in `stack-settings.yml` can contain a list of glob patterns, if any of these patterns match a files full path it will be excluded from the backup. The following example will exclude any file in a directory that ends with `metastore`.
 
     # filename: stack-settings.yml
         
     backup:
-        numberOfBackupsToKeep: 0 
-        ignoreList: 
+        backup_limit: 0 
+        ignore_list: 
             - "*metastore/*"
         remote:
 
 #### Remote backup strategies 
+
 Appcli supports storing backups in S3 buckets and can be extended to support other remote backup strategies. 
-The available variables for every remote backup strategy are:
-| variable      | Description                                                                 |
+The available keys for every remote backup strategy are:
+| key           | Description                                                                 |
 | ------------- | --------------------------------------------------------------------------- |
 | name          | A name or description used to describe this backup.                         |
-| type          | The type of this backup, must match an implemented remote backup strategy.  |
-| frequency     | A cron like pattern that appcli will check before taking a backup. Pattern is `* * *` `day_of_month month day_of_week` with `day_of_week` starting at monday = 0. `*` is a wildcard that is always matched. e.g. <br /> `* * *` Will always run. <br />  `* * 0` Will only run on Mondays                                                      |
+| strategy_type          | The type of this backup, must match an implemented remote backup strategy.  |
+| frequency     | A cron-like pattern that appcli will check before taking a backup. When the `backup` command is run, each remote strategy will check if the `frequency` pattern matches todays date. If it does, the remote backup strategy will run, otherwise it will not. Pattern is `* * *` `day_of_month month day_of_week` with `day_of_week` starting at monday = 1. `*` is a wildcard that is always matched. e.g. <br /> `* * *` Will always run. <br />  `* * 0` Will only run on Sundays                                                      |
 | configuration | Custom configuration block that is specific to each remote backup strategy. |
 
     # filename: stack-settings.yml
 
     backup:
-        numberOfBackupsToKeep: 0 
-        ignoreList: 
+        backup_limit: 0 
+        ignore_list: 
             - "*metastore/*"
         remote:
         - name: "daily_S3"
-            type: "S3"
-            frequency: "* * *"
-            configuration:
+          strategy_type: "S3"
+          frequency: "* * *"
+          configuration:
 
 
 ##### S3 backup
-To enable S3 backup add a list item to the `remote` section of `stack-settings.yml` with a `type` of `S3`.
-The available configuration variables for an S3 backup are:
-| variable       | Description                                               |
-| -------------- | --------------------------------------------------------- |
-| bucket_name    | The name of the bucket to upload to.                      |
-| access_key     | The public access key for the account to upload under. This value must be encrypted, this can be done by passing the access key to `./myapp encrypt my_access_key` and setting the value returned into `stack-settings.yml`.   |
-| secret_key     | The private access key for the account to upload under. This value must be encrypted, this can be done by passing the secret key to `./myapp encrypt my_secret_key` and setting the value returned into `stack-settings.yml`.    |
-| s3_bucket_path | The path to upload the backup to.                         |
-| tags           | Key value pairs of tags to set on the backup object.      |
+
+To enable S3 backup add a list item to the `remote` section of `stack-settings.yml` with a `strategy_type` of `S3`.
+The available configuration keys for an S3 backup are:
+| key            | Description                                                                                                |
+| -------------- | ---------------------------------------------------------------------------------------------------------- |
+| bucket_name    | The name of the bucket to upload                                                                           |
+| access_key     | The AWS Access key ID for the account to upload under.                                                     |
+| secret_key     | The AWS Secret access key for the account to upload under. The value must be encrypted using the appcli 'encrypt' command.    |
+| bucket_path | The path in the S3 bucket to upload to.                                                                       |
+| tags           | Key value pairs of tags to set on the backup object.                                                       |
 
     # filename: stack-settings.yml
 
     backup:
-        numberOfBackupsToKeep: 0 
-        ignoreList: 
+        backup_limit: 0 
+        ignore_list: 
             - "*metastore/*"
         remote:
         - name: "weekly_S3"
-            type: "S3"
-            frequency: "* * *"
-            configuration:
-                bucket_name: "aws.s3.bucket"
-                access_key: 
-                    enc:id=1:encrypted_text":end
-                secret_key: 
-                    enc:id=1:encrypted_text":end
-                s3_bucket_path: "bucket/path"
-                tags:
-                    frequency: "weekly"
-                    type: "data"
+          strategy_type: "S3"
+          frequency: "* * *"
+          configuration:
+            bucket_name: "aws.s3.bucket"
+            access_key: "aws_access_key"
+            secret_key: "enc:id=1:encrypted_text:end"
+            bucket_path: "bucket/path"
+            tags:
+                frequency: "weekly"
+                type: "data"
+
+### Restoring a remote backup
+
+To restore from a remote backup:
+
+1. Acquire the remote backup (.tgz file) that you wish to restore. For S3 this can be done by downloading the backup from the specified bucket.
+2. Place the backup `myapp_date.tgz` file in the backup directory set. By default this will be `/opt/brightsparklabs/${APP_NAME}/production/backup/`
+3. Confirm that the backup is now visible with the `./myapp view-backups` command
+4. Run the restore command `./myapp restore BACKUP_FILE.tgz` e.g. `./myapp restore APP_2021-02-02T10:55:48+00:00.tgz`
+
 
 ### Define a container for your CLI application
 
@@ -295,7 +307,7 @@ To be used in conjunction with your application `./myapp <command>` e.g. `./myap
 | restore      | Restore a backup of application data and configuration.           |
 | service      | Lifecycle management commands for application services.           |
 | task         | Commands for application tasks.                                   |
-| view-backups | View a list of available backups.                                 |
+| view-backups | View a list of locally-available backups.                                 |
 
 ### Options
 

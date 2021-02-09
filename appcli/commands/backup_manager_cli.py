@@ -5,8 +5,8 @@
 Commands for backup and restoration of application configuration and data.
 
 Responsible for creating local backups, remote (offsite) backups and restoring from a local backup.
-Pulls configuration from `stack-settings.yml`
-If no `backup` section is present in the configuration a local backup is still taken with nothing excluded and rolling backup deletion dissabled.
+Pulls configuration from `stack-settings.yml`.
+If no `backup` section is present in the configuration a local backup is still taken with nothing excluded and rolling backup deletion disabled.
 See the README for further details on backup configuration.
 _______________________________________________________________________________
 
@@ -16,13 +16,27 @@ www.brightsparklabs.com
 
 # vendor libraries
 import click
+from botocore.exceptions import ClientError
+
+# standard libraries
+import traceback
+
 
 # local libraries
+from appcli.commands.appcli_command import AppcliCommand
 from appcli.backup_manager.backup_manager import BackupManager
 from appcli.configuration_manager import ConfigurationManager
+from appcli.functions import error_and_exit
+from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
 
+# ------------------------------------------------------------------------------
+# CONSTANTS
+# ------------------------------------------------------------------------------
+
+BACKUP = "backup"
+""" The name of the key for the backup block in the stack settings file. """
 # ------------------------------------------------------------------------------
 # CLASSES
 # ------------------------------------------------------------------------------
@@ -43,11 +57,15 @@ class BackupManagerCli:
         # ------------------------------------------------------------------------------
 
         @click.command(
-            help="Create a backup of application data and configuration. Will also execute any remote strategies configured."
+            help="Create a backup of application data and configuration. Will also execute any configured remote strategies."
         )
         @click.pass_context
         def backup(ctx):
             cli_context: CliContext = ctx.obj
+
+            cli_context.get_configuration_dir_state().verify_command_allowed(
+                AppcliCommand.BACKUP
+            )
 
             backup_manager = self.__create_backup_manager(cli_context)
 
@@ -55,27 +73,53 @@ class BackupManagerCli:
             backup_filename = backup_manager.backup(ctx)
 
             # Get any remote backup strategies.
-            remote_strategies = backup_manager.getRemoteStrategies()
+            remote_strategies = backup_manager.get_remote_strategies()
+
+            # Get the key file for decrypting encrypted values used in a remote backup.
+            key_file = cli_context.get_key_file()
 
             # Execute each of the remote backup strategies with the local backup file.
             for backup_strategy in remote_strategies:
-                backup_strategy.backup(backup_filename)
+                try:
+                    pass
+                    #backup_strategy.backup(backup_filename, key_file)
+                except Exception as e:
+                    logger.error(f"Error while executing remote strategy [{backup_strategy.name}] - {e}")
+                    logger.debug(traceback.print_exc())
 
         @click.command(help="Restore a backup of application data and configuration.")
         @click.argument("backup_file")
+        @click.option(
+            "--force",
+            is_flag=True,
+            help="Force restoring a backup even if validation checks fail.",
+        )
         @click.pass_context
-        def restore(ctx, backup_file):
+        def restore(ctx, backup_file, force):
             cli_context: CliContext = ctx.obj
+
+            cli_context.get_configuration_dir_state().verify_command_allowed(
+                AppcliCommand.RESTORE, force
+            )
 
             backup_manager = self.__create_backup_manager(cli_context)
 
             backup_manager.restore(ctx, backup_file)
 
         @click.command(help="View a list of available backups.")
+        @click.option(
+            "--force",
+            is_flag=True,
+            help="Force viewing backups even if validation checks fail.",
+        )
         @click.pass_context
-        def view_backups(ctx):
+        def view_backups(ctx, force):
 
             cli_context: CliContext = ctx.obj
+            logger.info(force)
+            cli_context.get_configuration_dir_state().verify_command_allowed(
+                AppcliCommand.VIEW_BACKUPS, force
+            )
 
             backup_manager = self.__create_backup_manager(cli_context)
 
@@ -88,7 +132,7 @@ class BackupManagerCli:
             "view_backups": view_backups,
         }
 
-    def __create_backup_manager(self, cli_context):
+    def __create_backup_manager(self, cli_context: CliContext):
         """
         Create a BackupManager object from the `backup` section of the stack settings configuration file.
 
@@ -97,10 +141,16 @@ class BackupManagerCli:
         """
         # Get the settings from the `stack-settings` file.
         configuration = ConfigurationManager(cli_context, self.cli_configuration)
-        stack_variables = configuration.get_stack_variable("backup")
+        try:
+            stack_variables = configuration.get_stack_variable(BACKUP)
+        except KeyError as e:
+            error_and_exit(f"No backup key found in stack settings.")
+
+        if stack_variables is None:
+            error_and_exit(f"Backup key in stack settings was empty.")
 
         # Get the key file for decoding any encoded values.
         key_file = cli_context.get_key_file()
 
         # Create our BackupManager from the settings.
-        return BackupManager(stack_variables, key_file)
+        return BackupManager.from_dict(stack_variables)

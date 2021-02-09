@@ -84,6 +84,7 @@ class CliContext(NamedTuple):
                 self.configuration_dir,
                 generated_configuration_dir,
                 self.app_version,
+                self.backup_dir,
             )
         )
         logger.debug(f"Derived configuration state [{configuration_dir_state}]")

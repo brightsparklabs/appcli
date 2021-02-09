@@ -2,7 +2,7 @@
 # # -*- coding: utf-8 -*-
 
 """
-Handles backing up and restoration of data.
+Handles backing up and restoration of data of the configuration and data directories.
 ________________________________________________________________________________
 
 Created by brightSPARK Labs
@@ -10,58 +10,76 @@ www.brightsparklabs.com
 """
 
 
+
+# vendor libraries
+import cronex
+from dataclasses import dataclass, field
+from typing import List, Optional
+from dataclasses_json import dataclass_json
+
 # standard libraries
 import os
 import re
 import shutil
 import tarfile
 from datetime import datetime, timezone
+import time
 from pathlib import Path
 
 # local libraries
 from appcli.backup_manager.remote_strategy_factory import RemoteStrategyFactory
+from appcli.backup_manager.remote_strategy import RemoteBackup, RemoteBackupStrategy
+from appcli.functions import error_and_exit
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 
 
+
+@dataclass_json
+@dataclass
 class BackupManager:
     """
     Utility class which contains methods for local backup/restoration of application configuration and data.
     """
+    backup_limit: Optional[int] = 0
+    ignore_list: Optional[List[str]] = field(default_factory=list)
+    remote: Optional[List[RemoteBackup]] = field(default_factory=list)
+    #key_file: field(default_factory=Path)
 
-    # --------------------------------------------------------------------------
-    # CONSTRUCTOR
-    # --------------------------------------------------------------------------
-    def __init__(self, stack_variables, key_file):
-
-        if not isinstance(stack_variables, dict):
-            logger.error("stack settings did not have a `backup` configuration block.")
-            self.backup_variables = {}
-        else:
-            self.backup_variables = stack_variables
-
-        self.number_of_backups_to_retain = self.backup_variables.get(
-            "numberOfBackupsToKeep", 0
-        )
-        self.ignore_list = self.backup_variables.get("ignoreList", [])
-        self.remote_strategy_config = self.backup_variables.get("remote", {})
-        self.key_file = key_file
 
     # ------------------------------------------------------------------------------
     # PUBLIC METHODS
     # ------------------------------------------------------------------------------
 
-    def getRemoteStrategies(self):
-        return RemoteStrategyFactory.get_strategy(self, self.key_file)
+    def get_remote_strategies(self):
 
-    def backup(self, ctx, number_of_backups_to_retain=-1):
+        backup_strategies = []
+        
+        for backup in self.remote:
+
+            try:
+                # strategy = RemoteStrategyFactory.get_strategy(backup)
+                strategy = RemoteBackup.from_dict(backup)
+
+                strategy.strategy = RemoteStrategyFactory.get_strategy(strategy.strategy_type, strategy.configuration)
+                strategy.strategy.name = strategy.name
+
+                if strategy.should_run():
+                    backup_strategies.append(strategy)
+
+            except TypeError as e:
+                logger.error(e)
+
+        return backup_strategies
+
+    def backup(self, ctx, allow_rolling_deletion: bool = True):
         """Create a backup `.tgz` file that contains application data and configuration.
         Will shutdown the application and generate a backup containing CliContext.obj.data_dir and CliContext.obj.configuration_dir.
-        Will also perform a rolling backup deletion if `number_of_backups_to_retain` is is either passed in or set in config.
+        Will also perform a rolling backup deletion if `allow_rolling_deletion` is True.
 
         Args:
             ctx: Application context.
-            number_of_backups_to_retain: int. The number of backups to retain locally, `-1` will use the value set in config. 0 will not delete any backups.
+            allow_rolling_deletion: bool. Enable rolling backups, set to False to disable rolling backups and keep all backup files.
 
         Returns:
             backup_name (string): The filename of the generated backup that includes the full path.
@@ -89,20 +107,11 @@ class BackupManager:
         if not backup_dir.exists():
             backup_dir.mkdir(parents=True, exist_ok=True)
 
-        # Delete older backups.
-        number_of_backups_to_retain = (
-            self.number_of_backups_to_retain
-            if number_of_backups_to_retain == -1
-            else number_of_backups_to_retain
-        )
-        if number_of_backups_to_retain > 0:
-            self.__rolling_backup_deletion(cli_context.app_name, backup_dir)
-
         logger.info("Taking backup ...")
 
         tar_filter = (
             self.__glob_tar_filter
-            if isinstance(self.ignore_list, list)
+            if (isinstance(self.ignore_list, list) and self.ignore_list)
             else (lambda tarinfo: tarinfo)
         )
 
@@ -121,11 +130,15 @@ class BackupManager:
                 filter=tar_filter,
             )
 
-        logger.info("Backup completed")
+        # Delete older backups.
+        if allow_rolling_deletion:
+            self.__rolling_backup_deletion(cli_context.app_name, backup_dir)
+
+        logger.info("Backup completed. The application has been shut down.")
 
         return backup_name
 
-    def __glob_tar_filter(self, tarinfo):
+    def __glob_tar_filter(self, tarinfo: "TarInfo"):
         """
         Filter function for excluding files from the tgz if their full path matches any glob patterns set in the config.
 
@@ -134,7 +147,8 @@ class BackupManager:
         Returns:
             The TarInfo object if we want to include it in the tgz, return None if we want to skip this file.
         """
-        if not isinstance(self.ignore_list):
+        # If our glob list is not set or empty then we don't want to ignore any files.
+        if not isinstance(self.ignore_list, list) or not self.ignore_list:
             return tarinfo
 
         if any((Path(tarinfo.name).match(glob)) for glob in self.ignore_list):
@@ -142,7 +156,7 @@ class BackupManager:
         else:
             return tarinfo
 
-    def restore(self, ctx, backup_filename):
+    def restore(self, ctx, backup_filename: Path):
         """Restore application data and configuration from the provided local backup `.tgz` file.
         This will create a backup of the existing data and config, remove the contents `conf`, `data` and `conf/.generated` and then extract the backup to the appropriate locations.
         `conf`, `data` and `conf/.generated` are mapped into appcli which means we keep the folder but replace their contents on restore.
@@ -162,7 +176,7 @@ class BackupManager:
 
         # Check that the backup file exists.
         if not backup_name.is_file():
-            logger.error(f"Backup file {backup_name} not found.")
+            error_and_exit(f"Backup file {backup_name} not found.")
             return
 
         # Stop the system.
@@ -178,7 +192,7 @@ class BackupManager:
         # Perform a backup of the existing application config and data.
         logger.info("Creating backup of existing application data and configuration")
         restore_backup_name = self.backup(
-            ctx, 0
+            ctx, allow_rolling_deletion=False
         )  # 0 ensures we don't accidentally delete our backup
         logger.info(f"Backup generated before restore was: {restore_backup_name}")
 
@@ -186,40 +200,13 @@ class BackupManager:
         # Each of these is mounted, deleting them may result in "Device or resource busy"
         # so we clear their contents instead.
         # Clear the `data` directory.
-        for filename in os.listdir(data_dir):
-            file_path = os.path.join(data_dir, filename)
-            try:
-                if os.path.isfile(file_path) or os.path.islink(file_path):
-                    os.unlink(file_path)
-                elif os.path.isdir(file_path):
-                    shutil.rmtree(file_path)
-            except Exception as e:
-                logger.error(f"Failed to delete {file_path}. Reason: {e}")
+        self.__clear_folder(data_dir)
 
         # Clear the `conf` directory while ignoring `conf/.generated`.
-        for filename in os.listdir(conf_dir):
-            file_path = os.path.join(conf_dir, filename)
-            try:
-                if str(generated_conf_dir) in file_path:
-                    # We have the .generated sub folder, handle it seperately.
-                    pass
-                elif os.path.isfile(file_path) or os.path.islink(file_path):
-                    os.unlink(file_path)
-                elif os.path.isdir(file_path):
-                    shutil.rmtree(file_path)
-            except Exception as e:
-                logger.error(f"Failed to delete {file_path}. Reason: {e}")
+        self.__clear_folder(conf_dir, generated_conf_dir)
 
         # Clear the `conf/.generated` directory.
-        for filename in os.listdir(generated_conf_dir):
-            file_path = os.path.join(generated_conf_dir, filename)
-            try:
-                if os.path.isfile(file_path) or os.path.islink(file_path):
-                    os.unlink(file_path)
-                elif os.path.isdir(file_path):
-                    shutil.rmtree(file_path)
-            except Exception as e:
-                logger.error(f"Failed to delete {file_path}. Reason: {e}")
+        self.__clear_folder(generated_conf_dir)
 
         # Extract conf and data directories from the tar.
         try:
@@ -230,9 +217,24 @@ class BackupManager:
         except Exception as e:
             logger.error(f"Failed to extract backup. Reason: {e}")
 
-        logger.info("Restore complete.")
+        logger.info("Restore complete. The application has been shut down.")
 
-    def __members(self, tf, subfolder):
+    def __clear_folder(self, directory: Path, directory_to_ignore: Path = None):
+        for filename in os.listdir(directory):
+            file_path = os.path.join(directory, filename)
+            try:
+                if directory_to_ignore and str(directory_to_ignore) in file_path:
+                    # We have the .generated sub folder, handle it seperately.
+                    pass
+                elif os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                logger.error(f"Failed to delete {file_path}. Reason: {e}")
+
+
+    def __members(self, tf, subfolder: str):
         """Helper function for extracting folders from a tar ball.
         Will allow extracted files to exclude the provided subfolder from their extracted path.
 
@@ -242,7 +244,10 @@ class BackupManager:
         """
         length_of_subfolder = len(subfolder)
         for member in tf.getmembers():
+            # For each file (member) in the tar file check to see if it starts with the specified string.
             if member.path.startswith(subfolder):
+                # If it does start with that string, exclude that string from the start of the Path we are extracting it to.
+                # This allows us to put the extracted files straight into their respective `conf` or `data` directories.
                 member.path = member.path[length_of_subfolder:]
                 yield member
 
@@ -255,13 +260,12 @@ class BackupManager:
 
         backup_dir_files = sorted(
             os.listdir(backup_dir),
-            key=lambda x: self.__parse_datetime_from_filename(x, cli_context.app_name),
             reverse=True,
         )
         for backup in backup_dir_files:
             print(backup)
 
-    def __create_backup_filename(self, app_name):
+    def __create_backup_filename(self, app_name: str):
         """Generate the filename of the backup .tgz file.
            Format is "<APP_NAME>_<datetime.now>.tgz".
 
@@ -273,7 +277,7 @@ class BackupManager:
         now: datetime = datetime.now(timezone.utc).replace(microsecond=0)
         return f"{app_name.upper()}_{now.isoformat()}.tgz"
 
-    def __rolling_backup_deletion(self, app_name, backup_dir):
+    def __rolling_backup_deletion(self, app_name: str, backup_dir: Path):
         """Delete old backups, will only keep the most recent backups.
         The number of backups to keep is specified in the stack settings configuration file.
         Any files in the backup directory that do not match the filename pattern will be excluded
@@ -283,37 +287,35 @@ class BackupManager:
             app_name: str. The application name to be used in the naming of the tgz file.
             backup_dir (string): The directory that contains the backups.
         """
+
+        if self.backup_limit == 0:
+            return
+
         # Simply sort in Chronological descending order, and then delete from the appropriate index
         # onward.
         logger.info(
-            f"Removing old backups - retaining at least the last [{self.number_of_backups_to_retain}] backups ..."
+            f"Removing old backups - retaining at least the last [{self.backup_limit}] backups ..."
         )
 
-        # Filter out anything in the backup directory that is not an expected backup,
-        # We only want to delete backups that match our expected filename.
-        full_backup_directory = os.listdir(backup_dir)
-        regex_pattern = re.compile(
-            app_name.upper()
-            + "_\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d+([+-][0-2]\\d:[0-5]\\d|Z).tgz"
-        )
-        backup_files = [x for x in full_backup_directory if re.match(regex_pattern, x)]
+        # 'Get all files from our backup directory
+        backup_files = os.listdir(backup_dir)
 
         # Sort the backups by the DateTime specified in the filename.
         backup_dir_files = sorted(
             backup_files,
-            key=lambda x: self.__parse_datetime_from_filename(x, app_name),
             reverse=True,
         )
+        # Get the backups to delete by taking our sorted list of backups and creating a sub-list starting
+        # from the index matching the number of backups to retain to the end of the list
         backups_to_delete = backup_dir_files[
-            self.number_of_backups_to_retain
-            - 1 :  # noqa: E203 - Disable flake8 error on spaces before a `:`
+            self.backup_limit :  # noqa: E203 - Disable flake8 error on spaces before a `:`
         ]  # -1 as we're 0 indexed
         for backup_to_delete in backups_to_delete:
             backup_file: Path = Path(os.path.join(backup_dir, backup_to_delete))
             logger.info(f"Deleting backup file [{backup_file}]")
             os.remove(backup_file)
 
-    def __parse_datetime_from_filename(self, filename, app_name):
+    def __parse_datetime_from_filename(self, filename: str, app_name: str):
         """Helper function to parse a datetime object from a filename.
 
         Args:
