@@ -49,6 +49,11 @@ class RemoteBackup:
     frequency: Optional[str] = "* * *"
     configuration: Optional[dict] = field(default_factory=dict)
 
+    # def __post_init__(self):
+    # calls remote_strategy_factory
+    #    self.strategy = RemoteStrategyFactory.get_strategy(self.strategy_type, self.configuration)
+
+
     # ------------------------------------------------------------------------------
     # PUBLIC METHODS
     # ------------------------------------------------------------------------------
@@ -62,9 +67,6 @@ class RemoteBackup:
         """
         self.strategy.backup(backup_filename, key_file)
 
-    # def __post_init__(self):
-    # calls remote_strategy_factory
-    #    self.strategy = RemoteStrategyFactory.get_strategy(self.strategy_type, self.configuration)
 
     def should_run(self) -> bool:
         """
