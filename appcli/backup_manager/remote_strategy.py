@@ -37,22 +37,20 @@ class RemoteBackup:
     """
     A dataclass that represents the common tags that all remote backup strategies have.
 
-    Args:
-        strategy_type: str. The remote backup strategy type. This must match a key in remote_strategy_factory.py STRATEGIES.
-        name: Optional[str]. An optional name/description for the remote strategy.
-        frequency: Optional[str]. An optional CRON frequency with the time stripped out i.e. `* * *` for specifying when this strategy should run.
-        configuration: Optional[dict]. An optional dict that contains additional configuration values that allows the remote strategy to run.
     """
 
     strategy_type: str
+    """ The remote backup strategy type. This must match a key in remote_strategy_factory.py STRATEGIES. """
     name: Optional[str] = ""
+    """ An optional name/description for the remote strategy. """
     frequency: Optional[str] = "* * *"
+    """ An optional CRON frequency with the time stripped out i.e. `* * *` for specifying when this strategy should run. """
     configuration: Optional[dict] = field(default_factory=dict)
+    """ An optional dict that contains additional configuration values that allows the remote strategy to run. """
 
     # def __post_init__(self):
     # calls remote_strategy_factory
     #    self.strategy = RemoteStrategyFactory.get_strategy(self.strategy_type, self.configuration)
-
 
     # ------------------------------------------------------------------------------
     # PUBLIC METHODS
@@ -66,7 +64,6 @@ class RemoteBackup:
             key_file: Path. The path to the key file.
         """
         self.strategy.backup(backup_filename, key_file)
-
 
     def should_run(self) -> bool:
         """
@@ -97,8 +94,8 @@ class RemoteBackupStrategy:
         Backup method for the remote strategy. Must be overwritten.
 
         Args:
-            backup_filename: str. The name of the backup to restore from. This lives in the backup folder.
-            key_file: Path. The path to the key file.
+            backup_filename: (str). The name of the backup to restore from. This lives in the backup folder.
+            key_file: (Path). The path to the key file.
         """
         raise NotImplementedError(
             "The backup method has not been overwritten by the derived strategy class."
@@ -111,20 +108,18 @@ class AwsS3Strategy(RemoteBackupStrategy):
     """
     A dataclass that represents a Remote backup strategy for pushing a backup to an S3 bucket.
     Implements RemoteBackupStrategy.
-
-    Args:
-        access_key: str. The AWS access key.
-        secret_key: str. The AWS secret key.
-        bucket_name: str. The name of the S3 bucket to upload the backup to.
-        bucket_path: Optional[str]. An optional AWS bucket path to use when uploading a backup.
-        tags: Optional[dict]. An optional dict of tags to add to the backup in S3.
     """
 
     access_key: str
+    """ The AWS access key. """
     secret_key: str
+    """ The AWS secret key. """
     bucket_name: str
+    """ The name of the S3 bucket to upload the backup to. """
     bucket_path: Optional[str] = ""
+    """ An optional AWS bucket path to use when uploading a backup. """
     tags: Optional[dict] = field(default_factory=dict)
+    """ An optional dict of tags to add to the backup in S3. """
 
     # --------------------------------------------------------------------------
     # OVERRIDE: RemoteBackupStrategy
@@ -135,11 +130,11 @@ class AwsS3Strategy(RemoteBackupStrategy):
         Backup method for an S3 remote strategy.
 
         Args:
-            backup_filename: str. The name of the backup to restore from. This lives in the backup folder.
-            key_file: Path. The path to the key file.
+            backup_filename: (str). The name of the backup to restore from. This lives in the backup folder.
+            key_file: (Path). The path to the key file.
 
         Throws:
-            Exception:
+            Exception (of varying types):
                 Failed to decrypt the secret_key.
                 Failed to upload the backup with boto.
         """

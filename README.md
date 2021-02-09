@@ -196,7 +196,7 @@ To restore from a remote backup:
 1. Acquire the remote backup (.tgz file) that you wish to restore. For S3 this can be done by downloading the backup from the specified bucket.
 2. Place the backup `myapp_date.tgz` file in the backup directory set. By default this will be `/opt/brightsparklabs/${APP_NAME}/production/backup/`
 3. Confirm that the backup is now visible with the `./myapp view-backups` command
-4. Run the restore command `./myapp restore BACKUP_FILE.tgz` e.g. `./myapp restore APP_2021-02-02T10:55:48+00:00.tgz`
+4. Run the restore command `./myapp restore BACKUP_FILE.tgz` e.g. `./myapp restore APP_2021-02-02T10:55:48+00:00.tgz`. The restore process will trigger a backup.
 
 
 ### Define a container for your CLI application

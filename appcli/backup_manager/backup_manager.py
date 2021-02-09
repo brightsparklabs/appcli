@@ -38,8 +38,11 @@ class BackupManager:
     """
 
     backup_limit: Optional[int] = 0
+    """ The number of backups to retain locally. Set to 0 to never delete a backup. """
     ignore_list: Optional[List[str]] = field(default_factory=list)
+    """ An optional list of glob patterns. If any of these patterns match the full path of a file to be backed up then that file will be ignored. """
     remote: Optional[List[RemoteBackup]] = field(default_factory=list)
+    """ An optional list of remote backup strategies of potentially varing types. """
 
     # ------------------------------------------------------------------------------
     # PUBLIC METHODS
@@ -58,18 +61,18 @@ class BackupManager:
         for backup in self.remote:
 
             try:
-                strategy = RemoteBackup.from_dict(backup)
+                remote_backup = RemoteBackup.from_dict(backup)
 
-                strategy.strategy = RemoteStrategyFactory.get_strategy(
-                    strategy.strategy_type, strategy.configuration
+                remote_backup.strategy = RemoteStrategyFactory.get_strategy(
+                    remote_backup.strategy_type, remote_backup.configuration
                 )
-                strategy.strategy.name = strategy.name
+                remote_backup.strategy.name = remote_backup.name
 
-                if strategy.should_run():
-                    backup_strategies.append(strategy)
+                if remote_backup.should_run():
+                    backup_strategies.append(remote_backup)
 
             except TypeError as e:
-                logger.error(e)
+                logger.error(f"Failed to create remote strategy - {e}")
 
         return backup_strategies
 
@@ -79,11 +82,10 @@ class BackupManager:
         Will also perform a rolling backup deletion if `allow_rolling_deletion` is True.
 
         Args:
-            ctx: Application context.
-            allow_rolling_deletion: bool. Enable rolling backups, set to False to disable rolling backups and keep all backup files.
+            allow_rolling_deletion: (bool). Enable rolling backups, set to False to disable rolling backups and keep all backup files.
 
         Returns:
-            backup_name (string): The filename of the generated backup that includes the full path.
+            backup_name (Path): The filename of the generated backup that includes the full path.
         """
         cli_context: CliContext = ctx.obj
         logger.info("Initiating system backup")
@@ -110,6 +112,7 @@ class BackupManager:
 
         logger.info("Taking backup ...")
 
+        # If our glob filter list is empty or not set then we want a filter that always returns the TarInfo object.
         tar_filter = (
             self.__glob_tar_filter
             if (isinstance(self.ignore_list, list) and self.ignore_list)
@@ -144,13 +147,10 @@ class BackupManager:
         Filter function for excluding files from the tgz if their full path matches any glob patterns set in the config.
 
         Args:
-            tarinfo: TarInfo. A TarInfo object that represents the current file.
+            tarinfo: (TarInfo). A TarInfo object that represents the current file.
         Returns:
-            The TarInfo object if we want to include it in the tgz, return None if we want to skip this file.
+            The TarInfo object if we want to include it in the tgz, None if we want to skip this file.
         """
-        # If our glob list is not set or empty then we don't want to ignore any files.
-        if not isinstance(self.ignore_list, list) or not self.ignore_list:
-            return tarinfo
 
         if any((Path(tarinfo.name).match(glob)) for glob in self.ignore_list):
             return None
@@ -193,7 +193,7 @@ class BackupManager:
         logger.info("Creating backup of existing application data and configuration")
         restore_backup_name = self.backup(
             ctx, allow_rolling_deletion=False
-        )  # 0 ensures we don't accidentally delete our backup
+        )  # False ensures we don't accidentally delete our backup
         logger.info(f"Backup generated before restore was: {restore_backup_name}")
 
         # Extract conf and data directories from the tar.
@@ -218,7 +218,7 @@ class BackupManager:
         """
         length_of_subfolder = len(subfolder)
         for member in tf.getmembers():
-            # For each file (member) in the tar file check to see if it starts with the specified string.
+            # For each file (member) in the tar file check to see if it starts with the specified string (subfolder).
             if member.path.startswith(subfolder):
                 # If it does start with that string, exclude that string from the start of the Path we are extracting it to.
                 # This allows us to put the extracted files straight into their respective `conf` or `data` directories.
@@ -239,12 +239,12 @@ class BackupManager:
         for backup in backup_dir_files:
             print(backup)
 
-    def __create_backup_filename(self, app_name: str):
+    def __create_backup_filename(self, app_name: str) -> str:
         """Generate the filename of the backup .tgz file.
            Format is "<APP_NAME>_<datetime.now>.tgz".
 
         Args:
-            app_name: str. The application name to be used in the naming of the tgz file.
+            app_name: (str). The application name to be used in the naming of the tgz file.
         Returns:
             The formatted .tgz filename.
         """
@@ -258,15 +258,14 @@ class BackupManager:
         from deletion and will not count towards the number of backups to keep.
 
         Args:
-            app_name: str. The application name to be used in the naming of the tgz file.
-            backup_dir (string): The directory that contains the backups.
+            app_name: (str). The application name to be used in the naming of the tgz file.
+            backup_dir (Path): The directory that contains the backups.
         """
 
+        # If the backup limit is set to 0 then we never want to delete a backup.
         if self.backup_limit == 0:
             return
 
-        # Sort in Chronological descending order, and then delete from the appropriate index
-        # onward.
         logger.info(
             f"Removing old backups - retaining at least the last [{self.backup_limit}] backups ..."
         )
@@ -279,11 +278,11 @@ class BackupManager:
             backup_files,
             reverse=True,
         )
-        # Get the backups to delete by taking our sorted list of backups and creating a sub-list starting
-        # from the index matching the number of backups to retain to the end of the list
+        # Get the backups to delete by taking our sorted list of backups and then delete from the appropriate index
+        # onward.
         backups_to_delete = backup_dir_files[
             self.backup_limit :  # noqa: E203 - Disable flake8 error on spaces before a `:`
-        ]  # -1 as we're 0 indexed
+        ]
         for backup_to_delete in backups_to_delete:
             backup_file: Path = Path(os.path.join(backup_dir, backup_to_delete))
             logger.info(f"Deleting backup file [{backup_file}]")
