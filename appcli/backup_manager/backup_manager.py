@@ -12,7 +12,6 @@ www.brightsparklabs.com
 
 # standard libraries
 import os
-import shutil
 import tarfile
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -47,6 +46,12 @@ class BackupManager:
     # ------------------------------------------------------------------------------
 
     def get_remote_strategies(self):
+        """
+        Get a list of remote strategy objects that represent valid remote strategies that should be ran today.
+
+        Returns:
+            A list of remote strategy objects.
+        """
 
         backup_strategies = []
 
@@ -68,7 +73,7 @@ class BackupManager:
 
         return backup_strategies
 
-    def backup(self, ctx, allow_rolling_deletion: bool = True):
+    def backup(self, ctx, allow_rolling_deletion: bool = True) -> Path:
         """Create a backup `.tgz` file that contains application data and configuration.
         Will shutdown the application and generate a backup containing CliContext.obj.data_dir and CliContext.obj.configuration_dir.
         Will also perform a rolling backup deletion if `allow_rolling_deletion` is True.
@@ -165,7 +170,6 @@ class BackupManager:
         backup_dir: Path = cli_context.backup_dir
         data_dir: Path = cli_context.data_dir
         conf_dir: Path = cli_context.configuration_dir
-        generated_conf_dir: Path = cli_context.get_generated_configuration_dir()
         backup_name: Path = Path(os.path.join(backup_dir, backup_filename))
 
         logger.info("Initiating system restore")
@@ -192,19 +196,8 @@ class BackupManager:
         )  # 0 ensures we don't accidentally delete our backup
         logger.info(f"Backup generated before restore was: {restore_backup_name}")
 
-        # Clear the existing folders that will be populated from the backup.
-        # Each of these is mounted, deleting them may result in "Device or resource busy"
-        # so we clear their contents instead.
-        # Clear the `data` directory.
-        self.__clear_folder(data_dir)
-
-        # Clear the `conf` directory while ignoring `conf/.generated`.
-        self.__clear_folder(conf_dir, generated_conf_dir)
-
-        # Clear the `conf/.generated` directory.
-        self.__clear_folder(generated_conf_dir)
-
         # Extract conf and data directories from the tar.
+        # This will overwrite the contents of each directory, anything not in the backup (such as files matching the glob pattern) will be left alone.
         try:
             with tarfile.open(backup_name) as tar:
                 tar.extractall(conf_dir, members=self.__members(tar, "conf/"))
@@ -214,20 +207,6 @@ class BackupManager:
             logger.error(f"Failed to extract backup. Reason: {e}")
 
         logger.info("Restore complete. The application has been shut down.")
-
-    def __clear_folder(self, directory: Path, directory_to_ignore: Path = None):
-        for filename in os.listdir(directory):
-            file_path = os.path.join(directory, filename)
-            try:
-                if directory_to_ignore and str(directory_to_ignore) in file_path:
-                    # We have the .generated sub folder, handle it seperately.
-                    pass
-                elif os.path.isfile(file_path) or os.path.islink(file_path):
-                    os.unlink(file_path)
-                elif os.path.isdir(file_path):
-                    shutil.rmtree(file_path)
-            except Exception as e:
-                logger.error(f"Failed to delete {file_path}. Reason: {e}")
 
     def __members(self, tf, subfolder: str):
         """Helper function for extracting folders from a tar ball.
@@ -286,7 +265,7 @@ class BackupManager:
         if self.backup_limit == 0:
             return
 
-        # Simply sort in Chronological descending order, and then delete from the appropriate index
+        # Sort in Chronological descending order, and then delete from the appropriate index
         # onward.
         logger.info(
             f"Removing old backups - retaining at least the last [{self.backup_limit}] backups ..."
@@ -309,29 +288,3 @@ class BackupManager:
             backup_file: Path = Path(os.path.join(backup_dir, backup_to_delete))
             logger.info(f"Deleting backup file [{backup_file}]")
             os.remove(backup_file)
-
-    def __parse_datetime_from_filename(self, filename: str, app_name: str):
-        """Helper function to parse a datetime object from a filename.
-
-        Args:
-            filename (string): The filename to parse.
-            app_name: str. The application name to be used in the naming of the tgz file.
-
-        Returns:
-            The datetime object.
-        """
-
-        # Filename is <app_name>_<date>.tgz, need to strip the app_name and file extension.
-        timestamp = Path(filename).stem.replace(app_name.upper() + "_", "")
-
-        # Filename may not be in the expected format, in that case assign it a sort value of now
-        # so it appears at the top of the list.
-        now: datetime = datetime.now(timezone.utc).replace(microsecond=0)
-        sort_key = now.isoformat()
-
-        try:
-            return datetime.fromisoformat(timestamp)
-        except ValueError:
-            logger.info(f"Unexpected backup found {filename}")
-
-        return datetime.fromisoformat(sort_key)

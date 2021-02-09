@@ -15,8 +15,8 @@ from appcli.backup_manager.remote_strategy import AwsS3Strategy, RemoteBackupStr
 # ------------------------------------------------------------------------------
 # CONSTANTS
 # ------------------------------------------------------------------------------
-TYPE = "type"
 STRATEGIES = {"S3": AwsS3Strategy}
+""" A dict of remote strategy classes that are implemented. """
 
 
 class RemoteStrategyFactory:
@@ -25,7 +25,18 @@ class RemoteStrategyFactory:
     """
 
     @staticmethod
-    def get_strategy(remote_type, configuration) -> RemoteBackupStrategy:
+    def get_strategy(remote_type: str, configuration: dict) -> RemoteBackupStrategy:
+        """
+        Get an instance of a remote strategy for a given remote strategy type.
+
+        Args:
+            remote_type: (str). The type of strategy to build.
+            configuration: (dict). The extra configuration values to use in building the strategy.
+
+        Returns:
+            An instance of a strategy class.
+
+        """
 
         # Get the strategy class for the specified type.
         strategy_class = STRATEGIES.get(remote_type, None)

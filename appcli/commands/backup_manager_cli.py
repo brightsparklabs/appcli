@@ -116,7 +116,6 @@ class BackupManagerCli:
         def view_backups(ctx, force):
 
             cli_context: CliContext = ctx.obj
-            logger.info(force)
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.VIEW_BACKUPS, force
             )

@@ -34,25 +34,45 @@ from appcli.logger import logger
 @dataclass_json
 @dataclass
 class RemoteBackup:
-    """"""
+    """
+    A dataclass that represents the common tags that all remote backup strategies have.
+
+    Args:
+        strategy_type: str. The remote backup strategy type. This must match a key in remote_strategy_factory.py STRATEGIES.
+        name: Optional[str]. An optional name/description for the remote strategy.
+        frequency: Optional[str]. An optional CRON frequency with the time stripped out i.e. `* * *` for specifying when this strategy should run.
+        configuration: Optional[dict]. An optional dict that contains additional configuration values that allows the remote strategy to run.
+    """
 
     strategy_type: str
     name: Optional[str] = ""
     frequency: Optional[str] = "* * *"
     configuration: Optional[dict] = field(default_factory=dict)
-    # key_file: field(default_factory=Path)
 
     # ------------------------------------------------------------------------------
     # PUBLIC METHODS
     # ------------------------------------------------------------------------------
-    def backup(self, backup_filename, key_file):
+    def backup(self, backup_filename: Path, key_file: Path):
+        """
+        Call the set strategies backup method
+
+        Args:
+            backup_filename: str. The full Path of the backup to restore from. This lives in the backup folder.
+            key_file: Path. The path to the key file.
+        """
         self.strategy.backup(backup_filename, key_file)
 
     # def __post_init__(self):
     # calls remote_strategy_factory
     #    self.strategy = RemoteStrategyFactory.get_strategy(self.strategy_type, self.configuration)
 
-    def should_run(self):
+    def should_run(self) -> bool:
+        """
+        Verify if the backup strategy should run based on todays date and the frequency value set.
+
+        Returns:
+            True if the frequency matches today, False if it does not.
+        """
 
         # Our configuration is just the last 3 values of a cron pattern, prepend hour/minute as wild-cards.
         frequency = f"* * {self.frequency}"
@@ -68,9 +88,18 @@ class RemoteBackup:
 
 
 class RemoteBackupStrategy:
+    """ Base class for all remote strategies. """
+
     def backup(self, backup_filename: Path, key_file: Path):
+        """
+        Backup method for the remote strategy. Must be overwritten.
+
+        Args:
+            backup_filename: str. The name of the backup to restore from. This lives in the backup folder.
+            key_file: Path. The path to the key file.
+        """
         raise NotImplementedError(
-            "The backup method has not been overridden by the derived strategy class."
+            "The backup method has not been overwritten by the derived strategy class."
         )
 
 
@@ -78,8 +107,15 @@ class RemoteBackupStrategy:
 @dataclass
 class AwsS3Strategy(RemoteBackupStrategy):
     """
-    Remote backup strategy for pushing a backup to an S3 bucket.
+    A dataclass that represents a Remote backup strategy for pushing a backup to an S3 bucket.
     Implements RemoteBackupStrategy.
+
+    Args:
+        access_key: str. The AWS access key.
+        secret_key: str. The AWS secret key.
+        bucket_name: str. The name of the S3 bucket to upload the backup to.
+        bucket_path: Optional[str]. An optional AWS bucket path to use when uploading a backup.
+        tags: Optional[dict]. An optional dict of tags to add to the backup in S3.
     """
 
     access_key: str
@@ -93,7 +129,18 @@ class AwsS3Strategy(RemoteBackupStrategy):
     # --------------------------------------------------------------------------
 
     def backup(self, backup_filename: Path, key_file: Path):
+        """
+        Backup method for an S3 remote strategy.
 
+        Args:
+            backup_filename: str. The name of the backup to restore from. This lives in the backup folder.
+            key_file: Path. The path to the key file.
+
+        Throws:
+            Exception:
+                Failed to decrypt the secret_key.
+                Failed to upload the backup with boto.
+        """
         # Decrypt our secret key.
         cipher = Cipher(key_file)
         secret_key = cipher.decrypt(self.secret_key)
