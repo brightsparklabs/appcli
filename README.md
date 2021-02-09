@@ -350,6 +350,15 @@ or
     export NO_TTY=true
     ./myapp [...]
 
+If required, you can also disable interactive mode with the `NO_INTERACTIVE` environment variable.
+
+    NO_INTERACTIVE=true ./myapp [...]
+
+or
+
+    export NO_INTERACTIVE=true
+    ./myapp [...]
+
 ## Development
 
 This section details how to build/test/run/debug the system in a development environment.

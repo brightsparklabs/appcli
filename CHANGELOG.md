@@ -11,6 +11,18 @@ The changelog is applicable from version `1.0.0` onwards.
 ## [Unreleased]
 
 ---
+## [1.1.2] - (10/02/2021)
+
+### Added
+
+- The launcher now supports `NO_INTERACTIVE` environment variable to disable interactive mode.
+- Expose the `APP_NAME` environment variable to the launcher container
+
+### Fixed
+
+- Fixed issue where `migrate` command couldn't be run when the application needed to be migrated.
+
+---
 ## [1.1.1] - (26/11/2020)
 
 ### Added
