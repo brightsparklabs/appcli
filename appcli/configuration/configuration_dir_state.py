@@ -302,6 +302,8 @@ class InvalidConfigurationDirState(ConfigurationDirState):
 
         default_error_message = f"Invalid configuration state, this error must be rectified before continuing. {error}"
 
+        # Remove the 'VIEW_BACKUPS' and 'RESTORE' commands from the set of 'disallowed' commands so that we can add them
+        # as 'disallowed unless forced' commands
         disallowed_command = get_disallowed_command_from_allowed_commands(
             [AppcliCommand.VIEW_BACKUPS, AppcliCommand.RESTORE], default_error_message
         )
