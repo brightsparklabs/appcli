@@ -13,7 +13,7 @@ www.brightsparklabs.com
 # standard libraries
 import os
 import tarfile
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields, MISSING
 from datetime import datetime, timezone
 from pathlib import Path
 from tarfile import TarInfo
@@ -37,12 +37,35 @@ class BackupManager:
     Utility class which contains methods for local backup/restoration of application configuration and data.
     """
 
-    backup_limit: Optional[int] = 0
+    backup_limit: Optional[int] = field(default=0)
     """ The number of backups to retain locally. Set to 0 to never delete a backup. """
     ignore_list: Optional[List[str]] = field(default_factory=list)
     """ An optional list of glob patterns. If any of these patterns match the full path of a file to be backed up then that file will be ignored. """
     remote: Optional[List[RemoteBackup]] = field(default_factory=list)
     """ An optional list of remote backup strategies of potentially varing types. """
+
+    def __post_init__(self):
+        """Called after __init__().
+        None of the fields should be allowed to be 'None' - if any are, override with the default.
+        """
+
+        for f in fields(self):
+            val = getattr(self, f.name)
+            if val is None:
+                # If the field is 'empty' and set to None in the settings, default to:
+                # - f.default if it's defined, otherwise
+                # - f.default_factory() if f.default_factory is defined, otherwise
+                # - None (as there's no other reasonable default).
+                default_value = None
+                if f.default != MISSING:
+                    default_value = f.default
+                elif f.default_factory != MISSING:
+                    default_value = f.default_factory()
+
+                logger.debug(
+                    f"Overriding 'None' for [{f.name}] with default [{default_value}]"
+                )
+                setattr(self, f.name, default_value)
 
     # ------------------------------------------------------------------------------
     # PUBLIC METHODS
