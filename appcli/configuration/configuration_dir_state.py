@@ -179,6 +179,7 @@ class UninitialisedConfigurationDirState(ConfigurationDirState):
             [
                 AppcliCommand.CONFIGURE_INIT,
                 AppcliCommand.LAUNCHER,
+                AppcliCommand.BACKUP,
                 AppcliCommand.RESTORE,
                 AppcliCommand.VIEW_BACKUPS,
             ],
