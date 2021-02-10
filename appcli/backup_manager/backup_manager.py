@@ -154,7 +154,7 @@ class BackupManager:
 
         # Delete older backups.
         if allow_rolling_deletion:
-            self.__rolling_backup_deletion(cli_context.app_name, backup_dir)
+            self.__rolling_backup_deletion(backup_dir)
 
         logger.info("Backup completed. Application services have been shut down.")
 
