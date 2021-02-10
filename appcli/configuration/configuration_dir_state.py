@@ -43,10 +43,7 @@ class ConfigurationDirState:
         self.disallowed_command_unless_forced = disallowed_command_unless_forced
 
     def verify_command_allowed(self, command: AppcliCommand, force: bool = False):
-        if (
-            command in self.disallowed_command
-            and command not in self.disallowed_command_unless_forced
-        ):
+        if command in self.disallowed_command:
             error_and_exit(self.disallowed_command[command])
         if command in self.disallowed_command_unless_forced and not force:
             error_and_exit(
@@ -306,7 +303,7 @@ class InvalidConfigurationDirState(ConfigurationDirState):
         default_error_message = f"Invalid configuration state, this error must be rectified before continuing. {error}"
 
         disallowed_command = get_disallowed_command_from_allowed_commands(
-            [], default_error_message
+            [AppcliCommand.VIEW_BACKUPS, AppcliCommand.RESTORE], default_error_message
         )
         disallowed_command_unless_forced = {
             AppcliCommand.VIEW_BACKUPS: default_error_message,
