@@ -362,23 +362,20 @@ To be used in conjunction with your application `./myapp <command>` e.g. `./myap
 
 #### Command: `backup`
 
-Creates a backup `.tgz` file in the configured backup folder that contains all application and configuration data. Will also trigger any remote backup strategies set in configuration.
-usage `./myapp backup`
+Creates a backup `.tgz` file in the backup directory that contains files from the configuration and data directory, as
+configured in `stack-settings.yml`. After the backup is taken, remote backup strategies will be executed (if applicable).
 
-| Command | Description |
-| ------- | ----------- |
-
-
-No commands available
+usage: `./myapp backup`
 
 | Option | Description                     |
 | ------ | ------------------------------- |
 | --help | Show the help message and exit. |
 
-#### Command: `configure`
+#### Command Group: `configure`
 
 Configures the application.
-usage `./myapp configure [OPTIONS] COMMAND [ARGS]`
+
+usage: `./myapp configure [OPTIONS] COMMAND [ARGS]`
 
 | Command  | Description                                                                                                               |
 | -------- | ------------------------------------------------------------------------------------------------------------------------- |
@@ -397,22 +394,18 @@ usage `./myapp configure [OPTIONS] COMMAND [ARGS]`
 #### Command: `encrypt`
 
 Encrypts the specified string.
-usage `./myapp encrypt [OPTIONS] TEXT`
 
-| Command | Description |
-| ------- | ----------- |
-
-
-No commands available
+usage: `./myapp encrypt [OPTIONS] TEXT`
 
 | Option | Description                     |
 | ------ | ------------------------------- |
 | --help | Show the help message and exit. |
 
-#### Command: `init`
+#### Command Group: `init`
 
 Initialises the application.
-usage `./myapp init [OPTIONS] COMMAND [ARGS]`
+
+usage: `./myapp init [OPTIONS] COMMAND [ARGS]`
 
 | Command  | Description                                                              |
 | -------- | ------------------------------------------------------------------------ |
@@ -425,13 +418,8 @@ usage `./myapp init [OPTIONS] COMMAND [ARGS]`
 #### Command: `launcher`
 
 Outputs an appropriate launcher bash script to stdout.
-usage `./myapp launcher [OPTIONS]`
 
-| Command | Description |
-| ------- | ----------- |
-
-
-No commands available
+usage: `./myapp launcher [OPTIONS]`
 
 | Option | Description                     |
 | ------ | ------------------------------- |
@@ -440,22 +428,18 @@ No commands available
 #### Command: `migrate`
 
 Migrates the application configuration to work with the current application version.
-usage `./myapp migrate [OPTIONS]`
 
-| Command | Description |
-| ------- | ----------- |
-
-
-No commands available
+usage: `./myapp migrate [OPTIONS]`
 
 | Option | Description                     |
 | ------ | ------------------------------- |
 | --help | Show the help message and exit. |
 
-#### Command: `orchestrator`
+#### Command Group: `orchestrator`
 
 Perform tasks defined by the orchestrator.
-usage `./myapp orchestrator [OPTIONS] COMMAND [ARGS]`
+
+usage: `./myapp orchestrator [OPTIONS] COMMAND [ARGS]`
 
 All commands are defined within the orchestrators themselves. Run `./myapp orchestrator` to list available commands.
 
@@ -466,22 +450,18 @@ All commands are defined within the orchestrators themselves. Run `./myapp orche
 #### Command: `restore`
 
 Restores a specified backup `.tgz` file from the configured backup folder.
-usage `./myapp restore BACKUP_FILE`
 
-| Command | Description |
-| ------- | ----------- |
-
-
-No commands available
+usage: `./myapp restore BACKUP_FILE`
 
 | Option | Description                     |
 | ------ | ------------------------------- |
 | --help | Show the help message and exit. |
 
-#### Command: `service`
+#### Command Group: `service`
 
 Runs application services. These are the long-running services which should only exit on command.
-usage `./myapp service [OPTIONS] COMMAND [ARGS]`
+
+usage: `./myapp service [OPTIONS] COMMAND [ARGS]`
 
 | Command  | Description                                                                               |
 | -------- | ----------------------------------------------------------------------------------------- |
@@ -493,10 +473,11 @@ usage `./myapp service [OPTIONS] COMMAND [ARGS]`
 | ------ | ------------------------------- |
 | --help | Show the help message and exit. |
 
-#### Command: `task`
+#### Command Group: `task`
 
 Runs application tasks. These are short-lived services which should exit when the task is complete.
-usage `./myapp task [OPTIONS] COMMAND [ARGS]`
+
+usage: `./myapp task [OPTIONS] COMMAND [ARGS]`
 
 | Command | Description                        |
 | ------- | ---------------------------------- |
@@ -509,13 +490,8 @@ usage `./myapp task [OPTIONS] COMMAND [ARGS]`
 #### Command: `view-backups`
 
 View a list of all backups in the configured backup folder.
-usage `./myapp view-backups`
 
-| Command | Description |
-| ------- | ----------- |
-
-
-No commands available
+usage: `./myapp view-backups`
 
 | Option | Description                     |
 | ------ | ------------------------------- |
