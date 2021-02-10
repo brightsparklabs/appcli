@@ -16,7 +16,7 @@ import tarfile
 from dataclasses import MISSING, dataclass, field, fields
 from datetime import datetime, timezone
 from pathlib import Path
-from tarfile import TarInfo
+from tarfile import TarFile, TarInfo
 from typing import List, Optional
 
 # vendor libraries
@@ -115,7 +115,7 @@ class BackupManager:
         cli_context: CliContext = ctx.obj
         logger.info("Initiating system backup")
 
-        logger.info("Stopping services ...")
+        logger.info("Stopping application services ...")
         services_cli = cli_context.commands["service"]
         try:
             ctx.invoke(services_cli.commands["shutdown"])
@@ -177,28 +177,27 @@ class BackupManager:
 
     def restore(self, ctx, backup_filename: Path):
         """Restore application data and configuration from the provided local backup `.tgz` file.
-        This will create a backup of the existing data and config, remove the contents `conf`, `data` and `conf/.generated` and then extract the backup to the appropriate locations.
-        `conf`, `data` and `conf/.generated` are mapped into appcli which means we keep the folder but replace their contents on restore.
+        This will create a backup of the existing data and config, remove the contents `conf`, `data` and
+        `conf/.generated` and then extract the backup to the appropriate locations.
+        `conf`, `data` and `conf/.generated` are mapped into appcli which means we keep the folder but replace their
+        contents on restore.
 
         Args:
             backup_filename (string): The name of the file to use in restoring data. The path of the file will be pulled from `CliContext.obj.backup_dir`.
         """
         cli_context: CliContext = ctx.obj
 
-        backup_dir: Path = cli_context.backup_dir
-        data_dir: Path = cli_context.data_dir
-        conf_dir: Path = cli_context.configuration_dir
-        backup_name: Path = Path(os.path.join(backup_dir, backup_filename))
-
         logger.info("Initiating system restore")
 
         # Check that the backup file exists.
+        backup_dir: Path = cli_context.backup_dir
+        backup_name: Path = Path(os.path.join(backup_dir, backup_filename))
         if not backup_name.is_file():
-            error_and_exit(f"Backup file {backup_name} not found.")
+            error_and_exit(f"Backup file [{backup_name}] not found.")
             return
 
         # Stop the system.
-        logger.info("Stopping system ...")
+        logger.info("Stopping application services ...")
         services_cli = cli_context.commands["service"]
         try:
             ctx.invoke(services_cli.commands["shutdown"])
@@ -212,26 +211,28 @@ class BackupManager:
         restore_backup_name = self.backup(
             ctx, allow_rolling_deletion=False
         )  # False ensures we don't accidentally delete our backup
-        logger.info(f"Backup generated before restore was: {restore_backup_name}")
+        logger.info(f"Backup generated before restore was: [{restore_backup_name}]")
 
         # Extract conf and data directories from the tar.
         # This will overwrite the contents of each directory, anything not in the backup (such as files matching the glob pattern) will be left alone.
         try:
             with tarfile.open(backup_name) as tar:
+                conf_dir: Path = cli_context.configuration_dir
                 tar.extractall(conf_dir, members=self.__members(tar, "conf/"))
+                data_dir: Path = cli_context.data_dir
                 tar.extractall(data_dir, members=self.__members(tar, "data/"))
 
         except Exception as e:
             logger.error(f"Failed to extract backup. Reason: {e}")
 
-        logger.info("Restore complete. The application has been shut down.")
+        logger.info("Restore completed. Application services have been shut down.")
 
-    def __members(self, tf, subfolder: str):
+    def __members(self, tf: TarFile, subfolder: str):
         """Helper function for extracting folders from a tar ball.
         Will allow extracted files to exclude the provided subfolder from their extracted path.
 
         Args:
-            tf (tar): The tar file to extract.
+            tf (TarFile): The tar file to extract.
             subfolder (string): The subfolder to exclude from the extraction path.
         """
         length_of_subfolder = len(subfolder)
@@ -246,7 +247,7 @@ class BackupManager:
     def view_backups(self, ctx):
         """Display a list of available backups that were found in the backup folder."""
         cli_context: CliContext = ctx.obj
-        logger.info("Displaying all available backups.")
+        logger.info("Displaying all locally-available backups.")
 
         backup_dir: Path = cli_context.backup_dir
 
@@ -269,14 +270,15 @@ class BackupManager:
         now: datetime = datetime.now(timezone.utc).replace(microsecond=0)
         return f"{app_name.upper()}_{now.isoformat()}.tgz"
 
-    def __rolling_backup_deletion(self, app_name: str, backup_dir: Path):
+    def __rolling_backup_deletion(self, backup_dir: Path):
         """Delete old backups, will only keep the most recent backups.
         The number of backups to keep is specified in the stack settings configuration file.
-        Any files in the backup directory that do not match the filename pattern will be excluded
-        from deletion and will not count towards the number of backups to keep.
+        Note that the age of the backup is derived from the alphanumerical order of the backup filename.
+        This means that any supplementary files in the backup directory could have unintended consequences during
+        rolling deletion.
+        Backup files are intentionally named with a datetime stamp to enable age ordering.
 
         Args:
-            app_name: (str). The application name to be used in the naming of the tgz file.
             backup_dir (Path): The directory that contains the backups.
         """
 
@@ -288,10 +290,11 @@ class BackupManager:
             f"Removing old backups - retaining at least the last [{self.backup_limit}] backups ..."
         )
 
-        # 'Get all files from our backup directory
+        # Get all files from our backup directory
         backup_files = os.listdir(backup_dir)
 
-        # Sort the backups by the DateTime specified in the filename.
+        # Sort the backups alphanumerically by filename. Note that this assumes all files in the backup dir are backup
+        # files that use a time-sortable naming convention.
         backup_dir_files = sorted(
             backup_files,
             reverse=True,
