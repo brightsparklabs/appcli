@@ -6,7 +6,8 @@ Commands for backup and restoration of application configuration and data.
 
 Responsible for creating local backups, remote (offsite) backups and restoring from a local backup.
 Pulls configuration from `stack-settings.yml`.
-If no `backup` section is present in the configuration a local backup is still taken with nothing excluded and rolling backup deletion disabled.
+If no `backup` section is present in the configuration, a local backup is still taken with nothing excluded and rolling
+backup deletion disabled.
 See the README for further details on backup configuration.
 _______________________________________________________________________________
 
@@ -20,9 +21,8 @@ import traceback
 # vendor libraries
 import click
 
-from appcli.backup_manager.backup_manager import BackupManager
-
 # local libraries
+from appcli.backup_manager.backup_manager import BackupManager
 from appcli.commands.appcli_command import AppcliCommand
 from appcli.configuration_manager import ConfigurationManager
 from appcli.functions import error_and_exit
@@ -32,10 +32,11 @@ from appcli.models.configuration import Configuration
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
-# ------------------------------------------------------------------------------
+# ------------------1------------------------------------------------------------
 
+# The name of the key for the backup block in the stack settings file.
 BACKUP = "backup"
-""" The name of the key for the backup block in the stack settings file. """
+
 # ------------------------------------------------------------------------------
 # CLASSES
 # ------------------------------------------------------------------------------

@@ -13,7 +13,7 @@ www.brightsparklabs.com
 # standard libraries
 import os
 import tarfile
-from dataclasses import dataclass, field, fields, MISSING
+from dataclasses import MISSING, dataclass, field, fields
 from datetime import datetime, timezone
 from pathlib import Path
 from tarfile import TarInfo
