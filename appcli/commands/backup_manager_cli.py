@@ -143,7 +143,7 @@ class BackupManagerCli:
         configuration = ConfigurationManager(cli_context, self.cli_configuration)
         try:
             stack_variables = configuration.get_stack_variable(BACKUP)
-        except KeyError as e:
+        except (KeyError, TypeError) as e:
             error_and_exit(f"No backup key found in stack settings. [{e}]")
 
         if stack_variables is None:
