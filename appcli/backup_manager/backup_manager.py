@@ -23,8 +23,7 @@ from typing import List, Optional
 from dataclasses_json import dataclass_json
 
 # local libraries
-from appcli.backup_manager.remote_strategy import RemoteBackup
-from appcli.backup_manager.remote_strategy_factory import RemoteStrategyFactory
+from appcli.backup_manager.remote_strategy import RemoteBackup, RemoteBackupStrategy
 from appcli.functions import error_and_exit
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
@@ -71,25 +70,21 @@ class BackupManager:
     # PUBLIC METHODS
     # ------------------------------------------------------------------------------
 
-    def get_remote_strategies(self):
-        """
-        Get a list of remote strategy objects that represent valid remote strategies that should be ran today.
+    def get_remote_strategies(self) -> List[RemoteBackup]:
+        """Get a list of remote strategy objects that represent valid remote strategies that should be ran today.
 
         Returns:
-            A list of remote strategy objects.
+            List[RemoteBackup]: A list of configured remote backups.
         """
 
-        backup_strategies = []
+        backup_strategies: List[RemoteBackup] = []
 
-        for backup in self.remote:
+        for remote_configuration in self.remote:
 
             try:
-                remote_backup = RemoteBackup.from_dict(backup)
-
-                remote_backup.strategy = RemoteStrategyFactory.get_strategy(
-                    remote_backup.strategy_type, remote_backup.configuration
+                remote_backup: RemoteBackup = RemoteBackup.from_dict(
+                    remote_configuration
                 )
-                remote_backup.strategy.name = remote_backup.name
 
                 if remote_backup.should_run():
                     backup_strategies.append(remote_backup)
@@ -160,14 +155,14 @@ class BackupManager:
 
         return backup_name
 
-    def __glob_tar_filter(self, tarinfo: TarInfo):
+    def __glob_tar_filter(self, tarinfo: TarInfo) -> TarInfo:
         """
         Filter function for excluding files from the tgz if their full path matches any glob patterns set in the config.
 
         Args:
             tarinfo: (TarInfo). A TarInfo object that represents the current file.
         Returns:
-            The TarInfo object if we want to include it in the tgz, None if we want to skip this file.
+            [TarInfo]: The TarInfo object if we want to include it in the tgz, None if we want to skip this file.
         """
 
         if any((Path(tarinfo.name).match(glob)) for glob in self.ignore_list):

@@ -67,7 +67,7 @@ class BackupManagerCli:
                 AppcliCommand.BACKUP
             )
 
-            backup_manager = self.__create_backup_manager(cli_context)
+            backup_manager: BackupManager = self.__create_backup_manager(cli_context)
 
             # Create a local backup
             backup_filename = backup_manager.backup(ctx)
@@ -103,7 +103,7 @@ class BackupManagerCli:
                 AppcliCommand.RESTORE, force
             )
 
-            backup_manager = self.__create_backup_manager(cli_context)
+            backup_manager: BackupManager = self.__create_backup_manager(cli_context)
 
             backup_manager.restore(ctx, backup_file)
 
@@ -121,7 +121,7 @@ class BackupManagerCli:
                 AppcliCommand.VIEW_BACKUPS, force
             )
 
-            backup_manager = self.__create_backup_manager(cli_context)
+            backup_manager: BackupManager = self.__create_backup_manager(cli_context)
 
             backup_manager.view_backups(ctx)
 
@@ -132,7 +132,7 @@ class BackupManagerCli:
             "view_backups": view_backups,
         }
 
-    def __create_backup_manager(self, cli_context: CliContext):
+    def __create_backup_manager(self, cli_context: CliContext) -> BackupManager:
         """
         Create a BackupManager object from the `backup` section of the stack settings configuration file.
 
