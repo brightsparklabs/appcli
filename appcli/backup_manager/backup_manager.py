@@ -23,7 +23,7 @@ from typing import List, Optional
 from dataclasses_json import dataclass_json
 
 # local libraries
-from appcli.backup_manager.remote_strategy import RemoteBackup, RemoteBackupStrategy
+from appcli.backup_manager.remote_strategy import RemoteBackup
 from appcli.functions import error_and_exit
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
