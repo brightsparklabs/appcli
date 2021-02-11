@@ -19,8 +19,7 @@ import click
 
 # local libraries
 from appcli.commands.appcli_command import AppcliCommand
-from appcli.crypto import crypto
-from appcli.crypto.cipher import Cipher
+from appcli.commands.helpers import encrypt_helper
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
@@ -41,21 +40,14 @@ class EncryptCli:
         self.configuration: Configuration = configuration
 
         @click.command(help="Encrypts the specified string.")
-        @click.argument("text")
+        @click.argument("text", required=False)
         @click.pass_context
         def encrypt(ctx, text: str):
             cli_context: CliContext = ctx.obj
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.ENCRYPT
             )
-            key_file: Path = cli_context.get_key_file()
-            if not key_file.is_file():
-                logger.info("Creating encryption key at [%s]", key_file)
-                crypto.create_and_save_key(key_file)
-
-            cipher = Cipher(key_file)
-            result = cipher.encrypt(text)
-            print(result)
+            print(encrypt_helper(cli_context, text))
 
         # expose the CLI command
         self.commands = {"encrypt": encrypt}

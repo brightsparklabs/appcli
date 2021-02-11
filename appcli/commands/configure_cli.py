@@ -20,6 +20,7 @@ import click
 # local libraries
 from appcli.commands.appcli_command import AppcliCommand
 from appcli.commands.configure_template_cli import ConfigureTemplateCli
+from appcli.commands.helpers import encrypt_helper
 from appcli.configuration_manager import ConfigurationManager
 from appcli.functions import print_header
 from appcli.logger import logger
@@ -145,21 +146,34 @@ class ConfigureCli:
             type=click.Choice(StringTransformer.get_types()),
             default=StringTransformer.get_string_transformer_type(),
         )
+        @click.option(
+            "-e",
+            "--encrypted",
+            is_flag=True,
+        )
         @click.argument("setting")
-        @click.argument("value")
+        @click.argument("value", required=False)
         @click.pass_context
-        def set(ctx, type, setting, value):
+        def set(ctx, type, encrypted, setting, value):
             cli_context: CliContext = ctx.obj
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.CONFIGURE_SET
             )
+
+            # Check if value was not provided
+            if value is None:
+                value = click.prompt("Please enter a value", type=str)
 
             # Transform input value as type
             transformed_value = StringTransformer.transform(value, type)
 
             # Set settings value
             configuration = ConfigurationManager(cli_context, self.cli_configuration)
-            configuration.set_variable(setting, transformed_value)
+            if encrypted:
+                final_value = encrypt_helper(cli_context, transformed_value)
+            else:
+                final_value = transformed_value
+            configuration.set_variable(setting, final_value)
             logger.debug(f"Successfully set variable [{setting}] to [{value}].")
 
         @configure.command(
