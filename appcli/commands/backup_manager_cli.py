@@ -73,18 +73,18 @@ class BackupManagerCli:
             backup_filename = backup_manager.backup(ctx)
 
             # Get any remote backup strategies.
-            remote_strategies = backup_manager.get_remote_strategies()
+            remote_backups = backup_manager.get_remote_backups()
 
             # Get the key file for decrypting encrypted values used in a remote backup.
             key_file = cli_context.get_key_file()
 
             # Execute each of the remote backup strategies with the local backup file.
-            for backup_strategy in remote_strategies:
+            for remote_backup in remote_backups:
                 try:
-                    backup_strategy.backup(backup_filename, key_file)
+                    remote_backup.backup(backup_filename, key_file)
                 except Exception as e:
                     logger.error(
-                        f"Error while executing remote strategy [{backup_strategy.name}] - {e}"
+                        f"Error while executing remote strategy [{remote_backup.name}] - {e}"
                     )
                     traceback.print_exc()
 

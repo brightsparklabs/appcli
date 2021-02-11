@@ -70,7 +70,7 @@ class BackupManager:
     # PUBLIC METHODS
     # ------------------------------------------------------------------------------
 
-    def get_remote_strategies(self) -> List[RemoteBackup]:
+    def get_remote_backups(self) -> List[RemoteBackup]:
         """Get a list of remote strategy objects that represent valid remote strategies that should be ran today.
 
         Returns:
