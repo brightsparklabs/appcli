@@ -152,7 +152,7 @@ class AwsS3Strategy(RemoteBackupStrategy):
     access_key: str
     """ The AWS access key. """
     secret_key: str
-    """ The AWS secret key. """
+    """ The AWS secret key, encrypted with appcli 'encrypt' command. """
     bucket_name: str
     """ The name of the S3 bucket to upload the backup to. """
     bucket_path: Optional[str] = ""
@@ -179,9 +179,12 @@ class AwsS3Strategy(RemoteBackupStrategy):
         """
         # Decrypt our secret key.
         cipher = Cipher(key_file)
-
-        # TODO: Should log a nicer error if it cannot decrypt the value. ValueError is raised.
-        secret_key = cipher.decrypt(self.secret_key)
+        try:
+            secret_key = cipher.decrypt(self.secret_key)
+        except ValueError as e:
+            raise ValueError(
+                "Could not decrypt 'secret_key' - must be encrypted with 'encrypt' command."
+            ) from e
 
         # Table of configuration variables to print
         table = [
@@ -217,7 +220,7 @@ class AwsS3Strategy(RemoteBackupStrategy):
             # Wrap the ClientError with the bucket name.
             raise ClientError(
                 f"Failed to upload backup to bucket {self.bucket_name} - {e}"
-            )
+            ) from e
 
 
 class RemoteStrategyFactory:

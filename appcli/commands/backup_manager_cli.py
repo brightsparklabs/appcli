@@ -86,7 +86,7 @@ class BackupManagerCli:
                     logger.error(
                         f"Error while executing remote strategy [{backup_strategy.name}] - {e}"
                     )
-                    logger.debug(traceback.print_exc())
+                    traceback.print_exc()
 
         @click.command(help="Restore a backup of application data and configuration.")
         @click.argument("backup_file")
