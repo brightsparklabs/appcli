@@ -180,7 +180,7 @@ class AwsS3Strategy(RemoteBackupStrategy):
         # Decrypt our secret key.
         cipher = Cipher(key_file)
         try:
-            secret_key = cipher.decrypt(self.secret_key)
+            decrypted_secret_key = cipher.decrypt(self.secret_key)
         except ValueError as e:
             raise ValueError(
                 "Could not decrypt 'secret_key' - must be encrypted with 'encrypt' command."
@@ -205,13 +205,14 @@ class AwsS3Strategy(RemoteBackupStrategy):
         s3 = boto3.client(
             "s3",
             aws_access_key_id=self.access_key,
-            aws_secret_access_key=secret_key,
+            aws_secret_access_key=decrypted_secret_key,
         )
         try:
+            # rstrip("/") the bucket path so we don't get nested into a folder called '/'
             s3.upload_file(
                 backup_filename,
                 self.bucket_name,
-                self.bucket_path + "/" + os.path.basename(backup_filename),
+                self.bucket_path.rstrip("/") + "/" + os.path.basename(backup_filename),
                 # `Tagging` accepts a url like encoded string of tags.
                 # i.e "key1=value1&key2=value2&..."
                 ExtraArgs={"Tagging": urllib.parse.urlencode(self.tags)},

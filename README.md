@@ -206,7 +206,7 @@ The available configuration keys for an S3 backup are:
 | bucket_name | The name of the bucket to upload to.                                                                                        |
 | access_key  | The AWS Access key ID for the account to upload with.                                                                       |
 | secret_key  | The AWS Secret access key for the account to upload with. The value *must* be encrypted using the appcli `encrypt` command. |
-| bucket_path | The path in the S3 bucket to upload to.                                                                                     |
+| bucket_path | The path in the S3 bucket to upload to. Set this to an empty string to upload to the root of the bucket.                    |
 | tags        | Key value pairs of tags to set on the backup object.                                                                        |
 
     # filename: stack-settings.yml
