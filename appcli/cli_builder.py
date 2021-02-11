@@ -20,6 +20,7 @@ import click
 from tabulate import tabulate
 
 # local libraries
+from appcli.commands.backup_manager_cli import BackupManagerCli
 from appcli.commands.configure_cli import ConfigureCli
 from appcli.commands.debug_cli import DebugCli
 from appcli.commands.encrypt_cli import EncryptCli
@@ -70,6 +71,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         MigrateCli,
         ServiceCli,
         TaskCli,
+        BackupManagerCli,
     ):
         commands = cli_class(configuration).commands
         default_commands.update(**commands)
@@ -129,6 +131,14 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         multiple=True,
         callback=extract_valid_environment_variable_names,
     )
+    @click.option(
+        "--backup-dir",
+        "-b",
+        help="Directory containing backups of the system.",
+        type=Path,
+        cls=NotRequiredOn,
+        not_required_on=("install"),
+    )
     @click.pass_context
     def cli(
         ctx,
@@ -139,6 +149,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         docker_credentials_file,
         additional_data_dir,
         additional_env_var,
+        backup_dir,
     ):
         if debug:
             logger.info("Enabling debug logging")
@@ -156,6 +167,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             app_name=APP_NAME,
             app_version=APP_VERSION,
             commands=default_commands,
+            backup_dir=backup_dir,
         )
 
         if ctx.invoked_subcommand is None:
@@ -192,6 +204,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
                 f"{ctx.obj.get_generated_configuration_dir()}",
             ],
             ["Data directory", f"{ctx.obj.data_dir}"],
+            ["Backup directory", f"{ctx.obj.backup_dir}"],
             ["Environment", f"{ctx.obj.environment}"],
         ]
 
@@ -239,11 +252,13 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         ENV_VAR_CONFIG_DIR = f"{APP_NAME}_CONFIG_DIR"
         ENV_VAR_GENERATED_CONFIG_DIR = f"{APP_NAME}_GENERATED_CONFIG_DIR"
         ENV_VAR_DATA_DIR = f"{APP_NAME}_DATA_DIR"
+        ENV_VAR_BACKUP_DIR = f"{APP_NAME}_BACKUP_DIR"
         ENV_VAR_ENVIRONMENT = f"{APP_NAME}_ENVIRONMENT"
         launcher_set_mandatory_env_vars = [
             ENV_VAR_CONFIG_DIR,
             ENV_VAR_GENERATED_CONFIG_DIR,
             ENV_VAR_DATA_DIR,
+            ENV_VAR_BACKUP_DIR,
             ENV_VAR_ENVIRONMENT,
         ]
 

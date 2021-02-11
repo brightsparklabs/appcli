@@ -44,6 +44,7 @@ function generate_launcher()
         {{ configuration.docker_image }}:{{ cli_context.app_version }} \
             --configuration-dir "{{ cli_context.configuration_dir }}" \
             --data-dir "{{ cli_context.data_dir }}" \
+            --backup-dir "{{cli_context.backup_dir }}" \
             --environment "{{ cli_context.environment }}" \
 {% if cli_context.docker_credentials_file %}
             --docker-credentials-file "{{ cli_context.docker_credentials_file }}" \

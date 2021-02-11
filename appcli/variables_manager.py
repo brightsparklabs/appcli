@@ -44,12 +44,13 @@ class VariablesManager:
 
         Args:
             path (str): Dot notation for the setting. E.g. insilico.external.database.host
+
+        Throws:
+            Exception: Failed to find the configuration key.
         """
         configuration = self.__get_configuration()
-        try:
-            return reduce(lambda e, k: e[k], path.split("."), configuration)
-        except Exception:
-            return ""
+        variable = reduce(lambda e, k: e[k], path.split("."), configuration)
+        return variable if variable else None
 
     def get_all_variables(self):
         return self.__get_configuration()

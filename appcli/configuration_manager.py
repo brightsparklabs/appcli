@@ -190,6 +190,15 @@ class ConfigurationManager:
         """Get the variables manager for the current configuration"""
         return VariablesManager(self.cli_context.get_app_configuration_file())
 
+    def get_stack_variable(self, variable: str):
+        return self.__get_stack_variables_manager().get_variable(variable)
+
+    def set_stack_variable(self, variable: str, value: any):
+        return self.__get_stack_variables_manager().set_variable(variable, value)
+
+    def __get_stack_variables_manager(self):
+        return VariablesManager(self.cli_context.get_stack_configuration_file())
+
     def __create_new_configuration_branch_and_files(self):
 
         app_version: str = self.cli_context.app_version
@@ -240,6 +249,14 @@ class ConfigurationManager:
         )
         os.makedirs(target_app_configuration_file.parent, exist_ok=True)
         shutil.copy2(seed_app_configuration_file, target_app_configuration_file)
+
+        stack_configuration_file = self.cli_configuration.stack_configuration_file
+        target_stack_configuration_file = (
+            self.cli_context.get_stack_configuration_file()
+        )
+        # Copy in the stack configuration file
+        if stack_configuration_file.is_file():
+            shutil.copy2(stack_configuration_file, target_stack_configuration_file)
 
         # Create the configurable templates directory
         logger.info("Copying configurable templates ...")

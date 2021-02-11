@@ -31,6 +31,9 @@ The library exposes the following environment variables to the `docker-compose.y
 The `docker-compose.yml` can be templated by renaming to `docker-compose.yml.j2`, and setting
 variables within the `settings.yml` file as described in the Installation section.
 
+Stack variables can be set within the `stack-settings.yml` file as described in the
+`Build configuration template directories` section.
+
 ## Installation
 
 ### Add the library to your python CLI application
@@ -95,11 +98,144 @@ variables within the `settings.yml` file as described in the Installation sectio
 
 - Store any Jinja2 variable definitions you wish to use in your configuration
   template files in `resources/settings.yml`.
+- Store any appcli stack specific keys in `resources/stack-settings.yml`.
 - Store your `docker-compose.yml`/`docker-compose.yml.j2` file in `resources/templates/baseline/`.
 - Configuration files (Jinja2 compatible templates or otherwise) can be stored in one
   of two locations:
   - `resources/templates/baseline` - for templates which the end user **is not** expected to modify.
   - `resources/templates/configurable` - for templates which the end user is expected to modify.
+
+### Configure application backup
+
+Appcli's `backup` command creates backups of configuration and data of an application, stored locally in the
+backup directory. The settings for backup are configurable through a `backup` block in `stack-settings.yml`.
+
+The available keys for the `backup` block are:
+
+| key          | Description                                                                                       |
+| ------------ | ------------------------------------------------------------------------------------------------- |
+| backup_limit | The number of local backups to keep.                                                              |
+| ignore_list  | The ignore list is a list of glob patterns used to specify what files to exclude from the backup. |
+| remote       | The list of remote backup strategies.                                                             |
+
+    # filename: stack-settings.yml
+
+    backup:
+        backup_limit: 0
+        ignore_list:
+        remote:
+
+#### Backup limit
+
+A rolling deletion strategy is used to remove local backups, in order to keep `backup_limit` number of backups.
+
+If more than `backup_limit` number of backups exist in the backup directory, the oldest backups will be deleted.
+
+Set this value to `0` to keep all backups.
+
+#### Ignore lists
+
+The `ignore_list` list in `stack-settings.yml` can contain a list of glob patterns as strings. If any of the patterns
+match a file's full path, it will be excluded from the backup.
+
+The following example will exclude any file in any directories that end with `metastore`:
+
+    # filename: stack-settings.yml
+
+    backup:
+        backup_limit: 0
+        ignore_list:
+            - "*metastore/*"
+        remote:
+
+If you want to back up every file, do not add any entries to the `ignore_list`.
+
+#### Remote backup
+
+Appcli supports pushing local backups to remote storage. The list of strategies for pushing to remote storage are
+defined within the `remote` block.
+
+The available keys for every remote backup strategy are:
+
+| key           | Description                                                                 |
+| ------------- | --------------------------------------------------------------------------- |
+| name          | A short name or description used to describe this backup.                   |
+| strategy_type | The type of this backup, must match an implemented remote backup strategy.  |
+| frequency     | The cron-like frequency at which remote backups will execute.               |
+| configuration | Custom configuration block that is specific to each remote backup strategy. |
+
+    # filename: stack-settings.yml
+
+    backup:
+        backup_limit: 0
+        ignore_list:
+            - "*metastore/*"
+        remote:
+        - name: "daily_S3"
+          strategy_type: "S3"
+          frequency: "* * *"
+          configuration:
+
+##### Freqency
+
+Running the `backup` command will attempt to invoke all remote backup strategies. Appcli supports limiting the number of
+backups it will push to remote storage by using a cron-like frequency filter. Due to implementation limitations, the
+filtering is only applied on a day-by-day basis, which assumes backups are run only once-daily.
+
+When the `backup` command is run, each remote strategy will check if the `frequency` pattern matches today's date. Only
+strategies whose `frequency` pattern match today's date will execute.
+
+The input pattern `pattern` is concatenated to `"* * "` and used as a standard cron expression to check for a match.
+i.e. `"* * $pattern"`.
+
+Examples:
+
+- `"* * *"` (cron `"* * * * *"`) will always run.
+- `"* * 0"` (cron `"* * * * 0"`) will only run on Sunday.
+- `"1 */3 *"` (cron `"* * 1 */3 *"`) will only run on the first day-of-month of every 3rd month.
+
+##### Strategies
+
+###### AWS S3 remote strategy
+
+To use S3 remote backup, set `strategy_type` to `S3`.
+The available configuration keys for an S3 backup are:
+
+| key         | Description                                                                                                                 |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------- |
+| bucket_name | The name of the bucket to upload to.                                                                                        |
+| access_key  | The AWS Access key ID for the account to upload with.                                                                       |
+| secret_key  | The AWS Secret access key for the account to upload with. The value *must* be encrypted using the appcli `encrypt` command. |
+| bucket_path | The path in the S3 bucket to upload to. Set this to an empty string to upload to the root of the bucket.                    |
+| tags        | Key value pairs of tags to set on the backup object.                                                                        |
+
+    # filename: stack-settings.yml
+
+    backup:
+        backup_limit: 0
+        ignore_list:
+            - "*metastore/*"
+        remote:
+        - name: "weekly_S3"
+          strategy_type: "S3"
+          frequency: "* * *"
+          configuration:
+            bucket_name: "aws.s3.bucket"
+            access_key: "aws_access_key"
+            secret_key: "enc:id=1:encrypted_text:end"
+            bucket_path: "bucket/path"
+            tags:
+                frequency: "weekly"
+                type: "data"
+
+### Restoring a remote backup
+
+To restore from a remote backup:
+
+1. Acquire the remote backup (`.tgz` file) that you wish to restore. For S3 this can be done by downloading the backup from the specified bucket.
+2. Place the backup `myapp_date.tgz` file in the backup directory. By default this will be `/opt/brightsparklabs/${APP_NAME}/production/backup/`
+3. Confirm that appcli can access the backup by running the `view-backups` command
+4. Run the restore command `./myapp restore BACKUP_FILE.tgz` e.g. `./myapp restore APP_2021-02-02T10:55:48+00:00.tgz`. The restore process will trigger a backup.
 
 ### Define a container for your CLI application
 
@@ -159,6 +295,7 @@ The above will use the following defaults:
 - `install-dir` => `/opt/brightsparklabs/${APP_NAME}/production/`.
 - `configuration-dir` => `/opt/brightsparklabs/${APP_NAME}/production/conf/`.
 - `data-dir` => `/opt/brightsparklabs/${APP_NAME}/production/data/`.
+- `backup-dir` => `/opt/brightsparklabs/${APP_NAME}/production/backup/`.
 
 You can modify any of the above if desired. E.g.
 
@@ -198,14 +335,17 @@ To be used in conjunction with your application `./myapp <command>` e.g. `./myap
 
 | Command      | Description                                                       |
 | ------------ | ----------------------------------------------------------------- |
+| backup       | Create a backup of application data and configuration.            |
 | configure    | Configures the application.                                       |
 | encrypt      | Encrypts the specified string.                                    |
 | init         | Initialises the application.                                      |
 | launcher     | Outputs an appropriate launcher bash script.                      |
 | migrate      | Migrates the configuration of the application to a newer version. |
 | orchestrator | Perform docker orchestration                                      |
+| restore      | Restore a backup of application data and configuration.           |
 | service      | Lifecycle management commands for application services.           |
 | task         | Commands for application tasks.                                   |
+| view-backups | View a list of locally-available backups.                         |
 
 ### Options
 
@@ -220,10 +360,22 @@ To be used in conjunction with your application `./myapp <command>` e.g. `./myap
 | -e, --additional-env-var TEXT      | Additional environment variables to expose to launcher container. Can be specified multiple times.                  |
 | --help                             | Show the help message and exit.                                                                                     |
 
-#### Command: `configure`
+#### Command: `backup`
+
+Creates a backup `.tgz` file in the backup directory that contains files from the configuration and data directory, as
+configured in `stack-settings.yml`. After the backup is taken, remote backup strategies will be executed (if applicable).
+
+usage: `./myapp backup`
+
+| Option | Description                     |
+| ------ | ------------------------------- |
+| --help | Show the help message and exit. |
+
+#### Command Group: `configure`
 
 Configures the application.
-usage `./myapp configure [OPTIONS] COMMAND [ARGS]`
+
+usage: `./myapp configure [OPTIONS] COMMAND [ARGS]`
 
 | Command  | Description                                                                                                               |
 | -------- | ------------------------------------------------------------------------------------------------------------------------- |
@@ -242,22 +394,18 @@ usage `./myapp configure [OPTIONS] COMMAND [ARGS]`
 #### Command: `encrypt`
 
 Encrypts the specified string.
-usage `./myapp encrypt [OPTIONS] TEXT`
 
-| Command | Description |
-| ------- | ----------- |
-
-
-No commands available
+usage: `./myapp encrypt [OPTIONS] TEXT`
 
 | Option | Description                     |
 | ------ | ------------------------------- |
 | --help | Show the help message and exit. |
 
-#### Command: `init`
+#### Command Group: `init`
 
 Initialises the application.
-usage `./myapp init [OPTIONS] COMMAND [ARGS]`
+
+usage: `./myapp init [OPTIONS] COMMAND [ARGS]`
 
 | Command  | Description                                                              |
 | -------- | ------------------------------------------------------------------------ |
@@ -270,13 +418,8 @@ usage `./myapp init [OPTIONS] COMMAND [ARGS]`
 #### Command: `launcher`
 
 Outputs an appropriate launcher bash script to stdout.
-usage `./myapp launcher [OPTIONS]`
 
-| Command | Description |
-| ------- | ----------- |
-
-
-No commands available
+usage: `./myapp launcher [OPTIONS]`
 
 | Option | Description                     |
 | ------ | ------------------------------- |
@@ -285,22 +428,18 @@ No commands available
 #### Command: `migrate`
 
 Migrates the application configuration to work with the current application version.
-usage `./myapp migrate [OPTIONS]`
 
-| Command | Description |
-| ------- | ----------- |
-
-
-No commands available
+usage: `./myapp migrate [OPTIONS]`
 
 | Option | Description                     |
 | ------ | ------------------------------- |
 | --help | Show the help message and exit. |
 
-#### Command: `orchestrator`
+#### Command Group: `orchestrator`
 
 Perform tasks defined by the orchestrator.
-usage `./myapp orchestrator [OPTIONS] COMMAND [ARGS]`
+
+usage: `./myapp orchestrator [OPTIONS] COMMAND [ARGS]`
 
 All commands are defined within the orchestrators themselves. Run `./myapp orchestrator` to list available commands.
 
@@ -308,10 +447,21 @@ All commands are defined within the orchestrators themselves. Run `./myapp orche
 | ------ | ------------------------------ |
 | --help | Show the help message and exit |
 
-#### Command: `service`
+#### Command: `restore`
+
+Restores a specified backup `.tgz` file from the configured backup folder.
+
+usage: `./myapp restore BACKUP_FILE`
+
+| Option | Description                     |
+| ------ | ------------------------------- |
+| --help | Show the help message and exit. |
+
+#### Command Group: `service`
 
 Runs application services. These are the long-running services which should only exit on command.
-usage `./myapp service [OPTIONS] COMMAND [ARGS]`
+
+usage: `./myapp service [OPTIONS] COMMAND [ARGS]`
 
 | Command  | Description                                                                               |
 | -------- | ----------------------------------------------------------------------------------------- |
@@ -323,14 +473,25 @@ usage `./myapp service [OPTIONS] COMMAND [ARGS]`
 | ------ | ------------------------------- |
 | --help | Show the help message and exit. |
 
-#### Command: `task`
+#### Command Group: `task`
 
 Runs application tasks. These are short-lived services which should exit when the task is complete.
-usage `./myapp task [OPTIONS] COMMAND [ARGS]`
+
+usage: `./myapp task [OPTIONS] COMMAND [ARGS]`
 
 | Command | Description                        |
 | ------- | ---------------------------------- |
 | run     | Runs a specified application task. |
+
+| Option | Description                     |
+| ------ | ------------------------------- |
+| --help | Show the help message and exit. |
+
+#### Command: `view-backups`
+
+View a list of all backups in the configured backup folder.
+
+usage: `./myapp view-backups`
 
 | Option | Description                     |
 | ------ | ------------------------------- |

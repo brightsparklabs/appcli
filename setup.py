@@ -64,6 +64,9 @@ setup(
         "pycryptodome==3.9.8",
         "ruamel-yaml==0.16.10",
         "tabulate==0.8.7",
+        "boto3==1.16.62",
+        "cronex==0.1.3.1",
+        "dataclasses-json==0.5.2",
     ],
     extras_require={"dev": ["black", "flake8", "isort", "pytest"]},
 )
