@@ -10,6 +10,10 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ## [Unreleased]
 
+---
+
+## [1.1.3] - (17/02/2021)
+
 ### Added
 
 - `backup` and `restore` commands and its associated configuration.
