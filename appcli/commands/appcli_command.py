@@ -52,3 +52,7 @@ class AppcliCommand(Enum):
     TASK_RUN = auto()
 
     ORCHESTRATOR = auto()
+
+    BACKUP = auto()
+    RESTORE = auto()
+    VIEW_BACKUPS = auto()

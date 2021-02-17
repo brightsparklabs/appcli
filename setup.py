@@ -57,13 +57,16 @@ setup(
     install_requires=[
         "click==7.1.2",
         "coloredlogs==14.0",
-        "GitPython==3.1.7",
+        "GitPython==3.1.12",
         "jinja2==2.11.2",
         "python-dotenv==0.14.0",
         "python-keycloak==0.22.0",
-        "pycryptodome==3.9.8",
+        "pycryptodome==3.10.1",
         "ruamel-yaml==0.16.10",
         "tabulate==0.8.7",
+        "boto3==1.16.62",
+        "cronex==0.1.3.1",
+        "dataclasses-json==0.5.2",
     ],
     extras_require={"dev": ["black", "flake8", "isort", "pytest"]},
 )

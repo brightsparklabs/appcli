@@ -59,10 +59,19 @@ class ConfigurationDirStateFactory:
     """Factory class to get the current ConfigurationDirState state class"""
 
     def get_state(
-        configuration_dir: Path, generated_configuration_dir: Path, app_version: str
+        configuration_dir: Path,
+        generated_configuration_dir: Path,
+        app_version: str,
+        backup_dir: Path,
     ) -> ConfigurationDirState:
         if configuration_dir is None:
             return NoDirectoryProvidedConfigurationDirState()
+
+        if backup_dir is None:
+            return NoDirectoryProvidedBackupDirState()
+
+        if not backup_dir.exists():
+            return BackupDirectoryDoesNotExist()
 
         if not ConfigurationDirStateFactory.__is_git_repo(configuration_dir):
             return UninitialisedConfigurationDirState()
@@ -130,6 +139,35 @@ class NoDirectoryProvidedConfigurationDirState(ConfigurationDirState):
         super().__init__(disallowed_command, disallowed_command_unless_forced)
 
 
+class NoDirectoryProvidedBackupDirState(ConfigurationDirState):
+    """Represents the backup dir state where appcli doesn't know the path to backup dir."""
+
+    def __init__(self) -> None:
+
+        disallowed_command = {
+            AppcliCommand.BACKUP: "Cannot backup due to missing backup directory. Run 'install'.",
+            AppcliCommand.RESTORE: "Cannot restore due to missing backup directory. Run 'install'.",
+            AppcliCommand.VIEW_BACKUPS: "Cannot view backups due to missing backup directory. Run 'install'.",
+        }
+        disallowed_command_unless_forced = {}
+
+        super().__init__(disallowed_command, disallowed_command_unless_forced)
+
+
+class BackupDirectoryDoesNotExist(ConfigurationDirState):
+    """Represents the backup dir state where the backup directory does not exist."""
+
+    def __init__(self) -> None:
+
+        disallowed_command = {
+            AppcliCommand.RESTORE: "Cannot restore due to missing backup directory. Run 'backup'.",
+            AppcliCommand.VIEW_BACKUPS: "Cannot view backups due to missing backup directory. Run 'backup'.",
+        }
+        disallowed_command_unless_forced = {}
+
+        super().__init__(disallowed_command, disallowed_command_unless_forced)
+
+
 class UninitialisedConfigurationDirState(ConfigurationDirState):
     """Represents the configuration dir state where config directory hasn't been initialised."""
 
@@ -138,7 +176,13 @@ class UninitialisedConfigurationDirState(ConfigurationDirState):
         default_error_message = "Cannot run command against uninitialised application. Run 'configure init'."
 
         disallowed_command = get_disallowed_command_from_allowed_commands(
-            [AppcliCommand.CONFIGURE_INIT, AppcliCommand.LAUNCHER],
+            [
+                AppcliCommand.CONFIGURE_INIT,
+                AppcliCommand.LAUNCHER,
+                AppcliCommand.BACKUP,
+                AppcliCommand.RESTORE,
+                AppcliCommand.VIEW_BACKUPS,
+            ],
             default_error_message,
         )
         disallowed_command_unless_forced = {}
@@ -259,11 +303,15 @@ class InvalidConfigurationDirState(ConfigurationDirState):
 
         default_error_message = f"Invalid configuration state, this error must be rectified before continuing. {error}"
 
+        # Remove the 'VIEW_BACKUPS' and 'RESTORE' commands from the set of 'disallowed' commands so that we can add them
+        # as 'disallowed unless forced' commands
         disallowed_command = get_disallowed_command_from_allowed_commands(
-            [], default_error_message
+            [AppcliCommand.VIEW_BACKUPS, AppcliCommand.RESTORE], default_error_message
         )
-        disallowed_command_unless_forced = {}
-
+        disallowed_command_unless_forced = {
+            AppcliCommand.VIEW_BACKUPS: default_error_message,
+            AppcliCommand.RESTORE: default_error_message,
+        }
         super().__init__(disallowed_command, disallowed_command_unless_forced)
 
 

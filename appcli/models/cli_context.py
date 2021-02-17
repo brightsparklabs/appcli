@@ -26,6 +26,9 @@ class CliContext(NamedTuple):
     data_dir: Path
     """ Directory to use for persistent data storage. """
 
+    backup_dir: Path
+    """ Directory to store backups in. """
+
     additional_data_dirs: Iterable[Tuple[str, Path]]
     """ Additional directories to use for persistent data storage. """
 
@@ -81,6 +84,7 @@ class CliContext(NamedTuple):
                 self.configuration_dir,
                 generated_configuration_dir,
                 self.app_version,
+                self.backup_dir,
             )
         )
         logger.debug(f"Derived configuration state [{configuration_dir_state}]")
@@ -117,6 +121,14 @@ class CliContext(NamedTuple):
             Path: location of the configuration file
         """
         return self.configuration_dir.joinpath("settings.yml")
+
+    def get_stack_configuration_file(self) -> Path:
+        """Get the location of the configuration file
+
+        Returns:
+            Path: location of the configuration file
+        """
+        return self.configuration_dir.joinpath("stack-settings.yml")
 
     def get_baseline_template_overrides_dir(self) -> Path:
         """Get the directory of the configuration template overrides
