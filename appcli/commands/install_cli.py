@@ -15,7 +15,7 @@ www.brightsparklabs.com
 """
 
 # standard library
-import importlib.resources as pkg_resources
+from importlib_resources import files
 from pathlib import Path
 
 # vendor libraries
@@ -72,8 +72,8 @@ class InstallCli:
             logger.info("Generating installer script ...")
 
             # Get the template from the appcli package
-            launcher_template = pkg_resources.read_text(
-                templates, INSTALLER_TEMPLATE_FILENAME
+            launcher_template = (
+                files(templates).joinpath(INSTALLER_TEMPLATE_FILENAME).read_text()
             )
             logger.debug(f"Read template file [{INSTALLER_TEMPLATE_FILENAME}]")
 

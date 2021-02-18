@@ -13,7 +13,7 @@ www.brightsparklabs.com
 
 # standard library
 import datetime
-import importlib.resources as pkg_resources
+from importlib_resources import files
 import os
 
 # vendor libraries
@@ -61,8 +61,8 @@ class LauncherCli:
             logger.info("Generating launcher script ...")
 
             # Get the template from the appcli package
-            launcher_template = pkg_resources.read_text(
-                templates, LAUNCHER_TEMPLATE_FILENAME
+            launcher_template = (
+                files(templates).joinpath(LAUNCHER_TEMPLATE_FILENAME).read_text()
             )
             logger.debug(f"Read template file [{LAUNCHER_TEMPLATE_FILENAME}]")
 
