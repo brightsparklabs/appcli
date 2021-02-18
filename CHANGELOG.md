@@ -12,14 +12,25 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ---
 
-## [1.1.3] - (17/02/2021)
+## [1.2.0] - (18/02/2021)
+
+### Breaking Changes from 1.1
+
+Appcli no longer exposes internal classes and methods via the root module. To access these classes and methods,
+any python referring to the library will need to use full module path references.
+
+### Fixed
+
+- Fixed module imports which were broken due to using `__init__.py`, swapped to using implicit namespace modules.
+
+## [1.1.3] - (17/02/2021) [BROKEN - DO NOT USE THIS VERSION]
 
 ### Added
 
 - `backup` and `restore` commands and its associated configuration.
 
 ---
-## [1.1.2] - (10/02/2021)
+## [1.1.2] - (10/02/2021) [BROKEN - DO NOT USE THIS VERSION]
 
 ### Added
 
