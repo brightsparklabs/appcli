@@ -27,7 +27,7 @@ def get_version():
         process = run(["git", "describe", "--dirty", "--always"], stdout=PIPE)
         line = process.stdout.strip().decode("utf-8")
         return line
-    except Exception as ex:
+    except Exception:
         return "UNKNOWN"
 
 
@@ -68,6 +68,7 @@ setup(
         "python-keycloak==0.22.0",
         "ruamel-yaml==0.16.10",
         "tabulate==0.8.7",
+        "wheel==0.36.2",
     ],
     extras_require={"dev": ["black", "flake8", "isort", "pytest"]},
 )

@@ -15,9 +15,12 @@ from pathlib import Path
 # vendor libraries
 import pytest
 
+
 # local libraries
-from appcli import CliContext, Configuration, DockerComposeOrchestrator
 from appcli.configuration_manager import ConfigurationManager
+from appcli.models.cli_context import CliContext
+from appcli.models.configuration import Configuration
+from appcli.orchestrators import DockerComposeOrchestrator
 
 # ------------------------------------------------------------------------------
 # CONSTANTS

@@ -15,11 +15,12 @@ www.brightsparklabs.com
 """
 
 # standard library
-from importlib_resources import files
 from pathlib import Path
 
 # vendor libraries
 import click
+from importlib_resources import files
+
 from jinja2 import StrictUndefined, Template
 
 # local libraries
