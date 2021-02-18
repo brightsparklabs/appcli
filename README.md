@@ -42,6 +42,11 @@ Stack variables can be set within the `stack-settings.yml` file as described in 
 
 ### Define the CLI for your application `myapp`
 
+*Note for appcli version 1.1.3 and below*: Import paths to access to appcli
+internal classes and methods is now by a full path, rather than being exposed
+at the root. This was done to allow access to all methods and classes using
+python3 implicit namespaced packages.
+
     # filename: myapp.py
 
     #!/usr/bin/env python3
@@ -53,7 +58,9 @@ Stack variables can be set within the `stack-settings.yml` file as described in 
     from pathlib import Path
 
     # vendor libraries
-    import appcli
+    from appcli.cli_builder import create_cli
+    from appcli.models.configuration import Configuration
+    from appcli.orchestrators import DockerComposeOrchestrator
 
     # ------------------------------------------------------------------------------
     # CONSTANTS
@@ -67,31 +74,32 @@ Stack variables can be set within the `stack-settings.yml` file as described in 
     # ------------------------------------------------------------------------------
 
     def main():
-        configuration = appcli.Configuration(
+        configuration = Configuration(
             app_name='myapp',
             docker_image='brightsparklabs/myapp',
             seed_app_configuration_file=Path(BASE_DIR, 'resources/settings.yml'),
+            stack_configuration_file=Path(BASE_DIR, 'resources/stack-settings.yml'),
             baseline_templates_dir=Path(BASE_DIR, 'resources/templates/baseline'),
             configurable_templates_dir=Path(BASE_DIR, 'resource/templates/configurable'),
-            orchestrator=appcli.DockerComposeOrchestrator(
-                docker_compose_file = Path("docker-compose.yml"),
-                docker_compose_override_directory = Path("docker-compose.override.d/"),
-                docker_compose_task_file = Path("docker-compose.tasks.yml"),
+            orchestrator=DockerComposeOrchestrator(
+                docker_compose_file = Path('docker-compose.yml'),
+                docker_compose_override_directory = Path('docker-compose.override.d/'),
+                docker_compose_task_file = Path('docker-compose.tasks.yml'),
                 docker_compose_task_override_directory = Path(
-                    "docker-compose.tasks.override.d/"
+                    'docker-compose.tasks.override.d/'
                 ),
             ),
-            mandatory_additional_data_dirs=["EXTRA_DATA",],
-            mandatory_additional_env_variables=["ENV_VAR_2",],
+            mandatory_additional_data_dirs=['EXTRA_DATA',],
+            mandatory_additional_env_variables=['ENV_VAR_2',],
         )
-        cli = appcli.create_cli(configuration)
+        cli = create_cli(configuration)
         cli()
 
     # ------------------------------------------------------------------------------
     # ENTRYPOINT
     # ------------------------------------------------------------------------------
 
-    if __name__ == "__main__":
+    if __name__ == '__main__':
         main()
 
 ### Build configuration template directories
