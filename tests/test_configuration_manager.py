@@ -15,7 +15,6 @@ from pathlib import Path
 # vendor libraries
 import pytest
 
-
 # local libraries
 from appcli.configuration_manager import ConfigurationManager
 from appcli.models.cli_context import CliContext
