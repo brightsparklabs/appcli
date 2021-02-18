@@ -15,7 +15,7 @@ from os import path
 from subprocess import PIPE, run
 
 # always prefer setuptools over distutils
-from setuptools import find_packages, setup
+from setuptools import find_namespace_packages, setup
 
 # ------------------------------------------------------------------------------
 # UTILITY FUNCTIONS
@@ -52,7 +52,7 @@ setup(
     author="brightSPARK Labs",
     author_email="enquire@brightsparklabs.com",
     url="www.brightsparklabs.com",
-    packages=find_packages(exclude=["contrib", "docs", "tests"]),
+    packages=find_namespace_packages(exclude=["contrib", "docs", "tests"]),
     include_package_data=True,
     install_requires=[
         "click==7.1.2",
