@@ -62,7 +62,7 @@ setup(
         "dataclasses-json==0.5.2",
         "GitPython==3.1.12",
         "importlib-resources==5.1.0",
-        "jinja2==2.11.2",
+        "jinja2==2.11.3",
         "pycryptodome==3.10.1",
         "python-dotenv==0.14.0",
         "python-keycloak==0.22.0",
