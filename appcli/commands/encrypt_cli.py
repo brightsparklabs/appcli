@@ -19,10 +19,10 @@ import click
 
 # local libraries
 from appcli.commands.appcli_command import AppcliCommand
-from appcli.commands.helpers import encrypt_helper
-from appcli.logger import logger
+from appcli.functions import encrypt_text
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
+
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -47,7 +47,10 @@ class EncryptCli:
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.ENCRYPT
             )
-            print(encrypt_helper(cli_context, text))
+            # Check if value was not provided
+            if text is None:
+                text = click.prompt("Please enter a value to encrypt: ", type=str)
+            print(encrypt_text(cli_context, text))
 
         # expose the CLI command
         self.commands = {"encrypt": encrypt}
