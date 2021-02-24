@@ -468,6 +468,7 @@ usage: `./myapp service [OPTIONS] COMMAND [ARGS]`
 | logs     | Prints logs from all services.                                                            |
 | shutdown | Shuts down the system. If a service name is provided, shuts down the single service only. |
 | start    | Starts the system. If a service name is provided, starts the single service only.         |
+| restart  | Stops the system, If the --apply flag is provided a configure apply occurs, the system is then restarted. If a service name is provided, restarts the single service only. |
 
 | Option | Description                     |
 | ------ | ------------------------------- |

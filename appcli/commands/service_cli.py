@@ -67,7 +67,7 @@ class ServiceCli:
         @click.argument("service_name", required=False, type=click.STRING)
         @click.pass_context
         def restart(ctx, force, apply, service_name):
-            """Restarts services
+            """Restarts service(s)
 
             Args:
                 ctx (Context): Click Context for current CLI.
