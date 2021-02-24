@@ -54,6 +54,7 @@ def print_header(title):
         title.upper(),
     )
 
+
 def encrypt_text(cli_context, text):
     """Encrypts some text
 
@@ -68,7 +69,7 @@ def encrypt_text(cli_context, text):
 
     cipher = Cipher(key_file)
     if text is None:
-        raise ValueError("Text cannot be equal to None")    
+        raise ValueError("Text cannot be equal to None")
     else:
         result = cipher.encrypt(text)
     return result

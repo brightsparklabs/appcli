@@ -23,7 +23,6 @@ from appcli.functions import encrypt_text
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
 
-
 # ------------------------------------------------------------------------------
 # CLASSES
 # ------------------------------------------------------------------------------

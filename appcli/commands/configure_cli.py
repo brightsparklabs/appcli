@@ -21,13 +21,11 @@ import click
 from appcli.commands.appcli_command import AppcliCommand
 from appcli.commands.configure_template_cli import ConfigureTemplateCli
 from appcli.configuration_manager import ConfigurationManager
-from appcli.functions import print_header
-from appcli.functions import encrypt_text
+from appcli.functions import encrypt_text, print_header
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
 from appcli.string_transformer import StringTransformer
-
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
@@ -179,9 +177,15 @@ class ConfigureCli:
 
             # Set settings value
             configuration = ConfigurationManager(cli_context, self.cli_configuration)
-            final_value = (encrypt_text(cli_context, transformed_value) if encrypted else transformed_value)
+            final_value = (
+                encrypt_text(cli_context, transformed_value)
+                if encrypted
+                else transformed_value
+            )
             configuration.set_variable(setting, final_value)
-            logger.debug(f"Successfully set variable [{setting}] to [{'### Encrypted Value ###' if encrypted else value}].")
+            logger.debug(
+                f"Successfully set variable [{setting}] to [{'### Encrypted Value ###' if encrypted else value}]."
+            )
 
         @configure.command(
             help="Get the differences between current and default configuration settings."
