@@ -53,6 +53,51 @@ class ServiceCli:
 
             click.echo(ctx.get_help())
 
+        @service.command(help="Restarts services.")
+        @click.option(
+            "--force",
+            is_flag=True,
+            help="Force restart even if validation checks fail.",
+        )
+        @click.option(
+            "--apply",
+            is_flag=True,
+            help="Do a configure apply after services are stopped",
+        )
+        @click.argument("service_name", required=False, type=click.STRING)
+        @click.pass_context
+        def restart(ctx, force, apply, service_name):
+            """Restarts services
+
+            Args:
+                ctx (Context): Click Context for current CLI.
+                force (bool, optional): If True, pass force to all subcommands. Defaults to False.
+                apply (bool, optional): If True, configure apply after service(s) are stopped. Defaults to False.
+                service_name (str, optional): The name of the service to restart. If not provided, will restart all
+                    services.
+            """
+            cli_context: CliContext = ctx.obj
+            configure_cli = cli_context.commands["configure"]
+            # At completion, the invoked command tries to exit the script, so we have to catch
+            # the SystemExit.
+            try:
+                ctx.invoke(stop, service_name=service_name)
+            except SystemExit:
+                pass
+            if apply:
+                try:
+                    ctx.invoke(
+                        configure_cli.commands["apply"],
+                        message="[autocommit] due to `configure apply` triggered by `service restart --apply`",
+                        force=force,
+                    )
+                except SystemExit:
+                    pass
+            try:
+                ctx.invoke(start, force=force, service_name=service_name)
+            except SystemExit:
+                pass
+
         @service.command(help="Starts services.")
         @click.option(
             "--force",
