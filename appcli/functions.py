@@ -55,24 +55,23 @@ def print_header(title):
     )
 
 
-def encrypt_text(cli_context, text):
-    """Encrypts some text
+def encrypt_text(cli_context, text: str):
+    """Encrypts text using application key file.
 
     Args:
         cli_context (CliContext): the cli context
         text (str): the string to encrypt
     """
+    if text is None:
+        raise ValueError("Text to encrypt cannot be 'None'")
+
     key_file: Path = cli_context.get_key_file()
     if not key_file.is_file():
         logger.info("Creating encryption key at [%s]", key_file)
         crypto.create_and_save_key(key_file)
 
     cipher = Cipher(key_file)
-    if text is None:
-        raise ValueError("Text cannot be equal to None")
-    else:
-        result = cipher.encrypt(text)
-    return result
+    return cipher.encrypt(text)
 
 
 def extract_valid_environment_variable_names(

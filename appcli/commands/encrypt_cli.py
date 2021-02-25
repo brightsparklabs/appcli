@@ -13,6 +13,7 @@ www.brightsparklabs.com
 
 # vendor libraries
 import click
+from click.core import Context
 
 # local libraries
 from appcli.commands.appcli_command import AppcliCommand
@@ -38,14 +39,20 @@ class EncryptCli:
         @click.command(help="Encrypts the specified string.")
         @click.argument("text", required=False)
         @click.pass_context
-        def encrypt(ctx, text: str):
+        def encrypt(ctx: Context, text: str = None):
+            """Encrypt a string using the application keyfile.
+
+            Args:
+                ctx (Context): Click Context for current CLI.
+                text (str): The text to encrypt
+            """
             cli_context: CliContext = ctx.obj
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.ENCRYPT
             )
             # Check if value was not provided
             if text is None:
-                text = click.prompt("Please enter a value to encrypt: ", type=str)
+                text = click.prompt("Please enter a value to encrypt", type=str)
             print(encrypt_text(cli_context, text))
 
         # expose the CLI command
