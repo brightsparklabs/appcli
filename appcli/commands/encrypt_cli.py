@@ -11,9 +11,6 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-# standard library
-from pathlib import Path
-
 # vendor libraries
 import click
 
