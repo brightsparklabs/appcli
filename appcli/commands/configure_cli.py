@@ -16,12 +16,13 @@ import subprocess
 
 # vendor libraries
 import click
+from click.core import Context
 
 # local libraries
 from appcli.commands.appcli_command import AppcliCommand
 from appcli.commands.configure_template_cli import ConfigureTemplateCli
 from appcli.configuration_manager import ConfigurationManager
-from appcli.functions import print_header
+from appcli.functions import encrypt_text, error_and_exit, print_header
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
@@ -145,22 +146,63 @@ class ConfigureCli:
             type=click.Choice(StringTransformer.get_types()),
             default=StringTransformer.get_string_transformer_type(),
         )
+        @click.option(
+            "-e",
+            "--encrypted",
+            is_flag=True,
+        )
         @click.argument("setting")
-        @click.argument("value")
+        @click.argument("value", required=False)
         @click.pass_context
-        def set(ctx, type, setting, value):
+        def set(
+            ctx: Context, type: str, encrypted: bool, setting: str, value: str = None
+        ):
+            """Set a configuration value, with specified type, and optional encryption.
+
+            If the 'value' isn't passed in, then the user will be prompted. This is
+            useful in the case where the value is sensitive and shouldn't be captured
+            in terminal history.
+
+            Note - appcli does not currently support encrypting non-string-typed values.
+
+            Args:
+                ctx (Context): Click Context for current CLI.
+                type (str): Transform the input value as type
+                encrypted (Bool, flag): flag to indicate if value should be encrypted
+                setting (str): setting to set
+                value (str, optional): value to assign to setting
+            """
             cli_context: CliContext = ctx.obj
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.CONFIGURE_SET
             )
 
+            # Check if value was not provided
+            if value is None:
+                value = click.prompt("Please enter a value", type=str)
+
             # Transform input value as type
             transformed_value = StringTransformer.transform(value, type)
 
+            # We don't support encrypting non-string-typed values yet, so error and exit.
+            if encrypted and not isinstance(transformed_value, str):
+                error_and_exit(
+                    "Cannot encrypt a non-string-typed value. Exiting without setting value."
+                )
+
             # Set settings value
+            final_value = (
+                encrypt_text(cli_context, transformed_value)
+                if encrypted
+                else transformed_value
+            )
+
             configuration = ConfigurationManager(cli_context, self.cli_configuration)
-            configuration.set_variable(setting, transformed_value)
-            logger.debug(f"Successfully set variable [{setting}] to [{value}].")
+            configuration.set_variable(setting, final_value)
+
+            logger.debug(
+                f"Successfully set variable [{setting}] to [{'### Encrypted Value ###' if encrypted else value}]."
+            )
 
         @configure.command(
             help="Get the differences between current and default configuration settings."
