@@ -35,7 +35,7 @@ from appcli.models.configuration import Configuration
 # ------------------1------------------------------------------------------------
 
 # The name of the key for the backup block in the stack settings file.
-BACKUP = "backup"
+BACKUP = "backups"
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -69,24 +69,14 @@ class BackupManagerCli:
 
             backup_manager: BackupManager = self.__create_backup_manager(cli_context)
 
-            # Create a local backup
-            backup_filename = backup_manager.backup(ctx)
+            # kick off the backup
+            backup_manager.mainBackup(ctx)
 
-            # Get any remote backup strategies.
-            remote_backups = backup_manager.get_remote_backups()
 
-            # Get the key file for decrypting encrypted values used in a remote backup.
-            key_file = cli_context.get_key_file()
+           #ordereddict([('name', 'full'), ('backup_limit', 0), ('include_list', None), ('exclude_list', None), ('remote', None)])
 
-            # Execute each of the remote backup strategies with the local backup file.
-            for remote_backup in remote_backups:
-                try:
-                    remote_backup.backup(backup_filename, key_file)
-                except Exception as e:
-                    logger.error(
-                        f"Error while executing remote strategy [{remote_backup.name}] - {e}"
-                    )
-                    traceback.print_exc()
+
+  
 
         @click.command(help="Restore a backup of application data and configuration.")
         @click.argument("backup_file")
@@ -149,5 +139,7 @@ class BackupManagerCli:
         if stack_variables is None:
             error_and_exit("Backup key in stack settings was empty.")
 
+        logger.info(stack_variables)
+
         # Create our BackupManager from the settings.
-        return BackupManager.from_dict(stack_variables)
+        return BackupManager(stack_variables)
