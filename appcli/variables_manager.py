@@ -50,7 +50,7 @@ class VariablesManager:
         """
         configuration = self.__get_configuration()
         variable = reduce(lambda e, k: e[k], path.split("."), configuration)
-        return variable if variable else None
+        return variable if variable is not None else None
 
     def get_all_variables(self):
         return self.__get_configuration()
