@@ -9,7 +9,6 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-
 # standard libraries
 import os
 import tarfile
@@ -20,9 +19,14 @@ from tarfile import TarFile, TarInfo
 from typing import List, Optional
 import glob
 import copy
+import traceback
+import time
+
 
 # vendor libraries
 from dataclasses_json import dataclass_json
+import cronex
+
 
 # local libraries
 from appcli.backup_manager.remote_strategy import RemoteBackup
@@ -30,58 +34,22 @@ from appcli.functions import error_and_exit
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 
-@dataclass_json
-@dataclass
-class GlobList:
-    data_globs: Optional[List[str]] = field(default_factory=list)
-    """ The glob pattern to match. `**/*` to match everything """
-
-    conf_globs: Optional[List[str]] = field(default_factory=list)
-    """  """
-
-
-
-@dataclass_json
-@dataclass
-class BackupConfig:
-    """
-    Utility class which contains methods for local backup/restoration of application configuration and data.
-    """
-    name: str
-    """ The name of the folder to place the local backup in. """
-
-    backup_limit: Optional[int] = field(default=0)
-    """ The number of backups to retain locally. Set to 0 to never delete a backup. """
-
-    exclude_list: Optional[GlobList] = field(default_factory=GlobList)
-    """ An optional list of glob patterns. If any of these patterns match the full path of a file to be backed up then that file will be ignored. """
-
-    include_list: Optional[GlobList] = field(default_factory=GlobList)
-    """ An optional list of glob patterns. If provided only files that match the pattern will be backed up. """
-
-    remote_backups: Optional[List[RemoteBackup]] = field(default_factory=list)
-    """ An optional list of remote backup strategies of potentially varing types. """
-
-    def __post_init__(self):
-        """Called after __init__().
-        None of the fields should be allowed to be 'None' - if any are, override with the default.
+class DataClassExtensions:
+    """ Extensions for the DataClass library. """
+    def fix_defaults(self):
         """
-        if self.include_list is None:
-            self.include_list = GlobList(["**/*"], ["**/*"])
+        Set the default value for any field that is 'None'.
+        Dataclass interprates an empty field as intentionally empty ('None') and will disregard the default,
+        we need to check if any field is 'None' but had a valid default and set it.
 
-        if not self.include_list.conf_globs:
-            self.include_list.conf_globs = ["**/*"]
-        if not self.include_list.data_globs:
-            self.include_list.data_globs = ["**/*"]
-
-
+        The order in which to try to set the value is:
+        - f.default if it's defined, otherwise
+        - f.default_factory() if f.default_factory is defined, otherwise
+        - None (as there's no other reasonable default).
+        """
         for f in fields(self):
             val = getattr(self, f.name)
             if val is None:
-                # If the field is 'empty' and set to None in the settings, default to:
-                # - f.default if it's defined, otherwise
-                # - f.default_factory() if f.default_factory is defined, otherwise
-                # - None (as there's no other reasonable default).
                 default_value = None
                 if f.default != MISSING:
                     default_value = f.default
@@ -92,6 +60,79 @@ class BackupConfig:
                     f"Overriding 'None' for [{f.name}] with default [{default_value}]"
                 )
                 setattr(self, f.name, default_value)
+    def __post_init__(self):
+        self.fix_defaults()
+
+
+@dataclass_json
+@dataclass
+class GlobList(DataClassExtensions):
+    """ The container class for lits of globs for the include and exclude lists. """
+    include_list: Optional[List[str]] = field(default_factory=lambda: ["**/*"])
+    """ A List of glob patterns that represents the files to be added to the backup. Will default to everything. """
+
+    exclude_list: Optional[List[str]] = field(default_factory=lambda: ["[]"])
+    """ A List of glob patterns that represents the files to be excluded from the backup. Will default to nothing. """
+
+@dataclass_json
+@dataclass
+class FileFilter(DataClassExtensions):
+    """ The container class for the data and conf directory include/exclude lists. """
+    data_dir: Optional[GlobList] = field(default_factory=lambda: GlobList())
+    """ The GlobList for the data directory. """
+    conf_dir: Optional[GlobList] = field(default_factory=lambda: GlobList())
+    """ The GlobList for the conf directory. """
+
+@dataclass_json
+@dataclass
+class BackupConfig(DataClassExtensions):
+    """
+    Backup configuration class which contains methods for local backup of application configuration and data.
+    """
+    name: str
+    """ The name of the folder to place the local backup in. """
+
+    backup_limit: Optional[int] = field(default=0)
+    """ The number of backups to retain locally. Set to 0 to never delete a backup. """
+
+    file_filter: Optional[FileFilter] = field(default_factory=lambda: FileFilter(GlobList(), GlobList()))
+    """
+    A FileFilter which represents the files to include or exclude from the backup for the conf and data directories.
+    If not set will default to include everything and exclude nothing.
+    """
+
+    remote_backups: Optional[List[RemoteBackup]] = field(default_factory=list)
+    """ An optional list of remote backup strategies of potentially varing types. """
+
+    frequency: Optional[str] = field(default="* * *")
+    """ An optional CRON frequency with the time stripped out i.e. `* * *` for specifying when this strategy should run. """
+
+    def should_run(self) -> bool:
+        """
+        Verify if the backup should run based on todays date and the frequency value set.
+
+        Returns:
+            True if the frequency matches today, False if it does not.
+        """
+
+        # Our configuration is just the last 3 values of a cron pattern, prepend hour/minute as wild-cards.
+        cron_frequency = f"* * {self.frequency}"
+        try:
+            job = cronex.CronExpression(cron_frequency)
+        except ValueError as e:
+            logger.error(
+                f"Frequency for remote strategy [{self.name}] is not valid [{self.frequency}]. [{e}]"
+            )
+            return False
+
+        if not job.check_trigger(time.gmtime(time.time())[:5]):
+            logger.info(
+                f"Remote strategy [{self.name}] will not run due to frequency [{self.frequency}] not matching today."
+            )
+            return False
+
+        return True
+
 
     def backup(self, ctx, allow_rolling_deletion: bool = True) -> Path:
         """Create a backup `.tgz` file that contains application data and configuration.
@@ -119,10 +160,9 @@ class BackupConfig:
             pass
 
 
-        # 
         backup_dir: Path = cli_context.backup_dir
-        
-        # 
+
+        # Get the path to place the backup in by combining the backup_dir and the name of the backup.
         sub_backup_dir: Path = Path(os.path.join(backup_dir, self.name))
 
         # Create the backup directory if it does not exist.
@@ -135,32 +175,32 @@ class BackupConfig:
 
         logger.info(f"Taking backup [{self.name}]")
 
-
-        # 
+        # Get the backup name to use when creating the tar.
         backup_name: Path = os.path.join(
             sub_backup_dir, self.__create_backup_filename(cli_context.app_name)
         )
 
-        
         data_dir: Path = cli_context.data_dir
         conf_dir: Path = cli_context.configuration_dir
 
+        # Determine the list of conf files to add to the tar.
+        config_file_list: set(Path) = self.__determine_file_list_from_glob(conf_dir, self.file_filter.conf_dir)
+        # Determine the list of data files to add to the tar.
+        data_file_list: set(Path) = self.__determine_file_list_from_glob(data_dir, self.file_filter.data_dir)
 
-        config_file_list: set(Path) = self.__determine_file_list_from_glob(conf_dir, self.include_list.conf_globs, self.exclude_list.conf_globs)
-        data_file_list: set(Path) = self.__determine_file_list_from_glob(data_dir, self.include_list.data_globs, self.exclude_list.data_globs)
-     
+        # Backup the file lists to a tar file.
         with tarfile.open(backup_name, "w:gz") as tar:
-
             logger.info(f"Backing up [{conf_dir}] ...")
 
             if config_file_list:
                 for f in config_file_list:
                     tar.add(f, arcname= os.path.join(os.path.basename(conf_dir), os.path.relpath(f, conf_dir)))
 
+            logger.info(f"Backing up [{data_dir}] ...")
             if data_file_list:
                 for f in data_file_list:
                     tar.add(f, arcname= os.path.join(os.path.basename(data_dir), os.path.relpath(f, data_dir)))
-                
+
         # Delete older backups.
         if allow_rolling_deletion:
             self.__rolling_backup_deletion(sub_backup_dir)
@@ -169,26 +209,54 @@ class BackupConfig:
 
         return backup_name
 
-    def __determine_file_list_from_glob(self, path_to_backup: Path, include_globs, exclude_globs):
-        
-        included_globbed_files: set(Path) = set()
-        for glob in include_globs: 
-            files = path_to_backup.glob(glob)
-            
-            for item in files:
-                if not item.is_dir():
-                    included_globbed_files.add(item)
 
-        excluded_globbed_files: set(Path) = set()
-        for glob in exclude_globs: 
-            files = path_to_backup.glob(glob)
-            for item in files:
-                if not item.is_dir():
-                    excluded_globbed_files.add(item)
+    def __determine_file_list_from_glob(self, path_to_backup: Path, globs: GlobList):
+        """
+        Determine the list of files to backup in the path provided based on the include/exclude lists in the provided GlobList
 
+        Args:
+            path_to_backup: (Path). The path to use when generating the list of files.
+            globs: (GlobList). A GlobList which contains the include/exclude list used to filter the files found in the path.
+
+        Returns:
+            backup_name (set(Path)): A set of files that need to be backed up.
+        """
+
+        # Get a set of files that should be included in the backup.
+        included_globbed_files: set(Path) = self.__get_files_from_globs(path_to_backup, globs.include_list)
+        # Get a set of files that should be excluded from the backup.
+        excluded_globbed_files: set(Path) = self.__get_files_from_globs(path_to_backup, globs.exclude_list)
+
+        # Determine the files that need to be backed up by removing the exclude set from the include set.
         files_to_backup: set(Path) = included_globbed_files - excluded_globbed_files
 
         return files_to_backup
+
+    def __get_files_from_globs(self, path_to_backup: Path, globs: List[str]):
+        """
+        Get a list of files in the provided path that match the glob patterns provided.
+
+        Args:
+            path_to_backup: (Path). The path to use when generating the list of files.
+            globs: (List[str]). A list of glob patterns which we want to use to find files in the provided path.
+
+        Returns:
+            all_files (set(Path)): A set of files that match the provided glob patterns.
+        """
+        all_files: set(Path) = set()
+        for glob in globs:
+            files = path_to_backup.glob(glob)
+            for item in files:
+                # Glob pattern matching returns everything that matches the pattern including directories and all files (and the directory it is being run in).
+                # Including directories is troublesome as if we pass a directory to the python tar function it will add that directories
+                # tree recursively where as glob logic indicates that it should only add the folder with no contents.
+                # If we match glob logic exactly and force an empty folder into the tar then it serves no purpose as it is not data or config and becomes convoluted.
+                # To resolve this we do not add folders to the list of files to backup.
+                # This also solves the problem where a glob pattern can match the directory it is ran in and stops duplicated files from being added to the tar as each file can only exist once in the set.
+                if not item.is_dir():
+                    all_files.add(item)
+
+        return all_files
 
 
     def get_remote_backups(self) -> List[RemoteBackup]:
@@ -207,8 +275,7 @@ class BackupConfig:
                     remote_configuration
                 )
 
-                if remote_backup.should_run():
-                    backup_strategies.append(remote_backup)
+                backup_strategies.append(remote_backup)
 
             except TypeError as e:
                 logger.error(f"Failed to create remote strategy - {e}")
@@ -267,8 +334,6 @@ class BackupConfig:
             os.remove(backup_file)
 
 
-    
-
 @dataclass_json
 @dataclass
 class BackupManager:
@@ -278,28 +343,38 @@ class BackupManager:
     # PUBLIC METHODS
     # ------------------------------------------------------------------------------
 
+    def backup(self, ctx, allow_rolling_deletion: bool = True):
+        """
+        Perform all backups present in the configuration file.
 
-    def mainBackup(self, ctx):
+        Args:
+            allow_rolling_deletion: (bool). Enable rolling backups (default True). Set to False to disable rolling
+                backups and keep all backup files.
+        """
+
         cli_context: CliContext = ctx.obj
 
         # Get the key file for decrypting encrypted values used in a remote backup.
         key_file = cli_context.get_key_file()
 
-        for backup in self.backups:
+        for backup_config in self.backups:
 
-            b = BackupConfig.from_dict(backup)
+            backup = BackupConfig.from_dict(backup_config)
+
+            # Check if the set frequency matches today, if it does not then do not continue with the current backup.
+            if not backup.should_run():
+                return
 
             # create the backup
-            b.backup(ctx)
+            backup_filename = backup.backup(ctx)
 
             # Get any remote backup strategies.
-            remote_backups = b.get_remote_backups()
+            remote_backups = backup.get_remote_backups()
 
             # Execute each of the remote backup strategies with the local backup file.
             for remote_backup in remote_backups:
                 try:
-                    #remote_backup.backup(backup_filename, key_file)
-                    logger.info(remote_backup)
+                    remote_backup.backup(backup_filename, key_file)
                     pass
                 except Exception as e:
                     logger.error(
@@ -359,23 +434,6 @@ class BackupManager:
 
         logger.info("Restore completed. Application services have been shut down.")
 
-    def __members(self, tf: TarFile, subfolder: str):
-        """Helper function for extracting folders from a tar ball.
-        Will allow extracted files to exclude the provided subfolder from their extracted path.
-
-        Args:
-            tf (TarFile): The tar file to extract.
-            subfolder (string): The subfolder to exclude from the extraction path.
-        """
-        length_of_subfolder = len(subfolder)
-        for member in tf.getmembers():
-            # For each file (member) in the tar file check to see if it starts with the specified string (subfolder).
-            if member.path.startswith(subfolder):
-                # If it does start with that string, exclude that string from the start of the Path we are extracting it to.
-                # This allows us to put the extracted files straight into their respective `conf` or `data` directories.
-                member.path = member.path[length_of_subfolder:]
-                yield member
-
     def view_backups(self, ctx):
         """Display a list of available backups that were found in the backup folder."""
         cli_context: CliContext = ctx.obj
@@ -393,4 +451,25 @@ class BackupManager:
         for backup in backup_dir_files:
             print(backup)
 
-    
+
+    # ------------------------------------------------------------------------------
+    # PRIVATE METHODS
+    # ------------------------------------------------------------------------------
+
+    def __members(self, tf: TarFile, subfolder: str):
+        """Helper function for extracting folders from a tar ball.
+        Will allow extracted files to exclude the provided subfolder from their extracted path.
+
+        Args:
+            tf (TarFile): The tar file to extract.
+            subfolder (string): The subfolder to exclude from the extraction path.
+        """
+        length_of_subfolder = len(subfolder)
+        for member in tf.getmembers():
+            # For each file (member) in the tar file check to see if it starts with the specified string (subfolder).
+            if member.path.startswith(subfolder):
+                # If it does start with that string, exclude that string from the start of the Path we are extracting it to.
+                # This allows us to put the extracted files straight into their respective `conf` or `data` directories.
+                member.path = member.path[length_of_subfolder:]
+                yield member
+

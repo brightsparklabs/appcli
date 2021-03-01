@@ -112,17 +112,27 @@ backup directory. The settings for backup are configurable through a `backup` bl
 
 The available keys for the `backup` block are:
 
-| key          | Description                                                                                       |
-| ------------ | ------------------------------------------------------------------------------------------------- |
-| backup_limit | The number of local backups to keep.                                                              |
-| ignore_list  | The ignore list is a list of glob patterns used to specify what files to exclude from the backup. |
-| remote       | The list of remote backup strategies.                                                             |
+| key          | Description                                                                                                         |
+| ------------ | ------------------------------------------------------------------------------------------------------------------- |
+| name         | The name of the folder to place the backup in locally in the `backup` directory                                     |
+| backup_limit | The number of local backups to keep.                                                                                |
+| file_filter  | The file_filter is several lists of glob patterns used to specify what files to include or exclude from the backup. |
+| frequency    | The cron-like frequency at which backups will execute.                                                              |
+| remote       | The list of remote backup strategies.                                                                               |
 
     # filename: stack-settings.yml
 
     backup:
+        name: "full"
         backup_limit: 0
-        ignore_list:
+        file_filter:
+            data_dir:
+                include_list:
+                exclude_list:
+            conf_dir:
+                include_list:
+                exclude_list:
+        frequency: "* * *"
         remote:
 
 #### Backup limit
@@ -133,22 +143,47 @@ If more than `backup_limit` number of backups exist in the backup directory, the
 
 Set this value to `0` to keep all backups.
 
-#### Ignore lists
+#### file filter
 
-The `ignore_list` list in `stack-settings.yml` can contain a list of glob patterns as strings. If any of the patterns
-match a file's full path, it will be excluded from the backup.
+The `file_filter` block in `stack-settings.yml` contains the details of which files to include or exclude for the `conf` and `data` directories. For more details including examples [here](/README_BACKUP_FILE_FILTER.md)
 
-The following example will exclude any file in any directories that end with `metastore`:
+If you want to back up every file, do not include the `ignore_list` key.
 
     # filename: stack-settings.yml
 
     backup:
+        name: "full"
         backup_limit: 0
-        ignore_list:
-            - "*metastore/*"
+        file_filter:
+            data_dir:
+                include_list:
+                - "glob to include"
+                exclude_list:
+                - "glob to exclude"
+            conf_dir:
+                include_list:
+                exclude_list:
+        frequency: "* * *"
         remote:
 
-If you want to back up every file, do not add any entries to the `ignore_list`.
+##### Freqency
+
+Running the `backup` command will attempt to invoke all backup strategies. Appcli supports limiting the number of
+backups by using a cron-like frequency filter. Due to implementation limitations, the
+filtering is only applied on a day-by-day basis, which assumes backups are run only once-daily.
+
+When the `backup` command is run, each backup strategy will check if the `frequency` pattern matches today's date. Only
+strategies whose `frequency` pattern match today's date will execute.
+
+The input pattern `pattern` is prefixed with `"* * "` and used as a standard cron expression to check for a match.
+i.e. `"* * $pattern"`.
+
+Examples:
+
+- `"* * *"` (cron equivalent `"* * * * *"`) will always run.
+- `"* * 0"` (cron equivalent `"* * * * 0"`) will only run on Sunday.
+- `"1 */3 *"` (cron equivalent `"* * 1 */3 *"`) will only run on the first day-of-month of every 3rd month.
+
 
 #### Remote backup
 
@@ -161,38 +196,25 @@ The available keys for every remote backup strategy are:
 | ------------- | --------------------------------------------------------------------------- |
 | name          | A short name or description used to describe this backup.                   |
 | strategy_type | The type of this backup, must match an implemented remote backup strategy.  |
-| frequency     | The cron-like frequency at which remote backups will execute.               |
 | configuration | Custom configuration block that is specific to each remote backup strategy. |
 
     # filename: stack-settings.yml
 
     backup:
+        name: "logs"
         backup_limit: 0
-        ignore_list:
-            - "*metastore/*"
+        file_filter:
+            conf_dir:
+                include_list:
+                    - "**/*.log"
+            data_dir:
+                include_list:
+                    - "**/*.log"
         remote:
         - name: "daily_S3"
           strategy_type: "S3"
-          frequency: "* * *"
           configuration:
 
-##### Freqency
-
-Running the `backup` command will attempt to invoke all remote backup strategies. Appcli supports limiting the number of
-backups it will push to remote storage by using a cron-like frequency filter. Due to implementation limitations, the
-filtering is only applied on a day-by-day basis, which assumes backups are run only once-daily.
-
-When the `backup` command is run, each remote strategy will check if the `frequency` pattern matches today's date. Only
-strategies whose `frequency` pattern match today's date will execute.
-
-The input pattern `pattern` is concatenated to `"* * "` and used as a standard cron expression to check for a match.
-i.e. `"* * $pattern"`.
-
-Examples:
-
-- `"* * *"` (cron `"* * * * *"`) will always run.
-- `"* * 0"` (cron `"* * * * 0"`) will only run on Sunday.
-- `"1 */3 *"` (cron `"* * 1 */3 *"`) will only run on the first day-of-month of every 3rd month.
 
 ##### Strategies
 
@@ -212,13 +234,11 @@ The available configuration keys for an S3 backup are:
     # filename: stack-settings.yml
 
     backup:
+        name: "full_backup"
         backup_limit: 0
-        ignore_list:
-            - "*metastore/*"
         remote:
         - name: "weekly_S3"
           strategy_type: "S3"
-          frequency: "* * *"
           configuration:
             bucket_name: "aws.s3.bucket"
             access_key: "aws_access_key"

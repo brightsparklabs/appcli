@@ -41,7 +41,6 @@ BACKUP = "backups"
 # CLASSES
 # ------------------------------------------------------------------------------
 
-
 class BackupManagerCli:
 
     # --------------------------------------------------------------------------
@@ -70,13 +69,7 @@ class BackupManagerCli:
             backup_manager: BackupManager = self.__create_backup_manager(cli_context)
 
             # kick off the backup
-            backup_manager.mainBackup(ctx)
-
-
-           #ordereddict([('name', 'full'), ('backup_limit', 0), ('include_list', None), ('exclude_list', None), ('remote', None)])
-
-
-  
+            backup_manager.backup(ctx)
 
         @click.command(help="Restore a backup of application data and configuration.")
         @click.argument("backup_file")
@@ -138,8 +131,6 @@ class BackupManagerCli:
 
         if stack_variables is None:
             error_and_exit("Backup key in stack settings was empty.")
-
-        logger.info(stack_variables)
 
         # Create our BackupManager from the settings.
         return BackupManager(stack_variables)

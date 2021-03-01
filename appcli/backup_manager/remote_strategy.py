@@ -19,7 +19,6 @@ from typing import Optional
 
 # vendor libraries
 import boto3
-import cronex
 from botocore.exceptions import ClientError
 from dataclasses_json import dataclass_json
 from tabulate import tabulate
@@ -61,8 +60,6 @@ class RemoteBackup:
     """ The remote backup strategy type. This must match a key in remote_strategy_factory.py STRATEGIES. """
     name: Optional[str] = field(default="")
     """ An optional name/description for the remote strategy. """
-    frequency: Optional[str] = field(default="* * *")
-    """ An optional CRON frequency with the time stripped out i.e. `* * *` for specifying when this strategy should run. """
     configuration: dict = field(default_factory=dict)
     """ A dict that contains additional configuration values that allows the remote strategy to run. """
     strategy: RemoteBackupStrategy = field(init=False)
@@ -113,32 +110,6 @@ class RemoteBackup:
         """
         logger.info(f"Initiating backup [{self.name}]")
         self.strategy.backup(backup_filename, key_file)
-
-    def should_run(self) -> bool:
-        """
-        Verify if the backup strategy should run based on todays date and the frequency value set.
-
-        Returns:
-            True if the frequency matches today, False if it does not.
-        """
-
-        # Our configuration is just the last 3 values of a cron pattern, prepend hour/minute as wild-cards.
-        cron_frequency = f"* * {self.frequency}"
-        try:
-            job = cronex.CronExpression(cron_frequency)
-        except ValueError as e:
-            logger.error(
-                f"Frequency for remote strategy [{self.name}] is not valid [{self.frequency}]. [{e}]"
-            )
-            return False
-
-        if not job.check_trigger(time.gmtime(time.time())[:5]):
-            logger.info(
-                f"Remote strategy [{self.name}] will not run due to frequency [{self.frequency}] not matching today."
-            )
-            return False
-
-        return True
 
 
 @dataclass_json
