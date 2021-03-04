@@ -61,7 +61,7 @@ setup(
         "cronex==0.1.3.1",
         "dataclasses-json==0.5.2",
         "GitPython==3.1.14",
-        "importlib-resources==5.1.0",
+        "importlib-resources==5.1.1",
         "jinja2==2.11.3",
         "pycryptodome==3.10.1",
         "python-dotenv==0.15.0",
