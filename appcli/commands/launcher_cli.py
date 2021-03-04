@@ -13,11 +13,11 @@ www.brightsparklabs.com
 
 # standard library
 import datetime
+import importlib.resources as pkg_resources
 import os
 
 # vendor libraries
 import click
-import importlib.resources as pkg_resources
 from jinja2 import StrictUndefined, Template
 
 # local libraries

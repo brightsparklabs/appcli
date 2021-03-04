@@ -15,11 +15,11 @@ www.brightsparklabs.com
 """
 
 # standard library
+import importlib.resources as pkg_resources
 from pathlib import Path
 
 # vendor libraries
 import click
-import importlib.resources as pkg_resources
 from jinja2 import StrictUndefined, Template
 
 # local libraries
