@@ -471,11 +471,12 @@ Runs application services. These are the long-running services which should only
 
 usage: `./myapp service [OPTIONS] COMMAND [ARGS]`
 
-| Command  | Description                                                                               |
-| -------- | ----------------------------------------------------------------------------------------- |
-| logs     | Prints logs from all services.                                                            |
-| shutdown | Shuts down the system. If a service name is provided, shuts down the single service only. |
-| start    | Starts the system. If a service name is provided, starts the single service only.         |
+| Command  | Description                                                                                                                                                                                           |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| logs     | Prints logs from all services.                                                                                                                                                                        |
+| shutdown | Shuts down the system. If a service name is provided, shuts down the single service only.                                                                                                             |
+| start    | Starts the system. If a service name is provided, starts the single service only.                                                                                                                     |
+| restart  | Restarts service(s) (`shutdown` followed by `start`). Optionally run a `configure apply` during the restart with the `--apply` flag. If a service name is provided, restarts the single service only. |
 
 | Option | Description                     |
 | ------ | ------------------------------- |
