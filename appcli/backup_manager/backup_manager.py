@@ -9,21 +9,18 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-
 # standard libraries
 import copy
+import datetime
 import glob
 import os
 import tarfile
 import time
 import traceback
 from dataclasses import MISSING, dataclass, field, fields
-from datetime import datetime, timezone
 from pathlib import Path
 from tarfile import TarFile, TarInfo
 from typing import List, Optional
-
-
 
 # vendor libraries
 import cronex
@@ -34,38 +31,7 @@ from appcli.backup_manager.remote_strategy import RemoteBackup
 from appcli.functions import error_and_exit
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
-
-
-class DataClassExtensions:
-    """ Extensions for the DataClass library. """
-
-    def fix_defaults(self):
-        """
-        Set the default value for any field that is 'None'.
-        Dataclass interprates an empty field as intentionally empty ('None') and will disregard the default,
-        we need to check if any field is 'None' but had a valid default and set it.
-
-        The order in which to try to set the value is:
-        - f.default if it's defined, otherwise
-        - f.default_factory() if f.default_factory is defined, otherwise
-        - None (as there's no other reasonable default).
-        """
-        for f in fields(self):
-            val = getattr(self, f.name)
-            if val is None:
-                default_value = None
-                if f.default != MISSING:
-                    default_value = f.default
-                elif f.default_factory != MISSING:
-                    default_value = f.default_factory()
-
-                logger.debug(
-                    f"Overriding 'None' for [{f.name}] with default [{default_value}]"
-                )
-                setattr(self, f.name, default_value)
-
-    def __post_init__(self):
-        self.fix_defaults()
+from appcli.common.data_class_extensions import DataClassExtensions
 
 
 @dataclass_json
@@ -128,6 +94,7 @@ class BackupConfig(DataClassExtensions):
 
         # Our configuration is just the last 3 values of a cron pattern, prepend hour/minute as wild-cards.
         cron_frequency = f"* * {self.frequency}"
+
         try:
             job = cronex.CronExpression(cron_frequency)
         except ValueError as e:
@@ -135,7 +102,6 @@ class BackupConfig(DataClassExtensions):
                 f"Frequency for remote strategy [{self.name}] is not valid [{self.frequency}]. [{e}]"
             )
             return False
-
         if not job.check_trigger(time.gmtime(time.time())[:5]):
             logger.info(
                 f"Remote strategy [{self.name}] will not run due to frequency [{self.frequency}] not matching today."
@@ -158,16 +124,6 @@ class BackupConfig(DataClassExtensions):
             backup_name (Path): The filename of the generated backup that includes the full path.
         """
         cli_context: CliContext = ctx.obj
-        logger.info("Initiating system backup")
-
-        logger.info("Stopping application services ...")
-        services_cli = cli_context.commands["service"]
-        try:
-            ctx.invoke(services_cli.commands["shutdown"])
-        except SystemExit:
-            # At completion, the invoked command tries to exit the script, so we have to catch
-            # the SystemExit.
-            pass
 
         backup_dir: Path = cli_context.backup_dir
 
@@ -228,7 +184,6 @@ class BackupConfig(DataClassExtensions):
         if allow_rolling_deletion:
             self.__rolling_backup_deletion(sub_backup_dir)
 
-        logger.info("Backup completed. Application services have been shut down.")
 
         return backup_name
 
@@ -316,7 +271,9 @@ class BackupConfig(DataClassExtensions):
         Returns:
             The formatted .tgz filename.
         """
-        now: datetime = datetime.now(timezone.utc).replace(microsecond=0)
+        now: datetime = datetime.datetime.now(datetime.timezone.utc).replace(
+            microsecond=0
+        )
         return f"{app_name.upper()}_{now.isoformat()}.tgz"
 
     def __rolling_backup_deletion(self, backup_dir: Path):
@@ -378,12 +335,21 @@ class BackupManager:
         """
 
         cli_context: CliContext = ctx.obj
+        logger.info("Initiating system backup")
+
+        logger.info("Stopping application services ...")
+        try:
+            services_cli = cli_context.commands["service"]
+            ctx.invoke(services_cli.commands["shutdown"])
+        except (SystemExit, TypeError):
+            # At completion, the invoked command tries to exit the script, so we have to catch
+            # the SystemExit.
+            pass
 
         # Get the key file for decrypting encrypted values used in a remote backup.
         key_file = cli_context.get_key_file()
 
         for backup_config in self.backups:
-
             backup = BackupConfig.from_dict(backup_config)
 
             # Check if the set frequency matches today, if it does not then do not continue with the current backup.
@@ -406,6 +372,9 @@ class BackupManager:
                         f"Error while executing remote strategy [{remote_backup.name}] - {e}"
                     )
                     traceback.print_exc()
+
+        logger.info("Backup completed. Application services have been shut down.")
+
 
     def restore(self, ctx, backup_filename: Path):
         """Restore application data and configuration from the provided local backup `.tgz` file.
@@ -445,14 +414,16 @@ class BackupManager:
         )  # False ensures we don't accidentally delete our backup
         logger.info(f"Backup generated before restore was: [{restore_backup_name}]")
 
+
         # Extract conf and data directories from the tar.
-        # This will overwrite the contents of each directory, anything not in the backup (such as files matching the glob pattern) will be left alone.
+        # This will overwrite the contents of each directory, anything not in the backup (such as files matching the exclude glob patterns) will be left alone.
         try:
             with tarfile.open(backup_name) as tar:
                 conf_dir: Path = cli_context.configuration_dir
                 tar.extractall(
                     conf_dir, members=self.__members(tar, os.path.basename(conf_dir))
                 )
+
                 data_dir: Path = cli_context.data_dir
                 tar.extractall(
                     data_dir, members=self.__members(tar, os.path.basename(data_dir))
@@ -502,4 +473,6 @@ class BackupManager:
                 # If it does start with that string, exclude that string from the start of the Path we are extracting it to.
                 # This allows us to put the extracted files straight into their respective `conf` or `data` directories.
                 member.path = member.path[length_of_subfolder:]
+                # On the rare occasion that a leading "/" sneaks in remove it otherwise restore will try to un-tar to "/"
+                member.path = member.path.strip("/")
                 yield member

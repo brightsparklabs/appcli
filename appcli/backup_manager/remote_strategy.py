@@ -26,6 +26,8 @@ from tabulate import tabulate
 # local libraries
 from appcli.crypto.cipher import Cipher
 from appcli.logger import logger
+from appcli.common.data_class_extensions import DataClassExtensions
+
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -50,7 +52,7 @@ class RemoteBackupStrategy:
 
 @dataclass_json
 @dataclass
-class RemoteBackup:
+class RemoteBackup(DataClassExtensions):
     """
     A dataclass that represents the common tags that all remote backup strategies have.
 
@@ -67,35 +69,13 @@ class RemoteBackup:
 
     def __post_init__(self):
         """Called after __init__()."""
-
-        # None of the fields should be set `None` - if any are, override with the default.
-        for f in fields(self):
-
-            # Skip fields that are intentionally not initialised by __init__()
-            if f.init is False:
-                continue
-
-            val = getattr(self, f.name)
-            if val is None:
-                # If the field is 'empty' and set to None in the settings, default to:
-                # - f.default if it's defined, otherwise
-                # - f.default_factory() if f.default_factory is defined, otherwise
-                # - None (as there's no other reasonable default).
-                default_value = None
-                if f.default != MISSING:
-                    default_value = f.default
-                elif f.default_factory != MISSING:
-                    default_value = f.default_factory()
-
-                logger.debug(
-                    f"Overriding 'None' for [{f.name}] with default [{default_value}]"
-                )
-                setattr(self, f.name, default_value)
-
         # Instantiate the strategy
         self.strategy = RemoteStrategyFactory.get_strategy(
             self.strategy_type, self.configuration
         )
+        # Fix the defaults.
+        super().__post_init__()
+
 
     # ------------------------------------------------------------------------------
     # PUBLIC METHODS
