@@ -151,7 +151,7 @@ If more than `backup_limit` number of backups exist in the backup directory, the
 
 Set this value to `0` to keep all backups.
 
-#### file filter
+#### File filter
 
 The `file_filter` block in `stack-settings.yml` contains the details of which files to include or exclude for the `conf` and `data` directories. For more details including examples [here](/README_BACKUP_FILE_FILTER.md)
 
