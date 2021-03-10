@@ -49,8 +49,12 @@ class VariablesManager:
             Exception: Failed to find the configuration key.
         """
         configuration = self.__get_configuration()
-        variable = reduce(lambda e, k: e[k], path.split("."), configuration)
-        return variable if variable is not None else None
+        try:
+            variable = reduce(lambda e, k: e[k], path.split("."), configuration)
+        except KeyError as exc:
+            raise KeyError(f"Setting [{key}] not set in configuration.") from exc
+
+        return variable
 
     def get_all_variables(self):
         return self.__get_configuration()
@@ -63,6 +67,8 @@ class VariablesManager:
             value: value for the setting
         """
         configuration = self.__get_configuration()
+
+        print(path)
 
         path_elements = path.split(".")
         parent_path = path_elements[:-1]
