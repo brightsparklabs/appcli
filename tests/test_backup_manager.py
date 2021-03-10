@@ -13,29 +13,15 @@ www.brightsparklabs.com
 # standard libraries
 import datetime
 import os
-import pathlib
-import shutil
 import tarfile
-import time
 from pathlib import Path, PurePath
-from typing import Dict, List
 
 # vendor libraries
 import click
 import pytest
 
 # local libraries
-from appcli.backup_manager.backup_manager import (
-    BackupConfig,
-    BackupManager,
-    FileFilter,
-    GlobList,
-)
-from appcli.backup_manager.remote_strategy import (
-    AwsS3Strategy,
-    RemoteBackup,
-    RemoteBackupStrategy,
-)
+from appcli.backup_manager.backup_manager import BackupConfig, BackupManager
 from appcli.models.cli_context import CliContext
 
 # ------------------------------------------------------------------------------
@@ -125,12 +111,12 @@ def populate_conf_dir(tmpdir_factory):
 
     # Populate the conf directory with empty files
     for file in CONF_FILES:
-        with open(os.path.join(conf_dir, file), "w") as f:
+        with open(os.path.join(conf_dir, file), "w"):
             pass
     for folder in CONF_FOLDERS_ALL:
         os.mkdir(os.path.join(conf_dir, folder))
     for file in CONF_NESTED_FILES:
-        with open(os.path.join(conf_dir, file), "w") as f:
+        with open(os.path.join(conf_dir, file), "w"):
             pass
     return conf_dir
 
@@ -145,12 +131,12 @@ def populate_data_dir(tmpdir_factory):
 
     # Populate the data directory with empty files
     for file in DATA_FILES:
-        with open(os.path.join(data_dir, file), "w") as f:
+        with open(os.path.join(data_dir, file), "w"):
             pass
     for folder in DATA_FOLDERS_ALL:
         os.mkdir(os.path.join(data_dir, folder))
     for file in DATA_NESTED_FILES:
-        with open(os.path.join(data_dir, file), "w") as f:
+        with open(os.path.join(data_dir, file), "w"):
             pass
     return data_dir
 
@@ -584,7 +570,7 @@ def test_frequency_always_run():
     backup_config = BackupConfig.from_dict(conf)
     result = backup_config.should_run()
 
-    assert result == True
+    assert result
 
 
 def test_frequency_first_of_month_correct_date(reset_mockTime, monkeypatch):
@@ -597,7 +583,7 @@ def test_frequency_first_of_month_correct_date(reset_mockTime, monkeypatch):
     backup_config = BackupConfig.from_dict(conf)
     result = backup_config.should_run()
 
-    assert result == True
+    assert result
 
 
 def test_frequency_first_of_month_incorrect_date(reset_mockTime, monkeypatch):
@@ -611,7 +597,7 @@ def test_frequency_first_of_month_incorrect_date(reset_mockTime, monkeypatch):
     backup_config = BackupConfig.from_dict(conf)
     result = backup_config.should_run()
 
-    assert result == False
+    assert not result
 
 
 def test_will_not_run_with_missing_name(reset_mockTime):
@@ -620,7 +606,7 @@ def test_will_not_run_with_missing_name(reset_mockTime):
     }
 
     with pytest.raises(KeyError) as excinfo:
-        backup_config = BackupConfig.from_dict(conf)
+        BackupConfig.from_dict(conf)
 
     assert "'name'" in str(excinfo.value)
 
@@ -776,10 +762,6 @@ def test_restore_fails_no_backup(
     ctx = create_click_ctx(
         Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
     )
-    # Build our list of expected files to find in the backup
-    expected_files = get_expected_files(populate_data_dir, DATA_FILES_ALL).union(
-        get_expected_files(populate_conf_dir, CONF_FILES_ALL)
-    )
     # Create our configuration
     conf = {"backups": [{"name": "full"}]}
 
@@ -803,8 +785,6 @@ def test_restore_works_with_empty_filesystem(
     data_dir.mkdir()
     # Create the click context that backup_manager expects to deal with.
     ctx = create_click_ctx(Path(conf_dir), Path(data_dir), Path(backup_dir))
-    # Build our list of expected files to find in the backup.
-    expected_files = DATA_FILES_ALL.union(CONF_FILES_ALL)
     # Create our configuration
     conf = [{"name": "full"}]
 
@@ -813,14 +793,14 @@ def test_restore_works_with_empty_filesystem(
 
     data_result = set(
         [
-            os.path.join(dp[len(str(data_dir)) :], f).strip("/")
+            os.path.join(dp[len(str(data_dir)) :], f).strip("/")  # noqa: E203
             for dp, dn, filenames in os.walk(data_dir)
             for f in filenames
         ]
     )
     conf_result = set(
         [
-            os.path.join(dp[len(str(conf_dir)) :], f).strip("/")
+            os.path.join(dp[len(str(conf_dir)) :], f).strip("/")  # noqa: E203
             for dp, dn, filenames in os.walk(conf_dir)
             for f in filenames
         ]
@@ -843,8 +823,6 @@ def test_restore_works_with_existing_files(
     data_dir.mkdir()
     # Create the click context that backup_manager expects to deal with.
     ctx = create_click_ctx(Path(conf_dir), Path(data_dir), Path(backup_dir))
-    # Build our list of expected files to find in the backup.
-    expected_files = DATA_FILES_ALL.union(CONF_FILES_ALL)
     # Create our configuration
     conf = [{"name": "full"}]
     # Create an existing file that will be overwritten on restore.
@@ -872,8 +850,6 @@ def test_can_restore_with_no_config(
     data_dir.mkdir()
     # Create the click context that backup_manager expects to deal with.
     ctx = create_click_ctx(Path(conf_dir), Path(data_dir), Path(backup_dir))
-    # Build our list of expected files to find in the backup.
-    expected_files = DATA_FILES_ALL.union(CONF_FILES_ALL)
     # Create our configuration
     conf = []
 
@@ -882,14 +858,14 @@ def test_can_restore_with_no_config(
 
     data_result = set(
         [
-            os.path.join(dp[len(str(data_dir)) :], f).strip("/")
+            os.path.join(dp[len(str(data_dir)) :], f).strip("/")  # noqa: E203
             for dp, dn, filenames in os.walk(data_dir)
             for f in filenames
         ]
     )
     conf_result = set(
         [
-            os.path.join(dp[len(str(conf_dir)) :], f).strip("/")
+            os.path.join(dp[len(str(conf_dir)) :], f).strip("/")  # noqa: E203
             for dp, dn, filenames in os.walk(conf_dir)
             for f in filenames
         ]
@@ -918,8 +894,6 @@ def test_restore_triggers_config_backups(
     data_dir.mkdir()
     # Create the click context that backup_manager expects to deal with.
     ctx = create_click_ctx(Path(conf_dir), Path(data_dir), Path(backup_dir))
-    # Build our list of expected files to find in the backup.
-    expected_files = DATA_FILES_ALL.union(CONF_FILES_ALL)
     # Create our configuration
     conf = [{"name": "full"}]
 
@@ -944,14 +918,13 @@ def test_restore_does_not_replace_files_not_in_backup(
     data_dir.mkdir()
     # Create the click context that backup_manager expects to deal with.
     ctx = create_click_ctx(Path(conf_dir), Path(data_dir), Path(backup_dir))
-    # Build our list of expected files to find in the backup.
-    expected_files = DATA_FILES_ALL.union(CONF_FILES_ALL)
     # Create our configuration
     conf = [{"name": "full"}]
     # Create existing files in our temp data directory that should be kept on restore.
-    with open(os.path.join(data_dir, "existing_file_1.txt"), "w") as f:
+    with open(os.path.join(data_dir, "existing_file_1.txt"), "w"):
         pass
-    with open(os.path.join(data_dir, "existing_file_2.yml"), "w") as f:
+
+    with open(os.path.join(data_dir, "existing_file_2.yml"), "w"):
         pass
 
     backup_manager = BackupManager(conf)
@@ -959,14 +932,14 @@ def test_restore_does_not_replace_files_not_in_backup(
 
     data_result = set(
         [
-            os.path.join(dp[len(str(data_dir)) :], f).strip("/")
+            os.path.join(dp[len(str(data_dir)) :], f).strip("/")  # noqa: E203
             for dp, dn, filenames in os.walk(data_dir)
             for f in filenames
         ]
     )
     conf_result = set(
         [
-            os.path.join(dp[len(str(conf_dir)) :], f).strip("/")
+            os.path.join(dp[len(str(conf_dir)) :], f).strip("/")  # noqa: E203
             for dp, dn, filenames in os.walk(conf_dir)
             for f in filenames
         ]
@@ -1002,7 +975,7 @@ def test_view_backups(
     # Create a backup to view.
     with capsys.disabled():
         backup_config = BackupConfig.from_dict(conf)
-        backup = backup_config.backup(ctx)
+        backup_config.backup(ctx)
 
     backup_manager = BackupManager(conf)
     backup_manager.view_backups(ctx)
@@ -1048,7 +1021,7 @@ def test_view_multiple_backups_descending_order(
     with capsys.disabled():
         backup_config = BackupConfig.from_dict(conf)
         for x in range(10):
-            backup = backup_config.backup(ctx)
+            backup_config.backup(ctx)
             mock_time.increment()
 
     backup_manager = BackupManager(conf)
@@ -1093,11 +1066,11 @@ def test_view_backups_multiple_backup_strategies(
     # Create a backup to view.
     with capsys.disabled():
         backup_config = BackupConfig.from_dict(conf_full)
-        backup = backup_config.backup(ctx)
+        backup_config.backup(ctx)
         mock_time.increment()
 
         backup_config = BackupConfig.from_dict(conf_logs)
-        backup = backup_config.backup(ctx)
+        backup_config.backup(ctx)
         mock_time.increment()
 
     backup_manager = BackupManager([])

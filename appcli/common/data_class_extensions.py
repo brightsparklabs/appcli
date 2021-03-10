@@ -10,7 +10,7 @@ www.brightsparklabs.com
 """
 
 # standard libraries
-from dataclasses import MISSING, dataclass, field, fields
+from dataclasses import MISSING, fields
 
 # local libraries
 from appcli.logger import logger

@@ -10,16 +10,14 @@ www.brightsparklabs.com
 """
 
 # standard libraries
-import copy
 import datetime
-import glob
 import os
 import tarfile
 import time
 import traceback
-from dataclasses import MISSING, dataclass, field, fields
+from dataclasses import dataclass, field
 from pathlib import Path
-from tarfile import TarFile, TarInfo
+from tarfile import TarFile
 from typing import List, Optional
 
 # vendor libraries
@@ -439,7 +437,7 @@ class BackupManager:
         backup_dir: Path = cli_context.backup_dir
 
         files = [
-            os.path.join(path[len(str(backup_dir)) :].lstrip("/"), name)
+            os.path.join(path[len(str(backup_dir)) :].lstrip("/"), name)  # noqa: E203
             for path, subdirs, files in os.walk(backup_dir)
             for name in files
         ]
