@@ -126,7 +126,7 @@ The available keys for the `backup` block are:
 | backup_limit | The number of local backups to keep.                                                                                |
 | file_filter  | The file_filter is several lists of glob patterns used to specify what files to include or exclude from the backup. |
 | frequency    | The cron-like frequency at which backups will execute.                                                              |
-| remote       | The list of remote backup strategies.                                                                               |
+| remote_backups       | The list of remote backup strategies.                                                                               |
 
     # filename: stack-settings.yml
 
@@ -141,7 +141,7 @@ The available keys for the `backup` block are:
                 include_list:
                 exclude_list:
         frequency: "* * *"
-        remote:
+        remote_backups:
 
 #### Backup limit
 
@@ -172,7 +172,7 @@ If you want to back up every file, do not include the `ignore_list` key.
                 include_list:
                 exclude_list:
         frequency: "* * *"
-        remote:
+        remote_backups:
 
 ##### Freqency
 
@@ -196,7 +196,7 @@ Examples:
 #### Remote backup
 
 Appcli supports pushing local backups to remote storage. The list of strategies for pushing to remote storage are
-defined within the `remote` block.
+defined within the `remote_backups` block.
 
 The available keys for every remote backup strategy are:
 
@@ -218,7 +218,7 @@ The available keys for every remote backup strategy are:
             data_dir:
                 include_list:
                     - "**/*.log"
-        remote:
+        remote_backups:
         - name: "daily_S3"
           strategy_type: "S3"
           configuration:
@@ -244,7 +244,7 @@ The available configuration keys for an S3 backup are:
     backup:
         name: "full_backup"
         backup_limit: 0
-        remote:
+        remote_backups:
         - name: "weekly_S3"
           strategy_type: "S3"
           configuration:
