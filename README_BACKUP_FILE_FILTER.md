@@ -1,7 +1,7 @@
 # BSL Application CLI Backup `file_filter`settings block
 
-The `file_filter` block in the `stack-settings.yml` file allows for include and exclude lists to be used when creating a backup. [Glob](https://en.wikipedia.org/wiki/Glob_(programming)) pattern matching is used to determine what files should be included or excluded from the `data` and `conf` directories. Recursive glob patterns are enabled with the `**` notation.  
-Folder matches are ignored, only file matches will be placed in the backup and any necessary folders to maintain the hierarchy. 
+The `file_filter` block in the `stack-settings.yml` file allows for include and exclude lists to be used when creating a backup. [Glob](https://en.wikipedia.org/wiki/Glob_(programming)) pattern matching is used to determine what files should be included or excluded from the `data` and `conf` directories. Recursive glob patterns are enabled with the `**` notation.
+Folder matches are ignored, only file matches will be placed in the backup and any necessary folders to maintain the hierarchy.
 
 ## YML key definitions
 
@@ -50,7 +50,7 @@ An include list specifies what files should be included in the backup. By defaul
 
 ## Exclude lists
 
-An exclude list specifies what files should be excluded from the backup. By default this will not match any files, it does this by inserting an empty glob pattern when there are no patterns or the key is not present. 
+An exclude list specifies what files should be excluded from the backup. By default this will not match any files, it does this by inserting an empty glob pattern when there are no patterns or the key is not present.
 
     # filename: stack-settings.yml
 
@@ -72,21 +72,11 @@ To create a backup that contains everything in the data and conf directories eit
 
     backups:
         -name: "full_backups"
-         file_filter:
-            data_dir:
-                include_list:
-                    - "**/*"
-            conf_dir:
-                include_list:
-                    - "**/*"
-         frequency: 
 
-    # filename: stack-settings.yml
+         frequency:
 
-    backups:
-        -name
-         frequency: 
-         
+
+
 ### Only backup the data directory
 
 To backup the `data` directory but ignore the `conf` directory a recursive pattern that matches everything will need to be used in the exclude list `**/*`.
@@ -99,7 +89,7 @@ To backup the `data` directory but ignore the `conf` directory a recursive patte
             conf_dir:
                 exclude_list:
                     - "**/*"
-         frequency: 
+         frequency
 
 ### Only backup `.log` files
 
@@ -116,7 +106,7 @@ To only backup data that ends with `.log` a recursive pattern looking for log fi
             data_dir:
                 include_list:
                     - "**/*.log"
-         frequency: 
+         frequency:
 
 
 ### Backup the data root directory not including sub-folders
@@ -124,7 +114,7 @@ To only backup data that ends with `.log` a recursive pattern looking for log fi
 To backup the root directory of `data` a non-recursive wildcard pattern will be needed `*` for the `include_list` on `data` and a fully recursive match `**/*` for `exclude_list` on `conf`
 
 ```
-example directory:  
+example directory:
     data/
         search/
         engine/
@@ -132,7 +122,7 @@ example directory:
         file1.yml
         file2.yml
         logs.log
-    
+
     conf/
         settings.yml
         stack-settings.yml
@@ -149,7 +139,7 @@ example directory:
             data_dir:
                 include_list:
                     - "*"
-         frequency: 
+         frequency:
 
 
 ```
