@@ -11,17 +11,13 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-# standard library
-from pathlib import Path
-
 # vendor libraries
 import click
+from click.core import Context
 
 # local libraries
 from appcli.commands.appcli_command import AppcliCommand
-from appcli.crypto import crypto
-from appcli.crypto.cipher import Cipher
-from appcli.logger import logger
+from appcli.functions import encrypt_text
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
 
@@ -41,21 +37,23 @@ class EncryptCli:
         self.configuration: Configuration = configuration
 
         @click.command(help="Encrypts the specified string.")
-        @click.argument("text")
+        @click.argument("text", required=False)
         @click.pass_context
-        def encrypt(ctx, text: str):
+        def encrypt(ctx: Context, text: str = None):
+            """Encrypt a string using the application keyfile.
+
+            Args:
+                ctx (Context): Click Context for current CLI.
+                text (str): The text to encrypt
+            """
             cli_context: CliContext = ctx.obj
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.ENCRYPT
             )
-            key_file: Path = cli_context.get_key_file()
-            if not key_file.is_file():
-                logger.info("Creating encryption key at [%s]", key_file)
-                crypto.create_and_save_key(key_file)
-
-            cipher = Cipher(key_file)
-            result = cipher.encrypt(text)
-            print(result)
+            # Check if value was not provided
+            if text is None:
+                text = click.prompt("Please enter a value to encrypt", type=str)
+            print(encrypt_text(cli_context, text))
 
         # expose the CLI command
         self.commands = {"encrypt": encrypt}
