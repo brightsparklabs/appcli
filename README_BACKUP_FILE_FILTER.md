@@ -88,7 +88,7 @@ To backup the `data` directory but ignore the `conf` directory a recursive patte
             conf_dir:
                 exclude_list:
                     - "**/*"
-         frequency
+         frequency: "* * *"
 
 ### Only backup `.log` files
 
@@ -105,7 +105,7 @@ To only backup data that ends with `.log` a recursive pattern looking for log fi
             data_dir:
                 include_list:
                     - "**/*.log"
-         frequency:
+         frequency: "* * *"
 
 
 ### Backup the data root directory not including sub-folders
