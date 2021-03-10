@@ -72,8 +72,7 @@ To create a backup that contains everything in the data and conf directories eit
 
     backups:
         -name: "full_backups"
-
-         frequency:
+         frequency: "* * *"
 
 
 
