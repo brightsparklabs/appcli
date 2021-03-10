@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 # # -*- coding: utf-8 -*-
 
@@ -15,7 +14,6 @@ from dataclasses import MISSING, dataclass, field, fields
 
 # local libraries
 from appcli.logger import logger
-
 
 
 class DataClassExtensions:

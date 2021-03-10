@@ -28,10 +28,10 @@ from dataclasses_json import dataclass_json
 
 # local libraries
 from appcli.backup_manager.remote_strategy import RemoteBackup
+from appcli.common.data_class_extensions import DataClassExtensions
 from appcli.functions import error_and_exit
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
-from appcli.common.data_class_extensions import DataClassExtensions
 
 
 @dataclass_json
@@ -183,7 +183,6 @@ class BackupConfig(DataClassExtensions):
         # Delete older backups.
         if allow_rolling_deletion:
             self.__rolling_backup_deletion(sub_backup_dir)
-
 
         return backup_name
 
@@ -375,7 +374,6 @@ class BackupManager:
 
         logger.info("Backup completed. Application services have been shut down.")
 
-
     def restore(self, ctx, backup_filename: Path):
         """Restore application data and configuration from the provided local backup `.tgz` file.
         This will create a backup of the existing data and config, remove the contents `conf`, `data` and
@@ -413,7 +411,6 @@ class BackupManager:
             ctx, allow_rolling_deletion=False
         )  # False ensures we don't accidentally delete our backup
         logger.info(f"Backup generated before restore was: [{restore_backup_name}]")
-
 
         # Extract conf and data directories from the tar.
         # This will overwrite the contents of each directory, anything not in the backup (such as files matching the exclude glob patterns) will be left alone.

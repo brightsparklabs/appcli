@@ -24,10 +24,9 @@ from dataclasses_json import dataclass_json
 from tabulate import tabulate
 
 # local libraries
+from appcli.common.data_class_extensions import DataClassExtensions
 from appcli.crypto.cipher import Cipher
 from appcli.logger import logger
-from appcli.common.data_class_extensions import DataClassExtensions
-
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -75,7 +74,6 @@ class RemoteBackup(DataClassExtensions):
         )
         # Fix the defaults.
         super().__post_init__()
-
 
     # ------------------------------------------------------------------------------
     # PUBLIC METHODS

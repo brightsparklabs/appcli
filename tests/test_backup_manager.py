@@ -9,52 +9,63 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
+
 # standard libraries
-from typing import Dict, List
+import datetime
 import os
-from pathlib import Path, PurePath
+import pathlib
 import shutil
 import tarfile
 import time
-import datetime
-import pytest
-import pathlib
+from pathlib import Path, PurePath
+from typing import Dict, List
 
 # vendor libraries
 import click
-
-
+import pytest
 
 # local libraries
+from appcli.backup_manager.backup_manager import (
+    BackupConfig,
+    BackupManager,
+    FileFilter,
+    GlobList,
+)
 from appcli.backup_manager.remote_strategy import (
     AwsS3Strategy,
     RemoteBackup,
     RemoteBackupStrategy,
 )
-from appcli.backup_manager.backup_manager import BackupManager, BackupConfig,GlobList, FileFilter
 from appcli.models.cli_context import CliContext
-
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
 # ------------------------------------------------------------------------------
 
-BASE_CONF_DIR:Path = Path("conf")
-BASE_DATA_DIR:Path = Path("data")
+BASE_CONF_DIR: Path = Path("conf")
+BASE_DATA_DIR: Path = Path("data")
 BASE_BACKUP_DIR: Path = Path("backup")
 
 DATA_FILES = set({"1.txt", "2.txt", "3.yml", "4.log", "5.log"})
 DATA_FOLDERS_EMPTY = set({"empty_folder"})
 DATA_FOLDERS_POPULATED = set({"populated_folder"})
 DATA_FOLDERS_ALL = DATA_FOLDERS_EMPTY.union(DATA_FOLDERS_POPULATED)
-DATA_NESTED_FILES = set({"populated_folder/first.txt", "populated_folder/second.txt", "populated_folder/third.log"})
+DATA_NESTED_FILES = set(
+    {
+        "populated_folder/first.txt",
+        "populated_folder/second.txt",
+        "populated_folder/third.log",
+    }
+)
 DATA_FILES_ALL = DATA_FILES.union(DATA_NESTED_FILES)
 
 CONF_FILES = set({"6.txt", "7.txt", "8.log", "9.yml"})
 CONF_FOLDERS_EMPTY = set({"empty"})
-CONF_FOLDERS_POPULATED =  set({".hidden", "not_hidden"})
+CONF_FOLDERS_POPULATED = set({".hidden", "not_hidden"})
 CONF_FOLDERS_ALL = CONF_FOLDERS_EMPTY.union(CONF_FOLDERS_POPULATED)
-CONF_NESTED_FILES = set({".hidden/10.txt", ".hidden/11.log", "not_hidden/12.yml", "not_hidden/13.log"})
+CONF_NESTED_FILES = set(
+    {".hidden/10.txt", ".hidden/11.log", "not_hidden/12.yml", "not_hidden/13.log"}
+)
 CONF_FILES_ALL = CONF_FILES.union(CONF_NESTED_FILES)
 
 
@@ -62,17 +73,23 @@ CONF_FILES_ALL = CONF_FILES.union(CONF_NESTED_FILES)
 # FIXTURES
 # ------------------------------------------------------------------------------
 
+
 class MockTime:
     """ A class for manipulating the monkeypatched datetime for more consistent testing. """
+
     original_value = datetime.datetime(2020, 12, 25, 17, 5, 55)
     current = original_value
+
     def getTime(self):
-       return self.current
-    def setTime(self, date:datetime.datetime):
+        return self.current
+
+    def setTime(self, date: datetime.datetime):
         self.current = date
+
     def increment(self):
         """ Increment `datetime.now` by 1 second. """
-        self.current = self.current  + time_delta(seconds=1)
+        self.current = self.current + time_delta(seconds=1)
+
     def reset(self):
         """ Reset `datetime.now` to the initial state. """
         self.current = self.original_value
@@ -83,15 +100,19 @@ def reset_mockTime():
     """ Fixture for reseting `datetime.now`. """
     mock_time.reset()
 
+
 @pytest.fixture
 def patch_datetime_now(monkeypatch):
     """ Fixture for monkeypatching `datetime.now` into an object we can manipulate. """
+
     class mydatetime:
         @classmethod
-        def now(cls, utc = None):
+        def now(cls, utc=None):
             return mock_time.getTime()
 
-    monkeypatch.setattr('appcli.backup_manager.backup_manager.datetime.datetime', mydatetime)
+    monkeypatch.setattr(
+        "appcli.backup_manager.backup_manager.datetime.datetime", mydatetime
+    )
 
 
 @pytest.fixture(scope="session")
@@ -113,6 +134,7 @@ def populate_conf_dir(tmpdir_factory):
             pass
     return conf_dir
 
+
 @pytest.fixture(scope="session")
 def populate_data_dir(tmpdir_factory):
     """
@@ -132,6 +154,7 @@ def populate_data_dir(tmpdir_factory):
             pass
     return data_dir
 
+
 @pytest.fixture(scope="session")
 def backup_tgz(populate_conf_dir, populate_data_dir, tmpdir_factory) -> Path:
     """
@@ -143,7 +166,9 @@ def backup_tgz(populate_conf_dir, populate_data_dir, tmpdir_factory) -> Path:
     backup_dir = tmpdir_factory.mktemp(BASE_BACKUP_DIR)
 
     # Create the click context that backup_manager expects to deal with
-    ctx = create_click_ctx(Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir))
+    ctx = create_click_ctx(
+        Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
+    )
     # Create our configuration
     conf = {
         "name": "full",
@@ -154,6 +179,7 @@ def backup_tgz(populate_conf_dir, populate_data_dir, tmpdir_factory) -> Path:
 
     return backup
 
+
 def create_click_ctx(conf_dir, data_dir, backup_dir) -> click.Context:
     """
     Creates a click context object with the minimum set of values to enable backup & restore.
@@ -161,28 +187,34 @@ def create_click_ctx(conf_dir, data_dir, backup_dir) -> click.Context:
         Returns:
             ctx: (click.Context). A click library context object.
     """
-    service_commands = type('service_commands', (object,),
-                 {'commands':{"shutdown":lambda : None, "start":lambda : None}})()
-    commands = {"service":service_commands}
+    service_commands = type(
+        "service_commands",
+        (object,),
+        {"commands": {"shutdown": lambda: None, "start": lambda: None}},
+    )()
+    commands = {"service": service_commands}
 
-    ctx = click.Context(obj = CliContext(
-        configuration_dir = conf_dir,
-        data_dir = data_dir,
-        backup_dir = backup_dir,
-        app_name = "test_app",
-        additional_data_dirs = None,
-        additional_env_variables = None,
-        environment = "test",
-        docker_credentials_file = None,
-        subcommand_args = None,
-        debug = True,
-        app_version = "1.0",
-        commands = commands,
-    ), command=click.Command(
-        name="backup",
-        context_settings={"allow_extra_args":False}
-        ))
+    ctx = click.Context(
+        obj=CliContext(
+            configuration_dir=conf_dir,
+            data_dir=data_dir,
+            backup_dir=backup_dir,
+            app_name="test_app",
+            additional_data_dirs=None,
+            additional_env_variables=None,
+            environment="test",
+            docker_credentials_file=None,
+            subcommand_args=None,
+            debug=True,
+            app_version="1.0",
+            commands=commands,
+        ),
+        command=click.Command(
+            name="backup", context_settings={"allow_extra_args": False}
+        ),
+    )
     return ctx
+
 
 def get_tar_contents(tar: str):
     """ Return a set of all files in the provided tar"""
@@ -219,7 +251,10 @@ time_delta = datetime.timedelta
 # TESTS
 # ------------------------------------------------------------------------------
 
-def test_minimum_config_required_for_local_backup(reset_mockTime, populate_conf_dir, populate_data_dir, tmp_path):
+
+def test_minimum_config_required_for_local_backup(
+    reset_mockTime, populate_conf_dir, populate_data_dir, tmp_path
+):
     """
     Try to create a backup file with the minimum of config set.
     Check that the file was created and that its contents were expected.
@@ -227,9 +262,13 @@ def test_minimum_config_required_for_local_backup(reset_mockTime, populate_conf_
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the click context that backup_manager expects to deal with
-    ctx = create_click_ctx(Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir))
+    ctx = create_click_ctx(
+        Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
+    )
     # Build our list of expected files to find in the backup
-    expected_files = get_expected_files(populate_data_dir,DATA_FILES_ALL).union(get_expected_files(populate_conf_dir, CONF_FILES_ALL))
+    expected_files = get_expected_files(populate_data_dir, DATA_FILES_ALL).union(
+        get_expected_files(populate_conf_dir, CONF_FILES_ALL)
+    )
     # Create our configuration
     conf = {
         "name": "full",
@@ -242,11 +281,15 @@ def test_minimum_config_required_for_local_backup(reset_mockTime, populate_conf_
     assert get_tar_contents(backup) == expected_files
 
 
-def test_backup_no_limit(reset_mockTime, patch_datetime_now, populate_conf_dir, populate_data_dir, tmp_path):
+def test_backup_no_limit(
+    reset_mockTime, patch_datetime_now, populate_conf_dir, populate_data_dir, tmp_path
+):
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the click context that backup_manager expects to deal with
-    ctx = create_click_ctx(Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir))
+    ctx = create_click_ctx(
+        Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
+    )
     # Create our configuration
     conf = {
         "name": "full",
@@ -260,11 +303,16 @@ def test_backup_no_limit(reset_mockTime, patch_datetime_now, populate_conf_dir, 
 
     assert len(os.listdir(os.path.dirname(backup))) == 10
 
-def test_backup_with_limit_keep_5(reset_mockTime, patch_datetime_now, populate_conf_dir, populate_data_dir, tmp_path):
+
+def test_backup_with_limit_keep_5(
+    reset_mockTime, patch_datetime_now, populate_conf_dir, populate_data_dir, tmp_path
+):
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the click context that backup_manager expects to deal with.
-    ctx = create_click_ctx(Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir))
+    ctx = create_click_ctx(
+        Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
+    )
     # Create our configuration.
     conf = {
         "name": "full",
@@ -278,23 +326,30 @@ def test_backup_with_limit_keep_5(reset_mockTime, patch_datetime_now, populate_c
 
     assert len(os.listdir(os.path.dirname(backup))) == 5
 
-def test_backup_with_limit_keep_last_5(reset_mockTime, patch_datetime_now, populate_conf_dir, populate_data_dir, tmp_path):
+
+def test_backup_with_limit_keep_last_5(
+    reset_mockTime, patch_datetime_now, populate_conf_dir, populate_data_dir, tmp_path
+):
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the click context that backup_manager expects to deal with.
-    ctx = create_click_ctx(Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir))
+    ctx = create_click_ctx(
+        Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
+    )
     # Create our configuration.
     conf = {
         "name": "full",
         "backup_limit": 5,
     }
-    expected_result = set({
-        "TEST_APP_2020-12-25T17:06:00.tgz",
-        "TEST_APP_2020-12-25T17:06:01.tgz",
-        "TEST_APP_2020-12-25T17:06:02.tgz",
-        "TEST_APP_2020-12-25T17:06:03.tgz",
-        "TEST_APP_2020-12-25T17:06:04.tgz"})
-
+    expected_result = set(
+        {
+            "TEST_APP_2020-12-25T17:06:00.tgz",
+            "TEST_APP_2020-12-25T17:06:01.tgz",
+            "TEST_APP_2020-12-25T17:06:02.tgz",
+            "TEST_APP_2020-12-25T17:06:03.tgz",
+            "TEST_APP_2020-12-25T17:06:04.tgz",
+        }
+    )
 
     backup_config = BackupConfig.from_dict(conf)
 
@@ -305,22 +360,22 @@ def test_backup_with_limit_keep_last_5(reset_mockTime, patch_datetime_now, popul
     # Compare as a set so list order does not matter.
     assert set(os.listdir(os.path.dirname(backup))) == expected_result
 
-def test_data_dir_missing_include_list(reset_mockTime, populate_conf_dir, populate_data_dir, tmp_path):
+
+def test_data_dir_missing_include_list(
+    reset_mockTime, populate_conf_dir, populate_data_dir, tmp_path
+):
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the click context that backup_manager expects to deal with.
-    ctx = create_click_ctx(Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir))
+    ctx = create_click_ctx(
+        Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
+    )
     # Build our list of expected files to find in the backup
-    expected_files = get_expected_files(populate_data_dir,DATA_FILES_ALL).union(get_expected_files(populate_conf_dir, CONF_FILES_ALL))
+    expected_files = get_expected_files(populate_data_dir, DATA_FILES_ALL).union(
+        get_expected_files(populate_conf_dir, CONF_FILES_ALL)
+    )
     # Create our configuration.
-    conf = {
-        "name": "full",
-        "file_filter":{
-            "data_dir":{
-                "include_list":""
-            }
-        }
-    }
+    conf = {"name": "full", "file_filter": {"data_dir": {"include_list": ""}}}
     backup_config = BackupConfig.from_dict(conf)
 
     backup = backup_config.backup(ctx)
@@ -329,22 +384,22 @@ def test_data_dir_missing_include_list(reset_mockTime, populate_conf_dir, popula
     assert Path(backup).exists()
     assert get_tar_contents(backup) == expected_files
 
-def test_data_dir_empty_include_list(reset_mockTime, populate_conf_dir, populate_data_dir, tmp_path):
+
+def test_data_dir_empty_include_list(
+    reset_mockTime, populate_conf_dir, populate_data_dir, tmp_path
+):
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the click context that backup_manager expects to deal with.
-    ctx = create_click_ctx(Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir))
+    ctx = create_click_ctx(
+        Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
+    )
     # Build our list of expected files to find in the backup
-    expected_files = get_expected_files(populate_data_dir,DATA_FILES_ALL).union(get_expected_files(populate_conf_dir, CONF_FILES_ALL))
+    expected_files = get_expected_files(populate_data_dir, DATA_FILES_ALL).union(
+        get_expected_files(populate_conf_dir, CONF_FILES_ALL)
+    )
     # Create our configuration.
-    conf = {
-        "name": "full",
-        "file_filter":{
-            "data_dir":{
-                "include_list":[]
-            }
-        }
-    }
+    conf = {"name": "full", "file_filter": {"data_dir": {"include_list": []}}}
     backup_config = BackupConfig.from_dict(conf)
 
     backup = backup_config.backup(ctx)
@@ -353,22 +408,22 @@ def test_data_dir_empty_include_list(reset_mockTime, populate_conf_dir, populate
     assert Path(backup).exists()
     assert get_tar_contents(backup) == expected_files
 
-def test_conf_dir_mising_include_list(reset_mockTime, populate_conf_dir, populate_data_dir, tmp_path):
+
+def test_conf_dir_mising_include_list(
+    reset_mockTime, populate_conf_dir, populate_data_dir, tmp_path
+):
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the click context that backup_manager expects to deal with.
-    ctx = create_click_ctx(Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir))
+    ctx = create_click_ctx(
+        Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
+    )
     # Build our list of expected files to find in the backup
-    expected_files = get_expected_files(populate_data_dir,DATA_FILES_ALL).union(get_expected_files(populate_conf_dir, CONF_FILES_ALL))
+    expected_files = get_expected_files(populate_data_dir, DATA_FILES_ALL).union(
+        get_expected_files(populate_conf_dir, CONF_FILES_ALL)
+    )
     # Create our configuration.
-    conf = {
-        "name": "full",
-        "file_filter":{
-            "conf_dir":{
-                "include_list":""
-            }
-        }
-    }
+    conf = {"name": "full", "file_filter": {"conf_dir": {"include_list": ""}}}
 
     backup_config = BackupConfig.from_dict(conf)
     backup = backup_config.backup(ctx)
@@ -376,26 +431,29 @@ def test_conf_dir_mising_include_list(reset_mockTime, populate_conf_dir, populat
     get_tar_contents(backup)
     assert Path(backup).exists()
     assert get_tar_contents(backup) == expected_files
+
 
 def test_include_list(reset_mockTime, populate_conf_dir, populate_data_dir, tmp_path):
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the click context that backup_manager expects to deal with.
-    ctx = create_click_ctx(Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir))
+    ctx = create_click_ctx(
+        Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
+    )
     # Build our list of expected files to find in the backup
-    expected_files = get_expected_files(populate_data_dir,set(["1.txt", "populated_folder/first.txt"]))
-    expected_files = expected_files.union(get_expected_files(populate_conf_dir ,["6.txt", "7.txt", ".hidden/10.txt"]))
+    expected_files = get_expected_files(
+        populate_data_dir, set(["1.txt", "populated_folder/first.txt"])
+    )
+    expected_files = expected_files.union(
+        get_expected_files(populate_conf_dir, ["6.txt", "7.txt", ".hidden/10.txt"])
+    )
     # Create our configuration.
     conf = {
         "name": "full",
-        "file_filter":{
-            "data_dir":{
-                "include_list":["1.txt", "**/first.txt"]
-            },
-            "conf_dir":{
-                "include_list":["**/*.txt"]
-            }
-        }
+        "file_filter": {
+            "data_dir": {"include_list": ["1.txt", "**/first.txt"]},
+            "conf_dir": {"include_list": ["**/*.txt"]},
+        },
     }
 
     backup_config = BackupConfig.from_dict(conf)
@@ -404,22 +462,22 @@ def test_include_list(reset_mockTime, populate_conf_dir, populate_data_dir, tmp_
     assert Path(backup).exists()
     assert get_tar_contents(backup) == expected_files
 
-def test_data_dir_empty_exclude_list(reset_mockTime, populate_conf_dir, populate_data_dir, tmp_path):
+
+def test_data_dir_empty_exclude_list(
+    reset_mockTime, populate_conf_dir, populate_data_dir, tmp_path
+):
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the click context that backup_manager expects to deal with.
-    ctx = create_click_ctx(Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir))
+    ctx = create_click_ctx(
+        Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
+    )
     # Build our list of expected files to find in the backup
-    expected_files = get_expected_files(populate_data_dir,DATA_FILES_ALL).union(get_expected_files(populate_conf_dir, CONF_FILES_ALL))
+    expected_files = get_expected_files(populate_data_dir, DATA_FILES_ALL).union(
+        get_expected_files(populate_conf_dir, CONF_FILES_ALL)
+    )
     # Create our configuration.
-    conf = {
-        "name": "full",
-        "file_filter":{
-            "data_dir":{
-                "exclude_list":[]
-            }
-        }
-    }
+    conf = {"name": "full", "file_filter": {"data_dir": {"exclude_list": []}}}
 
     backup_config = BackupConfig.from_dict(conf)
     backup = backup_config.backup(ctx)
@@ -427,49 +485,54 @@ def test_data_dir_empty_exclude_list(reset_mockTime, populate_conf_dir, populate
     assert Path(backup).exists()
     assert get_tar_contents(backup) == expected_files
 
-def test_data_dir_missing_exclude_list(reset_mockTime, populate_conf_dir, populate_data_dir, tmp_path):
+
+def test_data_dir_missing_exclude_list(
+    reset_mockTime, populate_conf_dir, populate_data_dir, tmp_path
+):
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the click context that backup_manager expects to deal with.
-    ctx = create_click_ctx(Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir))
+    ctx = create_click_ctx(
+        Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
+    )
     # Build our list of expected files to find in the backup
-    expected_files = get_expected_files(populate_data_dir,DATA_FILES_ALL).union(get_expected_files(populate_conf_dir, CONF_FILES_ALL))
+    expected_files = get_expected_files(populate_data_dir, DATA_FILES_ALL).union(
+        get_expected_files(populate_conf_dir, CONF_FILES_ALL)
+    )
     # Create our configuration.
-    conf = {
-        "name": "full",
-        "file_filter":{
-            "data_dir":{
-                "exclude_list":""
-            }
-        }
-    }
+    conf = {"name": "full", "file_filter": {"data_dir": {"exclude_list": ""}}}
 
     backup_config = BackupConfig.from_dict(conf)
     backup = backup_config.backup(ctx)
 
     assert Path(backup).exists()
     assert get_tar_contents(backup) == expected_files
+
 
 def test_exclude_list(reset_mockTime, populate_conf_dir, populate_data_dir, tmp_path):
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the click context that backup_manager expects to deal with.
-    ctx = create_click_ctx(Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir))
+    ctx = create_click_ctx(
+        Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
+    )
     # Build our list of expected files to find in the backup
-    expected_files = get_expected_files(populate_data_dir,DATA_FILES_ALL).union(get_expected_files(populate_conf_dir, CONF_FILES_ALL))
-    expected_files = expected_files - get_expected_files(populate_data_dir, set(["1.txt", "populated_folder/first.txt"]))
-    expected_files = expected_files - get_expected_files(populate_conf_dir,set(["6.txt", "7.txt", ".hidden/10.txt"]))
+    expected_files = get_expected_files(populate_data_dir, DATA_FILES_ALL).union(
+        get_expected_files(populate_conf_dir, CONF_FILES_ALL)
+    )
+    expected_files = expected_files - get_expected_files(
+        populate_data_dir, set(["1.txt", "populated_folder/first.txt"])
+    )
+    expected_files = expected_files - get_expected_files(
+        populate_conf_dir, set(["6.txt", "7.txt", ".hidden/10.txt"])
+    )
     # Create our configuration.
     conf = {
         "name": "full",
-        "file_filter":{
-            "data_dir":{
-                "exclude_list":["1.txt", "**/first.txt"]
-            },
-            "conf_dir":{
-                "exclude_list":["**/*.txt"]
-            }
-        }
+        "file_filter": {
+            "data_dir": {"exclude_list": ["1.txt", "**/first.txt"]},
+            "conf_dir": {"exclude_list": ["**/*.txt"]},
+        },
     }
 
     backup_config = BackupConfig.from_dict(conf)
@@ -478,28 +541,34 @@ def test_exclude_list(reset_mockTime, populate_conf_dir, populate_data_dir, tmp_
     assert Path(backup).exists()
     assert get_tar_contents(backup) == expected_files
 
-def test_data_dir_include_and_exclude_list(reset_mockTime, populate_conf_dir, populate_data_dir, tmp_path):
+
+def test_data_dir_include_and_exclude_list(
+    reset_mockTime, populate_conf_dir, populate_data_dir, tmp_path
+):
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the click context that backup_manager expects to deal with.
-    ctx = create_click_ctx(Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir))
+    ctx = create_click_ctx(
+        Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
+    )
     # Build our list of expected files to find in the backup
-    expected_files = get_expected_files(populate_data_dir, DATA_FILES_ALL).union(get_expected_files(populate_conf_dir, CONF_FILES_ALL))
+    expected_files = get_expected_files(populate_data_dir, DATA_FILES_ALL).union(
+        get_expected_files(populate_conf_dir, CONF_FILES_ALL)
+    )
     expected_files = get_expected_files(populate_conf_dir, set([".hidden/11.log"]))
-    expected_files = expected_files.union(get_expected_files(populate_data_dir, (set(["populated_folder/third.log"]))))
+    expected_files = expected_files.union(
+        get_expected_files(populate_data_dir, (set(["populated_folder/third.log"])))
+    )
     # Create our configuration.
     conf = {
         "name": "full",
-        "file_filter":{
-            "data_dir":{
-                "include_list":["**/*.log"],
-                "exclude_list":["**/?.log"]
+        "file_filter": {
+            "data_dir": {"include_list": ["**/*.log"], "exclude_list": ["**/?.log"]},
+            "conf_dir": {
+                "include_list": [".hidden/**/*"],
+                "exclude_list": ["**/*.txt"],
             },
-            "conf_dir":{
-                "include_list":[".hidden/**/*"],
-                "exclude_list":["**/*.txt"]
-            }
-        }
+        },
     }
 
     backup_config = BackupConfig.from_dict(conf)
@@ -508,47 +577,42 @@ def test_data_dir_include_and_exclude_list(reset_mockTime, populate_conf_dir, po
     assert Path(backup).exists()
     assert get_tar_contents(backup) == expected_files
 
+
 def test_frequency_always_run():
-    conf = {
-        "name": "full",
-        "frequency": "* * *"
-    }
+    conf = {"name": "full", "frequency": "* * *"}
 
     backup_config = BackupConfig.from_dict(conf)
     result = backup_config.should_run()
 
     assert result == True
+
 
 def test_frequency_first_of_month_correct_date(reset_mockTime, monkeypatch):
     monkeypatch.setattr(
         "time.time",
-        lambda  : 1614568341, # 1st of march
+        lambda: 1614568341,  # 1st of march
     )
-    conf = {
-        "name": "full",
-        "frequency": "1 * *"
-    }
+    conf = {"name": "full", "frequency": "1 * *"}
 
     backup_config = BackupConfig.from_dict(conf)
     result = backup_config.should_run()
 
     assert result == True
 
+
 def test_frequency_first_of_month_incorrect_date(reset_mockTime, monkeypatch):
     monkeypatch.setattr(
         "time.time",
-        lambda  : 1614654741, # 2nd of march
+        lambda: 1614654741,  # 2nd of march
     )
 
-    conf = {
-        "name": "full",
-        "frequency": "1 * *"
-    }
+    conf = {"name": "full", "frequency": "1 * *"}
 
     backup_config = BackupConfig.from_dict(conf)
     result = backup_config.should_run()
 
     assert result == False
+
 
 def test_will_not_run_with_missing_name(reset_mockTime):
     conf = {
@@ -560,6 +624,7 @@ def test_will_not_run_with_missing_name(reset_mockTime):
 
     assert "'name'" in str(excinfo.value)
 
+
 def test_defaults_set_correctly_when_missing(reset_mockTime):
     conf = {
         "name": "full",
@@ -568,12 +633,13 @@ def test_defaults_set_correctly_when_missing(reset_mockTime):
 
     assert backup_config.name == "full"
     assert backup_config.backup_limit == 0
-    assert backup_config.file_filter.data_dir.include_list == ['**/*']
-    assert backup_config.file_filter.data_dir.exclude_list == ['[]']
-    assert backup_config.file_filter.conf_dir.include_list == ['**/*']
-    assert backup_config.file_filter.conf_dir.exclude_list == ['[]']
+    assert backup_config.file_filter.data_dir.include_list == ["**/*"]
+    assert backup_config.file_filter.data_dir.exclude_list == ["[]"]
+    assert backup_config.file_filter.conf_dir.include_list == ["**/*"]
+    assert backup_config.file_filter.conf_dir.exclude_list == ["[]"]
     assert backup_config.remote_backups == []
     assert backup_config.frequency == "* * *"
+
 
 def test_defaults_set_correctly_when_empty(reset_mockTime):
     conf = {
@@ -581,16 +647,16 @@ def test_defaults_set_correctly_when_empty(reset_mockTime):
         "frequency": "",
         "backup_limit": "",
         "remote_backups": "",
-        "file_filter":{}
+        "file_filter": {},
     }
     backup_config = BackupConfig.from_dict(conf)
 
     assert backup_config.name == "full"
     assert backup_config.backup_limit == 0
-    assert backup_config.file_filter.data_dir.include_list == ['**/*']
-    assert backup_config.file_filter.data_dir.exclude_list == ['[]']
-    assert backup_config.file_filter.conf_dir.include_list == ['**/*']
-    assert backup_config.file_filter.conf_dir.exclude_list == ['[]']
+    assert backup_config.file_filter.data_dir.include_list == ["**/*"]
+    assert backup_config.file_filter.data_dir.exclude_list == ["[]"]
+    assert backup_config.file_filter.conf_dir.include_list == ["**/*"]
+    assert backup_config.file_filter.conf_dir.exclude_list == ["[]"]
     assert backup_config.remote_backups == []
     assert backup_config.frequency == "* * *"
 
@@ -601,17 +667,14 @@ def test_defaults_set_correctly_empty_filter_dirs(reset_mockTime):
         "frequency": "",
         "backup_limit": "",
         "remote_backups": "",
-        "file_filter":{
-            "data_dir":{},
-            "conf_dir":{}
-        }
+        "file_filter": {"data_dir": {}, "conf_dir": {}},
     }
     backup_config = BackupConfig.from_dict(conf)
 
-    assert backup_config.file_filter.data_dir.include_list == ['**/*']
-    assert backup_config.file_filter.data_dir.exclude_list == ['[]']
-    assert backup_config.file_filter.conf_dir.include_list == ['**/*']
-    assert backup_config.file_filter.conf_dir.exclude_list == ['[]']
+    assert backup_config.file_filter.data_dir.include_list == ["**/*"]
+    assert backup_config.file_filter.data_dir.exclude_list == ["[]"]
+    assert backup_config.file_filter.conf_dir.include_list == ["**/*"]
+    assert backup_config.file_filter.conf_dir.exclude_list == ["[]"]
 
 
 def test_defaults_set_correctly_empty_include_exclude_lists(reset_mockTime):
@@ -620,23 +683,17 @@ def test_defaults_set_correctly_empty_include_exclude_lists(reset_mockTime):
         "frequency": "",
         "backup_limit": "",
         "remote_backups": "",
-        "file_filter":{
-            "data_dir":{
-                "include_list":[],
-                "exclude_list":[]
-            },
-            "conf_dir":{
-                "include_list":[],
-                "exclude_list":[]
-            }
-        }
+        "file_filter": {
+            "data_dir": {"include_list": [], "exclude_list": []},
+            "conf_dir": {"include_list": [], "exclude_list": []},
+        },
     }
     backup_config = BackupConfig.from_dict(conf)
 
-    assert backup_config.file_filter.data_dir.include_list == ['**/*']
-    assert backup_config.file_filter.data_dir.exclude_list == ['[]']
-    assert backup_config.file_filter.conf_dir.include_list == ['**/*']
-    assert backup_config.file_filter.conf_dir.exclude_list == ['[]']
+    assert backup_config.file_filter.data_dir.include_list == ["**/*"]
+    assert backup_config.file_filter.data_dir.exclude_list == ["[]"]
+    assert backup_config.file_filter.conf_dir.include_list == ["**/*"]
+    assert backup_config.file_filter.conf_dir.exclude_list == ["[]"]
 
 
 def test_defaults_set_correctly_missing_include_exclude_lists(reset_mockTime):
@@ -645,43 +702,35 @@ def test_defaults_set_correctly_missing_include_exclude_lists(reset_mockTime):
         "frequency": "",
         "backup_limit": "",
         "remote_backups": "",
-        "file_filter":{
-            "data_dir":{
-                "include_list":"",
-                "exclude_list":""
-            },
-            "conf_dir":{
-                "include_list":"",
-                "exclude_list":""
-            }
-        }
+        "file_filter": {
+            "data_dir": {"include_list": "", "exclude_list": ""},
+            "conf_dir": {"include_list": "", "exclude_list": ""},
+        },
     }
     backup_config = BackupConfig.from_dict(conf)
 
-    assert backup_config.file_filter.data_dir.include_list == ['**/*']
-    assert backup_config.file_filter.data_dir.exclude_list == ['[]']
-    assert backup_config.file_filter.conf_dir.include_list == ['**/*']
-    assert backup_config.file_filter.conf_dir.exclude_list == ['[]']
+    assert backup_config.file_filter.data_dir.include_list == ["**/*"]
+    assert backup_config.file_filter.data_dir.exclude_list == ["[]"]
+    assert backup_config.file_filter.conf_dir.include_list == ["**/*"]
+    assert backup_config.file_filter.conf_dir.exclude_list == ["[]"]
+
 
 def test_simple_remote_backups_parsing(reset_mockTime):
     conf = {
         "name": "full",
-        "remote_backups":[
+        "remote_backups": [
             {
-                "name":"s3_weekley",
-                "strategy_type" : "S3",
+                "name": "s3_weekley",
+                "strategy_type": "S3",
                 "configuration": {
                     "bucket_name": "name",
-                    "access_key":"asdf123",
-                    "secret_key":"qwer456",
-                    "bucket_path":"home/weekly",
-                    "tags":{
-                        "frequency":"weekley",
-                        "type":"data"
-                    }
-                }
+                    "access_key": "asdf123",
+                    "secret_key": "qwer456",
+                    "bucket_path": "home/weekly",
+                    "tags": {"frequency": "weekley", "type": "data"},
+                },
             }
-        ]
+        ],
     }
 
     backup_config = BackupConfig.from_dict(conf)
@@ -689,25 +738,23 @@ def test_simple_remote_backups_parsing(reset_mockTime):
     assert backup_config.remote_backups[0].name == "s3_weekley"
     assert backup_config.remote_backups[0].strategy_type == "S3"
 
+
 def test_simple_S3_remote_backup_parsing(reset_mockTime):
     conf = {
         "name": "full",
-        "remote_backups":[
+        "remote_backups": [
             {
-                "name":"s3_weekley",
-                "strategy_type" : "S3",
+                "name": "s3_weekley",
+                "strategy_type": "S3",
                 "configuration": {
                     "bucket_name": "name",
-                    "access_key":"asdf123",
-                    "secret_key":"qwer456",
-                    "bucket_path":"home/weekly",
-                    "tags":{
-                        "frequency":"weekley",
-                        "type":"data"
-                    }
-                }
+                    "access_key": "asdf123",
+                    "secret_key": "qwer456",
+                    "bucket_path": "home/weekly",
+                    "tags": {"frequency": "weekley", "type": "data"},
+                },
             }
-        ]
+        ],
     }
 
     backup_config = BackupConfig.from_dict(conf)
@@ -720,27 +767,32 @@ def test_simple_S3_remote_backup_parsing(reset_mockTime):
     assert backup_config.remote_backups[0].strategy.tags["type"] == "data"
 
 
-def test_restore_fails_no_backup(reset_mockTime, populate_conf_dir, populate_data_dir, tmp_path, caplog):
+def test_restore_fails_no_backup(
+    reset_mockTime, populate_conf_dir, populate_data_dir, tmp_path, caplog
+):
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the click context that backup_manager expects to deal with
-    ctx = create_click_ctx(Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir))
+    ctx = create_click_ctx(
+        Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
+    )
     # Build our list of expected files to find in the backup
-    expected_files = get_expected_files(populate_data_dir,DATA_FILES_ALL).union(get_expected_files(populate_conf_dir, CONF_FILES_ALL))
+    expected_files = get_expected_files(populate_data_dir, DATA_FILES_ALL).union(
+        get_expected_files(populate_conf_dir, CONF_FILES_ALL)
+    )
     # Create our configuration
-    conf = {
-        "backups":[
-            {"name": "full"}
-        ]
-    }
+    conf = {"backups": [{"name": "full"}]}
 
     backup_manager = BackupManager(conf)
     with pytest.raises(SystemExit) as excinfo:
         backup_manager.restore(ctx, "fake_file.tgz")
     assert "1" in str(excinfo.value)
-    #TODO: We should check the logs here for an error that contains the message "fake_file.tgz] not found"
+    # TODO: We should check the logs here for an error that contains the message "fake_file.tgz] not found"
 
-def test_restore_works_with_empty_filesystem(reset_mockTime, populate_conf_dir, populate_data_dir,backup_tgz, tmp_path):
+
+def test_restore_works_with_empty_filesystem(
+    reset_mockTime, populate_conf_dir, populate_data_dir, backup_tgz, tmp_path
+):
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the temporary conf directory to restore into.
@@ -754,21 +806,33 @@ def test_restore_works_with_empty_filesystem(reset_mockTime, populate_conf_dir, 
     # Build our list of expected files to find in the backup.
     expected_files = DATA_FILES_ALL.union(CONF_FILES_ALL)
     # Create our configuration
-    conf = [
-            {"name": "full"}
-    ]
+    conf = [{"name": "full"}]
 
     backup_manager = BackupManager(conf)
     backup_manager.restore(ctx, backup_tgz)
 
-    data_result = set([os.path.join(dp[len(str(data_dir)) :], f).strip("/") for dp, dn, filenames in os.walk(data_dir) for f in filenames])
-    conf_result = set([os.path.join(dp[len(str(conf_dir)) :], f).strip("/") for dp, dn, filenames in os.walk(conf_dir) for f in filenames])
-
+    data_result = set(
+        [
+            os.path.join(dp[len(str(data_dir)) :], f).strip("/")
+            for dp, dn, filenames in os.walk(data_dir)
+            for f in filenames
+        ]
+    )
+    conf_result = set(
+        [
+            os.path.join(dp[len(str(conf_dir)) :], f).strip("/")
+            for dp, dn, filenames in os.walk(conf_dir)
+            for f in filenames
+        ]
+    )
 
     assert DATA_FILES_ALL == data_result
     assert CONF_FILES_ALL == conf_result
 
-def test_restore_works_with_existing_files(reset_mockTime, populate_conf_dir, populate_data_dir,backup_tgz, tmp_path):
+
+def test_restore_works_with_existing_files(
+    reset_mockTime, populate_conf_dir, populate_data_dir, backup_tgz, tmp_path
+):
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the temporary conf directory to restore into.
@@ -782,12 +846,10 @@ def test_restore_works_with_existing_files(reset_mockTime, populate_conf_dir, po
     # Build our list of expected files to find in the backup.
     expected_files = DATA_FILES_ALL.union(CONF_FILES_ALL)
     # Create our configuration
-    conf = [
-            {"name": "full"}
-    ]
+    conf = [{"name": "full"}]
     # Create an existing file that will be overwritten on restore.
     with open(os.path.join(data_dir, "1.txt"), "w") as f:
-            f.write("some sample text")
+        f.write("some sample text")
 
     backup_manager = BackupManager(conf)
     backup_manager.restore(ctx, backup_tgz)
@@ -796,7 +858,10 @@ def test_restore_works_with_existing_files(reset_mockTime, populate_conf_dir, po
 
     assert contents == ""
 
-def test_can_restore_with_no_config(reset_mockTime, populate_conf_dir, populate_data_dir,backup_tgz, tmp_path):
+
+def test_can_restore_with_no_config(
+    reset_mockTime, populate_conf_dir, populate_data_dir, backup_tgz, tmp_path
+):
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the temporary conf directory to restore into.
@@ -815,14 +880,33 @@ def test_can_restore_with_no_config(reset_mockTime, populate_conf_dir, populate_
     backup_manager = BackupManager(conf)
     backup_manager.restore(ctx, backup_tgz)
 
-    data_result = set([os.path.join(dp[len(str(data_dir)) :], f).strip("/") for dp, dn, filenames in os.walk(data_dir) for f in filenames])
-    conf_result = set([os.path.join(dp[len(str(conf_dir)) :], f).strip("/") for dp, dn, filenames in os.walk(conf_dir) for f in filenames])
-
+    data_result = set(
+        [
+            os.path.join(dp[len(str(data_dir)) :], f).strip("/")
+            for dp, dn, filenames in os.walk(data_dir)
+            for f in filenames
+        ]
+    )
+    conf_result = set(
+        [
+            os.path.join(dp[len(str(conf_dir)) :], f).strip("/")
+            for dp, dn, filenames in os.walk(conf_dir)
+            for f in filenames
+        ]
+    )
 
     assert DATA_FILES_ALL == data_result
     assert CONF_FILES_ALL == conf_result
 
-def test_restore_triggers_config_backups(reset_mockTime, patch_datetime_now, populate_conf_dir, populate_data_dir,backup_tgz, tmp_path):
+
+def test_restore_triggers_config_backups(
+    reset_mockTime,
+    patch_datetime_now,
+    populate_conf_dir,
+    populate_data_dir,
+    backup_tgz,
+    tmp_path,
+):
     expected_result = set({"TEST_APP_2020-12-25T17:05:55.tgz"})
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
@@ -837,9 +921,7 @@ def test_restore_triggers_config_backups(reset_mockTime, patch_datetime_now, pop
     # Build our list of expected files to find in the backup.
     expected_files = DATA_FILES_ALL.union(CONF_FILES_ALL)
     # Create our configuration
-    conf = [
-            {"name": "full"}
-    ]
+    conf = [{"name": "full"}]
 
     backup_manager = BackupManager(conf)
     backup_manager.restore(ctx, backup_tgz)
@@ -847,8 +929,11 @@ def test_restore_triggers_config_backups(reset_mockTime, patch_datetime_now, pop
     # Compare as a set so list order does not matter.
     assert set(os.listdir(os.path.join(backup_dir, "full"))) == expected_result
 
+
 # does not replace existing files
-def test_restore_does_not_replace_files_not_in_backup(reset_mockTime, populate_conf_dir, populate_data_dir,backup_tgz, tmp_path):
+def test_restore_does_not_replace_files_not_in_backup(
+    reset_mockTime, populate_conf_dir, populate_data_dir, backup_tgz, tmp_path
+):
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the temporary conf directory to restore into.
@@ -862,30 +947,53 @@ def test_restore_does_not_replace_files_not_in_backup(reset_mockTime, populate_c
     # Build our list of expected files to find in the backup.
     expected_files = DATA_FILES_ALL.union(CONF_FILES_ALL)
     # Create our configuration
-    conf = [
-            {"name": "full"}
-    ]
+    conf = [{"name": "full"}]
     # Create existing files in our temp data directory that should be kept on restore.
     with open(os.path.join(data_dir, "existing_file_1.txt"), "w") as f:
-            pass
+        pass
     with open(os.path.join(data_dir, "existing_file_2.yml"), "w") as f:
-            pass
+        pass
 
     backup_manager = BackupManager(conf)
     backup_manager.restore(ctx, backup_tgz)
 
-    data_result = set([os.path.join(dp[len(str(data_dir)) :], f).strip("/") for dp, dn, filenames in os.walk(data_dir) for f in filenames])
-    conf_result = set([os.path.join(dp[len(str(conf_dir)) :], f).strip("/") for dp, dn, filenames in os.walk(conf_dir) for f in filenames])
+    data_result = set(
+        [
+            os.path.join(dp[len(str(data_dir)) :], f).strip("/")
+            for dp, dn, filenames in os.walk(data_dir)
+            for f in filenames
+        ]
+    )
+    conf_result = set(
+        [
+            os.path.join(dp[len(str(conf_dir)) :], f).strip("/")
+            for dp, dn, filenames in os.walk(conf_dir)
+            for f in filenames
+        ]
+    )
 
-    assert DATA_FILES_ALL.union(set({"existing_file_1.txt", "existing_file_2.yml"})) == data_result
+    assert (
+        DATA_FILES_ALL.union(set({"existing_file_1.txt", "existing_file_2.yml"}))
+        == data_result
+    )
     assert CONF_FILES_ALL == conf_result
 
-def test_view_backups(reset_mockTime, patch_datetime_now, populate_conf_dir, populate_data_dir, tmp_path, capsys):
+
+def test_view_backups(
+    reset_mockTime,
+    patch_datetime_now,
+    populate_conf_dir,
+    populate_data_dir,
+    tmp_path,
+    capsys,
+):
     expected = "full/TEST_APP_2020-12-25T17:05:55.tgz\n"
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the click context that backup_manager expects to deal with
-    ctx = create_click_ctx(Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir))
+    ctx = create_click_ctx(
+        Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
+    )
     # Create our configuration
     conf = {
         "name": "full",
@@ -904,21 +1012,33 @@ def test_view_backups(reset_mockTime, patch_datetime_now, populate_conf_dir, pop
 
     assert expected == output
 
-def test_view_multiple_backups_descending_order(reset_mockTime, patch_datetime_now, populate_conf_dir, populate_data_dir, tmp_path, capsys):
-    expected = ("full/TEST_APP_2020-12-25T17:06:04.tgz\n" +
-    "full/TEST_APP_2020-12-25T17:06:03.tgz\n" +
-    "full/TEST_APP_2020-12-25T17:06:02.tgz\n" +
-    "full/TEST_APP_2020-12-25T17:06:01.tgz\n" +
-    "full/TEST_APP_2020-12-25T17:06:00.tgz\n" +
-    "full/TEST_APP_2020-12-25T17:05:59.tgz\n" +
-    "full/TEST_APP_2020-12-25T17:05:58.tgz\n" +
-    "full/TEST_APP_2020-12-25T17:05:57.tgz\n" +
-    "full/TEST_APP_2020-12-25T17:05:56.tgz\n" +
-    "full/TEST_APP_2020-12-25T17:05:55.tgz\n")
+
+def test_view_multiple_backups_descending_order(
+    reset_mockTime,
+    patch_datetime_now,
+    populate_conf_dir,
+    populate_data_dir,
+    tmp_path,
+    capsys,
+):
+    expected = (
+        "full/TEST_APP_2020-12-25T17:06:04.tgz\n"
+        + "full/TEST_APP_2020-12-25T17:06:03.tgz\n"
+        + "full/TEST_APP_2020-12-25T17:06:02.tgz\n"
+        + "full/TEST_APP_2020-12-25T17:06:01.tgz\n"
+        + "full/TEST_APP_2020-12-25T17:06:00.tgz\n"
+        + "full/TEST_APP_2020-12-25T17:05:59.tgz\n"
+        + "full/TEST_APP_2020-12-25T17:05:58.tgz\n"
+        + "full/TEST_APP_2020-12-25T17:05:57.tgz\n"
+        + "full/TEST_APP_2020-12-25T17:05:56.tgz\n"
+        + "full/TEST_APP_2020-12-25T17:05:55.tgz\n"
+    )
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the click context that backup_manager expects to deal with
-    ctx = create_click_ctx(Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir))
+    ctx = create_click_ctx(
+        Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
+    )
     # Create our configuration
     conf = {
         "name": "full",
@@ -939,13 +1059,25 @@ def test_view_multiple_backups_descending_order(reset_mockTime, patch_datetime_n
 
     assert expected == output
 
-def test_view_backups_multiple_backup_strategies(reset_mockTime, patch_datetime_now, populate_conf_dir, populate_data_dir, tmp_path, capsys):
-    expected = ("logs/TEST_APP_2020-12-25T17:05:56.tgz\n"
-        "full/TEST_APP_2020-12-25T17:05:55.tgz\n")
+
+def test_view_backups_multiple_backup_strategies(
+    reset_mockTime,
+    patch_datetime_now,
+    populate_conf_dir,
+    populate_data_dir,
+    tmp_path,
+    capsys,
+):
+    expected = (
+        "logs/TEST_APP_2020-12-25T17:05:56.tgz\n"
+        "full/TEST_APP_2020-12-25T17:05:55.tgz\n"
+    )
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the click context that backup_manager expects to deal with
-    ctx = create_click_ctx(Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir))
+    ctx = create_click_ctx(
+        Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
+    )
     # Create our configuration
     conf_full = {
         "name": "full",
@@ -953,14 +1085,10 @@ def test_view_backups_multiple_backup_strategies(reset_mockTime, patch_datetime_
     }
     conf_logs = {
         "name": "logs",
-        "file_filter":{
-            "data_dir":{
-                "include_list":["1.txt", "**/first.txt"]
-            },
-            "conf_dir":{
-                "include_list":["**/*.txt"]
-            }
-        }
+        "file_filter": {
+            "data_dir": {"include_list": ["1.txt", "**/first.txt"]},
+            "conf_dir": {"include_list": ["**/*.txt"]},
+        },
     }
     # Create a backup to view.
     with capsys.disabled():
@@ -979,4 +1107,3 @@ def test_view_backups_multiple_backup_strategies(reset_mockTime, patch_datetime_
     output = captured.out
 
     assert expected == output
-
