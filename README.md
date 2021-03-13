@@ -42,7 +42,7 @@ Stack variables can be set within the `stack-settings.yml` file as described in 
 
 ### Define the CLI for your application `myapp`
 
-*Note for appcli version 1.1.3 and below*: Import paths to access to appcli
+_Note for appcli version 1.1.3 and below_: Import paths to access to appcli
 internal classes and methods is now by a full path, rather than being exposed
 at the root. This was done to allow access to all methods and classes using
 python3 implicit namespaced packages.
@@ -116,30 +116,30 @@ python3 implicit namespaced packages.
 ### Configure application backup
 
 Appcli's `backup` command creates backups of configuration and data of an application, stored locally in the
-backup directory. The settings for backup are configurable through a `backup` block in `stack-settings.yml`.
+backup directory. The settings for backups are configured through entries in a `backups` block in `stack-settings.yml`.
 
-The available keys for the `backup` block are:
+The available keys for entries in the `backups` block are:
 
-| key          | Description                                                                                                         |
-| ------------ | ------------------------------------------------------------------------------------------------------------------- |
-| name         | The name of the folder to place the backup in locally in the `backup` directory                                     |
-| backup_limit | The number of local backups to keep.                                                                                |
-| file_filter  | The file_filter is several lists of glob patterns used to specify what files to include or exclude from the backup. |
-| frequency    | The cron-like frequency at which backups will execute.                                                              |
-| remote_backups       | The list of remote backup strategies.                                                                               |
+| key            | Description                                                                                                       |
+| -------------- | ----------------------------------------------------------------------------------------------------------------- |
+| name           | The name of the backup. Must be unique between backup definitions.                                                |
+| backup_limit   | The number of local backups to keep. Set to `0` to disable rolling deletion.                                      |
+| file_filter    | The file_filter contains lists of glob patterns used to specify what files to include or exclude from the backup. |
+| frequency      | The cron-like frequency at which backups will execute.                                                            |
+| remote_backups | The list of remote backup strategies.                                                                             |
 
     # filename: stack-settings.yml
 
-    backup:
-        name: "full"
+    backups:
+      - name: "full"
         backup_limit: 0
         file_filter:
-            data_dir:
-                include_list:
-                exclude_list:
-            conf_dir:
-                include_list:
-                exclude_list:
+          data_dir:
+            include_list:
+            exclude_list:
+          conf_dir:
+            include_list:
+            exclude_list:
         frequency: "* * *"
         remote_backups:
 
@@ -153,45 +153,42 @@ Set this value to `0` to keep all backups.
 
 #### File filter
 
-The `file_filter` block in `stack-settings.yml` contains the details of which files to include or exclude for the `conf` and `data` directories. For more details including examples [here](/README_BACKUP_FILE_FILTER.md)
-
-If you want to back up every file, do not include the `ignore_list` key.
+The `file_filter` block enables filtering of files to backup from `conf` and `data` directories. For more details
+including examples, see [here](/README_BACKUP_FILE_FILTER.md).
 
     # filename: stack-settings.yml
+    # Includes all log files from data dir only
 
-    backup:
-        name: "full"
+    backups:
+      - name: "full"
         backup_limit: 0
         file_filter:
-            data_dir:
-                include_list:
-                - "glob to include"
-                exclude_list:
-                - "glob to exclude"
+          data_dir:
+            include_list:
+              - "**/*.log"
+            exclude_list:
             conf_dir:
-                include_list:
-                exclude_list:
+              include_list:
+              exclude_list:
+                - "**/*"
         frequency: "* * *"
         remote_backups:
 
-##### Freqency
+#### Freqency
 
-Running the `backup` command will attempt to invoke all backup strategies. Appcli supports limiting the number of
-backups by using a cron-like frequency filter. Due to implementation limitations, the
-filtering is only applied on a day-by-day basis, which assumes backups are run only once-daily.
+Appcli supports limiting individual backups to run on only specific days using a cron-like frequency filter.
 
-When the `backup` command is run, each backup strategy will check if the `frequency` pattern matches today's date. Only
-strategies whose `frequency` pattern match today's date will execute.
+When the `backup` command is run, each backup strategy will check if the `frequency` pattern matches
+today's date. Only strategies whose `frequency` pattern match today's date will execute.
 
-The input pattern `pattern` is prefixed with `"* * "` and used as a standard cron expression to check for a match.
-i.e. `"* * $pattern"`.
+The input pattern `pattern` is prefixed with `"* * "` and is used as a standard cron expression to
+check for a match. i.e. `"* * $pattern"`.
 
 Examples:
 
 - `"* * *"` (cron equivalent `"* * * * *"`) will always run.
 - `"* * 0"` (cron equivalent `"* * * * 0"`) will only run on Sunday.
 - `"1 */3 *"` (cron equivalent `"* * 1 */3 *"`) will only run on the first day-of-month of every 3rd month.
-
 
 #### Remote backup
 
@@ -206,24 +203,6 @@ The available keys for every remote backup strategy are:
 | strategy_type | The type of this backup, must match an implemented remote backup strategy.  |
 | configuration | Custom configuration block that is specific to each remote backup strategy. |
 
-    # filename: stack-settings.yml
-
-    backup:
-        name: "logs"
-        backup_limit: 0
-        file_filter:
-            conf_dir:
-                include_list:
-                    - "**/*.log"
-            data_dir:
-                include_list:
-                    - "**/*.log"
-        remote_backups:
-        - name: "daily_S3"
-          strategy_type: "S3"
-          configuration:
-
-
 ##### Strategies
 
 ###### AWS S3 remote strategy
@@ -235,14 +214,14 @@ The available configuration keys for an S3 backup are:
 | ----------- | --------------------------------------------------------------------------------------------------------------------------- |
 | bucket_name | The name of the bucket to upload to.                                                                                        |
 | access_key  | The AWS Access key ID for the account to upload with.                                                                       |
-| secret_key  | The AWS Secret access key for the account to upload with. The value *must* be encrypted using the appcli `encrypt` command. |
+| secret_key  | The AWS Secret access key for the account to upload with. The value _must_ be encrypted using the appcli `encrypt` command. |
 | bucket_path | The path in the S3 bucket to upload to. Set this to an empty string to upload to the root of the bucket.                    |
 | tags        | Key value pairs of tags to set on the backup object.                                                                        |
 
     # filename: stack-settings.yml
 
-    backup:
-        name: "full_backup"
+    backups:
+      - name: "full_backup"
         backup_limit: 0
         remote_backups:
         - name: "weekly_S3"
@@ -253,8 +232,8 @@ The available configuration keys for an S3 backup are:
             secret_key: "enc:id=1:encrypted_text:end"
             bucket_path: "bucket/path"
             tags:
-                frequency: "weekly"
-                type: "data"
+              frequency: "weekly"
+              type: "data"
 
 ### Restoring a remote backup
 
