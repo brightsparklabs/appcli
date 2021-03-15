@@ -35,7 +35,7 @@ from appcli.models.cli_context import CliContext
 @dataclass_json
 @dataclass
 class GlobList(DataClassExtensions):
-    """ The container class for lits of globs for the include and exclude lists. """
+    """ The container class for lists of globs for the include and exclude lists. """
 
     include_list: Optional[List[str]] = field(default_factory=lambda: ["**/*"])
     """ A List of glob patterns that represents the files to be added to the backup. Will default to everything. """
@@ -65,7 +65,7 @@ class BackupConfig(DataClassExtensions):
     name: str
     """ The name of the folder to place the local backup in. """
 
-    backup_limit: Optional[int] = field(default=0)
+    backup_limit: Optional[int] = field(default_factory=lambda: 0)
     """ The number of backups to retain locally. Set to 0 to never delete a backup. """
 
     file_filter: Optional[FileFilter] = field(
@@ -79,7 +79,7 @@ class BackupConfig(DataClassExtensions):
     remote_backups: Optional[List[RemoteBackup]] = field(default_factory=list)
     """ An optional list of remote backup strategies of potentially varing types. """
 
-    frequency: Optional[str] = field(default="* * *")
+    frequency: Optional[str] = field(default_factory=lambda: "* * *")
     """ An optional CRON frequency with the time stripped out i.e. `* * *` for specifying when this strategy should run. """
 
     def should_run(self) -> bool:

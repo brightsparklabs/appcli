@@ -56,9 +56,9 @@ class RemoteBackup(DataClassExtensions):
 
     """
 
-    strategy_type: str = field(default="")
+    strategy_type: str = field(default_factory=lambda: "")
     """ The remote backup strategy type. This must match a key in remote_strategy_factory.py STRATEGIES. """
-    name: Optional[str] = field(default="")
+    name: Optional[str] = field(default_factory=lambda: "")
     """ An optional name/description for the remote strategy. """
     configuration: dict = field(default_factory=dict)
     """ A dict that contains additional configuration values that allows the remote strategy to run. """
