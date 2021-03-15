@@ -329,11 +329,11 @@ def test_backup_with_limit_keep_last_5(
     }
     expected_result = set(
         {
-            "TEST_APP_2020-12-25T17:06:00.tgz",
-            "TEST_APP_2020-12-25T17:06:01.tgz",
-            "TEST_APP_2020-12-25T17:06:02.tgz",
-            "TEST_APP_2020-12-25T17:06:03.tgz",
-            "TEST_APP_2020-12-25T17:06:04.tgz",
+            "TEST_APP_FULL_2020-12-25T17:06:00.tgz",
+            "TEST_APP_FULL_2020-12-25T17:06:01.tgz",
+            "TEST_APP_FULL_2020-12-25T17:06:02.tgz",
+            "TEST_APP_FULL_2020-12-25T17:06:03.tgz",
+            "TEST_APP_FULL_2020-12-25T17:06:04.tgz",
         }
     )
 
@@ -883,7 +883,7 @@ def test_restore_triggers_config_backups(
     backup_tgz,
     tmp_path,
 ):
-    expected_result = set({"TEST_APP_2020-12-25T17:05:55.tgz"})
+    expected_result = set({"TEST_APP_FULL_2020-12-25T17:05:55.tgz"})
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the temporary conf directory to restore into.
@@ -960,7 +960,7 @@ def test_view_backups(
     tmp_path,
     capsys,
 ):
-    expected = "full/TEST_APP_2020-12-25T17:05:55.tgz\n"
+    expected = "full/TEST_APP_FULL_2020-12-25T17:05:55.tgz\n"
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
     # Create the click context that backup_manager expects to deal with
@@ -995,16 +995,16 @@ def test_view_multiple_backups_descending_order(
     capsys,
 ):
     expected = (
-        "full/TEST_APP_2020-12-25T17:06:04.tgz\n"
-        + "full/TEST_APP_2020-12-25T17:06:03.tgz\n"
-        + "full/TEST_APP_2020-12-25T17:06:02.tgz\n"
-        + "full/TEST_APP_2020-12-25T17:06:01.tgz\n"
-        + "full/TEST_APP_2020-12-25T17:06:00.tgz\n"
-        + "full/TEST_APP_2020-12-25T17:05:59.tgz\n"
-        + "full/TEST_APP_2020-12-25T17:05:58.tgz\n"
-        + "full/TEST_APP_2020-12-25T17:05:57.tgz\n"
-        + "full/TEST_APP_2020-12-25T17:05:56.tgz\n"
-        + "full/TEST_APP_2020-12-25T17:05:55.tgz\n"
+        "full/TEST_APP_FULL_2020-12-25T17:06:04.tgz\n"
+        + "full/TEST_APP_FULL_2020-12-25T17:06:03.tgz\n"
+        + "full/TEST_APP_FULL_2020-12-25T17:06:02.tgz\n"
+        + "full/TEST_APP_FULL_2020-12-25T17:06:01.tgz\n"
+        + "full/TEST_APP_FULL_2020-12-25T17:06:00.tgz\n"
+        + "full/TEST_APP_FULL_2020-12-25T17:05:59.tgz\n"
+        + "full/TEST_APP_FULL_2020-12-25T17:05:58.tgz\n"
+        + "full/TEST_APP_FULL_2020-12-25T17:05:57.tgz\n"
+        + "full/TEST_APP_FULL_2020-12-25T17:05:56.tgz\n"
+        + "full/TEST_APP_FULL_2020-12-25T17:05:55.tgz\n"
     )
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR
@@ -1042,8 +1042,8 @@ def test_view_backups_multiple_backup_strategies(
     capsys,
 ):
     expected = (
-        "logs/TEST_APP_2020-12-25T17:05:56.tgz\n"
-        "full/TEST_APP_2020-12-25T17:05:55.tgz\n"
+        "logs/TEST_APP_LOGS_2020-12-25T17:05:56.tgz\n"
+        "full/TEST_APP_FULL_2020-12-25T17:05:55.tgz\n"
     )
     # Set the backup directory.
     backup_dir = tmp_path / BASE_BACKUP_DIR

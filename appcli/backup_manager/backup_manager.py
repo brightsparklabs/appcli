@@ -18,10 +18,11 @@ import traceback
 from dataclasses import dataclass, field
 from pathlib import Path
 from tarfile import TarFile
-from typing import List, Optional
+from typing import List, Optional, Set
 
 # vendor libraries
 import cronex
+from click import Context
 from dataclasses_json import dataclass_json
 
 # local libraries
@@ -119,7 +120,7 @@ class BackupConfig(DataClassExtensions):
                 backups and keep all backup files.
 
         Returns:
-            backup_name (Path): The filename of the generated backup that includes the full path.
+            Path: The filename of the generated backup that includes the full path.
         """
         cli_context: CliContext = ctx.obj
 
@@ -140,7 +141,8 @@ class BackupConfig(DataClassExtensions):
 
         # Get the backup name to use when creating the tar.
         backup_name: Path = os.path.join(
-            sub_backup_dir, self.__create_backup_filename(cli_context.app_name)
+            sub_backup_dir,
+            self.__create_backup_filename(cli_context.app_name, self.name),
         )
 
         data_dir: Path = cli_context.data_dir
@@ -150,10 +152,12 @@ class BackupConfig(DataClassExtensions):
         config_file_list: set(Path) = self.__determine_file_list_from_glob(
             conf_dir, self.file_filter.conf_dir
         )
+        logger.debug(f"Config files to backup: [{config_file_list}]")
         # Determine the list of data files to add to the tar.
         data_file_list: set(Path) = self.__determine_file_list_from_glob(
             data_dir, self.file_filter.data_dir
         )
+        logger.debug(f"Data files to backup: [{data_file_list}]")
 
         # Backup the file lists to a tar file.
         with tarfile.open(backup_name, "w:gz") as tar:
@@ -178,13 +182,17 @@ class BackupConfig(DataClassExtensions):
                         ),
                     )
 
+        logger.info(f"Backup created at [{backup_name}]")
+
         # Delete older backups.
         if allow_rolling_deletion:
             self.__rolling_backup_deletion(sub_backup_dir)
 
         return backup_name
 
-    def __determine_file_list_from_glob(self, path_to_backup: Path, globs: GlobList):
+    def __determine_file_list_from_glob(
+        self, path_to_backup: Path, globs: GlobList
+    ) -> Set[Path]:
         """
         Determine the list of files to backup in the path provided based on the include/exclude lists in the provided GlobList
 
@@ -193,22 +201,29 @@ class BackupConfig(DataClassExtensions):
             globs: (GlobList). A GlobList which contains the include/exclude list used to filter the files found in the path.
 
         Returns:
-            backup_name (set(Path)): A set of files that need to be backed up.
+            set(Path): A set of files that need to be backed up.
         """
 
         # Get a set of files that should be included in the backup.
         included_globbed_files: set(Path) = self.__get_files_from_globs(
             path_to_backup, globs.include_list
         )
+        logger.debug(
+            f"Included files, glob: [{globs.include_list}], path: [{path_to_backup}], included files: [{included_globbed_files}]"
+        )
         # Get a set of files that should be excluded from the backup.
         excluded_globbed_files: set(Path) = self.__get_files_from_globs(
             path_to_backup, globs.exclude_list
         )
+        logger.debug(
+            f"Excluded files, glob: [{globs.exclude_list}], path: [{path_to_backup}], excluded files: [{excluded_globbed_files}]"
+        )
 
         # Determine the files that need to be backed up by removing the exclude set from the include set.
-        files_to_backup: set(Path) = included_globbed_files - excluded_globbed_files
+        filtered_files: set(Path) = included_globbed_files - excluded_globbed_files
+        logger.debug(f"Final set of files to include: [{filtered_files}]")
 
-        return files_to_backup
+        return filtered_files
 
     def __get_files_from_globs(self, path_to_backup: Path, globs: List[str]):
         """
@@ -219,7 +234,7 @@ class BackupConfig(DataClassExtensions):
             globs: (List[str]). A list of glob patterns which we want to use to find files in the provided path.
 
         Returns:
-            all_files (set(Path)): A set of files that match the provided glob patterns.
+            set(Path): A set of files that match the provided glob patterns.
         """
         all_files: set(Path) = set()
         for glob in globs:
@@ -237,7 +252,7 @@ class BackupConfig(DataClassExtensions):
         return all_files
 
     def get_remote_backups(self) -> List[RemoteBackup]:
-        """Get a list of remote strategy objects that represent valid remote strategies that should be ran today.
+        """Get the list of remote strategy objects for this backup configuration.
 
         Returns:
             List[RemoteBackup]: A list of configured remote backups.
@@ -259,19 +274,20 @@ class BackupConfig(DataClassExtensions):
 
         return backup_strategies
 
-    def __create_backup_filename(self, app_name: str) -> str:
+    def __create_backup_filename(self, app_name: str, backup_name: str) -> str:
         """Generate the filename of the backup .tgz file.
-            Format is "<APP_NAME>_<datetime.now>.tgz".
+            Format is "<APP_NAME>_<BACKUP_NAME>_<datetime.now>.tgz".
 
         Args:
             app_name: (str). The application name to be used in the naming of the tgz file.
+            backup_name: (str). The name of the backup being taken.
         Returns:
             The formatted .tgz filename.
         """
         now: datetime = datetime.datetime.now(datetime.timezone.utc).replace(
             microsecond=0
         )
-        return f"{app_name.upper()}_{now.isoformat()}.tgz"
+        return f"{app_name.upper()}_{backup_name.upper()}_{now.isoformat()}.tgz"
 
     def __rolling_backup_deletion(self, backup_dir: Path):
         """Delete old backups, will only keep the most recent backups.
@@ -287,6 +303,7 @@ class BackupConfig(DataClassExtensions):
 
         # If the backup limit is set to 0 then we never want to delete a backup.
         if self.backup_limit == 0:
+            logger.debug("Backup limit is 0 - skipping rolling deletion.")
             return
 
         logger.info(
@@ -322,11 +339,12 @@ class BackupManager:
     # PUBLIC METHODS
     # ------------------------------------------------------------------------------
 
-    def backup(self, ctx, allow_rolling_deletion: bool = True):
+    def backup(self, ctx: Context, allow_rolling_deletion: bool = True):
         """
         Perform all backups present in the configuration file.
 
         Args:
+            ctx: (Context). The current Click Context.
             allow_rolling_deletion: (bool). Enable rolling backups (default True). Set to False to disable rolling
                 backups and keep all backup files.
         """
@@ -354,7 +372,11 @@ class BackupManager:
                 return
 
             # create the backup
-            backup_filename = backup.backup(ctx)
+            logger.info(f"Running backup [{backup.name}]")
+            backup_filename = backup.backup(ctx, allow_rolling_deletion)
+            logger.info(
+                f"Completed local backup [{backup.name}]. Output file: [{backup_filename}]"
+            )
 
             # Get any remote backup strategies.
             remote_backups = backup.get_remote_backups()
@@ -362,8 +384,13 @@ class BackupManager:
             # Execute each of the remote backup strategies with the local backup file.
             for remote_backup in remote_backups:
                 try:
+                    logger.info(
+                        f"Performing remote backup [{remote_backup.name}] for backup [{backup.name}]"
+                    )
                     remote_backup.backup(backup_filename, key_file)
-                    pass
+                    logger.info(
+                        f"Remote backup [{remote_backup.name}] for backup [{backup.name}] complete."
+                    )
                 except Exception as e:
                     logger.error(
                         f"Error while executing remote strategy [{remote_backup.name}] - {e}"
@@ -384,14 +411,13 @@ class BackupManager:
         """
         cli_context: CliContext = ctx.obj
 
-        logger.info("Initiating system restore")
+        logger.info(f"Initiating system restore with backup [{backup_filename}]")
 
         # Check that the backup file exists.
         backup_dir: Path = cli_context.backup_dir
         backup_name: Path = Path(os.path.join(backup_dir, backup_filename))
         if not backup_name.is_file():
             error_and_exit(f"Backup file [{backup_name}] not found.")
-            return
 
         # Stop the system.
         logger.info("Stopping application services ...")
