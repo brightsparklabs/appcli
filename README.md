@@ -42,7 +42,7 @@ Stack variables can be set within the `stack-settings.yml` file as described in 
 
 ### Define the CLI for your application `myapp`
 
-*Note for appcli version 1.1.3 and below*: Import paths to access to appcli
+_Note for appcli version 1.1.3 and below_: Import paths to access to appcli
 internal classes and methods is now by a full path, rather than being exposed
 at the root. This was done to allow access to all methods and classes using
 python3 implicit namespaced packages.
@@ -116,22 +116,64 @@ python3 implicit namespaced packages.
 ### Configure application backup
 
 Appcli's `backup` command creates backups of configuration and data of an application, stored locally in the
-backup directory. The settings for backup are configurable through a `backup` block in `stack-settings.yml`.
+backup directory. The settings for backups are configured through entries in a `backups` block in `stack-settings.yml`.
 
-The available keys for the `backup` block are:
+The available keys for entries in the `backups` block are:
 
-| key          | Description                                                                                       |
-| ------------ | ------------------------------------------------------------------------------------------------- |
-| backup_limit | The number of local backups to keep.                                                              |
-| ignore_list  | The ignore list is a list of glob patterns used to specify what files to exclude from the backup. |
-| remote       | The list of remote backup strategies.                                                             |
+| key            | Description                                                                                                       |
+| -------------- | ----------------------------------------------------------------------------------------------------------------- |
+| name           | The name of the backup. Must be unique between backup definitions and use `kebab-case`.                           |
+| backup_limit   | The number of local backups to keep. Set to `0` to disable rolling deletion.                                      |
+| file_filter    | The file_filter contains lists of glob patterns used to specify what files to include or exclude from the backup. |
+| frequency      | The cron-like frequency at which backups will execute.                                                            |
+| remote_backups | The list of remote backup strategies.                                                                             |
 
     # filename: stack-settings.yml
 
-    backup:
+    backups:
+      - name: "full"
         backup_limit: 0
-        ignore_list:
-        remote:
+        file_filter:
+          data_dir:
+            include_list:
+            exclude_list:
+          conf_dir:
+            include_list:
+            exclude_list:
+        frequency: "* * *"
+        remote_backups:
+
+#### Backup name
+
+The backup `name` is a short descriptive name for the backup definition.
+To avoid problems, we _highly_ recommend `name` be:
+
+- unique between items in the `backups` list
+- use `kebab-case`
+
+Examples of good names:
+
+- `full`
+- `conf-only`
+- `audit-logs`
+
+Without a unique `name`, backups from different items in `backups` will
+overwrite each other without warning.
+
+Using `kebab-case` is necessary to avoid some issues with `click` and filesystem
+naming issues.
+
+When using the `backup` command, you are able to supply the name
+of the backup to run. If you have a backup `name` with a space in it, the `click`
+library cannot interpret the name as a whole string (even with quotes), so you
+will be unable to run the backup individually.
+
+If the backup `name` doesn't use `kebab-case`, it may use some characters that
+are incompatible with file and directory naming conventions. Appcli will
+automatically slugify the name to something compatible, but this may cause
+collisions in the folder names of backups to be taken which will lead to backups
+being overwritten. e.g. `s3#1` and `s3&1` will both translate internally to
+`s3-1`.
 
 #### Backup limit
 
@@ -141,27 +183,49 @@ If more than `backup_limit` number of backups exist in the backup directory, the
 
 Set this value to `0` to keep all backups.
 
-#### Ignore lists
+#### File filter
 
-The `ignore_list` list in `stack-settings.yml` can contain a list of glob patterns as strings. If any of the patterns
-match a file's full path, it will be excluded from the backup.
-
-The following example will exclude any file in any directories that end with `metastore`:
+The `file_filter` block enables filtering of files to backup from `conf` and `data` directories. For more details
+including examples, see [here](/README_BACKUP_FILE_FILTER.md).
 
     # filename: stack-settings.yml
+    # Includes all log files from data dir only
 
-    backup:
+    backups:
+      - name: "full"
         backup_limit: 0
-        ignore_list:
-            - "*metastore/*"
-        remote:
+        file_filter:
+          data_dir:
+            include_list:
+              - "**/*.log"
+            exclude_list:
+            conf_dir:
+              include_list:
+              exclude_list:
+                - "**/*"
+        frequency: "* * *"
+        remote_backups:
 
-If you want to back up every file, do not add any entries to the `ignore_list`.
+#### Freqency
+
+Appcli supports limiting individual backups to run on only specific days using a cron-like frequency filter.
+
+When the `backup` command is run, each backup strategy will check if the `frequency` pattern matches
+today's date. Only strategies whose `frequency` pattern match today's date will execute.
+
+The input pattern `pattern` is prefixed with `"* * "` and is used as a standard cron expression to
+check for a match. i.e. `"* * $pattern"`.
+
+Examples:
+
+- `"* * *"` (cron equivalent `"* * * * *"`) will always run.
+- `"* * 0"` (cron equivalent `"* * * * 0"`) will only run on Sunday.
+- `"1 */3 *"` (cron equivalent `"* * 1 */3 *"`) will only run on the first day-of-month of every 3rd month.
 
 #### Remote backup
 
 Appcli supports pushing local backups to remote storage. The list of strategies for pushing to remote storage are
-defined within the `remote` block.
+defined within the `remote_backups` block.
 
 The available keys for every remote backup strategy are:
 
@@ -169,38 +233,7 @@ The available keys for every remote backup strategy are:
 | ------------- | --------------------------------------------------------------------------- |
 | name          | A short name or description used to describe this backup.                   |
 | strategy_type | The type of this backup, must match an implemented remote backup strategy.  |
-| frequency     | The cron-like frequency at which remote backups will execute.               |
 | configuration | Custom configuration block that is specific to each remote backup strategy. |
-
-    # filename: stack-settings.yml
-
-    backup:
-        backup_limit: 0
-        ignore_list:
-            - "*metastore/*"
-        remote:
-        - name: "daily_S3"
-          strategy_type: "S3"
-          frequency: "* * *"
-          configuration:
-
-##### Freqency
-
-Running the `backup` command will attempt to invoke all remote backup strategies. Appcli supports limiting the number of
-backups it will push to remote storage by using a cron-like frequency filter. Due to implementation limitations, the
-filtering is only applied on a day-by-day basis, which assumes backups are run only once-daily.
-
-When the `backup` command is run, each remote strategy will check if the `frequency` pattern matches today's date. Only
-strategies whose `frequency` pattern match today's date will execute.
-
-The input pattern `pattern` is concatenated to `"* * "` and used as a standard cron expression to check for a match.
-i.e. `"* * $pattern"`.
-
-Examples:
-
-- `"* * *"` (cron `"* * * * *"`) will always run.
-- `"* * 0"` (cron `"* * * * 0"`) will only run on Sunday.
-- `"1 */3 *"` (cron `"* * 1 */3 *"`) will only run on the first day-of-month of every 3rd month.
 
 ##### Strategies
 
@@ -213,28 +246,26 @@ The available configuration keys for an S3 backup are:
 | ----------- | --------------------------------------------------------------------------------------------------------------------------- |
 | bucket_name | The name of the bucket to upload to.                                                                                        |
 | access_key  | The AWS Access key ID for the account to upload with.                                                                       |
-| secret_key  | The AWS Secret access key for the account to upload with. The value *must* be encrypted using the appcli `encrypt` command. |
+| secret_key  | The AWS Secret access key for the account to upload with. The value _must_ be encrypted using the appcli `encrypt` command. |
 | bucket_path | The path in the S3 bucket to upload to. Set this to an empty string to upload to the root of the bucket.                    |
 | tags        | Key value pairs of tags to set on the backup object.                                                                        |
 
     # filename: stack-settings.yml
 
-    backup:
+    backups:
+      - name: "full_backup"
         backup_limit: 0
-        ignore_list:
-            - "*metastore/*"
-        remote:
+        remote_backups:
         - name: "weekly_S3"
           strategy_type: "S3"
-          frequency: "* * *"
           configuration:
             bucket_name: "aws.s3.bucket"
             access_key: "aws_access_key"
             secret_key: "enc:id=1:encrypted_text:end"
             bucket_path: "bucket/path"
             tags:
-                frequency: "weekly"
-                type: "data"
+              frequency: "weekly"
+              type: "data"
 
 ### Restoring a remote backup
 
@@ -373,12 +404,16 @@ To be used in conjunction with your application `./myapp <command>` e.g. `./myap
 Creates a backup `.tgz` file in the backup directory that contains files from the configuration and data directory, as
 configured in `stack-settings.yml`. After the backup is taken, remote backup strategies will be executed (if applicable).
 
-usage: `./myapp backup`
+usage: `./myapp backup [OPTIONS] [ARGS]`
 
-| Option | Description                     |
-| ------ | ------------------------------- |
-| --help | Show the help message and exit. |
+| Option                                         | Description                                        |
+| ---------------------------------------------- | -------------------------------------------------- |
+| --pre-stop-services/--no-pre-stop-services     | Whether to stop services before performing backup. |
+| --post-start-services/--no-post-start-services | Whether to start services after performing backup. |
+| --help                                         | Show the help message and exit.                    |
 
+The `backup` command optionally takes an argument corresponding to the `name` of the backup to run. If no `name` is
+provided, all backups will attempt to run.
 #### Command Group: `configure`
 
 Configures the application.
@@ -471,11 +506,12 @@ Runs application services. These are the long-running services which should only
 
 usage: `./myapp service [OPTIONS] COMMAND [ARGS]`
 
-| Command  | Description                                                                               |
-| -------- | ----------------------------------------------------------------------------------------- |
-| logs     | Prints logs from all services.                                                            |
-| shutdown | Shuts down the system. If a service name is provided, shuts down the single service only. |
-| start    | Starts the system. If a service name is provided, starts the single service only.         |
+| Command  | Description                                                                                                                                                                                           |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| logs     | Prints logs from all services.                                                                                                                                                                        |
+| shutdown | Shuts down the system. If a service name is provided, shuts down the single service only.                                                                                                             |
+| start    | Starts the system. If a service name is provided, starts the single service only.                                                                                                                     |
+| restart  | Restarts service(s) (`shutdown` followed by `start`). Optionally run a `configure apply` during the restart with the `--apply` flag. If a service name is provided, restarts the single service only. |
 
 | Option | Description                     |
 | ------ | ------------------------------- |
