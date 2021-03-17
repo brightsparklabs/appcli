@@ -109,7 +109,7 @@ class BackupConfig(DataClassExtensions):
             )
             return False
         if not job.check_trigger(time.gmtime(time.time())[:5]):
-            logger.info(
+            logger.debug(
                 f"Remote strategy [{self.name}] will not run due to frequency [{self.frequency}] not matching today."
             )
             return False
@@ -350,7 +350,9 @@ class BackupManager:
     # PUBLIC METHODS
     # ------------------------------------------------------------------------------
 
-    def backup(self, ctx: Context, allow_rolling_deletion: bool = True) -> List[Path]:
+    def backup(
+        self, ctx: Context, backup_name: str = None, allow_rolling_deletion: bool = True
+    ) -> List[Path]:
         """
         Perform all backups present in the configuration file.
 
@@ -374,14 +376,20 @@ class BackupManager:
         for backup_config in self.backups:
             backup = BackupConfig.from_dict(backup_config)
 
+            if backup_name is not None and backup.name != backup_name:
+                logger.debug(
+                    f"Skipping backup [{backup.name}] - only running backup [{backup_name}]"
+                )
+                continue
+
             # Check if the set frequency matches today, if it does not then do not continue with the current backup.
             if not backup.should_run():
-                return
+                continue
 
             # create the backup
             logger.debug(f"Backup [{backup.name}] running...")
             backup_filename = backup.backup(ctx, allow_rolling_deletion)
-            completed_backups.append(backup_filename)
+            completed_backups.append((backup.name, backup_filename))
             logger.debug(
                 f"Backup [{backup.name}] complete. Output file: [{backup_filename}]"
             )
@@ -405,7 +413,13 @@ class BackupManager:
                     )
                     traceback.print_exc()
 
-        logger.info("All backups complete.")
+        logger.info("Backups complete.")
+        if len(completed_backups) > 0:
+            logger.debug(f"Completed backups [{completed_backups}].")
+        else:
+            logger.warning(
+                "No backups successfully ran or completed. Use --debug flag for more detailed logs."
+            )
         return completed_backups
 
     def backup_file_exists(self, ctx, backup_filename: Path) -> bool:

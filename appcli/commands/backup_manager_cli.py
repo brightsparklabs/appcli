@@ -68,8 +68,9 @@ class BackupManagerCli:
             is_flag=True,
             help="Whether to start services AFTER the backup is complete. Default to start services.",
         )
+        @click.argument("backup_name", type=click.STRING, required=False)
         @click.pass_context
-        def backup(ctx, pre_stop_services, post_start_services):
+        def backup(ctx, pre_stop_services, post_start_services, backup_name):
             cli_context: CliContext = ctx.obj
 
             cli_context.get_configuration_dir_state().verify_command_allowed(
@@ -87,7 +88,7 @@ class BackupManagerCli:
                     pass
 
             backup_manager: BackupManager = self.__create_backup_manager(cli_context)
-            backup_manager.backup(ctx)
+            backup_manager.backup(ctx, backup_name=backup_name)
 
             if post_start_services:
                 logger.info("Starting application services ...")
