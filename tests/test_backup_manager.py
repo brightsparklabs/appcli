@@ -347,6 +347,30 @@ def test_backup_with_limit_keep_last_5(
     assert set(os.listdir(os.path.dirname(backup))) == expected_result
 
 
+def test_backup_with_unsafe_name_for_files(
+    reset_mockTime, patch_datetime_now, populate_conf_dir, populate_data_dir, tmp_path
+):
+    # Set the backup directory.
+    backup_dir = tmp_path / BASE_BACKUP_DIR
+    # Create the click context that backup_manager expects to deal with.
+    ctx = create_click_ctx(
+        Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
+    )
+    # Create our configuration.
+    conf = {
+        "name": "Backup: Weekly > Sunday",
+    }
+    expected_result = [
+        "TEST_APP_BACKUP-WEEKLY-SUNDAY_2020-12-25T17:05:55.tgz",
+    ]
+
+    backup_config = BackupConfig.from_dict(conf)
+    backup = backup_config.backup(ctx)
+
+    # Compare as a set so list order does not matter.
+    assert os.listdir(os.path.dirname(backup)) == expected_result
+
+
 def test_data_dir_missing_include_list(
     reset_mockTime, populate_conf_dir, populate_data_dir, tmp_path
 ):

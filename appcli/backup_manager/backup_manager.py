@@ -24,6 +24,7 @@ from typing import List, Optional, Set
 import cronex
 from click import Context
 from dataclasses_json import dataclass_json
+from slugify import slugify
 
 # local libraries
 from appcli.backup_manager.remote_strategy import RemoteBackup
@@ -83,6 +84,12 @@ class BackupConfig(DataClassExtensions):
     frequency: Optional[str] = field(default_factory=lambda: "* * *")
     """ An optional CRON frequency with the time stripped out i.e. `* * *` for specifying when this strategy should run. """
 
+    def get_name_slug(self) -> str:
+        """
+        Get the backup name as a slug. This is useful for safe file and directory names.
+        """
+        return slugify(self.name)
+
     def should_run(self) -> bool:
         """
         Verify if the backup should run based on todays date and the frequency value set.
@@ -127,7 +134,7 @@ class BackupConfig(DataClassExtensions):
         backup_dir: Path = cli_context.backup_dir
 
         # Get the path to place the backup in by combining the backup_dir and the name of the backup.
-        sub_backup_dir: Path = Path(os.path.join(backup_dir, self.name))
+        sub_backup_dir: Path = Path(os.path.join(backup_dir, self.get_name_slug()))
 
         # Create the backup directory if it does not exist.
         if not backup_dir.exists():
@@ -142,7 +149,7 @@ class BackupConfig(DataClassExtensions):
         # Get the backup name to use when creating the tar.
         backup_name: Path = os.path.join(
             sub_backup_dir,
-            self.__create_backup_filename(cli_context.app_name, self.name),
+            self.__create_backup_filename(cli_context.app_name, self.get_name_slug()),
         )
 
         data_dir: Path = cli_context.data_dir
