@@ -84,9 +84,9 @@ class BackupConfig(DataClassExtensions):
     frequency: Optional[str] = field(default_factory=lambda: "* * *")
     """ An optional CRON frequency with the time stripped out i.e. `* * *` for specifying when this strategy should run. """
 
-    def get_name_slug(self) -> str:
+    def get_filesystem_safe_name(self) -> str:
         """
-        Get the backup name as a slug. This is useful for safe file and directory names.
+        Get the backup name as a filessystem-safe name.
         """
         return slugify(self.name)
 
@@ -118,9 +118,7 @@ class BackupConfig(DataClassExtensions):
 
     def backup(self, ctx, allow_rolling_deletion: bool = True) -> Path:
         """Create a backup `.tgz` file that contains application data and configuration.
-        Will shutdown the application and generate a backup containing CliContext.obj.data_dir and
-        CliContext.obj.configuration_dir. Will also perform a rolling backup deletion if `allow_rolling_deletion` is
-        True.
+        Will perform a rolling backup deletion if `allow_rolling_deletion` is `True`.
 
         Args:
             allow_rolling_deletion: (bool). Enable rolling backups (default True). Set to False to disable rolling
@@ -134,7 +132,9 @@ class BackupConfig(DataClassExtensions):
         backup_dir: Path = cli_context.backup_dir
 
         # Get the path to place the backup in by combining the backup_dir and the name of the backup.
-        sub_backup_dir: Path = Path(os.path.join(backup_dir, self.get_name_slug()))
+        sub_backup_dir: Path = Path(
+            os.path.join(backup_dir, self.get_filesystem_safe_name())
+        )
 
         # Create the backup directory if it does not exist.
         if not backup_dir.exists():
@@ -149,7 +149,9 @@ class BackupConfig(DataClassExtensions):
         # Get the backup name to use when creating the tar.
         backup_name: Path = os.path.join(
             sub_backup_dir,
-            self.__create_backup_filename(cli_context.app_name, self.get_name_slug()),
+            self.__create_backup_filename(
+                cli_context.app_name, self.get_filesystem_safe_name()
+            ),
         )
 
         data_dir: Path = cli_context.data_dir
