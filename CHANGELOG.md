@@ -12,6 +12,17 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ---
 
+## [1.3.0] - (17/03/2021)
+
+### Added
+
+- Added `service restart` command to restart service(s) with option `--apply`.
+- Backup configuration now supports multiple backup definitions with their own granularity and remotes.
+- Backup and restore now have options to enable/disable pre-stop/pre-start services.
+- Added `--encrypt` option to `configure set` to set an encrypted value directly.
+- Value for `configure set` is now optional, and will be interactively requested if missing.
+- Various dependency updates.
+
 ## [1.2.0] - (18/02/2021)
 
 ### Breaking Changes from 1.1
