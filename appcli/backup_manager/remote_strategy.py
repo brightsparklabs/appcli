@@ -52,16 +52,15 @@ class RemoteBackupStrategy:
 @dataclass
 class RemoteBackup(DataClassExtensions):
     """
-    A dataclass that represents the common tags that all remote backup strategies have.
-
+    A dataclass that represents the common properties that all remote backup strategies have.
     """
 
     strategy_type: str = field(default_factory=lambda: "")
-    """ The remote backup strategy type. This must match a key in remote_strategy_factory.py STRATEGIES. """
+    """ The remote backup strategy type. This must match a key in RemoteStrategyFactory. """
     name: Optional[str] = field(default_factory=lambda: "")
     """ An optional name/description for the remote strategy. """
     configuration: dict = field(default_factory=dict)
-    """ A dict that contains additional configuration values that allows the remote strategy to run. """
+    """ A dict that contains configuration values specific to the strategy type. """
     strategy: RemoteBackupStrategy = field(init=False)
     """ The remote backup strategy implementation """
 
@@ -79,10 +78,10 @@ class RemoteBackup(DataClassExtensions):
     # ------------------------------------------------------------------------------
     def backup(self, backup_filename: Path, key_file: Path):
         """
-        Call the set strategies backup method
+        Execute the backup of this remote strategy.
 
         Args:
-            backup_filename: str. The full Path of the backup to restore from. This lives in the backup folder.
+            backup_filename: str. The full Path of the backup to create. This lives in the backup folder.
             key_file: Path. The path to the key file.
         """
         logger.info(f"Initiating backup [{self.name}]")
@@ -117,7 +116,7 @@ class AwsS3Strategy(RemoteBackupStrategy):
         Backup method for an S3 remote strategy.
 
         Args:
-            backup_filename: (str). The name of the backup to restore from. This lives in the backup folder.
+            backup_filename: (str). The name of the backup to upload. This lives in the backup folder.
             key_file: (Path). The path to the key file.
 
         Throws:
@@ -125,7 +124,7 @@ class AwsS3Strategy(RemoteBackupStrategy):
                 Failed to decrypt the secret_key.
                 Failed to upload the backup with boto.
         """
-        # Decrypt our secret key.
+        # The IAM 'secret key' must be encrypted. Try to decrypt and fail if it cannot.
         cipher = Cipher(key_file)
         try:
             decrypted_secret_key = cipher.decrypt(self.secret_key)
