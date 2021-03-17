@@ -23,6 +23,7 @@ from appcli.backup_manager.backup_manager import BackupManager
 from appcli.commands.appcli_command import AppcliCommand
 from appcli.configuration_manager import ConfigurationManager
 from appcli.functions import error_and_exit
+from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
 
@@ -65,6 +66,15 @@ class BackupManagerCli:
 
             backup_manager: BackupManager = self.__create_backup_manager(cli_context)
 
+            logger.info("Stopping application services ...")
+            services_cli = cli_context.commands["service"]
+            try:
+                ctx.invoke(services_cli.commands["shutdown"])
+            except SystemExit:
+                # At completion, the invoked command tries to exit the script, so we have to catch
+                # the SystemExit.
+                pass
+
             # kick off the backup
             backup_manager.backup(ctx)
 
@@ -84,6 +94,19 @@ class BackupManagerCli:
             )
 
             backup_manager: BackupManager = self.__create_backup_manager(cli_context)
+
+            # Ensure the backup file exists before attempting restore
+            if not backup_manager.backup_file_exists(ctx, backup_file):
+                error_and_exit(f"Backup file [{backup_file}] not found.")
+
+            logger.info("Stopping application services ...")
+            services_cli = cli_context.commands["service"]
+            try:
+                ctx.invoke(services_cli.commands["shutdown"])
+            except SystemExit:
+                # At completion, the invoked command tries to exit the script, so we have to catch
+                # the SystemExit.
+                pass
 
             backup_manager.restore(ctx, backup_file)
 

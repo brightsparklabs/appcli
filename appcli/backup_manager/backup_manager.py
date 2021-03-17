@@ -342,6 +342,10 @@ class BackupConfig(DataClassExtensions):
 @dataclass_json
 @dataclass
 class BackupManager:
+    """
+    Backup manager class that contains all backup definitions.
+    """
+
     backups: BackupConfig
 
     # ------------------------------------------------------------------------------
@@ -360,15 +364,6 @@ class BackupManager:
 
         cli_context: CliContext = ctx.obj
         logger.info("Initiating system backup")
-
-        logger.info("Stopping application services ...")
-        try:
-            services_cli = cli_context.commands["service"]
-            ctx.invoke(services_cli.commands["shutdown"])
-        except (SystemExit, TypeError):
-            # At completion, the invoked command tries to exit the script, so we have to catch
-            # the SystemExit.
-            pass
 
         # Get the key file for decrypting encrypted values used in a remote backup.
         key_file = cli_context.get_key_file()
@@ -408,6 +403,15 @@ class BackupManager:
 
         logger.info("Backup completed. Application services have been shut down.")
 
+    def backup_file_exists(self, ctx, backup_filename: Path) -> bool:
+        """
+        Checks if a backup file exists. Returns True if it does, otherwise False.
+        """
+        cli_context: CliContext = ctx.obj
+        backup_dir: Path = cli_context.backup_dir
+        backup_name: Path = Path(os.path.join(backup_dir, backup_filename))
+        return backup_name.is_file()
+
     def restore(self, ctx, backup_filename: Path):
         """Restore application data and configuration from the provided local backup `.tgz` file.
         This will create a backup of the existing data and config, remove the contents `conf`, `data` and
@@ -427,16 +431,6 @@ class BackupManager:
         backup_name: Path = Path(os.path.join(backup_dir, backup_filename))
         if not backup_name.is_file():
             error_and_exit(f"Backup file [{backup_name}] not found.")
-
-        # Stop the system.
-        logger.info("Stopping application services ...")
-        services_cli = cli_context.commands["service"]
-        try:
-            ctx.invoke(services_cli.commands["shutdown"])
-        except SystemExit:
-            # At completion, the invoked command tries to exit the script, so we have to catch
-            # the SystemExit.
-            pass
 
         # Perform a backup of the existing application config and data.
         logger.info("Creating backup of existing application data and configuration")
