@@ -56,37 +56,74 @@ class BackupManagerCli:
         @click.command(
             help="Create a backup of application data and configuration. Will also execute any configured remote strategies."
         )
+        @click.option(
+            "--pre-stop-services/--no-pre-stop-services",
+            default=True,
+            is_flag=True,
+            help="Whether to stop services BEFORE the backup is executed. Defaults to stop services.",
+        )
+        @click.option(
+            "--post-start-services/--no-post-start-services",
+            default=True,
+            is_flag=True,
+            help="Whether to start services AFTER the backup is complete. Default to start services.",
+        )
         @click.pass_context
-        def backup(ctx):
+        def backup(ctx, pre_stop_services, post_start_services):
             cli_context: CliContext = ctx.obj
 
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.BACKUP
             )
+            services_cli = cli_context.commands["service"]
+
+            if pre_stop_services:
+                logger.info("Stopping application services ...")
+                try:
+                    ctx.invoke(services_cli.commands["shutdown"])
+                except SystemExit:
+                    # At completion, the invoked command tries to exit the script, so we have to catch
+                    # the SystemExit.
+                    pass
 
             backup_manager: BackupManager = self.__create_backup_manager(cli_context)
-
-            logger.info("Stopping application services ...")
-            services_cli = cli_context.commands["service"]
-            try:
-                ctx.invoke(services_cli.commands["shutdown"])
-            except SystemExit:
-                # At completion, the invoked command tries to exit the script, so we have to catch
-                # the SystemExit.
-                pass
-
-            # kick off the backup
             backup_manager.backup(ctx)
 
+            if post_start_services:
+                logger.info("Starting application services ...")
+                try:
+                    ctx.invoke(services_cli.commands["start"])
+                except SystemExit:
+                    # At completion, the invoked command tries to exit the script, so we have to catch
+                    # the SystemExit.
+                    pass
+
+            if pre_stop_services and not post_start_services:
+                logger.warn(
+                    "Services have been shutdown by the backup command and were intentionally not restarted."
+                )
+
         @click.command(help="Restore a backup of application data and configuration.")
-        @click.argument("backup_file")
+        @click.option(
+            "--pre-stop-services/--no-pre-stop-services",
+            default=True,
+            is_flag=True,
+            help="Whether to stop services BEFORE the restore is executed. Defaults to stop services.",
+        )
+        @click.option(
+            "--post-start-services/--no-post-start-services",
+            default=True,
+            is_flag=True,
+            help="Whether to start services AFTER the restore is complete. Default to start services.",
+        )
         @click.option(
             "--force",
             is_flag=True,
             help="Force restoring a backup even if validation checks fail.",
         )
+        @click.argument("backup_file")
         @click.pass_context
-        def restore(ctx, backup_file, force):
+        def restore(ctx, pre_stop_services, post_start_services, force, backup_file):
             cli_context: CliContext = ctx.obj
 
             cli_context.get_configuration_dir_state().verify_command_allowed(
@@ -99,16 +136,32 @@ class BackupManagerCli:
             if not backup_manager.backup_file_exists(ctx, backup_file):
                 error_and_exit(f"Backup file [{backup_file}] not found.")
 
-            logger.info("Stopping application services ...")
             services_cli = cli_context.commands["service"]
-            try:
-                ctx.invoke(services_cli.commands["shutdown"])
-            except SystemExit:
-                # At completion, the invoked command tries to exit the script, so we have to catch
-                # the SystemExit.
-                pass
+
+            if pre_stop_services:
+                logger.info("Stopping application services ...")
+                try:
+                    ctx.invoke(services_cli.commands["shutdown"])
+                except SystemExit:
+                    # At completion, the invoked command tries to exit the script, so we have to catch
+                    # the SystemExit.
+                    pass
 
             backup_manager.restore(ctx, backup_file)
+
+            if post_start_services:
+                logger.info("Starting application services ...")
+                try:
+                    ctx.invoke(services_cli.commands["start"])
+                except SystemExit:
+                    # At completion, the invoked command tries to exit the script, so we have to catch
+                    # the SystemExit.
+                    pass
+
+            if pre_stop_services and not post_start_services:
+                logger.warn(
+                    "Services have been shutdown by the restore command and were intentionally not restarted."
+                )
 
         @click.command(help="View a list of available backups.")
         @click.option(
