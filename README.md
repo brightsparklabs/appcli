@@ -122,7 +122,7 @@ The available keys for entries in the `backups` block are:
 
 | key            | Description                                                                                                       |
 | -------------- | ----------------------------------------------------------------------------------------------------------------- |
-| name           | The name of the backup. Must be unique between backup definitions.                                                |
+| name           | The name of the backup. Must be unique between backup definitions and use `kebab-case`.                           |
 | backup_limit   | The number of local backups to keep. Set to `0` to disable rolling deletion.                                      |
 | file_filter    | The file_filter contains lists of glob patterns used to specify what files to include or exclude from the backup. |
 | frequency      | The cron-like frequency at which backups will execute.                                                            |
@@ -142,6 +142,38 @@ The available keys for entries in the `backups` block are:
             exclude_list:
         frequency: "* * *"
         remote_backups:
+
+#### Backup name
+
+The backup `name` is a short descriptive name for the backup definition.
+To avoid problems, we _highly_ recommend `name` be:
+
+- unique between items in the `backups` list
+- use `kebab-case`
+
+Examples of good names:
+
+- `full`
+- `conf-only`
+- `audit-logs`
+
+Without a unique `name`, backups from different items in `backups` will
+overwrite each other without warning.
+
+Using `kebab-case` is necessary to avoid some issues with `click` and filesystem
+naming issues.
+
+When using the `backup` command, you are able to supply the name
+of the backup to run. If you have a backup `name` with a space in it, the `click`
+library cannot interpret the name as a whole string (even with quotes), so you
+will be unable to run the backup individually.
+
+If the backup `name` doesn't use `kebab-case`, it may use some characters that
+are incompatible with file and directory naming conventions. Appcli will
+automatically slugify the name to something compatible, but this may cause
+collisions in the folder names of backups to be taken which will lead to backups
+being overwritten. e.g. `s3#1` and `s3&1` will both translate internally to
+`s3-1`.
 
 #### Backup limit
 
@@ -372,12 +404,16 @@ To be used in conjunction with your application `./myapp <command>` e.g. `./myap
 Creates a backup `.tgz` file in the backup directory that contains files from the configuration and data directory, as
 configured in `stack-settings.yml`. After the backup is taken, remote backup strategies will be executed (if applicable).
 
-usage: `./myapp backup`
+usage: `./myapp backup [OPTIONS] [ARGS]`
 
-| Option | Description                     |
-| ------ | ------------------------------- |
-| --help | Show the help message and exit. |
+| Option                                         | Description                                        |
+| ---------------------------------------------- | -------------------------------------------------- |
+| --pre-stop-services/--no-pre-stop-services     | Whether to stop services before performing backup. |
+| --post-start-services/--no-post-start-services | Whether to start services after performing backup. |
+| --help                                         | Show the help message and exit.                    |
 
+The `backup` command optionally takes an argument corresponding to the `name` of the backup to run. If no `name` is
+provided, all backups will attempt to run.
 #### Command Group: `configure`
 
 Configures the application.
