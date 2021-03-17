@@ -66,7 +66,7 @@ setup(
         "python-dotenv==0.15.0",
         "python-keycloak==0.22.0",
         "python-slugify==4.0.1",
-        "ruamel-yaml==0.16.12",
+        "ruamel-yaml==0.16.13",
         "tabulate==0.8.9",
         "wheel==0.36.2",
     ],
