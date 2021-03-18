@@ -211,7 +211,7 @@ class KeycloakManager:
 
         """
         self.create_realm(app_name)
-        logger.info(f"Created realm [{app_name}]")
+        logger.debug(f"Created realm [{app_name}]")
 
         client_payload = {
             "redirectUris": ["*"],
@@ -231,19 +231,19 @@ class KeycloakManager:
         }
         self.create_client(app_name, app_name, client_payload)
         secret = self.get_client_secret(app_name, app_name)
-        logger.info(f"Created client [{app_name}] with secret [{secret}]")
+        logger.debug(f"Created client [{app_name}] with secret [{secret}]")
 
         realm_role = f"{app_name}-admin"
         self.create_realm_role(app_name, realm_role)
-        logger.info(f"Created realm role [{realm_role}]")
+        logger.debug(f"Created realm role [{realm_role}]")
 
         username = "test.user"
         self.create_user(
             app_name, username, "password", "Test", "User", "test.user@email.test"
         )
-        logger.info(
+        logger.debug(
             f"Created user [test.user] with password [password] in realm [{app_name}]"
         )
 
         self.assign_realm_role(app_name, username, realm_role)
-        logger.info(f"Assigned realm role [{realm_role}] to user [test.user]")
+        logger.debug(f"Assigned realm role [{realm_role}] to user [test.user]")
