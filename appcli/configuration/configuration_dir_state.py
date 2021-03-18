@@ -198,7 +198,6 @@ class UnappliedConfigurationDirState(ConfigurationDirState):
 
         disallowed_command = {
             AppcliCommand.CONFIGURE_INIT: "Cannot initialise an existing configuration.",
-            AppcliCommand.INSTALL: "Cannot install over the top of existing application.",
             AppcliCommand.SERVICE_START: "Cannot start services due to missing generated configuration. Run 'configure apply'.",
             AppcliCommand.SERVICE_SHUTDOWN: "Cannot stop services due to missing generated configuration. Run 'configure apply'.",
             AppcliCommand.SERVICE_LOGS: "Cannot get service logs due to missing generated configuration. Run 'configure apply'.",
@@ -217,7 +216,6 @@ class CleanConfigurationDirState(ConfigurationDirState):
     def __init__(self) -> None:
         disallowed_command = {
             AppcliCommand.CONFIGURE_INIT: "Cannot initialise an existing configuration.",
-            AppcliCommand.INSTALL: "Cannot install over the top of existing application.",
         }
         disallowed_command_unless_forced = {}
 
@@ -231,7 +229,6 @@ class DirtyConfConfigurationDirState(ConfigurationDirState):
 
         disallowed_command = {
             AppcliCommand.CONFIGURE_INIT: "Cannot initialise an existing configuration.",
-            AppcliCommand.INSTALL: "Cannot install over the top of existing application.",
             AppcliCommand.MIGRATE: "Cannot migrate with a dirty configuration. Run 'configure apply'.",
         }
         disallowed_command_unless_forced = {
@@ -250,7 +247,6 @@ class DirtyGenConfigurationDirState(ConfigurationDirState):
 
         disallowed_command = {
             AppcliCommand.CONFIGURE_INIT: "Cannot initialise an existing configuration.",
-            AppcliCommand.INSTALL: "Cannot install over the top of existing application.",
             AppcliCommand.MIGRATE: "Cannot migrate with a dirty generated configuration. Run 'configure apply'.",
         }
         disallowed_command_unless_forced = {
@@ -270,7 +266,6 @@ class DirtyConfAndGenConfigurationDirState(ConfigurationDirState):
 
         disallowed_command = {
             AppcliCommand.CONFIGURE_INIT: "Cannot initialise an existing configuration.",
-            AppcliCommand.INSTALL: "Cannot install over the top of existing application.",
             AppcliCommand.MIGRATE: "Cannot migrate with a dirty generated configuration. Run 'configure apply'.",
         }
         disallowed_command_unless_forced = {

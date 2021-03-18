@@ -67,7 +67,7 @@ def encrypt_text(cli_context, text: str):
 
     key_file: Path = cli_context.get_key_file()
     if not key_file.is_file():
-        logger.info("Creating encryption key at [%s]", key_file)
+        logger.debug("Creating encryption key at [%s]", key_file)
         crypto.create_and_save_key(key_file)
 
     cipher = Cipher(key_file)
