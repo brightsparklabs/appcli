@@ -12,6 +12,12 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ---
 
+## [1.3.1] - (18/03/2021)
+
+### Added
+
+- `install` command script automatically does upgrade if installing over an existing application.
+
 ## [1.3.0] - (17/03/2021)
 
 ### Added
