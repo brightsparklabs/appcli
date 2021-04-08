@@ -247,6 +247,8 @@ class DockerComposeOrchestrator(Orchestrator):
         )
 
 
+# This is now broken since the Docker image no longer includes a Docker installation.
+# TODO: (GH-115) Replace calls to docker with the `docker` python library which only requires access to the docker.sock
 class DockerSwarmOrchestrator(Orchestrator):
     """
     Uses Docker Swarm to orchestrate containers.
@@ -342,6 +344,8 @@ class DockerSwarmOrchestrator(Orchestrator):
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.SERVICE_LOGS
             )
+            # This is now broken since the Docker image no longer includes a Docker installation.
+            # TODO: (GH-115) Replace this call with using the `docker` python library which only requires access to the docker.sock
             command = ["docker", "service", "logs", "--follow"]
             command.append(f"{cli_context.get_project_name()}_{service}")
             result = self.__exec_command(command)
@@ -370,6 +374,8 @@ class DockerSwarmOrchestrator(Orchestrator):
     def __docker_stack(
         self, cli_context: CliContext, subcommand: Iterable[str]
     ) -> CompletedProcess:
+        # This is now broken since the Docker image no longer includes a Docker installation.
+        # TODO: (GH-115) Replace this call with using the `docker` python library which only requires access to the docker.sock
         command = ["docker", "stack"]
         command.extend(subcommand)
         command.append(cli_context.get_project_name())
