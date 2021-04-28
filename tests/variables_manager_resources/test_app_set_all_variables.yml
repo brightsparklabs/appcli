@@ -1,7 +1,0 @@
-object:
-  booleans:
-    false_boolean: false
-    true_boolean: true
-  float: 12345.6789
-  int: 12345
-  string: Value

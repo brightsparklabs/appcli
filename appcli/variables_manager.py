@@ -12,7 +12,7 @@ www.brightsparklabs.com
 # standard library
 from functools import reduce
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Union
 
 # vendor libraries
 from ruamel.yaml import YAML
@@ -52,15 +52,17 @@ class VariablesManager:
         try:
             variable = reduce(lambda e, k: e[k], path.split("."), configuration)
         except KeyError as exc:
-            raise KeyError(f"Setting [{key}] not set in configuration.") from exc
+            raise KeyError(f"Setting [{path}] not set in configuration.") from exc
 
         return variable
 
     def get_all_variables(self):
         return self.__get_configuration()
 
-    def set_variable(self, path, value):
+    def set_variable(self, path: str, value: Union[str, bool, int, float]):
         """Sets a value in the configuration.
+
+        Type of value is not enforced but this might not serialise into yml in a deserialisable format.
 
         Args:
             path (str): Dot notation for the setting. E.g. insilico.external.database.host
@@ -103,7 +105,14 @@ class VariablesManager:
         """
         try:
             data = self.configuration_file.read_text(encoding="utf-8")
-            return self.yaml.load(data)
+
+            # if our file is empty then yaml_data is None, but the rest of
+            # our application expects it to be an empty dictionary
+            yaml_data = self.yaml.load(data)
+            if yaml_data is None:
+                return {}
+            return yaml_data
+
         except Exception as ex:
             raise Exception(
                 f"Could not read configuration file at [{self.configuration_file}]"

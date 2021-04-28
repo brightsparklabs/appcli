@@ -1,9 +1,1 @@
-test:
-  server:
-    http:
-      port: 80
-
-metadata:
-  # the version of the schema this file conforms to
-  schema_version: 1
 float: 12345.6789
