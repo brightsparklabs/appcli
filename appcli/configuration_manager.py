@@ -181,7 +181,6 @@ class ConfigurationManager:
         )
 
     def get_variable(self, variable: str):
-
         return self.__get_variables_manager().get_variable(variable)
 
     def set_variable(self, variable: str, value: any):
