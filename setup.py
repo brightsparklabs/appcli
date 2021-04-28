@@ -57,6 +57,7 @@ setup(
     install_requires=[
         "click==7.1.2",
         "coloredlogs==14.0",
+        "deepdiff==5.3.0",
         "GitPython==3.1.12",
         "jinja2==2.11.2",
         "python-dotenv==0.14.0",

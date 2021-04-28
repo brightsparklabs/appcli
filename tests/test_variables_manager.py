@@ -10,8 +10,8 @@ www.brightsparklabs.com
 """
 
 # standard libraries
-from pathlib import Path
 import filecmp
+from pathlib import Path
 
 # vendor libraries
 import pytest
