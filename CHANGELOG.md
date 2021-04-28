@@ -10,6 +10,10 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed [#89](https://github.com/brightsparklabs/appcli/issues/89): `configure get` on a boolean returns `None` if setting is `false`
+
 ---
 
 ## [1.3.1] - (18/03/2021)
