@@ -53,7 +53,6 @@ class VariablesManager:
             variable = reduce(lambda e, k: e[k], path.split("."), configuration)
         except KeyError as exc:
             raise KeyError(f"Setting [{path}] not set in configuration.") from exc
-
         return variable
 
     def get_all_variables(self):

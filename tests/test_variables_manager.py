@@ -32,10 +32,6 @@ APP_NAME = "test_app"
 # TESTS
 # ------------------------------------------------------------------------------
 
-# TODO: resource file doesnt exist
-# TODO: resource file isnt .yml
-# TODO: set test cases
-
 # GET
 
 
@@ -135,7 +131,7 @@ def test_set_variable_empty(tmpdir):
 
 
 def test_set_string_variable(tmpdir):
-    """"""
+    """When we set a variable of type string, we expect the varible to be of type string in our yml file"""
     set_config_file = Path(tmpdir, "test_app_set_string_variable.yml")
     set_config_file.touch()
     var_manager = VariablesManager(set_config_file)
@@ -150,7 +146,7 @@ def test_set_string_variable(tmpdir):
 
 
 def test_set_bool_variable(tmpdir):
-    """"""
+    """When we set a variable of type bool, we expect the varible to be of type bool in our yml file"""
     set_config_file = Path(tmpdir, "test_app_set_bool_variable.yml")
     set_config_file.touch()
     var_manager = VariablesManager(set_config_file)
@@ -166,7 +162,7 @@ def test_set_bool_variable(tmpdir):
 
 
 def test_set_float_variable(tmpdir):
-    """"""
+    """When we set a variable of type float, we expect the varible to be of type float in our yml file"""
     set_config_file = Path(tmpdir, "test_app_set_float_variable.yml")
     set_config_file.touch()
     var_manager = VariablesManager(set_config_file)
@@ -181,7 +177,7 @@ def test_set_float_variable(tmpdir):
 
 
 def test_set_int_variable(tmpdir):
-    """"""
+    """When we set a variable of type int, we expect the varible to be of type int in our yml file"""
     set_config_file = Path(tmpdir, "test_app_set_int_variable.yml")
     set_config_file.touch()
     var_manager = VariablesManager(set_config_file)
@@ -225,7 +221,7 @@ def test_set_all_variables(tmpdir):
 
 
 def create_var_manager_from_resource(configFile) -> VariablesManager:
-    """"""
+    """Creates a variables manager object from a file in our variables_manager_resources directory"""
     # directory containing this script
     return VariablesManager(
         Path(Path(__file__).parent, f"variables_manager_resources/{configFile}.yml")
