@@ -69,8 +69,6 @@ class VariablesManager:
         """
         configuration = self.__get_configuration()
 
-        print(path)
-
         path_elements = path.split(".")
         parent_path = path_elements[:-1]
 
@@ -103,11 +101,12 @@ class VariablesManager:
             Dict: the current configuration
         """
         try:
-            data = self.configuration_file.read_text(encoding="utf-8")
+            raw_data = self.configuration_file.read_text(encoding="utf-8")
 
-            # if our file is empty then yaml_data is None, but the rest of
-            # our application expects it to be an empty dictionary
-            yaml_data = self.yaml.load(data)
+            # If the file is empty, the YAML library will load as `None`. Since
+            # we expect this function to return a valid dict, we return an
+            # empty dictionary if it's empty.
+            yaml_data = self.yaml.load(raw_data)
             if yaml_data is None:
                 return {}
             return yaml_data
