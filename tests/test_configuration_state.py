@@ -48,8 +48,8 @@ def test_no_state():
         assert pytest_wrapped_e.value.code == 1
 
 
-def test_no_configure_init_or_install_on_existing_repos():
-    """When the configuration dir exists, do not allow 'configure init' or 'install'."""
+def test_no_configure_init_on_existing_repos():
+    """When the configuration dir exists, do not allow 'configure init'."""
 
     for state_class in [
         UnappliedConfigurationDirState,
@@ -60,12 +60,11 @@ def test_no_configure_init_or_install_on_existing_repos():
     ]:
         state: ConfigurationDirState = state_class()
 
-        for command in [AppcliCommand.CONFIGURE_INIT, AppcliCommand.INSTALL]:
-            with pytest.raises(SystemExit) as pytest_wrapped_e:
-                # Expect that we cannot initialise on an already-initialised repo
-                state.verify_command_allowed(command)
-            assert pytest_wrapped_e.type == SystemExit
-            assert pytest_wrapped_e.value.code == 1
+        with pytest.raises(SystemExit) as pytest_wrapped_e:
+            # Expect that we cannot initialise on an already-initialised repo
+            state.verify_command_allowed(AppcliCommand.CONFIGURE_INIT)
+        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.value.code == 1
 
 
 # TODO: More ConfigurationDirStateFactory tests

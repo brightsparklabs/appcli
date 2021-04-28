@@ -235,7 +235,7 @@ class ConfigurationManager:
         """Seed the raw configuration into the configuration directory"""
         print_header("Seeding configuration directory ...")
 
-        logger.info("Copying app configuration file ...")
+        logger.debug("Copying app configuration file ...")
         seed_app_configuration_file = self.cli_configuration.seed_app_configuration_file
         if not seed_app_configuration_file.is_file():
             error_and_exit(
@@ -259,7 +259,7 @@ class ConfigurationManager:
             shutil.copy2(stack_configuration_file, target_stack_configuration_file)
 
         # Create the configurable templates directory
-        logger.info("Copying configurable templates ...")
+        logger.debug("Copying configurable templates ...")
         configurable_templates_dir = self.cli_context.get_configurable_templates_dir()
         configurable_templates_dir.mkdir(parents=True, exist_ok=True)
         seed_configurable_templates_dir = (
@@ -277,7 +277,7 @@ class ConfigurationManager:
 
         # Copy each seed file to the configurable templates directory
         for source_file in seed_configurable_templates_dir.glob("**/*"):
-            logger.info(source_file)
+            logger.debug(source_file)
             relative_file = source_file.relative_to(seed_configurable_templates_dir)
             target_file = configurable_templates_dir.joinpath(relative_file)
 
@@ -358,14 +358,14 @@ class ConfigurationManager:
             if template_file.suffix == ".j2":
                 # parse jinja2 templates against configuration
                 target_file = target_file.with_suffix("")
-                logger.info("Generating configuration file [%s] ...", target_file)
+                logger.debug("Generating configuration file [%s] ...", target_file)
                 self.__generate_from_template(
                     template_file,
                     target_file,
                     self.__get_variables_manager().get_all_variables(),
                 )
             else:
-                logger.info("Copying configuration file to [%s] ...", target_file)
+                logger.debug("Copying configuration file to [%s] ...", target_file)
                 shutil.copy2(template_file, target_file)
 
     def __directory_is_not_empty(self, directory: Path) -> bool:
@@ -557,7 +557,7 @@ class ConfigurationManager:
             )
 
             # Create the backup
-            logger.info(f"Backing up directory [{source_dir}] to [{output_filename}]")
+            logger.debug(f"Backing up directory [{source_dir}] to [{output_filename}]")
             with tarfile.open(output_filename, "w:gz") as tar:
                 tar.add(source_dir, arcname=os.path.basename(source_dir))
 
@@ -569,13 +569,13 @@ class ConfigurationManager:
 
             # Remove the existing directory
             shutil.rmtree(source_dir, ignore_errors=True)
-            logger.info(
+            logger.debug(
                 f"Deleted previous generated configuration directory [{source_dir}]"
             )
 
         source_dir.mkdir(parents=True, exist_ok=True)
 
-        logger.info(f"Created clean directory [{source_dir}]")
+        logger.debug(f"Created clean directory [{source_dir}]")
 
         return source_dir
 

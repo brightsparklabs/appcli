@@ -11,20 +11,19 @@ www.brightsparklabs.com
 
 # standard libraries
 import os
-import time
 import urllib.parse
-from dataclasses import MISSING, dataclass, field, fields
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
 # vendor libraries
 import boto3
-import cronex
 from botocore.exceptions import ClientError
 from dataclasses_json import dataclass_json
 from tabulate import tabulate
 
 # local libraries
+from appcli.common.data_class_extensions import DataClassExtensions
 from appcli.crypto.cipher import Cipher
 from appcli.logger import logger
 
@@ -51,94 +50,42 @@ class RemoteBackupStrategy:
 
 @dataclass_json
 @dataclass
-class RemoteBackup:
+class RemoteBackup(DataClassExtensions):
     """
-    A dataclass that represents the common tags that all remote backup strategies have.
-
+    A dataclass that represents the common properties that all remote backup strategies have.
     """
 
-    strategy_type: str = field(default="")
-    """ The remote backup strategy type. This must match a key in remote_strategy_factory.py STRATEGIES. """
-    name: Optional[str] = field(default="")
+    strategy_type: str = field(default_factory=lambda: "")
+    """ The remote backup strategy type. This must match a key in RemoteStrategyFactory. """
+    name: Optional[str] = field(default_factory=lambda: "")
     """ An optional name/description for the remote strategy. """
-    frequency: Optional[str] = field(default="* * *")
-    """ An optional CRON frequency with the time stripped out i.e. `* * *` for specifying when this strategy should run. """
     configuration: dict = field(default_factory=dict)
-    """ A dict that contains additional configuration values that allows the remote strategy to run. """
+    """ A dict that contains configuration values specific to the strategy type. """
     strategy: RemoteBackupStrategy = field(init=False)
     """ The remote backup strategy implementation """
 
     def __post_init__(self):
         """Called after __init__()."""
-
-        # None of the fields should be set `None` - if any are, override with the default.
-        for f in fields(self):
-
-            # Skip fields that are intentionally not initialised by __init__()
-            if f.init is False:
-                continue
-
-            val = getattr(self, f.name)
-            if val is None:
-                # If the field is 'empty' and set to None in the settings, default to:
-                # - f.default if it's defined, otherwise
-                # - f.default_factory() if f.default_factory is defined, otherwise
-                # - None (as there's no other reasonable default).
-                default_value = None
-                if f.default != MISSING:
-                    default_value = f.default
-                elif f.default_factory != MISSING:
-                    default_value = f.default_factory()
-
-                logger.debug(
-                    f"Overriding 'None' for [{f.name}] with default [{default_value}]"
-                )
-                setattr(self, f.name, default_value)
-
         # Instantiate the strategy
         self.strategy = RemoteStrategyFactory.get_strategy(
             self.strategy_type, self.configuration
         )
+        # Fix the defaults.
+        super().__post_init__()
 
     # ------------------------------------------------------------------------------
     # PUBLIC METHODS
     # ------------------------------------------------------------------------------
     def backup(self, backup_filename: Path, key_file: Path):
         """
-        Call the set strategies backup method
+        Execute the backup of this remote strategy.
 
         Args:
-            backup_filename: str. The full Path of the backup to restore from. This lives in the backup folder.
+            backup_filename: str. The full Path of the backup to create. This lives in the backup folder.
             key_file: Path. The path to the key file.
         """
         logger.info(f"Initiating backup [{self.name}]")
         self.strategy.backup(backup_filename, key_file)
-
-    def should_run(self) -> bool:
-        """
-        Verify if the backup strategy should run based on todays date and the frequency value set.
-
-        Returns:
-            True if the frequency matches today, False if it does not.
-        """
-
-        # Our configuration is just the last 3 values of a cron pattern, prepend hour/minute as wild-cards.
-        cron_frequency = f"* * {self.frequency}"
-        try:
-            job = cronex.CronExpression(cron_frequency)
-        except ValueError as e:
-            logger.error(
-                f"Frequency for remote strategy [{self.name}] is not valid [{self.frequency}]. [{e}]"
-            )
-            return False
-
-        if not job.check_trigger(time.gmtime(time.time())[:5]):
-            logger.info(
-                f"Remote strategy [{self.name}] will not run due to frequency [{self.frequency}] not matching today."
-            )
-            return False
-
-        return True
 
 
 @dataclass_json
@@ -169,7 +116,7 @@ class AwsS3Strategy(RemoteBackupStrategy):
         Backup method for an S3 remote strategy.
 
         Args:
-            backup_filename: (str). The name of the backup to restore from. This lives in the backup folder.
+            backup_filename: (str). The name of the backup to upload. This lives in the backup folder.
             key_file: (Path). The path to the key file.
 
         Throws:
@@ -177,7 +124,7 @@ class AwsS3Strategy(RemoteBackupStrategy):
                 Failed to decrypt the secret_key.
                 Failed to upload the backup with boto.
         """
-        # Decrypt our secret key.
+        # The IAM 'secret key' must be encrypted. Try to decrypt and fail if it cannot.
         cipher = Cipher(key_file)
         try:
             decrypted_secret_key = cipher.decrypt(self.secret_key)

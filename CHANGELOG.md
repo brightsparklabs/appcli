@@ -10,12 +10,44 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ## [Unreleased]
 
+---
+
+## [1.3.1] - (18/03/2021)
+
+### Added
+
+- `install` command script automatically does upgrade if installing over an existing application.
+
+## [1.3.0] - (17/03/2021)
+
+### Added
+
+- Added `service restart` command to restart service(s) with option `--apply`.
+- Backup configuration now supports multiple backup definitions with their own granularity and remotes.
+- Backup and restore now have options to enable/disable pre-stop/pre-start services.
+- Added `--encrypt` option to `configure set` to set an encrypted value directly.
+- Value for `configure set` is now optional, and will be interactively requested if missing.
+- Various dependency updates.
+
+## [1.2.0] - (18/02/2021)
+
+### Breaking Changes from 1.1
+
+Appcli no longer exposes internal classes and methods via the root module. To access these classes and methods,
+any python referring to the library will need to use full module path references.
+
+### Fixed
+
+- Fixed module imports which were broken due to using `__init__.py`, swapped to using implicit namespace modules.
+
+## [1.1.3] - (17/02/2021) [BROKEN - DO NOT USE THIS VERSION]
+
 ### Added
 
 - `backup` and `restore` commands and its associated configuration.
 
 ---
-## [1.1.2] - (10/02/2021)
+## [1.1.2] - (10/02/2021) [BROKEN - DO NOT USE THIS VERSION]
 
 ### Added
 

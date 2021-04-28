@@ -124,6 +124,6 @@ class VariablesManager:
             variables (Dict): the variables to save
         """
         full_path = self.configuration_file.absolute().as_posix()
-        logger.info(f"Saving configuration to [{full_path}] ...")
+        logger.debug(f"Saving configuration to [{full_path}] ...")
         with open(full_path, "w") as config_file:
             self.yaml.dump(variables, config_file)
