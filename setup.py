@@ -55,8 +55,11 @@ setup(
     packages=find_packages(exclude=["contrib", "docs", "tests"]),
     include_package_data=True,
     install_requires=[
+        "boto3==1.16.62",
         "click==7.1.2",
-        "coloredlogs==14.0",
+        "coloredlogs==15.0",
+        "cronex==0.1.3.1",
+        "dataclasses-json==0.5.2",
         "deepdiff==5.3.0",
         "GitPython==3.1.12",
         "jinja2==2.11.2",
@@ -65,9 +68,6 @@ setup(
         "pycryptodome==3.10.1",
         "ruamel-yaml==0.16.10",
         "tabulate==0.8.7",
-        "boto3==1.16.62",
-        "cronex==0.1.3.1",
-        "dataclasses-json==0.5.2",
     ],
     extras_require={"dev": ["black", "flake8", "isort", "pytest"]},
 )
