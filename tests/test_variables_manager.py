@@ -12,7 +12,6 @@ www.brightsparklabs.com
 # standard libraries
 from pathlib import Path
 import filecmp
-from pyparsing import Dict
 
 # vendor libraries
 import pytest
@@ -23,16 +22,8 @@ from ruamel import yaml
 from appcli.variables_manager import VariablesManager
 
 # ------------------------------------------------------------------------------
-# CONSTANTS
-# ------------------------------------------------------------------------------
-
-APP_NAME = "test_app"
-
-# ------------------------------------------------------------------------------
 # TESTS
 # ------------------------------------------------------------------------------
-
-# GET
 
 
 def test_get_variable_before_set(tmpdir):
@@ -111,9 +102,6 @@ def test_get_all_variables(tmpdir):
         )
         == {}
     )
-
-
-# SET
 
 
 def test_set_variable_empty(tmpdir):
