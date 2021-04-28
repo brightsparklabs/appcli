@@ -12,7 +12,7 @@ www.brightsparklabs.com
 # standard library
 from functools import reduce
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Union
 
 # vendor libraries
 from ruamel.yaml import YAML
@@ -49,14 +49,19 @@ class VariablesManager:
             Exception: Failed to find the configuration key.
         """
         configuration = self.__get_configuration()
-        variable = reduce(lambda e, k: e[k], path.split("."), configuration)
-        return variable if variable else None
+        try:
+            variable = reduce(lambda e, k: e[k], path.split("."), configuration)
+        except KeyError as exc:
+            raise KeyError(f"Setting [{path}] not set in configuration.") from exc
+        return variable
 
     def get_all_variables(self):
         return self.__get_configuration()
 
-    def set_variable(self, path, value):
+    def set_variable(self, path: str, value: Union[str, bool, int, float]):
         """Sets a value in the configuration.
+
+        Type of value is not enforced but this might not serialise into yml in a deserialisable format.
 
         Args:
             path (str): Dot notation for the setting. E.g. insilico.external.database.host
@@ -96,8 +101,16 @@ class VariablesManager:
             Dict: the current configuration
         """
         try:
-            data = self.configuration_file.read_text(encoding="utf-8")
-            return self.yaml.load(data)
+            raw_data = self.configuration_file.read_text(encoding="utf-8")
+
+            # If the file is empty, the YAML library will load as `None`. Since
+            # we expect this function to return a valid dict, we return an
+            # empty dictionary if it's empty.
+            yaml_data = self.yaml.load(raw_data)
+            if yaml_data is None:
+                return {}
+            return yaml_data
+
         except Exception as ex:
             raise Exception(
                 f"Could not read configuration file at [{self.configuration_file}]"
