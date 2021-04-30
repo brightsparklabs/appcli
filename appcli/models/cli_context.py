@@ -14,7 +14,7 @@ from appcli.logger import logger
 
 
 class CliContext(NamedTuple):
-    """ Shared context from a run of the CLI. """
+    """Shared context from a run of the CLI."""
 
     # ---------------------------------
     # data passed in when CLI invoked on the command line

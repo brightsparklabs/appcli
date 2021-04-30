@@ -37,7 +37,7 @@ from appcli.models.cli_context import CliContext
 @dataclass_json
 @dataclass
 class GlobList(DataClassExtensions):
-    """ The container class for lists of globs for the include and exclude lists. """
+    """The container class for lists of globs for the include and exclude lists."""
 
     include_list: Optional[List[str]] = field(default_factory=lambda: ["**/*"])
     """ A List of glob patterns that represents the files to be added to the backup. Will default to everything. """
@@ -49,7 +49,7 @@ class GlobList(DataClassExtensions):
 @dataclass_json
 @dataclass
 class FileFilter(DataClassExtensions):
-    """ The container class for the data and conf directory include/exclude lists. """
+    """The container class for the data and conf directory include/exclude lists."""
 
     data_dir: Optional[GlobList] = field(default_factory=lambda: GlobList())
     """ The GlobList for the data directory. """

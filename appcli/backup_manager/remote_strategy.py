@@ -33,7 +33,7 @@ from appcli.logger import logger
 
 
 class RemoteBackupStrategy:
-    """ Base class for all remote strategies. """
+    """Base class for all remote strategies."""
 
     def backup(self, backup_filename: Path, key_file: Path):
         """

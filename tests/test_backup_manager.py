@@ -61,7 +61,7 @@ CONF_FILES_ALL = CONF_FILES.union(CONF_NESTED_FILES)
 
 
 class MockTime:
-    """ A class for manipulating the monkeypatched datetime for more consistent testing. """
+    """A class for manipulating the monkeypatched datetime for more consistent testing."""
 
     original_value = datetime.datetime(2020, 12, 25, 17, 5, 55)
     current = original_value
@@ -73,23 +73,23 @@ class MockTime:
         self.current = date
 
     def increment(self):
-        """ Increment `datetime.now` by 1 second. """
+        """Increment `datetime.now` by 1 second."""
         self.current = self.current + time_delta(seconds=1)
 
     def reset(self):
-        """ Reset `datetime.now` to the initial state. """
+        """Reset `datetime.now` to the initial state."""
         self.current = self.original_value
 
 
 @pytest.fixture
 def reset_mockTime():
-    """ Fixture for reseting `datetime.now`. """
+    """Fixture for reseting `datetime.now`."""
     mock_time.reset()
 
 
 @pytest.fixture
 def patch_datetime_now(monkeypatch):
-    """ Fixture for monkeypatching `datetime.now` into an object we can manipulate. """
+    """Fixture for monkeypatching `datetime.now` into an object we can manipulate."""
 
     class mydatetime:
         @classmethod
@@ -203,7 +203,7 @@ def create_click_ctx(conf_dir, data_dir, backup_dir) -> click.Context:
 
 
 def get_tar_contents(tar: str):
-    """ Return a set of all files in the provided tar"""
+    """Return a set of all files in the provided tar"""
 
     files = set()
 
@@ -215,7 +215,7 @@ def get_tar_contents(tar: str):
 
 
 def get_expected_files(tmp_folder_path, file_list):
-    """ Take a given file list and prepend a given string. """
+    """Take a given file list and prepend a given string."""
     tar_path = PurePath(tmp_folder_path).name
 
     expected_files = set()
