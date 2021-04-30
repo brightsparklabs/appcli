@@ -7,9 +7,7 @@ from typing import Dict, Iterable, NamedTuple, Tuple
 
 # local libraries
 from appcli.configuration.configuration_dir_state import (
-    ConfigurationDirState,
-    ConfigurationDirStateFactory,
-)
+    ConfigurationDirState, ConfigurationDirStateFactory)
 from appcli.logger import logger
 
 

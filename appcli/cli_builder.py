@@ -30,7 +30,8 @@ from appcli.commands.launcher_cli import LauncherCli
 from appcli.commands.migrate_cli import MigrateCli
 from appcli.commands.service_cli import ServiceCli
 from appcli.commands.task_cli import TaskCli
-from appcli.functions import error_and_exit, extract_valid_environment_variable_names
+from appcli.functions import (error_and_exit,
+                              extract_valid_environment_variable_names)
 from appcli.logger import enable_debug_logging, logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration

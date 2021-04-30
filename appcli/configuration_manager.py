@@ -24,14 +24,11 @@ from typing import Iterable
 from jinja2 import StrictUndefined, Template
 
 from appcli.crypto import crypto
-
 # local libraries
 from appcli.crypto.crypto import decrypt_values_in_file
 from appcli.functions import error_and_exit, print_header
 from appcli.git_repositories.git_repositories import (
-    ConfigurationGitRepository,
-    GeneratedConfigurationGitRepository,
-)
+    ConfigurationGitRepository, GeneratedConfigurationGitRepository)
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration

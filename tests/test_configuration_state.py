@@ -15,15 +15,10 @@ import pytest
 # local libraries
 from appcli.commands.appcli_command import AppcliCommand
 from appcli.configuration.configuration_dir_state import (
-    CleanConfigurationDirState,
-    ConfigurationDirState,
-    ConfigurationDirStateFactory,
-    DirtyConfAndGenConfigurationDirState,
-    DirtyConfConfigurationDirState,
-    DirtyGenConfigurationDirState,
-    NoDirectoryProvidedConfigurationDirState,
-    UnappliedConfigurationDirState,
-)
+    CleanConfigurationDirState, ConfigurationDirState,
+    ConfigurationDirStateFactory, DirtyConfAndGenConfigurationDirState,
+    DirtyConfConfigurationDirState, DirtyGenConfigurationDirState,
+    NoDirectoryProvidedConfigurationDirState, UnappliedConfigurationDirState)
 
 # ------------------------------------------------------------------------------
 # TESTS
