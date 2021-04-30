@@ -29,8 +29,6 @@ install: skip
 
 jobs:
   include:
-  - stage: unit tests
-    script: VENV_NAME=${VIRTUAL_ENV} make test lint
   - stage: publish
     if: branch = develop
     script: make docker-publish

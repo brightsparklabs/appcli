@@ -48,8 +48,21 @@ lint: venv
 isort: venv
 	${PYTHON} -m isort .
 
+isort-check: venv
+	${PYTHON} -m isort . --diff --check-only
+
 format: isort
 	${PYTHON} -m black .
+
+format-check: venv
+	${PYTHON} -m black . --diff --check
+
+build-wheel: venv
+	${PYTHON} -m pip install setuptools wheel twine
+	${PYTHON} setup.py sdist bdist_wheel
+
+publish-wheel: build-wheel
+	twine upload dist/*
 
 docker:
 	docker build -t brightsparklabs/appcli:${APP_VERSION} -t brightsparklabs/appcli:latest .
@@ -61,3 +74,5 @@ docker-publish: docker
 	docker logout
 
 all: format lint test
+
+check: format-check isort-check lint test
