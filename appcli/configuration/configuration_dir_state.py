@@ -21,7 +21,9 @@ import git
 from appcli.commands.appcli_command import AppcliCommand
 from appcli.functions import error_and_exit
 from appcli.git_repositories.git_repositories import (
-    ConfigurationGitRepository, GeneratedConfigurationGitRepository)
+    ConfigurationGitRepository,
+    GeneratedConfigurationGitRepository,
+)
 from appcli.logger import logger
 
 # ------------------------------------------------------------------------------
