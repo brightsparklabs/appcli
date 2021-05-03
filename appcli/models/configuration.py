@@ -14,7 +14,7 @@ from appcli.orchestrators import Orchestrator
 
 
 class Hooks(NamedTuple):
-    """ Hooks to run before/after stages """
+    """Hooks to run before/after stages"""
 
     migrate_variables: Callable[
         [click.Context, Dict, str, Dict], Dict
@@ -49,7 +49,7 @@ class Hooks(NamedTuple):
 
 
 class Configuration(NamedTuple):
-    """ Configuration for building the CLI. """
+    """Configuration for building the CLI."""
 
     app_name: str
     """ Name of the application (do not use spaces). """
