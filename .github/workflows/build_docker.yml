@@ -1,7 +1,10 @@
 name: Build and publish docker image
 
-# TODO: Change this to only on `develop` branch
-on: [push]
+on:
+  push:
+    branches:
+      - develop
+      - master
 
 jobs:
   build:
