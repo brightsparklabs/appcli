@@ -1,6 +1,6 @@
 # BSL Application CLI Library
 
-[![Build Status](https://travis-ci.org/brightsparklabs/appcli.svg?branch=develop)](https://travis-ci.org/brightsparklabs/appcli)
+![Test Python](https://github.com/brightsparklabs/appcli/actions/workflows/build_python.yml/badge.svg)
 
 A library for adding CLI interfaces to applications in the brightSPARK Labs style.
 
