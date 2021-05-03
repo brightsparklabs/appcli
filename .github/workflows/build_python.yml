@@ -1,4 +1,4 @@
-name: Test Python and build wheel
+name: Test Python
 
 on: [push]
 
@@ -27,6 +27,7 @@ jobs:
             ${{ runner.os }}-
       - name: Check python
         run: make check
+      # TODO: Build wheel and publish to pypi
       # - name: Build wheel
       #   run: make build-wheel
       # Next step would be to publish the image with twine. We already have a `make` target available that calls twine. See:
