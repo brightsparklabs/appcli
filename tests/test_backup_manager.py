@@ -747,6 +747,7 @@ def test_simple_remote_backups_parsing(reset_mockTime):
 
     assert backup_config.remote_backups[0].name == "s3_weekley"
     assert backup_config.remote_backups[0].strategy_type == "S3"
+    assert backup_config.remote_backups[0].frequency == "* * *"
 
 
 def test_simple_S3_remote_backup_parsing(reset_mockTime):
@@ -754,8 +755,9 @@ def test_simple_S3_remote_backup_parsing(reset_mockTime):
         "name": "full",
         "remote_backups": [
             {
-                "name": "s3_weekley",
+                "name": "s3_sunday",
                 "strategy_type": "S3",
+                "frequency": "* * 0",
                 "configuration": {
                     "bucket_name": "name",
                     "access_key": "asdf123",
@@ -769,6 +771,9 @@ def test_simple_S3_remote_backup_parsing(reset_mockTime):
 
     backup_config = BackupConfig.from_dict(conf)
 
+    assert backup_config.remote_backups[0].name == "s3_sunday"
+    assert backup_config.remote_backups[0].strategy_type == "S3"
+    assert backup_config.remote_backups[0].frequency == "* * 0"
     assert backup_config.remote_backups[0].strategy.bucket_name == "name"
     assert backup_config.remote_backups[0].strategy.access_key == "asdf123"
     assert backup_config.remote_backups[0].strategy.secret_key == "qwer456"

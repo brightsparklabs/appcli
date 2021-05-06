@@ -110,7 +110,7 @@ class BackupConfig(DataClassExtensions):
             return False
         if not job.check_trigger(time.gmtime(time.time())[:5]):
             logger.debug(
-                f"Remote strategy [{self.name}] will not run due to frequency [{self.frequency}] not matching today."
+                f"Backup strategy [{self.name}] will not run due to frequency [{self.frequency}] not matching today."
             )
             return False
 
