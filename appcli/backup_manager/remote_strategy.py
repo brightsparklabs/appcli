@@ -11,10 +11,10 @@ www.brightsparklabs.com
 
 # standard libraries
 import os
+import time
 import urllib.parse
 from dataclasses import dataclass, field
 from pathlib import Path
-import time
 from typing import Optional
 
 # vendor libraries
