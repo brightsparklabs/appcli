@@ -21,14 +21,24 @@ help:
 	@echo "       run flake8"
 	@echo "make isort"
 	@echo "       run + apply isort"
+	@echo "make isort-check"
+	@echo "       check with isort"
 	@echo "make format"
-	@echo "       run isort + black"
+	@echo "       run + apply black"
+	@echo "make format-check"
+	@echo "       check with black"
+	@echo "make build-wheel"
+	@echo "       build wheel"
+	@echo "make publish-wheel"
+	@echo "       publish wheel"
 	@echo "make all"
-	@echo "       run all the above"
+	@echo "       run format + isort + lint + test"
 	@echo "make docker"
 	@echo "       build docker image"
 	@echo "make docker-publish"
 	@echo "       publish docker image"
+	@echo "make check"
+	@echo "       run format-check + isort-check + lint + test"
 
 # Requirements are in setup.py, so whenever setup.py is changed, re-run installation of dependencies.
 venv: $(VENV_NAME)/bin/activate
@@ -48,16 +58,29 @@ lint: venv
 isort: venv
 	${PYTHON} -m isort .
 
-format: isort
+isort-check: venv
+	${PYTHON} -m isort . --diff --check-only
+
+format: venv
 	${PYTHON} -m black .
+
+format-check: venv
+	${PYTHON} -m black . --diff --check
+
+build-wheel: venv
+	${PYTHON} -m pip install setuptools wheel twine
+	${PYTHON} setup.py sdist bdist_wheel
+
+publish-wheel: build-wheel
+	twine upload dist/*
 
 docker:
 	docker build -t brightsparklabs/appcli:${APP_VERSION} -t brightsparklabs/appcli:latest .
 
 docker-publish: docker
-	docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
 	docker push brightsparklabs/appcli:${APP_VERSION}
 	docker push brightsparklabs/appcli:latest
-	docker logout
 
-all: format lint test
+all: format isort lint test
+
+check: format-check isort-check lint test

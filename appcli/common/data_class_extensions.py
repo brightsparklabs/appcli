@@ -17,7 +17,7 @@ from appcli.logger import logger
 
 
 class DataClassExtensions:
-    """ Extensions for the DataClass library. """
+    """Extensions for the DataClass library."""
 
     def fix_defaults(self):
         """

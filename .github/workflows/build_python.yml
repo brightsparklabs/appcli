@@ -1,0 +1,34 @@
+name: Test Python
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Cache pip
+        uses: actions/cache@v2
+        with:
+          # This path is specific to Ubuntu
+          path: ~/.cache/pip
+          # Look to see if there is a cache hit for the corresponding requirements file
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: Check python
+        run: make check
+      # TODO: Build wheel and publish to pypi
+      # - name: Build wheel
+      #   run: make build-wheel
+      # Next step would be to publish the image with twine. We already have a `make` target available that calls twine. See:
+      # https://docs.github.com/en/actions/guides/building-and-testing-python#publishing-to-package-registries
