@@ -233,7 +233,12 @@ The available keys for every remote backup strategy are:
 | ------------- | --------------------------------------------------------------------------- |
 | name          | A short name or description used to describe this backup.                   |
 | strategy_type | The type of this backup, must match an implemented remote backup strategy.  |
+| frequency     | The cron-like frequency at which remote backups will execute.               |
 | configuration | Custom configuration block that is specific to each remote backup strategy. |
+
+N.B. remote backups will only run for a local backup that has run. Therefore the `frequency` of the local backup
+will apply first, followed by the `frequency` of the remote backup. This means that it's possible to write a remote
+backup frequency that will never execute. e.g. Local `* * 0` and remote `* * 1`.
 
 ##### Strategies
 
@@ -258,6 +263,7 @@ The available configuration keys for an S3 backup are:
         remote_backups:
         - name: "weekly_S3"
           strategy_type: "S3"
+          frequency: "* * 0"
           configuration:
             bucket_name: "aws.s3.bucket"
             access_key: "aws_access_key"

@@ -14,10 +14,12 @@ import os
 import urllib.parse
 from dataclasses import dataclass, field
 from pathlib import Path
+import time
 from typing import Optional
 
 # vendor libraries
 import boto3
+import cronex
 from botocore.exceptions import ClientError
 from dataclasses_json import dataclass_json
 from tabulate import tabulate
@@ -61,6 +63,8 @@ class RemoteBackup(DataClassExtensions):
     """ An optional name/description for the remote strategy. """
     configuration: dict = field(default_factory=dict)
     """ A dict that contains configuration values specific to the strategy type. """
+    frequency: Optional[str] = field(default_factory=lambda: "* * *")
+    """ An optional CRON frequency with the time stripped out i.e. `* * *` for specifying when this remote strategy should run. """
     strategy: RemoteBackupStrategy = field(init=False)
     """ The remote backup strategy implementation """
 
@@ -85,7 +89,34 @@ class RemoteBackup(DataClassExtensions):
             key_file: Path. The path to the key file.
         """
         logger.info(f"Initiating backup [{self.name}]")
-        self.strategy.backup(backup_filename, key_file)
+        if self.should_run():
+            self.strategy.backup(backup_filename, key_file)
+
+    def should_run(self) -> bool:
+        """
+        Verify if the backup should run based on todays date and the frequency value set.
+
+        Returns:
+            True if the frequency matches today, False if it does not.
+        """
+
+        # Our configuration is just the last 3 values of a cron pattern, prepend hour/minute as wild-cards.
+        cron_frequency = f"* * {self.frequency}"
+
+        try:
+            job = cronex.CronExpression(cron_frequency)
+        except ValueError as e:
+            logger.error(
+                f"Frequency for remote strategy [{self.name}] is not valid [{self.frequency}]. [{e}]"
+            )
+            return False
+        if not job.check_trigger(time.gmtime(time.time())[:5]):
+            logger.debug(
+                f"Remote strategy [{self.name}] will not run due to frequency [{self.frequency}] not matching today."
+            )
+            return False
+
+        return True
 
 
 @dataclass_json
