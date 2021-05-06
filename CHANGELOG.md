@@ -7,21 +7,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 The changelog is applicable from version `1.0.0` onwards.
 
 ---
-
 ## [Unreleased]
+
+---
+
+## [1.3.2] - (06/05/2021)
+
+### Added
+
+- [#128](https://github.com/brightsparklabs/appcli/pull/128) Added `frequency` to individual remote backup configurations.
 
 ### Fixed
 
 - Fixed [#89](https://github.com/brightsparklabs/appcli/issues/89): `configure get` on a boolean returns `None` if setting is `false`
 
 ---
-
 ## [1.3.1] - (18/03/2021)
 
 ### Added
 
 - `install` command script automatically does upgrade if installing over an existing application.
 
+---
 ## [1.3.0] - (17/03/2021)
 
 ### Added
@@ -33,6 +40,7 @@ The changelog is applicable from version `1.0.0` onwards.
 - Value for `configure set` is now optional, and will be interactively requested if missing.
 - Various dependency updates.
 
+---
 ## [1.2.0] - (18/02/2021)
 
 ### Breaking Changes from 1.1
@@ -44,6 +52,7 @@ any python referring to the library will need to use full module path references
 
 - Fixed module imports which were broken due to using `__init__.py`, swapped to using implicit namespace modules.
 
+---
 ## [1.1.3] - (17/02/2021) [BROKEN - DO NOT USE THIS VERSION]
 
 ### Added
