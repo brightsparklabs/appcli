@@ -40,18 +40,16 @@ here = path.dirname(path.realpath(__file__))
 with open(path.join(here, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
-# get the license
-with open(path.join(here, "LICENSE"), encoding="utf-8") as f:
-    license = f.read()
-
 setup(
-    name="appcli",
+    name="bsl-appcli",
     version=get_version(),
-    description=long_description,
-    license=license,
+    description="A library for adding CLI interfaces to applications in the brightSPARK Labs style",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    license="MIT License",
     author="brightSPARK Labs",
     author_email="enquire@brightsparklabs.com",
-    url="www.brightsparklabs.com",
+    url="https://www.brightsparklabs.com",
     packages=find_namespace_packages(exclude=["contrib", "docs", "tests"]),
     include_package_data=True,
     install_requires=[

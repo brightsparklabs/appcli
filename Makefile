@@ -67,12 +67,20 @@ format: venv
 format-check: venv
 	${PYTHON} -m black . --diff --check
 
-build-wheel: venv
+clean:
+	rm -rf build/ dist/ bsl_appcli.egg-info/
+
+build-wheel: venv clean
 	${PYTHON} -m pip install setuptools wheel twine
 	${PYTHON} setup.py sdist bdist_wheel
 
 publish-wheel: build-wheel
-	twine upload dist/*
+	twine check dist/*
+	twine upload --non-interactive --username __token__ --password ${PYPI_TOKEN} dist/*
+
+publish-wheel-test: build-wheel
+	twine check dist/*
+	twine upload --repository-url https://test.pypi.org/legacy/ --non-interactive --username __token__ --password ${PYPI_TOKEN} dist/*
 
 docker:
 	docker build -t brightsparklabs/appcli:${APP_VERSION} -t brightsparklabs/appcli:latest .
