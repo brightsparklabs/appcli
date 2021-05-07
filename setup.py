@@ -49,7 +49,7 @@ setup(
     license="MIT License",
     author="brightSPARK Labs",
     author_email="enquire@brightsparklabs.com",
-    url="www.brightsparklabs.com",
+    url="https://www.brightsparklabs.com",
     packages=find_namespace_packages(exclude=["contrib", "docs", "tests"]),
     include_package_data=True,
     install_requires=[
