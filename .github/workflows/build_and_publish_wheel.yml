@@ -27,4 +27,6 @@ jobs:
       - name: Check python
         run: make check
       - name: Build and publish wheel to PYPI
-        run: make publish-wheel
+        run: |
+          export PYPI_TOKEN
+          make publish-wheel
