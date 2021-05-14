@@ -10,6 +10,10 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ## [Unreleased]
 
+### Fixed
+
+- Stack settings file is no longer overwritten to the default when running `migrate` command.
+
 ---
 
 ## [1.3.3] - (07/05/2021)
