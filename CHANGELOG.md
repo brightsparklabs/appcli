@@ -13,6 +13,8 @@ The changelog is applicable from version `1.0.0` onwards.
 ### Fixed
 
 - Stack settings file is no longer overwritten to the default when running `migrate` command.
+- [#130](https://github.com/brightsparklabs/appcli/issues/130) Added back in `docker` binary to the appcli Docker image, so tasks can now be run again.
+- [#115](https://github.com/brightsparklabs/appcli/issues/115) Fixed DockerSwarm orchestrator with the addition of the `docker` binary
 
 ---
 
