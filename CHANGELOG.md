@@ -5,10 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 The changelog is applicable from version `1.0.0` onwards.
-
 ---
 
 ## [Unreleased]
+
+---
+
+## [1.3.4] - (14/05/2021)
 
 ### Fixed
 
