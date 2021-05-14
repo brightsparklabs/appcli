@@ -27,6 +27,11 @@ from appcli.orchestrators import DockerComposeOrchestrator
 
 APP_NAME = "test_app"
 
+# directory containing this script
+BASE_DIR = Path(__file__).parent
+
+STACK_CONFIGURATION_FILE = Path(BASE_DIR, "resources/test_stack_settings.yml")
+
 # ------------------------------------------------------------------------------
 # TESTS
 # ------------------------------------------------------------------------------
@@ -142,6 +147,40 @@ def test_migration_same_version(tmpdir):
     # TODO: Asserts on the git repo state?
 
 
+def test_migration_maintains_stack_settings(tmpdir):
+    default_stack_settings_content = STACK_CONFIGURATION_FILE.read_text()
+    new_stack_settings_content = "backups:\n  name: full"
+
+    cli_context_1 = create_cli_context(tmpdir, app_version="1.0.0")
+    conf_manager_1 = create_conf_manager(tmpdir, cli_context_1)
+
+    # Initialise and apply
+    conf_manager_1.initialise_configuration()
+    conf_manager_1.apply_configuration_changes(message="testing test_migration")
+
+    # Verify that the default stack settings file exists and contains default content
+    assert (
+        cli_context_1.get_stack_configuration_file().read_text()
+        == default_stack_settings_content
+    )
+
+    # Update contents of the stack settings file
+    cli_context_1.get_stack_configuration_file().write_text(new_stack_settings_content)
+    conf_manager_1.apply_configuration_changes(message="update stack settings")
+
+    cli_context_2 = create_cli_context(tmpdir, app_version="2.0.0")
+    conf_manager_2 = create_conf_manager(tmpdir, cli_context_2)
+
+    # Expect no error
+    conf_manager_2.migrate_configuration()
+
+    # Assert that the stack settings file was copied across from the old version
+    migrated_stack_settings_content = (
+        cli_context_2.get_stack_configuration_file().read_text()
+    )
+    assert migrated_stack_settings_content == new_stack_settings_content
+
+
 # TODO: Test where conf/data directories don't exist
 # TODO: Test deliberately failing migrations with migration function hooks
 
@@ -180,9 +219,6 @@ def create_conf_manager(tmpdir, cli_context: CliContext = None) -> Configuration
     if cli_context is None:
         cli_context = create_cli_context(tmpdir)
 
-    # directory containing this script
-    BASE_DIR = Path(__file__).parent
-
     configuration = Configuration(
         app_name=APP_NAME,
         docker_image="invalid-image-name",
@@ -190,7 +226,7 @@ def create_conf_manager(tmpdir, cli_context: CliContext = None) -> Configuration
         baseline_templates_dir=Path(BASE_DIR, "resources/templates/baseline"),
         configurable_templates_dir=Path(BASE_DIR, "resources/templates/configurable"),
         orchestrator=DockerComposeOrchestrator("cli/docker-compose.yml", []),
-        stack_configuration_file=Path(BASE_DIR, "resources/test_tack_settings.yml"),
+        stack_configuration_file=STACK_CONFIGURATION_FILE,
     )
 
     return ConfigurationManager(cli_context, configuration)
