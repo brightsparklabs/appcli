@@ -6,9 +6,20 @@
  # www.brightsparklabs.com
  ##
 
+FROM alpine AS docker-binary-download
+
+WORKDIR /tmp
+
+# Download and extract the static docker binary
+RUN \
+    wget https://download.docker.com/linux/static/stable/x86_64/docker-20.10.6.tgz \
+    && tar xf docker-20.10.6.tgz
+
 FROM python:3.8.2-slim-buster
 
 ENV LANG=C.UTF-8
+
+COPY --from=docker-binary-download /tmp/docker/docker /usr/bin
 
 RUN \
     # set timezone to UTC by default
