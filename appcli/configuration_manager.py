@@ -118,6 +118,15 @@ class ConfigurationManager:
             self.config_repo.checkout_existing_branch(app_version_branch)
             return
 
+        # Get the stack-settings file contents if it exists
+        stack_config_file = self.cli_context.get_stack_configuration_file()
+        stack_settings_exists_pre_migration = stack_config_file.is_file()
+        current_stack_settings_variables = (
+            stack_config_file.read_text()
+            if stack_settings_exists_pre_migration
+            else None
+        )
+
         # Migrate the current configuration variables
         current_variables = self.__get_variables_manager().get_all_variables()
 
@@ -174,6 +183,13 @@ class ConfigurationManager:
 
         # Write out 'migrated' variables file
         self.__get_variables_manager().set_all_variables(migrated_variables)
+
+        # If stack settings existed pre-migration, then replace the default with the existing settings
+        if stack_settings_exists_pre_migration:
+            logger.warning(
+                "Stack settings file was copied directly from previous version, please check for compatibility"
+            )
+            stack_config_file.write_text(current_stack_settings_variables)
 
         # Commit the new variables file
         self.config_repo.commit_changes(

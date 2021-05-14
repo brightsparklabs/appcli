@@ -75,12 +75,12 @@ build-wheel: venv clean
 	${PYTHON} setup.py sdist bdist_wheel
 
 publish-wheel: build-wheel
-	twine check dist/*
-	twine upload --non-interactive --username __token__ --password ${PYPI_TOKEN} dist/*
+	${PYTHON} -m twine check dist/*
+	${PYTHON} -m twine upload --non-interactive --username __token__ --password ${PYPI_TOKEN} dist/*
 
 publish-wheel-test: build-wheel
-	twine check dist/*
-	twine upload --repository-url https://test.pypi.org/legacy/ --non-interactive --username __token__ --password ${PYPI_TOKEN} dist/*
+	${PYTHON} -m twine check dist/*
+	${PYTHON} -m twine upload --repository-url https://test.pypi.org/legacy/ --non-interactive --username __token__ --password ${PYPI_TOKEN} dist/*
 
 docker:
 	docker build -t brightsparklabs/appcli:${APP_VERSION} -t brightsparklabs/appcli:latest .

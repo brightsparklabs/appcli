@@ -5,10 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 The changelog is applicable from version `1.0.0` onwards.
-
 ---
 
 ## [Unreleased]
+
+---
+
+## [1.3.4] - (14/05/2021)
+
+### Fixed
+
+- Stack settings file is no longer overwritten to the default when running `migrate` command.
+- [#130](https://github.com/brightsparklabs/appcli/issues/130) Added back in `docker` binary to the appcli Docker image, so tasks can now be run again.
+- [#115](https://github.com/brightsparklabs/appcli/issues/115) Fixed DockerSwarm orchestrator with the addition of the `docker` binary
 
 ---
 
