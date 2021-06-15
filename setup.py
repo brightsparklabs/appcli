@@ -59,7 +59,7 @@ setup(
         "cronex==0.1.3.1",
         "dataclasses-json==0.5.2",
         "deepdiff==5.5.0",
-        "GitPython==3.1.14",
+        "GitPython==3.1.17",
         "jinja2==2.11.3",
         "pycryptodome==3.10.1",
         "python-dotenv==0.17.1",
