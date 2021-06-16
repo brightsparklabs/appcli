@@ -70,7 +70,11 @@ class Orchestrator:
         raise NotImplementedError
 
     def task(
-        self, cli_context: CliContext, service_name: str, extra_args: Iterable[str]
+        self,
+        cli_context: CliContext,
+        service_name: str,
+        extra_args: Iterable[str],
+        detached: bool,
     ) -> CompletedProcess:
         """
         Runs a specified Docker container which is expected to exit
@@ -80,6 +84,7 @@ class Orchestrator:
             cli_context (CliContext): The current CLI context.
             service_name (str): Name of the container to run.
             extra_args (Iterable[str]): Extra arguments for running the container
+            detached (bool): If True, runs the task in the background.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -172,9 +177,16 @@ class DockerComposeOrchestrator(Orchestrator):
         return self.__compose_service(cli_context, ("down",))
 
     def task(
-        self, cli_context: CliContext, service_name: str, extra_args: Iterable[str]
+        self,
+        cli_context: CliContext,
+        service_name: str,
+        extra_args: Iterable[str],
+        detached: bool,
     ) -> CompletedProcess:
-        command = ["run", "--rm", service_name]
+        command = ["run", "--rm"]
+        if detached:
+            command.append("--detach")
+        command.append(service_name)
         command.extend(extra_args)
         return self.__compose_task(cli_context, command)
 
@@ -326,11 +338,18 @@ class DockerSwarmOrchestrator(Orchestrator):
         return self.__docker_stack(cli_context, ("rm",))
 
     def task(
-        self, cli_context: CliContext, service_name: str, extra_args: Iterable[str]
+        self,
+        cli_context: CliContext,
+        service_name: str,
+        extra_args: Iterable[str],
+        detached: bool,
     ) -> CompletedProcess:
-        return self.__compose_task(
-            cli_context, ["run", "--rm", service_name].extend(extra_args)
-        )
+        command = ["run", "--rm"]
+        if detached:
+            command.append("--detach")
+        command.append(service_name)
+        command.extend(extra_args)
+        return self.__compose_task(cli_context, command)
 
     def get_logs_command(self):
         @click.command(

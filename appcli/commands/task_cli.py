@@ -64,13 +64,33 @@ class TaskCli:
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.TASK_RUN
             )
+            _run_task(ctx, service_name, extra_args, detached=False)
+
+        @task.command(
+            help="Runs a specified application task in the background.",
+            context_settings=dict(ignore_unknown_options=True),
+        )
+        @click.argument("service_name", required=True, type=click.STRING)
+        @click.argument("extra_args", nargs=-1, type=click.UNPROCESSED)
+        @click.pass_context
+        def run_background(ctx, service_name, extra_args):
+            cli_context: CliContext = ctx.obj
+            cli_context.get_configuration_dir_state().verify_command_allowed(
+                AppcliCommand.TASK_RUN
+            )
+            _run_task(ctx, service_name, extra_args, detached=True)
+
+        def _run_task(ctx, service_name, extra_args, detached):
             logger.info(
                 "Running task [%s] with args [%s] ...",
                 service_name,
                 extra_args,
             )
-            result = self.orchestrator.task(ctx.obj, service_name, extra_args)
-            logger.info("Task service finished with code [%i]", result.returncode)
+            result = self.orchestrator.task(ctx.obj, service_name, extra_args, detached)
+            if detached:
+                logger.info("Running task in the background...")
+            else:
+                logger.info("Task service finished with code [%i]", result.returncode)
             sys.exit(result.returncode)
 
         # expose the CLI commands
