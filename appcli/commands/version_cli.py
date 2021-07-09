@@ -11,13 +11,13 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-# vendor libraries
-import click
+# standard libraries
 import os
 
+# vendor libraries
+import click
+
 # local libraries
-from appcli.commands.appcli_command import AppcliCommand
-from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
 
 # ------------------------------------------------------------------------------
@@ -37,8 +37,7 @@ class VersionCli:
 
         @click.command(help="Fetches app version")
         def version():
-            """Fetches the version of the app being managed with appcli
-            """
+            """Fetches the version of the app being managed with appcli"""
             print(os.environ.get("APP_VERSION", "latest"))
 
         # expose the CLI command
