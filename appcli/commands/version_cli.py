@@ -4,7 +4,7 @@
 """
 The version command available when running the CLI.
 
-Responsible for returning app version.
+Responsible for fetching current app version.
 ________________________________________________________________________________
 
 Created by brightSPARK Labs
@@ -35,9 +35,9 @@ class VersionCli:
 
         self.configuration: Configuration = configuration
 
-        @click.command(help="Returns app version")
+        @click.command(help="Fetches app version")
         def version():
-            """Outputs the version of the app being managed with appcli
+            """Fetches the version of the app being managed with appcli
             """
             print(os.environ.get("APP_VERSION", "latest"))
 
