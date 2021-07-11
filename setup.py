@@ -62,7 +62,7 @@ setup(
         "GitPython==3.1.18",
         "jinja2==3.0.1",
         "pycryptodome==3.10.1",
-        "python-dotenv==0.17.1",
+        "python-dotenv==0.18.0",
         "python-keycloak==0.22.0",
         "python-slugify==5.0.2",
         "ruamel-yaml==0.17.9",
