@@ -127,16 +127,30 @@ class ServiceCli:
             sys.exit(result.returncode)
 
         @service.command(help="Shuts down services.")
-        @click.argument("service_name", required=False, type=click.STRING)
+        @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
         @click.pass_context
-        def shutdown(ctx, service_name):
-            self.__shutdown(ctx, service_name)
+        def shutdown(ctx, service_names):
+            if service_names is not None:
+                for service_name in service_names:
+                    returncode = self.__shutdown(ctx, service_name);
+                    if returncode:
+                        sys.exit(returncode)
+                sys.exit(0)
+            else:
+                self.__shutdown(ctx, None)
 
         @service.command(help="Stops services.", hidden=True)
-        @click.argument("service_name", required=False, type=click.STRING)
+        @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
         @click.pass_context
-        def stop(ctx, service_name):
-            self.__shutdown(ctx, service_name)
+        def stop(ctx, service_names):
+            if service_names is not None:
+                for service_name in service_names:
+                    returncode = self.__shutdown(ctx, service_name);
+                    if returncode:
+                        sys.exit(returncode)
+                sys.exit(0)
+            else:
+                self.__shutdown(ctx, None)
 
         # Add the 'logs' subcommand
         service.add_command(self.orchestrator.get_logs_command())
@@ -163,7 +177,7 @@ class ServiceCli:
                 orchestrator.add_command(command)
             self.commands.update({"orchestrator": orchestrator})
 
-    def __shutdown(self, ctx: Context, service_name: str = None):
+    def __shutdown(self, ctx: Context, service_name: str = None) -> int:
         """Shutdown service(s) using the orchestrator.
 
         Args:
@@ -189,4 +203,4 @@ class ServiceCli:
         hooks.post_shutdown(ctx, result)
 
         logger.info("Shutdown command finished with code [%i]", result.returncode)
-        sys.exit(result.returncode)
+        return result.returncode
