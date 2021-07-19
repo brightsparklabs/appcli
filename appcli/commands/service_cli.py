@@ -132,6 +132,10 @@ class ServiceCli:
         def shutdown(ctx, service_names):
             if service_names is not None:
                 for service_name in service_names:
+                    if not self.orchestrator.is_service(ctx.obj,service_name):
+                        logger.error("No Such Service: %s",service_name)
+                        sys.exit(1)
+                for service_name in service_names:
                     returncode = self.__shutdown(ctx, service_name);
                     if returncode:
                         sys.exit(returncode)
@@ -144,6 +148,10 @@ class ServiceCli:
         @click.pass_context
         def stop(ctx, service_names):
             if service_names is not None:
+                for service_name in service_names:
+                    if not self.orchestrator.is_service(ctx.obj,service_name):
+                        logger.error("No Such Service: %s",service_name)
+                        sys.exit(1)
                 for service_name in service_names:
                     returncode = self.__shutdown(ctx, service_name);
                     if returncode:
