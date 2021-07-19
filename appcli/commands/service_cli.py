@@ -104,61 +104,58 @@ class ServiceCli:
             is_flag=True,
             help="Force start even if validation checks fail.",
         )
-        @click.argument("service_name", required=False, type=click.STRING)
+        @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
         @click.pass_context
-        def start(ctx, force, service_name):
-            cli_context: CliContext = ctx.obj
-            cli_context.get_configuration_dir_state().verify_command_allowed(
-                AppcliCommand.SERVICE_START, force
-            )
-
-            hooks = self.cli_configuration.hooks
-
-            logger.debug("Running pre-start hook")
-            hooks.pre_start(ctx)
-
-            logger.info("Starting %s ...", configuration.app_name)
-            result = self.orchestrator.start(ctx.obj, service_name)
-
-            logger.debug("Running post-start hook")
-            hooks.post_start(ctx, result)
-
-            logger.info("Start command finished with code [%i]", result.returncode)
-            sys.exit(result.returncode)
+        def start(ctx, force, service_names):
+            if service_names:
+                for service_name in service_names:
+                    if not self.orchestrator.is_service(ctx.obj,service_name):
+                        logger.error("No Such Service: %s", service_name)
+                        sys.exit(1)
+                for service_name in service_names:
+                    returncode = self.__start(ctx, force, service_name)
+                    if returncode:
+                        sys.exit(returncode)
+                sys.exit(0)
+            else:
+                returncode = self.__start(ctx, force, None)
+                sys.exit(returncode)
 
         @service.command(help="Shuts down services.")
         @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
         @click.pass_context
         def shutdown(ctx, service_names):
-            if service_names is not None:
+            if service_names:
                 for service_name in service_names:
                     if not self.orchestrator.is_service(ctx.obj,service_name):
                         logger.error("No Such Service: %s",service_name)
                         sys.exit(1)
                 for service_name in service_names:
-                    returncode = self.__shutdown(ctx, service_name);
+                    returncode = self.__shutdown(ctx, service_name)
                     if returncode:
                         sys.exit(returncode)
                 sys.exit(0)
             else:
-                self.__shutdown(ctx, None)
+                returncode = self.__shutdown(ctx, None)
+                sys.exit(returncode)
 
         @service.command(help="Stops services.", hidden=True)
         @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
         @click.pass_context
         def stop(ctx, service_names):
-            if service_names is not None:
+            if service_names:
                 for service_name in service_names:
                     if not self.orchestrator.is_service(ctx.obj,service_name):
                         logger.error("No Such Service: %s",service_name)
                         sys.exit(1)
                 for service_name in service_names:
-                    returncode = self.__shutdown(ctx, service_name);
+                    returncode = self.__shutdown(ctx, service_name)
                     if returncode:
                         sys.exit(returncode)
                 sys.exit(0)
             else:
-                self.__shutdown(ctx, None)
+                returncode = self.__shutdown(ctx, None)
+                sys.exit(returncode)
 
         # Add the 'logs' subcommand
         service.add_command(self.orchestrator.get_logs_command())
@@ -184,6 +181,36 @@ class ServiceCli:
             for command in orchestrator_commands:
                 orchestrator.add_command(command)
             self.commands.update({"orchestrator": orchestrator})
+
+        
+    def __start(self, ctx: Context, force: bool, service_name: str = None) -> int:
+        """Starts service(s) using the orchestrator.
+
+        Args:
+            ctx (Context): Click Context for current CLI.
+            force (bool, optional): If True, forcibly shuts down service(s). Defaults to False.
+            service_name (str, optional): The name of the service to shutdown. If not provided, will shut down all
+                services.
+        """
+
+        cli_context: CliContext = ctx.obj
+        cli_context.get_configuration_dir_state().verify_command_allowed(
+            AppcliCommand.SERVICE_START, force
+        )
+
+        hooks = self.cli_configuration.hooks
+
+        logger.debug("Running pre-start hook")
+        hooks.pre_start(ctx)
+
+        logger.info("Starting %s ...", self.cli_configuration.app_name)
+        result = self.orchestrator.start(ctx.obj, service_name)
+
+        logger.debug("Running post-start hook")
+        hooks.post_start(ctx, result)
+
+        logger.info("Start command finished with code [%i]", result.returncode)
+        return result.returncode
 
     def __shutdown(self, ctx: Context, service_name: str = None) -> int:
         """Shutdown service(s) using the orchestrator.
