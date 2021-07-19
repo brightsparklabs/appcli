@@ -64,7 +64,7 @@ class ServiceCli:
             is_flag=True,
             help="Do a configure apply after services are stopped",
         )
-        @click.argument("service_names", required=False, type=click.STRING,nargs=-1)
+        @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
         @click.pass_context
         def restart(ctx, force, apply, service_names):
             """Restarts service(s)
@@ -109,7 +109,7 @@ class ServiceCli:
         def start(ctx, force, service_names):
             if service_names:
                 for service_name in service_names:
-                    if not self.orchestrator.is_service(ctx.obj,service_name):
+                    if not self.orchestrator.is_service(ctx.obj, service_name):
                         logger.error("No Such Service: %s", service_name)
                         sys.exit(1)
                 for service_name in service_names:
@@ -127,8 +127,8 @@ class ServiceCli:
         def shutdown(ctx, service_names):
             if service_names:
                 for service_name in service_names:
-                    if not self.orchestrator.is_service(ctx.obj,service_name):
-                        logger.error("No Such Service: %s",service_name)
+                    if not self.orchestrator.is_service(ctx.obj, service_name):
+                        logger.error("No Such Service: %s", service_name)
                         sys.exit(1)
                 for service_name in service_names:
                     returncode = self.__shutdown(ctx, service_name)
@@ -145,8 +145,8 @@ class ServiceCli:
         def stop(ctx, service_names):
             if service_names:
                 for service_name in service_names:
-                    if not self.orchestrator.is_service(ctx.obj,service_name):
-                        logger.error("No Such Service: %s",service_name)
+                    if not self.orchestrator.is_service(ctx.obj, service_name):
+                        logger.error("No Such Service: %s", service_name)
                         sys.exit(1)
                 for service_name in service_names:
                     returncode = self.__shutdown(ctx, service_name)
@@ -181,7 +181,6 @@ class ServiceCli:
             for command in orchestrator_commands:
                 orchestrator.add_command(command)
             self.commands.update({"orchestrator": orchestrator})
-
 
     def __start(self, ctx: Context, force: bool, service_name: str = None) -> int:
         """Starts service(s) using the orchestrator.

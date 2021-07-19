@@ -115,12 +115,12 @@ class Orchestrator:
             str: the name of this orchestrator.
         """
         raise NotImplementedError
-    
+
     def is_service(self) -> bool:
         """
         Returns whether or not a service exists.
 
-        Args: 
+        Args:
             cli_context (CliContext): The current CLI context.
             service_name (str): Name of the service.
 
@@ -128,6 +128,7 @@ class Orchestrator:
             bool: if the service exists.
         """
         raise NotImplementedError
+
 
 class DockerComposeOrchestrator(Orchestrator):
     """
@@ -189,7 +190,7 @@ class DockerComposeOrchestrator(Orchestrator):
         command = ["run", "--rm", service_name]
         command.extend(extra_args)
         return self.__compose_task(cli_context, command)
-    
+
     def is_service(self, cli_context: CliContext, service_name: str):
         command = ["ps", "-q", service_name]
         result = self.__compose_service(cli_context, command)
@@ -354,7 +355,7 @@ class DockerSwarmOrchestrator(Orchestrator):
         return self.__compose_task(
             cli_context, ["run", "--rm", service_name].extend(extra_args)
         )
-    
+
     def is_service(self, cli_context: CliContext, service_name: str):
         subcommand = ["ps", "-q", service_name]
         result = self.__docker_stack(cli_context, subcommand)
