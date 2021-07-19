@@ -64,9 +64,9 @@ class ServiceCli:
             is_flag=True,
             help="Do a configure apply after services are stopped",
         )
-        @click.argument("service_name", required=False, type=click.STRING)
+        @click.argument("service_names", required=False, type=click.STRING,nargs=-1)
         @click.pass_context
-        def restart(ctx, force, apply, service_name):
+        def restart(ctx, force, apply, service_names):
             """Restarts service(s)
 
             Args:
@@ -81,7 +81,7 @@ class ServiceCli:
             # At completion, the invoked command tries to exit the script, so we have to catch
             # the SystemExit.
             try:
-                ctx.invoke(stop, service_name=service_name)
+                ctx.invoke(stop, service_names=service_names)
             except SystemExit:
                 pass
             if apply:
@@ -94,7 +94,7 @@ class ServiceCli:
                 except SystemExit:
                     pass
             try:
-                ctx.invoke(start, force=force, service_name=service_name)
+                ctx.invoke(start, force=force, service_names=service_names)
             except SystemExit:
                 pass
 
@@ -182,7 +182,7 @@ class ServiceCli:
                 orchestrator.add_command(command)
             self.commands.update({"orchestrator": orchestrator})
 
-        
+
     def __start(self, ctx: Context, force: bool, service_name: str = None) -> int:
         """Starts service(s) using the orchestrator.
 
