@@ -118,11 +118,11 @@ class Orchestrator:
 
     def is_service(self) -> bool:
         """
-        Returns whether or not a service exists.
+        Returns whether or not a list of services exists.
 
         Args:
             cli_context (CliContext): The current CLI context.
-            service_name (str): Name of the service.
+            service_name (List[str]): Names of the services.
 
         Returns:
             bool: if the service exists.
@@ -191,10 +191,21 @@ class DockerComposeOrchestrator(Orchestrator):
         command.extend(extra_args)
         return self.__compose_task(cli_context, command)
 
-    def is_service(self, cli_context: CliContext, service_name: str):
-        command = ["ps", "-q", service_name]
+    def is_service(self, cli_context: CliContext, service_names: List[str]) -> bool:
+        command = ["config", "--services"]
         result = self.__compose_service(cli_context, command)
-        return result.returncode == 0
+        # Takes bytes type and converts into a list of strings removing the tailing empty string
+        valid_service_names = "".join([chr(x) for x in list(result.stdout)]).split("\n")[:-1]
+        is_list_valid = True
+
+        logger.debug("Valid Services: %s",", ".join(valid_service_names))
+        
+        for service_name in service_names:
+            if service_name not in valid_service_names:
+                logger.error("Service [%s] does not exist",service_name)
+                is_list_valid = False
+
+        return is_list_valid
 
     def get_logs_command(self):
         @click.command(
@@ -356,10 +367,22 @@ class DockerSwarmOrchestrator(Orchestrator):
             cli_context, ["run", "--rm", service_name].extend(extra_args)
         )
 
-    def is_service(self, cli_context: CliContext, service_name: str):
-        subcommand = ["ps", "-q", service_name]
+    def is_service(self, cli_context: CliContext, service_names: List[str]) -> bool:
+        subcommand = ["config", "--services"]
         result = self.__docker_stack(cli_context, subcommand)
-        return result.returncode == 0
+        # Takes bytes type and converts into a list of strings removing the tailing empty string
+        valid_service_names = "".join([chr(x) for x in list(result.stdout)]).split("\n")[:-1]
+        is_list_valid = True
+
+        logger.debug("Valid Services: %s",", ".join(valid_service_names))
+        logger.debug(result.stderr)
+
+        for service_name in service_names:
+            if service_name not in valid_service_names:
+                logger.error("Service [%s] does not exist",service_name)
+                is_list_valid = False
+
+        return is_list_valid
 
     def get_logs_command(self):
         @click.command(
@@ -562,6 +585,7 @@ def execute_compose(
     if command is not None:
         docker_compose_command.extend(command)
 
+    logger.debug(docker_compose_command)
     logger.debug("Running [%s]", " ".join(docker_compose_command))
-    result = run(docker_compose_command)
+    result = run(docker_compose_command, capture_output=True)
     return result
