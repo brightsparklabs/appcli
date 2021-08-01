@@ -152,33 +152,36 @@ class ServiceCli:
         return_code = 0
         cli_context: CliContext = ctx.obj
         hooks = self.cli_configuration.hooks
-        
+
         if action == "start":
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.SERVICE_START, force
             )
 
-            def pre_hook():
+            def pre_hook(service_name: str = self.cli_configuration.app_name):
                 logger.debug("Running pre-start hook")
                 hooks.pre_start(ctx)
-                logger.info("Starting %s ...", self.cli_configuration.app_name)
+                logger.info("Starting %s ...", service_name)
 
             def post_hook(result):
                 logger.debug("Running post-start hook")
+
                 hooks.post_start(ctx, result)
                 logger.info(
                     "Start command finished with code [%i]",
                     result.returncode,
                 )
+
             orchestrator = self.orchestrator.start
         else:
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.SERVICE_SHUTDOWN
             )
-            def pre_hook():
+
+            def pre_hook(service_name: str = self.cli_configuration.app_name):
                 logger.debug("Running pre-shutdown hook")
                 hooks.pre_shutdown(ctx)
-                logger.info("Shutting down %s ...", self.cli_configuration.app_name)
+                logger.info("Shutting down %s ...", service_name)
 
             def post_hook(result):
                 logger.debug("Running post-shutdown hook")
@@ -187,20 +190,28 @@ class ServiceCli:
                     "Shutdown command finished with code [%i]",
                     result.returncode,
                 )
+
             orchestrator = self.orchestrator.shutdown
 
         if service_names:
             if not self.orchestrator.is_service(ctx.obj, service_names):
                 sys.exit(1)
             for service_name in service_names:
-                pre_hook()
-                result = orchestrator(ctx.obj, service_name)
+                pre_hook(service_name)
+                try:
+                    result = orchestrator(ctx.obj, service_name)
+                except BaseException: 
+                    logger.exception("An exception was thrown!")
+
                 post_hook(result)
                 if result.returncode:
                     return_code = result.returncode
             sys.exit(return_code)
         else:
             pre_hook()
-            result = orchestrator(ctx.obj, None)
+            try:
+                result = orchestrator(ctx.obj, None)
+            except BaseException: 
+                logger.exception("An exception was thrown!")
             post_hook(result)
             sys.exit(result.returncode)

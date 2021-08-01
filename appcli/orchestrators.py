@@ -195,14 +195,16 @@ class DockerComposeOrchestrator(Orchestrator):
         command = ["config", "--services"]
         result = self.__compose_service(cli_context, command)
         # Takes bytes type and converts into a list of strings removing the tailing empty string
-        valid_service_names = "".join([chr(x) for x in list(result.stdout)]).split("\n")[:-1]
+        valid_service_names = "".join([chr(x) for x in list(result.stdout)]).split(
+            "\n"
+        )[:-1]
         is_list_valid = True
 
-        logger.debug("Valid Services: %s",", ".join(valid_service_names))
-        
+        logger.debug("Valid Services: %s", ", ".join(valid_service_names))
+
         for service_name in service_names:
             if service_name not in valid_service_names:
-                logger.error("Service [%s] does not exist",service_name)
+                logger.error("Service [%s] does not exist", service_name)
                 is_list_valid = False
 
         return is_list_valid
@@ -371,15 +373,17 @@ class DockerSwarmOrchestrator(Orchestrator):
         subcommand = ["config", "--services"]
         result = self.__docker_stack(cli_context, subcommand)
         # Takes bytes type and converts into a list of strings removing the tailing empty string
-        valid_service_names = "".join([chr(x) for x in list(result.stdout)]).split("\n")[:-1]
+        valid_service_names = "".join([chr(x) for x in list(result.stdout)]).split(
+            "\n"
+        )[:-1]
         is_list_valid = True
 
-        logger.debug("Valid Services: %s",", ".join(valid_service_names))
+        logger.debug("Valid Services: %s", ", ".join(valid_service_names))
         logger.debug(result.stderr)
 
         for service_name in service_names:
             if service_name not in valid_service_names:
-                logger.error("Service [%s] does not exist",service_name)
+                logger.error("Service [%s] does not exist", service_name)
                 is_list_valid = False
 
         return is_list_valid
