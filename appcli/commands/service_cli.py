@@ -9,8 +9,11 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-# standard libraries
+import enum
 import sys
+
+# standard libraries
+from subprocess import CompletedProcess
 
 # vendor libraries
 import click
@@ -22,9 +25,13 @@ from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
 
+
 # ------------------------------------------------------------------------------
 # CLASSES
 # ------------------------------------------------------------------------------
+class ServiceAction(enum.Enum):
+    START = enum.auto()
+    SHUTDOWN = enum.auto()
 
 
 class ServiceCli:
@@ -66,14 +73,16 @@ class ServiceCli:
         )
         @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
         @click.pass_context
-        def restart(ctx, force, apply, service_names):
+        def restart(
+            ctx: Context, force: bool, apply: bool, service_names: tuple[str, ...]
+        ):
             """Restarts service(s)
 
             Args:
                 ctx (Context): Click Context for current CLI.
                 force (bool, optional): If True, pass force to all subcommands. Defaults to False.
                 apply (bool, optional): If True, configure apply after service(s) are stopped. Defaults to False.
-                service_name (str, optional): The name of the service to restart. If not provided, will restart all
+                service_names (str, optional): The name of the service(s) to restart. If not provided, will restart all
                     services.
             """
             cli_context: CliContext = ctx.obj
@@ -106,20 +115,26 @@ class ServiceCli:
         )
         @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
         @click.pass_context
-        def start(ctx, force, service_names):
-            self.__service_command_orchestrator(ctx, "start", service_names, force)
+        def start(ctx: Context, force: bool, service_names: tuple[str, ...]):
+            self.__service_command_orchestrator(
+                ctx, ServiceAction.START, service_names, force
+            )
 
         @service.command(help="Shuts down services.")
         @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
         @click.pass_context
-        def shutdown(ctx, service_names):
-            self.__service_command_orchestrator(ctx, "shutdown", service_names)
+        def shutdown(ctx: Context, service_names: tuple[str, ...]):
+            self.__service_command_orchestrator(
+                ctx, ServiceAction.SHUTDOWN, service_names
+            )
 
         @service.command(help="Stops services.", hidden=True)
         @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
         @click.pass_context
-        def stop(ctx, service_names):
-            self.__service_command_orchestrator(ctx, "shutdown", service_names)
+        def stop(ctx: Context, service_names: tuple[str, ...]):
+            self.__service_command_orchestrator(
+                ctx, ServiceAction.SHUTDOWN, service_names
+            )
 
         # Add the 'logs' subcommand
         service.add_command(self.orchestrator.get_logs_command())
@@ -147,13 +162,26 @@ class ServiceCli:
             self.commands.update({"orchestrator": orchestrator})
 
     def __service_command_orchestrator(
-        self, ctx: Context, action: str, service_names: str = None, force: bool = False
+        self,
+        ctx: Context,
+        action: ServiceAction,
+        service_names: tuple[str, ...] = None,
+        force: bool = False,
     ):
+        """Applies an action to service(s)
+
+        Args:
+            ctx (Context): Click Context for current CLI.
+            action (ServiceAction): action to apply to service(s), ie start, stop ...
+            service_name (str, optional): The name of the service(s) to restart. If not provided, will restart all
+                services.
+            force (bool, optional): If True, pass force to all subcommands. Defaults to False.
+        """
         return_code = 0
         cli_context: CliContext = ctx.obj
         hooks = self.cli_configuration.hooks
 
-        if action == "start":
+        if action == ServiceAction.START:
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.SERVICE_START, force
             )
@@ -163,7 +191,7 @@ class ServiceCli:
                 hooks.pre_start(ctx)
                 logger.info("Starting %s ...", service_name)
 
-            def post_hook(result):
+            def post_hook(result: CompletedProcess):
                 logger.debug("Running post-start hook")
 
                 hooks.post_start(ctx, result)
@@ -183,7 +211,7 @@ class ServiceCli:
                 hooks.pre_shutdown(ctx)
                 logger.info("Shutting down %s ...", service_name)
 
-            def post_hook(result):
+            def post_hook(result: CompletedProcess):
                 logger.debug("Running post-shutdown hook")
                 hooks.post_shutdown(ctx, result)
                 logger.info(
@@ -198,20 +226,13 @@ class ServiceCli:
                 sys.exit(1)
             for service_name in service_names:
                 pre_hook(service_name)
-                try:
-                    result = orchestrator(ctx.obj, service_name)
-                except BaseException: 
-                    logger.exception("An exception was thrown!")
-
+                result = orchestrator(ctx.obj, service_name)
                 post_hook(result)
                 if result.returncode:
                     return_code = result.returncode
             sys.exit(return_code)
         else:
             pre_hook()
-            try:
-                result = orchestrator(ctx.obj, None)
-            except BaseException: 
-                logger.exception("An exception was thrown!")
+            result = orchestrator(ctx.obj, None)
             post_hook(result)
             sys.exit(result.returncode)
