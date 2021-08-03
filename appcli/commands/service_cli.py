@@ -31,7 +31,16 @@ from appcli.models.configuration import Configuration
 # ------------------------------------------------------------------------------
 # CLASSES
 # ------------------------------------------------------------------------------
+
 class ServiceAction(enum.Enum):
+    """
+    Enum representing avaliable actions to apply to an appcli service or group of services.
+    This enum is required to be passed into __action_runner().
+
+    Options:
+        START: Starts up a service
+        SHUTDOWN: shutsdown a service
+    """
     START = enum.auto()
     SHUTDOWN = enum.auto()
 
@@ -84,7 +93,7 @@ class ServiceCli:
                 ctx (Context): Click Context for current CLI.
                 force (bool, optional): If True, pass force to all subcommands. Defaults to False.
                 apply (bool, optional): If True, configure apply after service(s) are stopped. Defaults to False.
-                service_names (str, optional): The name of the service(s) to restart. If not provided, will restart all
+                service_names (tuple[str, ...], optional): The name of the service(s) to restart. If not provided, will restart all
                     services.
             """
             cli_context: CliContext = ctx.obj
@@ -118,7 +127,7 @@ class ServiceCli:
         @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
         @click.pass_context
         def start(ctx: Context, force: bool, service_names: tuple[str, ...]):
-            self.__service_command_orchestrator(
+            self.__action_runner(
                 ctx, ServiceAction.START, service_names, force
             )
 
@@ -126,7 +135,7 @@ class ServiceCli:
         @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
         @click.pass_context
         def shutdown(ctx: Context, service_names: tuple[str, ...]):
-            self.__service_command_orchestrator(
+            self.__action_runner(
                 ctx, ServiceAction.SHUTDOWN, service_names
             )
 
@@ -134,7 +143,7 @@ class ServiceCli:
         @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
         @click.pass_context
         def stop(ctx: Context, service_names: tuple[str, ...]):
-            self.__service_command_orchestrator(
+            self.__action_runner(
                 ctx, ServiceAction.SHUTDOWN, service_names
             )
 
@@ -163,7 +172,7 @@ class ServiceCli:
                 orchestrator.add_command(command)
             self.commands.update({"orchestrator": orchestrator})
 
-    def __service_command_orchestrator(
+    def __action_orchestrator(
         self,
         ctx: Context,
         action: ServiceAction,
@@ -175,8 +184,7 @@ class ServiceCli:
         Args:
             ctx (Context): Click Context for current CLI.
             action (ServiceAction): action to apply to service(s), ie start, stop ...
-            service_name (str, optional): The name of the service(s) to restart. If not provided, will restart all
-                services.
+            service_names (tuple[str, ...], optional): The name(s) of the service(s) to effect. If not provided the action applies to all services.
             force (bool, optional): If True, pass force to all subcommands. Defaults to False.
         """
         return_code = 0
@@ -202,7 +210,7 @@ class ServiceCli:
                     result.returncode,
                 )
 
-            orchestrator = self.orchestrator.start
+            action_runner = self.orchestrator.start
         else:
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.SERVICE_SHUTDOWN
@@ -221,20 +229,20 @@ class ServiceCli:
                     result.returncode,
                 )
 
-            orchestrator = self.orchestrator.shutdown
+            action_runner = self.orchestrator.shutdown
 
         if service_names:
             if not self.orchestrator.is_service(ctx.obj, service_names):
                 sys.exit(1)
             for service_name in service_names:
                 pre_hook(service_name)
-                result = orchestrator(ctx.obj, service_name)
+                result = action_runner(ctx.obj, service_name)
                 post_hook(result)
                 if result.returncode:
                     return_code = result.returncode
             sys.exit(return_code)
         else:
             pre_hook()
-            result = orchestrator(ctx.obj, None)
+            result = action_runner(ctx.obj, None)
             post_hook(result)
             sys.exit(result.returncode)
