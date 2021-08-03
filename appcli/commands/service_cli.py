@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # # -*- coding: utf-8 -*-
-from __future__ import annotations
 
 """
 Commands for lifecycle management of application services.
@@ -10,10 +9,12 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-import enum
-import sys
 
 # standard libraries
+from __future__ import annotations
+
+import enum
+import sys
 from subprocess import CompletedProcess
 
 # vendor libraries
