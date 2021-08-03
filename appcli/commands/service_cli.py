@@ -27,10 +27,10 @@ from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
 
-
 # ------------------------------------------------------------------------------
 # CLASSES
 # ------------------------------------------------------------------------------
+
 
 class ServiceAction(enum.Enum):
     """
@@ -41,6 +41,7 @@ class ServiceAction(enum.Enum):
         START: Starts up a service
         SHUTDOWN: shutsdown a service
     """
+
     START = enum.auto()
     SHUTDOWN = enum.auto()
 
@@ -127,25 +128,19 @@ class ServiceCli:
         @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
         @click.pass_context
         def start(ctx: Context, force: bool, service_names: tuple[str, ...]):
-            self.__action_runner(
-                ctx, ServiceAction.START, service_names, force
-            )
+            self.__action_orchestrator(ctx, ServiceAction.START, service_names, force)
 
         @service.command(help="Shuts down services.")
         @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
         @click.pass_context
         def shutdown(ctx: Context, service_names: tuple[str, ...]):
-            self.__action_runner(
-                ctx, ServiceAction.SHUTDOWN, service_names
-            )
+            self.__action_orchestrator(ctx, ServiceAction.SHUTDOWN, service_names)
 
         @service.command(help="Stops services.", hidden=True)
         @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
         @click.pass_context
         def stop(ctx: Context, service_names: tuple[str, ...]):
-            self.__action_runner(
-                ctx, ServiceAction.SHUTDOWN, service_names
-            )
+            self.__action_orchestrator(ctx, ServiceAction.SHUTDOWN, service_names)
 
         # Add the 'logs' subcommand
         service.add_command(self.orchestrator.get_logs_command())
