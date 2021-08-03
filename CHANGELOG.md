@@ -8,6 +8,9 @@ The changelog is applicable from version `1.0.0` onwards.
 ---
 
 ## [Unreleased]
+
+### Added
+
 - [#165](https://github.com/brightsparklabs/appcli/issues/165) Added ability to start/shutdown/restart multiple services at a time with the `service` command.
 
 ### Added
