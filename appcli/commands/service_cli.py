@@ -128,18 +128,30 @@ class ServiceCli:
         @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
         @click.pass_context
         def start(ctx: Context, force: bool, service_names: tuple[str, ...]):
+            cli_context: CliContext = ctx.obj
+            cli_context.get_configuration_dir_state().verify_command_allowed(
+                AppcliCommand.SERVICE_START, force
+            )
             self.__action_orchestrator(ctx, ServiceAction.START, service_names, force)
 
         @service.command(help="Shuts down services.")
         @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
         @click.pass_context
         def shutdown(ctx: Context, service_names: tuple[str, ...]):
+            cli_context: CliContext = ctx.obj
+            cli_context.get_configuration_dir_state().verify_command_allowed(
+                AppcliCommand.SERVICE_SHUTDOWN
+            )
             self.__action_orchestrator(ctx, ServiceAction.SHUTDOWN, service_names)
 
         @service.command(help="Stops services.", hidden=True)
         @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
         @click.pass_context
         def stop(ctx: Context, service_names: tuple[str, ...]):
+            cli_context: CliContext = ctx.obj
+            cli_context.get_configuration_dir_state().verify_command_allowed(
+                AppcliCommand.SERVICE_SHUTDOWN
+            )
             self.__action_orchestrator(ctx, ServiceAction.SHUTDOWN, service_names)
 
         # Add the 'logs' subcommand
@@ -183,13 +195,10 @@ class ServiceCli:
             force (bool, optional): If True, pass force to all subcommands. Defaults to False.
         """
         return_code = 0
-        cli_context: CliContext = ctx.obj
         hooks = self.cli_configuration.hooks
 
         if action == ServiceAction.START:
-            cli_context.get_configuration_dir_state().verify_command_allowed(
-                AppcliCommand.SERVICE_START, force
-            )
+
             def pre_hook():
                 if service_names:
                     services = ", ".join(service_names)
@@ -210,9 +219,6 @@ class ServiceCli:
 
             action_runner = self.orchestrator.start
         else:
-            cli_context.get_configuration_dir_state().verify_command_allowed(
-                AppcliCommand.SERVICE_SHUTDOWN
-            )
 
             def pre_hook():
                 if service_names:
