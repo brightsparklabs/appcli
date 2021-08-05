@@ -190,11 +190,14 @@ class ServiceCli:
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.SERVICE_START, force
             )
-
-            def pre_hook(service_name: str = self.cli_configuration.app_name):
+            def pre_hook():
+                if service_names:
+                    services = ", ".join(service_names)
+                else:
+                    services = self.cli_configuration.app_name
                 logger.debug("Running pre-start hook")
                 hooks.pre_start(ctx)
-                logger.info("Starting %s ...", service_name)
+                logger.info("Starting %s ...", services)
 
             def post_hook(result: CompletedProcess):
                 logger.debug("Running post-start hook")
@@ -211,10 +214,14 @@ class ServiceCli:
                 AppcliCommand.SERVICE_SHUTDOWN
             )
 
-            def pre_hook(service_name: str = self.cli_configuration.app_name):
+            def pre_hook():
+                if service_names:
+                    services = ", ".join(service_names)
+                else:
+                    services = self.cli_configuration.app_name
                 logger.debug("Running pre-shutdown hook")
                 hooks.pre_shutdown(ctx)
-                logger.info("Shutting down %s ...", service_name)
+                logger.info("Shutting down %s ...", services)
 
             def post_hook(result: CompletedProcess):
                 logger.debug("Running post-shutdown hook")
@@ -226,18 +233,21 @@ class ServiceCli:
 
             action_runner = self.orchestrator.shutdown
 
+        pre_hook()
         if service_names:
             if not self.orchestrator.is_service(ctx.obj, service_names):
                 sys.exit(1)
             for service_name in service_names:
-                pre_hook(service_name)
-                result = action_runner(ctx.obj, service_name)
-                post_hook(result)
-                if result.returncode:
-                    return_code = result.returncode
-            sys.exit(return_code)
+                result: CompletedProcess = action_runner(ctx.obj, service_name)
+                if result.returncode > 0:
+                    if action == ServiceAction:
+                        error_msg = result.stderr.decode()
+                        logger.error(
+                            f"Failed at Starting {service_name} Reason: {error_msg} "
+                        )
+                        return_code = 1
         else:
-            pre_hook()
             result = action_runner(ctx.obj, None)
-            post_hook(result)
-            sys.exit(result.returncode)
+            return_code = result.returncode
+        post_hook(result)
+        sys.exit(return_code)

@@ -71,8 +71,7 @@ def test_service_start_multiple_inputs(tmpdir):
     )
 
     assert "force is [False]" in result.output
-    assert "Starting service_1 ..." in result.output
-    assert "Starting service_2 ..." in result.output
+    assert "Starting service_1, service_2 ..." in result.output
     assert result.exit_code == 0
 
 
@@ -132,9 +131,7 @@ def test_service_start_force_flag_multiple_inputs(tmpdir):
     )
 
     assert "force is [True]" in result.output
-    assert "Starting service_1 ..." in result.output
-    assert "Starting service_2 ..." in result.output
-    assert "Starting service_3 ..." in result.output
+    assert "Starting service_1, service_2, service_3 ..." in result.output
     assert result.exit_code == 0
 
 
@@ -197,8 +194,7 @@ def test_service_shutdown_multiple_inputs(tmpdir):
         service_command, ["shutdown", "service_3", "service_1"], obj=cli_context
     )
 
-    assert "Shutting down service_3 ..." in result.output
-    assert "Shutting down service_1 ..." in result.output
+    assert "Shutting down service_3, service_1 ..." in result.output
     assert result.exit_code == 0
 
 
@@ -255,10 +251,8 @@ def test_service_restart_multiple_inputs(tmpdir):
     )
 
     assert "force is [False]" in result.output
-    assert "Shutting down service_1 ..." in result.output
-    assert "Starting service_1 ..." in result.output
-    assert "Shutting down service_2 ..." in result.output
-    assert "Starting service_2 ..." in result.output
+    assert "Shutting down service_1, service_2 ..." in result.output
+    assert "Starting service_1, service_2 ..." in result.output
     assert result.exit_code == 0
 
 
@@ -318,10 +312,8 @@ def test_service_restart_force_flag_multiple_inputs(tmpdir):
     )
 
     assert "force is [True]" in result.output
-    assert "Shutting down service_1 ..." in result.output
-    assert "Starting service_1 ..." in result.output
-    assert "Shutting down service_2 ..." in result.output
-    assert "Starting service_2 ..." in result.output
+    assert "Shutting down service_1, service_2 ..." in result.output
+    assert "Starting service_1, service_2 ..." in result.output
     assert result.exit_code == 0
 
 
@@ -384,10 +376,8 @@ def test_service_restart_apply_flag_multiple_inputs(tmpdir):
 
     assert "force is [False]" in result.output
     assert "Finished applying configuration" in result.output
-    assert "Shutting down service_1 ..." in result.output
-    assert "Starting service_1 ..." in result.output
-    assert "Shutting down service_2 ..." in result.output
-    assert "Starting service_2 ..." in result.output
+    assert "Shutting down service_1, service_2 ..." in result.output
+    assert "Starting service_1, service_2 ..." in result.output
     assert result.exit_code == 0
 
 
@@ -460,10 +450,8 @@ def test_service_restart_force_apply_flag_multiple_inputs(tmpdir):
 
     assert "force is [False]" in result.output
     assert "Finished applying configuration" in result.output
-    assert "Shutting down service_1 ..." in result.output
-    assert "Starting service_1 ..." in result.output
-    assert "Shutting down service_2 ..." in result.output
-    assert "Starting service_2 ..." in result.output
+    assert "Shutting down service_1, service_2 ..." in result.output
+    assert "Starting service_1, service_2 ..." in result.output
     assert result.exit_code == 0
 
 
