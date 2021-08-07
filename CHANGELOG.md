@@ -11,7 +11,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Added
 
-- [#118](https://github.com/brightsparklabs/appcli/issues/118) Added `version` command to fetch version of app managed by appcli 
+- [#118](https://github.com/brightsparklabs/appcli/issues/118) Added `version` command to fetch version of app managed by appcli.
 
 ---
 
