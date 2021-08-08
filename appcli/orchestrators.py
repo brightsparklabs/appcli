@@ -42,14 +42,14 @@ class Orchestrator:
     """
 
     def start(
-        self, cli_context: CliContext, service_name: str = None
+        self, cli_context: CliContext, service_name: tuple[str, ...] = None
     ) -> CompletedProcess:
         """
-        Starts Docker containers (services). Optionally accepts a single service name to start.
+        Starts Docker containers (services). Optionally accepts a tuple of service names to start.
 
         Args:
             cli_context (CliContext): The current CLI context.
-            service_name (str, optional): Name of the service to start. If not provided, starts all services.
+            service_names (tuple[str,...], optional): Names of the services to start. If not provided, starts all services.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -57,14 +57,14 @@ class Orchestrator:
         raise NotImplementedError
 
     def shutdown(
-        self, cli_context: CliContext, service_name: str = None
+        self, cli_context: CliContext, service_name: tuple[str, ...] = None
     ) -> CompletedProcess:
         """
-        Stops Docker containers (services). Optionally accepts a single service name to shutdown.
+        Stops Docker containers (services). Optionally accepts a tuple of service names to shutdown.
 
         Args:
             cli_context (CliContext): The current CLI context.
-            service_name (str, optional): Name of the service to shutdown. If not provided, shuts down all services.
+            service_names (tuple[str,...], optional): Names of the services to shutdown. If not provided, shuts down all services.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -122,14 +122,14 @@ class Orchestrator:
         self, cli_context: CliContext, service_names: tuple[str, ...]
     ) -> bool:
         """
-        Returns whether or not a list of services exists.
+        Checks whether a list of named services exist. Returns True if all services exist, otherwise returns False.
 
         Args:
             cli_context (CliContext): The current CLI context.
-            service_names (tuple[str,...]): Names of the service(s).
+            service_names (tuple[str,...]): Names of the services.
 
         Returns:
-            bool: if the service exists.
+            bool: if the services exists.
         """
         raise NotImplementedError
 
@@ -171,21 +171,22 @@ class DockerComposeOrchestrator(Orchestrator):
         )
 
     def start(
-        self, cli_context: CliContext, service_name: str = None
+        self, cli_context: CliContext, service_names: tuple[str, ...] = None
     ) -> CompletedProcess:
-        command = ["up", "-d"]
-        if service_name:
-            command.append(service_name)
-        return self.__compose_service(cli_context, tuple(command))
+        command = ("up", "-d")
+        if service_names:
+            command += service_names
+        return self.__compose_service(cli_context, command)
 
     def shutdown(
-        self, cli_context: CliContext, service_name: str = None
+        self, cli_context: CliContext, service_names: tuple[str, ...] = None
     ) -> CompletedProcess:
-        if service_name is not None:
+        if service_names is not None:
             # We cannot use the 'down' command as it removes more than just the specified service (by design).
             # https://github.com/docker/compose/issues/5420
             # `-fsv` flags mean forcibly stop the container before removing, and delete attached anonymous volumes
-            return self.__compose_service(cli_context, ("rm", "-fsv", service_name))
+            command = ("rm", "-fsv") + service_names
+            return self.__compose_service(cli_context, command)
         return self.__compose_service(cli_context, ("down",))
 
     def task(
@@ -449,6 +450,13 @@ class DockerSwarmOrchestrator(Orchestrator):
 def service_name_verifier(
     service_names: tuple[str, ...], result: CompletedProcess
 ) -> bool:
+    """Verify all services within the provided tuple of service names exist.
+
+    Args:
+        service_names: (tuple[str, ...]): The list of service names to check
+        result: The result of running 'docker-compose config --services'.
+
+    """
     if result.returncode == 0:
         # Converts the byte type into list of names, and removes trailing empty string
         valid_service_names = result.stdout.decode().split("\n")[:-1]

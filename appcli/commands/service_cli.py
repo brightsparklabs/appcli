@@ -242,16 +242,11 @@ class ServiceCli:
         pre_hook()
         if service_names:
             if not self.orchestrator.verify_service_names(ctx.obj, service_names):
-                sys.exit(1)
-            for service_name in service_names:
-                result: CompletedProcess = action_runner(ctx.obj, service_name)
-                if result.returncode > 0:
-                    if action == ServiceAction:
-                        error_msg = result.stderr.decode()
-                        logger.error(
-                            f"Failed at Starting {service_name} Reason: {error_msg} "
-                        )
-                        return_code = 1
+                result = CompletedProcess(args=None, returncode=1)
+                return_code = 1
+            else:
+                result = action_runner(ctx.obj, service_names)
+                return_code = result.returncode
         else:
             result = action_runner(ctx.obj, None)
             return_code = result.returncode
