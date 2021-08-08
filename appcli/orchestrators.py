@@ -13,9 +13,10 @@ www.brightsparklabs.com
 from __future__ import annotations
 
 import os
+import subprocess
 import sys
 from pathlib import Path
-from subprocess import CompletedProcess, run
+from subprocess import CompletedProcess
 from tempfile import NamedTemporaryFile
 from typing import Iterable, List
 
@@ -439,7 +440,7 @@ class DockerSwarmOrchestrator(Orchestrator):
 
     def __exec_command(self, command: str) -> CompletedProcess:
         logger.debug("Running [%s]", " ".join(command))
-        return run(command)
+        return subprocess.run(command)
 
 
 # ------------------------------------------------------------------------------
@@ -609,5 +610,5 @@ def execute_compose(
 
     logger.debug(docker_compose_command)
     logger.debug("Running [%s]", " ".join(docker_compose_command))
-    result = run(docker_compose_command, capture_output=True)
+    result = subprocess.run(docker_compose_command, capture_output=True)
     return result
