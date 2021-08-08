@@ -241,7 +241,7 @@ class ServiceCli:
 
         pre_hook()
         if service_names:
-            if not self.orchestrator.is_service(ctx.obj, service_names):
+            if not self.orchestrator.verify_service_names(ctx.obj, service_names):
                 sys.exit(1)
             for service_name in service_names:
                 result: CompletedProcess = action_runner(ctx.obj, service_name)

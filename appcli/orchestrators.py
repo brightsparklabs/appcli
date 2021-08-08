@@ -64,7 +64,7 @@ class Orchestrator:
 
         Args:
             cli_context (CliContext): The current CLI context.
-            container (str, optional): Name of the service to shutdown. If not provided, shuts down all services.
+            service_name (str, optional): Name of the service to shutdown. If not provided, shuts down all services.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -118,7 +118,7 @@ class Orchestrator:
         """
         raise NotImplementedError
 
-    def is_service(
+    def verify_service_names(
         self, cli_context: CliContext, service_names: tuple[str, ...]
     ) -> bool:
         """
@@ -195,27 +195,13 @@ class DockerComposeOrchestrator(Orchestrator):
         command.extend(extra_args)
         return self.__compose_task(cli_context, command)
 
-    def is_service(
+    def verify_service_names(
         self, cli_context: CliContext, service_names: tuple[str, ...]
     ) -> bool:
         command = ["config", "--services"]
         result = self.__compose_service(cli_context, command)
 
-        # Converts the byte type into list of names, and removes trailing empty string
-        valid_service_names = result.stdout.decode().split("\n")[:-1]
-
-        logger.debug("Valid Services: %s", ", ".join(valid_service_names))
-
-        invalid_service_names = [
-            service_name
-            for service_name in service_names
-            if service_name not in valid_service_names
-        ]
-
-        for service_name in invalid_service_names:
-            logger.error("Service [%s] does not exist", service_name)
-
-        return len(invalid_service_names) == 0
+        return service_name_verifier(service_names, result)
 
     def get_logs_command(self):
         @click.command(
@@ -377,27 +363,13 @@ class DockerSwarmOrchestrator(Orchestrator):
             cli_context, ["run", "--rm", service_name].extend(extra_args)
         )
 
-    def is_service(
+    def verify_service_names(
         self, cli_context: CliContext, service_names: tuple[str, ...]
     ) -> bool:
         subcommand = ["config", "--services"]
         result = self.__docker_stack(cli_context, subcommand)
 
-        # Converts the byte type into list of names, and removes trailing empty string
-        valid_service_names = result.stdout.decode().split("\n")[:-1]
-
-        logger.debug("Valid Services: %s", ", ".join(valid_service_names))
-
-        invalid_service_names = [
-            service_name
-            for service_name in service_names
-            if service_name not in valid_service_names
-        ]
-
-        for service_name in invalid_service_names:
-            logger.error("Service [%s] does not exist", service_name)
-
-        return len(invalid_service_names) == 0
+        return service_name_verifier(service_names, result)
 
     def get_logs_command(self):
         @click.command(
@@ -472,6 +444,33 @@ class DockerSwarmOrchestrator(Orchestrator):
 # ------------------------------------------------------------------------------
 # PUBLIC METHODS
 # ------------------------------------------------------------------------------
+
+
+def service_name_verifier(
+    service_names: tuple[str, ...], result: CompletedProcess
+) -> bool:
+    if result.returncode == 0:
+        # Converts the byte type into list of names, and removes trailing empty string
+        valid_service_names = result.stdout.decode().split("\n")[:-1]
+
+        logger.debug("Valid Services: %s", ", ".join(valid_service_names))
+
+        invalid_service_names = [
+            service_name
+            for service_name in service_names
+            if service_name not in valid_service_names
+        ]
+
+        for service_name in invalid_service_names:
+            logger.error("Service [%s] does not exist", service_name)
+
+        return len(invalid_service_names) == 0
+    else:
+        error_msg = result.stderr.decode()
+        logger.error(
+            f"An unexpected error occured while verifying services. Error: {error_msg}"
+        )
+        return False
 
 
 def decrypt_docker_compose_files(
