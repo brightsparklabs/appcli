@@ -291,10 +291,13 @@ class BackupConfig(DataClassExtensions):
         Returns:
             The formatted .tgz filename.
         """
-        now: datetime = datetime.datetime.now(datetime.timezone.utc).replace(
-            microsecond=0
+        now: str = (
+            datetime.datetime.now(datetime.timezone.utc)
+            .replace(microsecond=0)
+            .isoformat()
+            .replace(":", "")
         )
-        return f"{app_name.upper()}_{backup_name.upper()}_{now.isoformat()}.tgz"
+        return f"{app_name.upper()}_{backup_name.upper()}_{now}.tgz"
 
     def __rolling_backup_deletion(self, backup_dir: Path):
         """Delete old backups, will only keep the most recent backups.
