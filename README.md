@@ -390,6 +390,7 @@ To be used in conjunction with your application `./myapp <command>` e.g. `./myap
 | restore      | Restore a backup of application data and configuration.           |
 | service      | Lifecycle management commands for application services.           |
 | task         | Commands for application tasks.                                   |
+| version      | Fetches the version of the app being managed with appcli.         |
 | view-backups | View a list of locally-available backups.                         |
 
 ### Options
@@ -536,6 +537,12 @@ usage: `./myapp task [OPTIONS] COMMAND [ARGS]`
 | Option | Description                     |
 | ------ | ------------------------------- |
 | --help | Show the help message and exit. |
+
+#### Command: `version`
+
+Fetches the version of the app being managed with appcli.
+
+usage: `./myapp version`
 
 #### Command: `view-backups`
 
