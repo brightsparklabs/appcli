@@ -291,6 +291,11 @@ class BackupConfig(DataClassExtensions):
         Returns:
             The formatted .tgz filename.
         """
+        # datetime's ISO format includes the ':' separator for the `hours:minutes:seconds`.
+        # Since we're using this format in the filename of the backup, the backup filename
+        # will include the ':' character.
+        # Tools like `tar` (by default) expects files with ':' in the name to be a remote
+        # resouces. To avoid this issue, we remove all ':'.
         now: str = (
             datetime.datetime.now(datetime.timezone.utc)
             .replace(microsecond=0)
