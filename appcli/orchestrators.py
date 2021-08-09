@@ -184,13 +184,21 @@ class DockerComposeOrchestrator(Orchestrator):
             context_settings=dict(ignore_unknown_options=True),
         )
         @click.pass_context
+        @click.option(
+            "--lines",
+            "-n",
+            help="Output the last NUM lines instead of all.",
+            type=click.STRING,
+            required=False,
+            default="all",
+        )
         @click.argument("service", nargs=-1, type=click.UNPROCESSED)
-        def logs(ctx, service):
+        def logs(ctx, lines, service):
             cli_context: CliContext = ctx.obj
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.SERVICE_LOGS
             )
-            subcommand = ["logs", "--follow"]
+            subcommand = ["logs", "--follow", f"--tail={lines}"]
             subcommand.extend(service)
             result = self.__compose_service(cli_context, subcommand)
             sys.exit(result.returncode)
@@ -336,13 +344,21 @@ class DockerSwarmOrchestrator(Orchestrator):
             context_settings=dict(ignore_unknown_options=True),
         )
         @click.pass_context
+        @click.option(
+            "--lines",
+            "-n",
+            help="Output the last NUM lines instead of all.",
+            type=click.STRING,
+            required=False,
+            default="all",
+        )
         @click.argument("service", type=click.STRING)
-        def logs(ctx, service):
+        def logs(ctx, lines, service):
             cli_context: CliContext = ctx.obj
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.SERVICE_LOGS
             )
-            command = ["docker", "service", "logs", "--follow"]
+            command = ["docker", "service", "logs", "--follow", f"--tail={lines}"]
             command.append(f"{cli_context.get_project_name()}_{service}")
             result = self.__exec_command(command)
             sys.exit(result.returncode)
