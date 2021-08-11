@@ -319,12 +319,12 @@ class DockerSwarmOrchestrator(Orchestrator):
         )
 
     def start(
-        self, cli_context: CliContext, service_name: str = None
+        self, cli_context: CliContext, service_names: tuple[str, ...] = None
     ) -> CompletedProcess:
-        if service_name is not None:
+        if service_names is not None:
             logger.error(
                 "Docker Swarm orchestrator cannot start individual services. Attempted to start [%s].",
-                service_name,
+                service_names,
             )
             return CompletedProcess(args=None, returncode=1)
 
@@ -347,12 +347,12 @@ class DockerSwarmOrchestrator(Orchestrator):
         return self.__docker_stack(cli_context, subcommand)
 
     def shutdown(
-        self, cli_context: CliContext, service_name: str = None
+        self, cli_context: CliContext, service_names: tuple[str, ...] = None
     ) -> CompletedProcess:
-        if service_name is not None:
+        if service_names is not None:
             logger.error(
                 "Docker Swarm orchestrator cannot stop individual services. Attempted to shutdown [%s].",
-                service_name,
+                service_names,
             )
             return CompletedProcess(args=None, returncode=1)
 
