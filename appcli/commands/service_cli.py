@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 """
 Commands for lifecycle management of application services.
@@ -239,16 +239,14 @@ class ServiceCli:
 
             action_runner = self.orchestrator.shutdown
 
-        pre_hook()
         if service_names:
             if not self.orchestrator.verify_service_names(ctx.obj, service_names):
-                result = CompletedProcess(args=None, returncode=1)
-                return_code = 1
-            else:
-                result = action_runner(ctx.obj, service_names)
-                return_code = result.returncode
+                sys.exit(1)
         else:
-            result = action_runner(ctx.obj, None)
-            return_code = result.returncode
+            service_names = None
+
+        pre_hook()
+        result = action_runner(ctx.obj, service_names)
+        return_code = result.returncode
         post_hook(result)
         sys.exit(return_code)
