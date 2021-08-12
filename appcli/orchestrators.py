@@ -175,14 +175,14 @@ class DockerComposeOrchestrator(Orchestrator):
         self, cli_context: CliContext, service_names: tuple[str, ...] = None
     ) -> CompletedProcess:
         command = ("up", "-d")
-        if service_names:
+        if service_names != () and service_names is not None:
             command += service_names
         return self.__compose_service(cli_context, command)
 
     def shutdown(
         self, cli_context: CliContext, service_names: tuple[str, ...] = None
     ) -> CompletedProcess:
-        if service_names is not None:
+        if service_names != () and service_names is not None:
             # We cannot use the 'down' command as it removes more than just the specified service (by design).
             # https://github.com/docker/compose/issues/5420
             # `-fsv` flags mean forcibly stop the container before removing, and delete attached anonymous volumes
@@ -321,7 +321,7 @@ class DockerSwarmOrchestrator(Orchestrator):
     def start(
         self, cli_context: CliContext, service_names: tuple[str, ...] = None
     ) -> CompletedProcess:
-        if service_names is not None:
+        if service_names != () and service_names is not None:
             logger.error(
                 "Docker Swarm orchestrator cannot start individual services. Attempted to start [%s].",
                 service_names,
@@ -349,7 +349,7 @@ class DockerSwarmOrchestrator(Orchestrator):
     def shutdown(
         self, cli_context: CliContext, service_names: tuple[str, ...] = None
     ) -> CompletedProcess:
-        if service_names is not None:
+        if service_names != () and service_names is not None:
             logger.error(
                 "Docker Swarm orchestrator cannot stop individual services. Attempted to shutdown [%s].",
                 service_names,

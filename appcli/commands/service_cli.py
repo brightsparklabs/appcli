@@ -238,7 +238,7 @@ class ServiceCli:
 
             action_runner = self.orchestrator.shutdown
 
-        if service_names:
+        if service_names != () and service_names is not None:
             if not self.orchestrator.verify_service_names(ctx.obj, service_names):
                 sys.exit(1)
         else:
