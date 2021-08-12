@@ -193,7 +193,6 @@ class ServiceCli:
             service_names (tuple[str, ...], optional): The name(s) of the service(s) to effect. If not provided the action applies to all services.
             force (bool, optional): If True, pass force to all subcommands. Defaults to False.
         """
-        return_code = 0
         hooks = self.cli_configuration.hooks
 
         if action == ServiceAction.START:
@@ -246,6 +245,5 @@ class ServiceCli:
 
         pre_hook()
         result = action_runner(ctx.obj, service_names)
-        return_code = result.returncode
         post_hook(result)
-        sys.exit(return_code)
+        sys.exit(result.returncode)
