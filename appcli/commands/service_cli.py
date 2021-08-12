@@ -35,7 +35,6 @@ from appcli.models.configuration import Configuration
 class ServiceAction(enum.Enum):
     """
     Enum representing avaliable actions to apply to an appcli service or group of services.
-    This enum is required to be passed into __action_runner().
 
     Options:
         START: Starts up a service
