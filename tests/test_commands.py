@@ -12,6 +12,7 @@ www.brightsparklabs.com
 # standard libraries
 import subprocess
 from pathlib import Path
+from typing import List
 
 import pytest
 from click.testing import CliRunner
@@ -23,7 +24,7 @@ from ruamel.yaml import YAML
 from appcli.commands.configure_cli import ConfigureCli
 from appcli.commands.service_cli import ServiceCli
 from appcli.configuration_manager import ConfigurationManager
-from appcli.logger import enable_debug_logging
+from appcli.logger import enable_debug_logging, logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
 from appcli.orchestrators import DockerComposeOrchestrator
@@ -49,11 +50,14 @@ DOCKER_COMPOSE_SERVICES = list(YAML().load(open(DOCKER_COMPOSE_YML))["services"]
 
 
 class Test_ServiceCommands:
+
+    # --------------------------------------------------------------------------
+    # SERVICE START
+    # --------------------------------------------------------------------------
+
     def test_service_start_no_input(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command, ["start"], obj=test_env.cli_context
-        )
+        result = test_env.invoke_service_command(["start"])
 
         assert "force is [False]" in result.output
         assert f"START {APP_NAME} ..." in result.output
@@ -61,11 +65,7 @@ class Test_ServiceCommands:
 
     def test_service_start_multiple_inputs(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command,
-            ["start", "service_1", "service_2"],
-            obj=test_env.cli_context,
-        )
+        result = test_env.invoke_service_command(["start", "service_1", "service_2"])
 
         assert "force is [False]" in result.output
         assert "START service_1, service_2 ..." in result.output
@@ -73,10 +73,8 @@ class Test_ServiceCommands:
 
     def test_service_start_invalid_input(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command,
-            ["start", "INVALID_SERVICE_1", "service_1", "INVALID_SERVICE_2"],
-            obj=test_env.cli_context,
+        result = test_env.invoke_service_command(
+            ["start", "INVALID_SERVICE_1", "service_1", "INVALID_SERVICE_2"]
         )
 
         assert "Service [INVALID_SERVICE_1] does not exist" in result.output
@@ -85,9 +83,7 @@ class Test_ServiceCommands:
 
     def test_service_start_force_flag_no_inputs(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command, ["start", "--force"], obj=test_env.cli_context
-        )
+        result = test_env.invoke_service_command(["start", "--force"])
 
         assert "force is [True]" in result.output
         assert f"START {APP_NAME} ..." in result.output
@@ -95,10 +91,8 @@ class Test_ServiceCommands:
 
     def test_service_start_force_flag_multiple_inputs(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command,
+        result = test_env.invoke_service_command(
             ["start", "--force", "service_1", "service_2", "service_3"],
-            obj=test_env.cli_context,
         )
 
         assert "force is [True]" in result.output
@@ -107,8 +101,7 @@ class Test_ServiceCommands:
 
     def test_service_start_force_flag_invalid_inputs(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command,
+        result = test_env.invoke_service_command(
             [
                 "start",
                 "--force",
@@ -117,28 +110,27 @@ class Test_ServiceCommands:
                 "INVALID_SERVICE_1",
                 "INVALID_SERVICE_2",
             ],
-            obj=test_env.cli_context,
         )
 
         assert "Service [INVALID_SERVICE_1] does not exist" in result.output
         assert "Service [INVALID_SERVICE_2] does not exist" in result.output
         assert result.exit_code == 1
 
+    # --------------------------------------------------------------------------
+    # SERVICE SHUTDOWN
+    # --------------------------------------------------------------------------
+
     def test_service_shutdown_no_input(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command, ["shutdown"], obj=test_env.cli_context
-        )
+        result = test_env.invoke_service_command(["shutdown"])
 
         assert f"SHUTDOWN {APP_NAME} ..." in result.output
         assert result.exit_code == 0
 
     def test_service_shutdown_multiple_inputs(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command,
+        result = test_env.invoke_service_command(
             ["shutdown", "service_3", "service_1"],
-            obj=test_env.cli_context,
         )
 
         assert "SHUTDOWN service_3, service_1 ..." in result.output
@@ -146,20 +138,20 @@ class Test_ServiceCommands:
 
     def test_service_shutdown_invalid_input(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command,
+        result = test_env.invoke_service_command(
             ["shutdown", "service_1", "service_2", "INVALID_SERVICE_1"],
-            obj=test_env.cli_context,
         )
 
         assert "Service [INVALID_SERVICE_1] does not exist" in result.output
         assert result.exit_code == 1
 
+    # --------------------------------------------------------------------------
+    # SERVICE RESTART
+    # --------------------------------------------------------------------------
+
     def test_service_restart_no_input(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command, ["restart"], obj=test_env.cli_context
-        )
+        result = test_env.invoke_service_command(["restart"])
 
         assert "force is [False]" in result.output
         assert f"SHUTDOWN {APP_NAME} ..." in result.output
@@ -168,10 +160,8 @@ class Test_ServiceCommands:
 
     def test_service_restart_single_input(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command,
+        result = test_env.invoke_service_command(
             ["restart", "service_1"],
-            obj=test_env.cli_context,
         )
 
         assert "force is [False]" in result.output
@@ -181,10 +171,8 @@ class Test_ServiceCommands:
 
     def test_service_restart_multiple_inputs(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command,
+        result = test_env.invoke_service_command(
             ["restart", "service_1", "service_2"],
-            obj=test_env.cli_context,
         )
 
         assert "force is [False]" in result.output
@@ -194,10 +182,8 @@ class Test_ServiceCommands:
 
     def test_service_restart_invalid_input(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command,
+        result = test_env.invoke_service_command(
             ["restart", "service_1", "service_2", "INVALID_SERVICE_1"],
-            obj=test_env.cli_context,
         )
 
         assert "Service [INVALID_SERVICE_1] does not exist" in result.output
@@ -205,9 +191,7 @@ class Test_ServiceCommands:
 
     def test_service_restart_force_flag_no_inputs(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command, ["restart", "--force"], obj=test_env.cli_context
-        )
+        result = test_env.invoke_service_command(["restart", "--force"])
 
         assert "force is [True]" in result.output
         assert f"SHUTDOWN {APP_NAME} ..." in result.output
@@ -216,10 +200,8 @@ class Test_ServiceCommands:
 
     def test_service_restart_force_flag_multiple_inputs(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command,
+        result = test_env.invoke_service_command(
             ["restart", "--force", "service_1", "service_2"],
-            obj=test_env.cli_context,
         )
 
         assert "force is [True]" in result.output
@@ -229,10 +211,8 @@ class Test_ServiceCommands:
 
     def test_service_restart_force_flag_invalid_inputs(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command,
+        result = test_env.invoke_service_command(
             ["restart", "--force", "INVALID_SERVICE_1", "service_1", "service_2"],
-            obj=test_env.cli_context,
         )
 
         assert "Service [INVALID_SERVICE_1] does not exist" in result.output
@@ -240,9 +220,7 @@ class Test_ServiceCommands:
 
     def test_service_restart_apply_flag_no_inputs(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command, ["restart", "--apply"], obj=test_env.cli_context
-        )
+        result = test_env.invoke_service_command(["restart", "--apply"])
         print(result.output)
 
         assert "force is [False]" in result.output
@@ -253,10 +231,8 @@ class Test_ServiceCommands:
 
     def test_service_restart_apply_flag_multiple_inputs(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command,
+        result = test_env.invoke_service_command(
             ["restart", "--apply", "service_1", "service_2"],
-            obj=test_env.cli_context,
         )
 
         assert "force is [False]" in result.output
@@ -267,8 +243,7 @@ class Test_ServiceCommands:
 
     def test_service_restart_apply_flag_invalid_inputs(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command,
+        result = test_env.invoke_service_command(
             [
                 "restart",
                 "--apply",
@@ -277,7 +252,6 @@ class Test_ServiceCommands:
                 "service_2",
                 "INVALID_SERVICE_2",
             ],
-            obj=test_env.cli_context,
         )
 
         assert "Service [INVALID_SERVICE_1] does not exist" in result.output
@@ -286,10 +260,8 @@ class Test_ServiceCommands:
 
     def test_service_restart_force_apply_flag_no_inputs(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command,
+        result = test_env.invoke_service_command(
             ["restart", "--force", "--apply"],
-            obj=test_env.cli_context,
         )
 
         assert "force is [True]" in result.output
@@ -300,10 +272,8 @@ class Test_ServiceCommands:
 
     def test_service_restart_force_apply_flag_multiple_inputs(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command,
+        result = test_env.invoke_service_command(
             ["restart", "--force", "--apply", "service_1", "service_2"],
-            obj=test_env.cli_context,
         )
 
         assert "force is [False]" in result.output
@@ -314,8 +284,7 @@ class Test_ServiceCommands:
 
     def test_service_restart_force_apply_flag_invalid_inputs(self, test_env):
 
-        result = test_env.runner.invoke(
-            test_env.service_command,
+        result = test_env.invoke_service_command(
             [
                 "restart",
                 "--force",
@@ -325,7 +294,6 @@ class Test_ServiceCommands:
                 "service_2",
                 "INVALID_SERVICE_2",
             ],
-            obj=test_env.cli_context,
         )
 
         assert "Service [INVALID_SERVICE_1] does not exist" in result.output
@@ -346,6 +314,8 @@ def test_env(tmp_path_factory):
 @pytest.fixture(autouse=True)
 def patch_subprocess(monkeypatch):
     def patched_subprocess_run(docker_compose_command, capture_output=True):
+        # TODO: We should take advantage of the printed command to perform test validation
+        logger.info(f"PYTEST_PATCHED_DOCKER_COMPOSE_COMMAND=[{docker_compose_command}]")
         if all([x in docker_compose_command for x in ["config", "--services"]]):
             # patch for fetching the valid service names, used by the verify_service_names orchestrator.
             valid_services = "\n".join(DOCKER_COMPOSE_SERVICES) + "\n"
@@ -370,17 +340,37 @@ def patch_subprocess(monkeypatch):
 
 
 class Environment:
+    """The test appcli environment in which we can run commands."""
+
+    # --------------------------------------------------------------------------
+    # CONSTRUCTOR
+    # --------------------------------------------------------------------------
+
     def __init__(self, tmpdir) -> None:
         enable_debug_logging()
-        self.config = self.create_config()
-        self.cli_context = self.create_cli_context(tmpdir, self.config)
-        self.config_manager = self.create_config_manager(self.cli_context, self.config)
+        self.config = self._create_config()
+        self.cli_context = self._create_cli_context(tmpdir, self.config)
+        self.config_manager = self._create_config_manager(self.cli_context, self.config)
         self.config_manager.initialise_configuration()
         self.config_manager.apply_configuration_changes(message="init apply")
         self.runner = CliRunner()
-        self.service_command = ServiceCli(self.config).commands["service"]
 
-    def create_cli_context(self, tmpdir, config) -> CliContext:
+    # --------------------------------------------------------------------------
+    # PUBLIC METHODS
+    # --------------------------------------------------------------------------
+
+    def invoke_service_command(self, args: List[str]):
+        return self.runner.invoke(
+            ServiceCli(self.config).commands["service"],
+            args,
+            obj=self.cli_context,
+        )
+
+    # --------------------------------------------------------------------------
+    # PRIVATE METHODS
+    # --------------------------------------------------------------------------
+
+    def _create_cli_context(self, tmpdir, config) -> CliContext:
         group_dir = str(tmpdir.mktemp("commands_test"))
         conf_dir = Path(group_dir, "conf")
         conf_dir.mkdir(exist_ok=True)
@@ -404,7 +394,7 @@ class Environment:
             commands=ConfigureCli(config).commands,
         )
 
-    def create_config(self) -> Configuration:
+    def _create_config(self) -> Configuration:
         return Configuration(
             app_name=APP_NAME,
             docker_image="invalid-image-name",
@@ -417,7 +407,7 @@ class Environment:
             stack_configuration_file=STACK_CONFIGURATION_FILE,
         )
 
-    def create_config_manager(
+    def _create_config_manager(
         self, cli_context: CliContext, config: Configuration
     ) -> ConfigurationManager:
         return ConfigurationManager(cli_context, config)
