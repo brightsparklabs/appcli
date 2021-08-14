@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 The changelog is applicable from version `1.0.0` onwards.
+
 ---
 
 ## [Unreleased]
@@ -14,6 +15,7 @@ The changelog is applicable from version `1.0.0` onwards.
 - [#118](https://github.com/brightsparklabs/appcli/issues/118) Added `version` command to fetch version of app managed by appcli.
 - [#144](https://github.com/brightsparklabs/appcli/issues/144) Added `--lines/-n` option to the `logs` commands for orchestrators. This is the `n` number of lines from the end to start the tail.
 - [#147](https://github.com/brightsparklabs/appcli/issues/147) Remove ':' character from backup filenames, to allow tools like `tar` to work more easily with the unmodified filename.
+- [#165](https://github.com/brightsparklabs/appcli/issues/165) Added ability to start/shutdown/restart multiple services at a time with the `service` command.
 
 ---
 
