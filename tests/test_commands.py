@@ -166,6 +166,19 @@ class Test_ServiceCommands:
         assert f"START {APP_NAME} ..." in result.output
         assert result.exit_code == 0
 
+    def test_service_restart_single_input(self, test_env):
+
+        result = test_env.runner.invoke(
+            test_env.service_command,
+            ["restart", "service_1"],
+            obj=test_env.cli_context,
+        )
+
+        assert "force is [False]" in result.output
+        assert "SHUTDOWN service_1 ..." in result.output
+        assert "START service_1 ..." in result.output
+        assert result.exit_code == 0
+
     def test_service_restart_multiple_inputs(self, test_env):
 
         result = test_env.runner.invoke(

@@ -238,7 +238,7 @@ class ServiceCli:
             f"{action.name} "
             + (
                 ", ".join(service_names)
-                if service_names is not None and len(service_names) > 1
+                if service_names is not None and len(service_names) > 0
                 else self.cli_configuration.app_name
             )
             + " ..."
