@@ -207,9 +207,9 @@ class ServiceCli:
         """Validates service names. Exits with error if any invalid service names are passed in.
 
         Args:
-            ctx (click.Context): current CLI context
-            param (click.Option): the option parameter to validate
-            values (click.Tuple): the values passed to the option, could be multiple
+            ctx (click.Context): Current CLI context.
+            param (click.Option): The option parameter to validate.
+            values (click.Tuple): The values passed to the option, could be multiple.
         """
         if not self.orchestrator.verify_service_names(ctx.obj, values):
             error_and_exit("One or more service names were not found.")
@@ -228,12 +228,20 @@ class ServiceCli:
             action (ServiceAction): action to apply to service(s), ie start, stop ...
             service_names (tuple[str, ...], optional): The name(s) of the service(s) to effect. If not provided the action applies to all services.
         """
-
-        # If any of the service names aren't valid, exit with error
-        if not self.orchestrator.verify_service_names(ctx.obj, service_names):
-            error_and_exit("One or more service names were not found.")
-
         hooks = self.cli_configuration.hooks
+        if action == ServiceAction.START:
+            action_run_function = self.orchestrator.start
+            pre_hook = hooks.pre_start
+            post_hook = hooks.post_start
+
+        elif action == ServiceAction.SHUTDOWN:
+            action_run_function = self.orchestrator.shutdown
+            pre_hook = hooks.pre_shutdown
+            post_hook = hooks.post_shutdown
+
+        else:
+            error_and_exit(f"Unhandled action called: [{action.name}]")
+
         pre_run_log_message = (
             f"{action.name} "
             + (
@@ -245,24 +253,11 @@ class ServiceCli:
         )
         post_run_log_message = f"{action.name} command finished with code [%i]"
 
-        if action == ServiceAction.START:
-            action_runner = self.orchestrator.start
-            pre_hook = hooks.pre_start
-            post_hook = hooks.post_start
-
-        elif action == ServiceAction.SHUTDOWN:
-            action_runner = self.orchestrator.shutdown
-            pre_hook = hooks.pre_shutdown
-            post_hook = hooks.post_shutdown
-
-        else:
-            error_and_exit(f"Invalid action called: [{action.name}]")
-
         logger.debug(f"Running pre-{action.name} hook")
         pre_hook(ctx)
 
         logger.info(pre_run_log_message)
-        result = action_runner(ctx.obj, service_names)
+        result = action_run_function(ctx.obj, service_names)
 
         logger.debug(f"Running post-{action.name} hook")
         post_hook(ctx, result)
