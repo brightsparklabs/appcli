@@ -12,11 +12,9 @@ www.brightsparklabs.com
 
 # standard libraries
 from __future__ import annotations
-from appcli.functions import error_and_exit
 
 import enum
 import sys
-from subprocess import CompletedProcess
 
 # vendor libraries
 import click
@@ -24,6 +22,7 @@ from click.core import Context
 
 # local libraries
 from appcli.commands.appcli_command import AppcliCommand
+from appcli.functions import error_and_exit
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
@@ -83,7 +82,13 @@ class ServiceCli:
             is_flag=True,
             help="Do a configure apply after services are stopped",
         )
-        @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
+        @click.argument(
+            "service_names",
+            required=False,
+            type=click.STRING,
+            nargs=-1,
+            callback=self._validate_service_names,
+        )
         @click.pass_context
         def restart(
             ctx: Context, force: bool, apply: bool, service_names: tuple[str, ...]
@@ -99,12 +104,13 @@ class ServiceCli:
             """
             cli_context: CliContext = ctx.obj
             configure_cli = cli_context.commands["configure"]
-            # At completion, the invoked command tries to exit the script, so we have to catch
-            # the SystemExit.
+            # At completion, the invoked commands try to exit the script, so we have to catch
+            # the SystemExit exception.
             try:
                 ctx.invoke(stop, service_names=service_names)
             except SystemExit:
                 pass
+
             if apply:
                 try:
                     ctx.invoke(
@@ -114,10 +120,8 @@ class ServiceCli:
                     )
                 except SystemExit:
                     pass
-            try:
-                ctx.invoke(start, force=force, service_names=service_names)
-            except SystemExit:
-                pass
+
+            ctx.invoke(start, force=force, service_names=service_names)
 
         @service.command(help="Starts services.")
         @click.option(
@@ -125,7 +129,13 @@ class ServiceCli:
             is_flag=True,
             help="Force start even if validation checks fail.",
         )
-        @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
+        @click.argument(
+            "service_names",
+            required=False,
+            type=click.STRING,
+            nargs=-1,
+            callback=self._validate_service_names,
+        )
         @click.pass_context
         def start(ctx: Context, force: bool, service_names: tuple[str, ...]):
             cli_context: CliContext = ctx.obj
@@ -135,7 +145,13 @@ class ServiceCli:
             self._action_orchestrator(ctx, ServiceAction.START, service_names)
 
         @service.command(help="Shuts down services.")
-        @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
+        @click.argument(
+            "service_names",
+            required=False,
+            type=click.STRING,
+            nargs=-1,
+            callback=self._validate_service_names,
+        )
         @click.pass_context
         def shutdown(ctx: Context, service_names: tuple[str, ...]):
             cli_context: CliContext = ctx.obj
@@ -145,7 +161,13 @@ class ServiceCli:
             self._action_orchestrator(ctx, ServiceAction.SHUTDOWN, service_names)
 
         @service.command(help="Stops services.", hidden=True)
-        @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
+        @click.argument(
+            "service_names",
+            required=False,
+            type=click.STRING,
+            nargs=-1,
+            callback=self._validate_service_names,
+        )
         @click.pass_context
         def stop(ctx: Context, service_names: tuple[str, ...]):
             cli_context: CliContext = ctx.obj
@@ -178,6 +200,20 @@ class ServiceCli:
             for command in orchestrator_commands:
                 orchestrator.add_command(command)
             self.commands.update({"orchestrator": orchestrator})
+
+    def _validate_service_names(
+        self, ctx: click.Context, param: click.Option, values: click.Tuple
+    ):
+        """Validates service names. Exits with error if any invalid service names are passed in.
+
+        Args:
+            ctx (click.Context): current CLI context
+            param (click.Option): the option parameter to validate
+            values (click.Tuple): the values passed to the option, could be multiple
+        """
+        if not self.orchestrator.verify_service_names(ctx.obj, values):
+            error_and_exit("One or more service names were not found.")
+        return values
 
     def _action_orchestrator(
         self,

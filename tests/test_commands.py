@@ -79,7 +79,6 @@ class Test_ServiceCommands:
             obj=test_env.cli_context,
         )
 
-        assert "force is [False]" in result.output
         assert "Service [INVALID_SERVICE_1] does not exist" in result.output
         assert "Service [INVALID_SERVICE_2] does not exist" in result.output
         assert result.exit_code == 1
@@ -121,7 +120,6 @@ class Test_ServiceCommands:
             obj=test_env.cli_context,
         )
 
-        assert "force is [True]" in result.output
         assert "Service [INVALID_SERVICE_1] does not exist" in result.output
         assert "Service [INVALID_SERVICE_2] does not exist" in result.output
         assert result.exit_code == 1
@@ -189,9 +187,8 @@ class Test_ServiceCommands:
             obj=test_env.cli_context,
         )
 
-        assert "force is [False]" in result.output
         assert "Service [INVALID_SERVICE_1] does not exist" in result.output
-        assert result.exit_code == 0
+        assert result.exit_code == 1
 
     def test_service_restart_force_flag_no_inputs(self, test_env):
 
@@ -225,9 +222,8 @@ class Test_ServiceCommands:
             obj=test_env.cli_context,
         )
 
-        assert "force is [True]" in result.output
         assert "Service [INVALID_SERVICE_1] does not exist" in result.output
-        assert result.exit_code == 0
+        assert result.exit_code == 1
 
     def test_service_restart_apply_flag_no_inputs(self, test_env):
 
@@ -271,11 +267,9 @@ class Test_ServiceCommands:
             obj=test_env.cli_context,
         )
 
-        assert "force is [False]" in result.output
-        assert "Finished applying configuration" in result.output
         assert "Service [INVALID_SERVICE_1] does not exist" in result.output
         assert "Service [INVALID_SERVICE_2] does not exist" in result.output
-        assert result.exit_code == 0
+        assert result.exit_code == 1
 
     def test_service_restart_force_apply_flag_no_inputs(self, test_env):
 
@@ -321,11 +315,9 @@ class Test_ServiceCommands:
             obj=test_env.cli_context,
         )
 
-        assert "force is [False]" in result.output
-        assert "Finished applying configuration" in result.output
         assert "Service [INVALID_SERVICE_1] does not exist" in result.output
         assert "Service [INVALID_SERVICE_2] does not exist" in result.output
-        assert result.exit_code == 0
+        assert result.exit_code == 1
 
 
 # ------------------------------------------------------------------------------
