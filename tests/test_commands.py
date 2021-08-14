@@ -63,12 +63,20 @@ class Test_ServiceCommands:
         assert f"START {APP_NAME} ..." in result.output
         assert result.exit_code == 0
 
-    def test_service_start_multiple_inputs(self, test_env):
+    def test_service_start_single_input(self, test_env):
 
-        result = test_env.invoke_service_command(["start", "service_1", "service_2"])
+        result = test_env.invoke_service_command(["start", "service_2"])
 
         assert "force is [False]" in result.output
-        assert "START service_1, service_2 ..." in result.output
+        assert "START service_2 ..." in result.output
+        assert result.exit_code == 0
+
+    def test_service_start_multiple_inputs(self, test_env):
+
+        result = test_env.invoke_service_command(["start", "service_2", "service_1"])
+
+        assert "force is [False]" in result.output
+        assert "START service_2, service_1 ..." in result.output
         assert result.exit_code == 0
 
     def test_service_start_invalid_input(self, test_env):
