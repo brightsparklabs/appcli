@@ -175,14 +175,14 @@ class DockerComposeOrchestrator(Orchestrator):
         self, cli_context: CliContext, service_names: tuple[str, ...] = None
     ) -> CompletedProcess:
         command = ("up", "-d")
-        if service_names != () and service_names is not None:
+        if service_names is not None and len(service_names) > 0:
             command += service_names
         return self.__compose_service(cli_context, command)
 
     def shutdown(
         self, cli_context: CliContext, service_names: tuple[str, ...] = None
     ) -> CompletedProcess:
-        if service_names != () and service_names is not None:
+        if service_names is not None and len(service_names) > 0:
             # We cannot use the 'down' command as it removes more than just the specified service (by design).
             # https://github.com/docker/compose/issues/5420
             # `-fsv` flags mean forcibly stop the container before removing, and delete attached anonymous volumes
@@ -204,8 +204,17 @@ class DockerComposeOrchestrator(Orchestrator):
             return True
         command = ["config", "--services"]
         result = self.__compose_service(cli_context, command)
+        if result.returncode != 0:
+            error_msg = result.stderr.decode()
+            logger.error(
+                f"An unexpected error occured while verifying services. Error: {error_msg}"
+            )
+            return False
 
-        return service_name_verifier(service_names, result)
+        # Converts the byte type into list of names, and removes trailing empty string
+        valid_service_names = result.stdout.decode().split("\n")[:-1]
+        logger.debug("Valid Services: %s", ", ".join(valid_service_names))
+        return service_name_verifier(service_names, valid_service_names)
 
     def get_logs_command(self):
         @click.command(
@@ -323,7 +332,7 @@ class DockerSwarmOrchestrator(Orchestrator):
     def start(
         self, cli_context: CliContext, service_names: tuple[str, ...] = None
     ) -> CompletedProcess:
-        if service_names != () and service_names is not None:
+        if service_names is not None and len(service_names) > 0:
             logger.error(
                 "Docker Swarm orchestrator cannot start individual services. Attempted to start [%s].",
                 service_names,
@@ -351,7 +360,7 @@ class DockerSwarmOrchestrator(Orchestrator):
     def shutdown(
         self, cli_context: CliContext, service_names: tuple[str, ...] = None
     ) -> CompletedProcess:
-        if service_names != () and service_names is not None:
+        if service_names is not None and len(service_names) > 0:
             logger.error(
                 "Docker Swarm orchestrator cannot stop individual services. Attempted to shutdown [%s].",
                 service_names,
@@ -374,8 +383,17 @@ class DockerSwarmOrchestrator(Orchestrator):
             return True
         subcommand = ["config", "--services"]
         result = self.__docker_stack(cli_context, subcommand)
+        if result.returncode != 0:
+            error_msg = result.stderr.decode()
+            logger.error(
+                f"An unexpected error occured while verifying services. Error: {error_msg}"
+            )
+            return False
 
-        return service_name_verifier(service_names, result)
+        # Converts the byte type into list of names, and removes trailing empty string
+        valid_service_names = result.stdout.decode().split("\n")[:-1]
+        logger.debug("Valid Services: %s", ", ".join(valid_service_names))
+        return service_name_verifier(service_names, valid_service_names)
 
     def get_logs_command(self):
         @click.command(
@@ -453,37 +471,21 @@ class DockerSwarmOrchestrator(Orchestrator):
 
 
 def service_name_verifier(
-    service_names: tuple[str, ...], result: CompletedProcess
+    service_names: tuple[str, ...], valid_service_names: List[str]
 ) -> bool:
     """Verify all services within the provided tuple of service names exist.
 
     Args:
-        service_names: (tuple[str, ...]): The list of service names to check
-        result: The result of running 'docker-compose config --services'.
+        service_names (tuple[str, ...]): The list of service names to check
+        valid_service_names [List[str]]: The list of valid service names.
 
     """
-    if result.returncode == 0:
-        # Converts the byte type into list of names, and removes trailing empty string
-        valid_service_names = result.stdout.decode().split("\n")[:-1]
+    invalid_service_names = set(service_names) - set(valid_service_names)
 
-        logger.debug("Valid Services: %s", ", ".join(valid_service_names))
+    for service_name in invalid_service_names:
+        logger.error("Service [%s] does not exist", service_name)
 
-        invalid_service_names = [
-            service_name
-            for service_name in service_names
-            if service_name not in valid_service_names
-        ]
-
-        for service_name in invalid_service_names:
-            logger.error("Service [%s] does not exist", service_name)
-
-        return len(invalid_service_names) == 0
-    else:
-        error_msg = result.stderr.decode()
-        logger.error(
-            f"An unexpected error occured while verifying services. Error: {error_msg}"
-        )
-        return False
+    return len(invalid_service_names) == 0
 
 
 def decrypt_docker_compose_files(
