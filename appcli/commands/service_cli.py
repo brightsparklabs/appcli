@@ -12,6 +12,7 @@ www.brightsparklabs.com
 
 # standard libraries
 from __future__ import annotations
+from appcli.functions import error_and_exit
 
 import enum
 import sys
@@ -37,8 +38,8 @@ class ServiceAction(enum.Enum):
     Enum representing avaliable actions to apply to an appcli service or group of services.
 
     Options:
-        START: Starts up a service
-        SHUTDOWN: shutsdown a service
+        START: Start service(s)
+        SHUTDOWN: Shutdown service(s)
     """
 
     START = enum.auto()
@@ -131,7 +132,7 @@ class ServiceCli:
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.SERVICE_START, force
             )
-            self.__action_orchestrator(ctx, ServiceAction.START, service_names, force)
+            self._action_orchestrator(ctx, ServiceAction.START, service_names)
 
         @service.command(help="Shuts down services.")
         @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
@@ -141,7 +142,7 @@ class ServiceCli:
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.SERVICE_SHUTDOWN
             )
-            self.__action_orchestrator(ctx, ServiceAction.SHUTDOWN, service_names)
+            self._action_orchestrator(ctx, ServiceAction.SHUTDOWN, service_names)
 
         @service.command(help="Stops services.", hidden=True)
         @click.argument("service_names", required=False, type=click.STRING, nargs=-1)
@@ -151,7 +152,7 @@ class ServiceCli:
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.SERVICE_SHUTDOWN
             )
-            self.__action_orchestrator(ctx, ServiceAction.SHUTDOWN, service_names)
+            self._action_orchestrator(ctx, ServiceAction.SHUTDOWN, service_names)
 
         # Add the 'logs' subcommand
         service.add_command(self.orchestrator.get_logs_command())
@@ -178,72 +179,57 @@ class ServiceCli:
                 orchestrator.add_command(command)
             self.commands.update({"orchestrator": orchestrator})
 
-    def __action_orchestrator(
+    def _action_orchestrator(
         self,
         ctx: Context,
         action: ServiceAction,
         service_names: tuple[str, ...] = None,
-        force: bool = False,
     ):
-        """Applies an action to service(s)
+        """Applies an action to service(s).
 
         Args:
             ctx (Context): Click Context for current CLI.
             action (ServiceAction): action to apply to service(s), ie start, stop ...
             service_names (tuple[str, ...], optional): The name(s) of the service(s) to effect. If not provided the action applies to all services.
-            force (bool, optional): If True, pass force to all subcommands. Defaults to False.
         """
+
+        # If any of the service names aren't valid, exit with error
+        if not self.orchestrator.verify_service_names(ctx.obj, service_names):
+            error_and_exit("One or more service names were not found.")
+
         hooks = self.cli_configuration.hooks
+        pre_run_log_message = (
+            f"{action.name} "
+            + (
+                ", ".join(service_names)
+                if service_names is not None and len(service_names) > 1
+                else self.cli_configuration.app_name
+            )
+            + " ..."
+        )
+        post_run_log_message = f"{action.name} command finished with code [%i]"
 
         if action == ServiceAction.START:
-
-            def pre_hook():
-                if service_names:
-                    services = ", ".join(service_names)
-                else:
-                    services = self.cli_configuration.app_name
-                logger.debug("Running pre-start hook")
-                hooks.pre_start(ctx)
-                logger.info("Starting %s ...", services)
-
-            def post_hook(result: CompletedProcess):
-                logger.debug("Running post-start hook")
-
-                hooks.post_start(ctx, result)
-                logger.info(
-                    "Start command finished with code [%i]",
-                    result.returncode,
-                )
-
             action_runner = self.orchestrator.start
-        else:
+            pre_hook = hooks.pre_start
+            post_hook = hooks.post_start
 
-            def pre_hook():
-                if service_names:
-                    services = ", ".join(service_names)
-                else:
-                    services = self.cli_configuration.app_name
-                logger.debug("Running pre-shutdown hook")
-                hooks.pre_shutdown(ctx)
-                logger.info("Shutting down %s ...", services)
-
-            def post_hook(result: CompletedProcess):
-                logger.debug("Running post-shutdown hook")
-                hooks.post_shutdown(ctx, result)
-                logger.info(
-                    "Shutdown command finished with code [%i]",
-                    result.returncode,
-                )
-
+        elif action == ServiceAction.SHUTDOWN:
             action_runner = self.orchestrator.shutdown
+            pre_hook = hooks.pre_shutdown
+            post_hook = hooks.post_shutdown
 
-        if service_names != () and service_names is not None:
-            if not self.orchestrator.verify_service_names(ctx.obj, service_names):
-                sys.exit(1)
         else:
-            service_names = None
+            error_and_exit(f"Invalid action called: [{action.name}]")
 
-        pre_hook()
+        logger.debug(f"Running pre-{action.name} hook")
+        pre_hook(ctx)
+
+        logger.info(pre_run_log_message)
         result = action_runner(ctx.obj, service_names)
-        post_hook(result)
+
+        logger.debug(f"Running post-{action.name} hook")
+        post_hook(ctx, result)
+
+        logger.info(post_run_log_message, result.returncode)
         sys.exit(result.returncode)

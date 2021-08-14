@@ -56,7 +56,7 @@ class Test_ServiceCommands:
         )
 
         assert "force is [False]" in result.output
-        assert f"Starting {APP_NAME} ..." in result.output
+        assert f"START {APP_NAME} ..." in result.output
         assert result.exit_code == 0
 
     def test_service_start_multiple_inputs(self, test_env):
@@ -68,7 +68,7 @@ class Test_ServiceCommands:
         )
 
         assert "force is [False]" in result.output
-        assert "Starting service_1, service_2 ..." in result.output
+        assert "START service_1, service_2 ..." in result.output
         assert result.exit_code == 0
 
     def test_service_start_invalid_input(self, test_env):
@@ -91,7 +91,7 @@ class Test_ServiceCommands:
         )
 
         assert "force is [True]" in result.output
-        assert f"Starting {APP_NAME} ..." in result.output
+        assert f"START {APP_NAME} ..." in result.output
         assert result.exit_code == 0
 
     def test_service_start_force_flag_multiple_inputs(self, test_env):
@@ -103,7 +103,7 @@ class Test_ServiceCommands:
         )
 
         assert "force is [True]" in result.output
-        assert "Starting service_1, service_2, service_3 ..." in result.output
+        assert "START service_1, service_2, service_3 ..." in result.output
         assert result.exit_code == 0
 
     def test_service_start_force_flag_invalid_inputs(self, test_env):
@@ -132,7 +132,7 @@ class Test_ServiceCommands:
             test_env.service_command, ["shutdown"], obj=test_env.cli_context
         )
 
-        assert f"Shutting down {APP_NAME} ..." in result.output
+        assert f"SHUTDOWN {APP_NAME} ..." in result.output
         assert result.exit_code == 0
 
     def test_service_shutdown_multiple_inputs(self, test_env):
@@ -143,7 +143,7 @@ class Test_ServiceCommands:
             obj=test_env.cli_context,
         )
 
-        assert "Shutting down service_3, service_1 ..." in result.output
+        assert "SHUTDOWN service_3, service_1 ..." in result.output
         assert result.exit_code == 0
 
     def test_service_shutdown_invalid_input(self, test_env):
@@ -164,8 +164,8 @@ class Test_ServiceCommands:
         )
 
         assert "force is [False]" in result.output
-        assert f"Shutting down {APP_NAME} ..." in result.output
-        assert f"Starting {APP_NAME} ..." in result.output
+        assert f"SHUTDOWN {APP_NAME} ..." in result.output
+        assert f"START {APP_NAME} ..." in result.output
         assert result.exit_code == 0
 
     def test_service_restart_multiple_inputs(self, test_env):
@@ -177,8 +177,8 @@ class Test_ServiceCommands:
         )
 
         assert "force is [False]" in result.output
-        assert "Shutting down service_1, service_2 ..." in result.output
-        assert "Starting service_1, service_2 ..." in result.output
+        assert "SHUTDOWN service_1, service_2 ..." in result.output
+        assert "START service_1, service_2 ..." in result.output
         assert result.exit_code == 0
 
     def test_service_restart_invalid_input(self, test_env):
@@ -200,8 +200,8 @@ class Test_ServiceCommands:
         )
 
         assert "force is [True]" in result.output
-        assert f"Shutting down {APP_NAME} ..." in result.output
-        assert f"Starting {APP_NAME} ..." in result.output
+        assert f"SHUTDOWN {APP_NAME} ..." in result.output
+        assert f"START {APP_NAME} ..." in result.output
         assert result.exit_code == 0
 
     def test_service_restart_force_flag_multiple_inputs(self, test_env):
@@ -213,8 +213,8 @@ class Test_ServiceCommands:
         )
 
         assert "force is [True]" in result.output
-        assert "Shutting down service_1, service_2 ..." in result.output
-        assert "Starting service_1, service_2 ..." in result.output
+        assert "SHUTDOWN service_1, service_2 ..." in result.output
+        assert "START service_1, service_2 ..." in result.output
         assert result.exit_code == 0
 
     def test_service_restart_force_flag_invalid_inputs(self, test_env):
@@ -238,8 +238,8 @@ class Test_ServiceCommands:
 
         assert "force is [False]" in result.output
         assert "Finished applying configuration" in result.output
-        assert f"Shutting down {APP_NAME} ..." in result.output
-        assert f"Starting {APP_NAME} ..." in result.output
+        assert f"SHUTDOWN {APP_NAME} ..." in result.output
+        assert f"START {APP_NAME} ..." in result.output
         assert result.exit_code == 0
 
     def test_service_restart_apply_flag_multiple_inputs(self, test_env):
@@ -252,8 +252,8 @@ class Test_ServiceCommands:
 
         assert "force is [False]" in result.output
         assert "Finished applying configuration" in result.output
-        assert "Shutting down service_1, service_2 ..." in result.output
-        assert "Starting service_1, service_2 ..." in result.output
+        assert "SHUTDOWN service_1, service_2 ..." in result.output
+        assert "START service_1, service_2 ..." in result.output
         assert result.exit_code == 0
 
     def test_service_restart_apply_flag_invalid_inputs(self, test_env):
@@ -287,8 +287,8 @@ class Test_ServiceCommands:
 
         assert "force is [True]" in result.output
         assert "Finished applying configuration" in result.output
-        assert f"Shutting down {APP_NAME} ..." in result.output
-        assert f"Starting {APP_NAME} ..." in result.output
+        assert f"SHUTDOWN {APP_NAME} ..." in result.output
+        assert f"START {APP_NAME} ..." in result.output
         assert result.exit_code == 0
 
     def test_service_restart_force_apply_flag_multiple_inputs(self, test_env):
@@ -301,8 +301,8 @@ class Test_ServiceCommands:
 
         assert "force is [False]" in result.output
         assert "Finished applying configuration" in result.output
-        assert "Shutting down service_1, service_2 ..." in result.output
-        assert "Starting service_1, service_2 ..." in result.output
+        assert "SHUTDOWN service_1, service_2 ..." in result.output
+        assert "START service_1, service_2 ..." in result.output
         assert result.exit_code == 0
 
     def test_service_restart_force_apply_flag_invalid_inputs(self, test_env):

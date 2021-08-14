@@ -200,6 +200,8 @@ class DockerComposeOrchestrator(Orchestrator):
     def verify_service_names(
         self, cli_context: CliContext, service_names: tuple[str, ...]
     ) -> bool:
+        if service_names is None or len(service_names) == 0:
+            return True
         command = ["config", "--services"]
         result = self.__compose_service(cli_context, command)
 
@@ -368,6 +370,8 @@ class DockerSwarmOrchestrator(Orchestrator):
     def verify_service_names(
         self, cli_context: CliContext, service_names: tuple[str, ...]
     ) -> bool:
+        if service_names is None or len(service_names) == 0:
+            return True
         subcommand = ["config", "--services"]
         result = self.__docker_stack(cli_context, subcommand)
 
