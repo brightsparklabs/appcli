@@ -473,10 +473,10 @@ class DockerSwarmOrchestrator(Orchestrator):
 def service_name_verifier(
     service_names: tuple[str, ...], valid_service_names: List[str]
 ) -> bool:
-    """Verify all services within the provided tuple of service names exist.
+    """Verify all services exist.
 
     Args:
-        service_names (tuple[str, ...]): The list of service names to check
+        service_names (tuple[str, ...]): The list of service names to check.
         valid_service_names [List[str]]: The list of valid service names.
 
     """
