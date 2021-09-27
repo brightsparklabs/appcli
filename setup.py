@@ -61,7 +61,7 @@ setup(
         "deepdiff==5.5.0",
         "GitPython==3.1.24",
         "jinja2==3.0.1",
-        "pycryptodome==3.10.1",
+        "pycryptodome==3.10.4",
         "python-keycloak==0.22.0",
         "python-slugify==5.0.2",
         "ruamel-yaml==0.17.16",
