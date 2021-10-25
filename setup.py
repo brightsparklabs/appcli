@@ -53,7 +53,7 @@ setup(
     packages=find_namespace_packages(exclude=["contrib", "docs", "tests"]),
     include_package_data=True,
     install_requires=[
-        "boto3==1.18.44",
+        "boto3==1.19.2",
         "click==8.0.1",
         "coloredlogs==15.0.1",
         "cronex==0.1.3.1",
