@@ -64,7 +64,7 @@ setup(
         "pycryptodome==3.12.0",
         "python-keycloak==0.22.0",
         "python-slugify==5.0.2",
-        "ruamel-yaml==0.17.16",
+        "ruamel-yaml==0.17.17",
         "tabulate==0.8.9",
         "wheel==0.37.0",
     ],
