@@ -18,14 +18,9 @@ function main()
     cd "{{ install_dir }}"
 
     # Create versioned launcher
-    local _launcher_versioned=".{{ cli_context.app_name|lower }}-{{ cli_context.app_version }}"
+    local _launcher_versioned=".$(date -Isec --utc)_{{ cli_context.app_name|lower }}_{{ cli_context.app_version }}"
     generate_launcher > "${_launcher_versioned}" || print_error_and_exit "No permissions to write to [${_launcher_versioned}]"
     chmod a+x "${_launcher_versioned}"
-
-    # Create date-based launcher link
-    local _launcher_deploy_date=".$(date -Isec --utc)"
-    rm -f "${_launcher_deploy_date}" || print_error_and_exit "No permissions to delete to [${_launcher_deploy_date}]"
-    ln -s "${_launcher_versioned}" "${_launcher_deploy_date}"
 
     local _launcher_generic="{{ cli_context.app_name|lower }}"
 
