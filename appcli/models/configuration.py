@@ -5,6 +5,7 @@
 from pathlib import Path
 from subprocess import CompletedProcess
 from typing import Callable, Dict, FrozenSet, Iterable, NamedTuple
+import re
 
 # vendor libraries
 import click
@@ -85,6 +86,13 @@ class Configuration(NamedTuple):
     used to generate the final configuration files. These template files are expected to be
     modified as required on a per-deployment basis.
     """
+    
+    app_name_shell_safe: str = None
+    """ 
+    A shell safe version of the application name.
+    The name should be set through this field, and called with the associated getter.
+    Not setting this field causes a default shell-safe name to be generated. 
+    """
 
     hooks: Hooks = Hooks()
     """ Optional. Hooks to run before/after stages. """
@@ -111,6 +119,20 @@ class Configuration(NamedTuple):
     generated files. Paths are relative and will be resolved against the
     generated configuration directory.
     """
+
+    def get_app_name_shell_safe(self) -> str:
+        """ A shell safe version of the application name.
+        This transforms the app_name variable by replacing any unsafe shell
+        characters with '_', and returning the new string.
+
+        Returns:
+            The app_name with no unsafe shell characters (echo-server -> echo_server) etc.
+            Or a custom shell-safe name provided by the user.
+
+        """
+        if self.app_name_shell_safe == None: # User hasn't defined a custom shell-safe name.
+            return re.sub(r"[\s\-\.\{\}\[\]\"\'\,]","_",self.app_name)
+        return self.app_name_shell_safe # Return users custom name.
 
 
 def is_matching_dict_structure(dict_to_validate: Dict, clean_dict: Dict):
