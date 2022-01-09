@@ -80,7 +80,7 @@ python3 implicit namespaced packages.
             seed_app_configuration_file=Path(BASE_DIR, 'resources/settings.yml'),
             stack_configuration_file=Path(BASE_DIR, 'resources/stack-settings.yml'),
             baseline_templates_dir=Path(BASE_DIR, 'resources/templates/baseline'),
-            configurable_templates_dir=Path(BASE_DIR, 'resource/templates/configurable'),
+            configurable_templates_dir=Path(BASE_DIR, 'resources/templates/configurable'),
             orchestrator=DockerComposeOrchestrator(
                 docker_compose_file = Path('docker-compose.yml'),
                 docker_compose_override_directory = Path('docker-compose.override.d/'),
