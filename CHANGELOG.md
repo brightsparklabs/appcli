@@ -19,6 +19,10 @@ The changelog is applicable from version `1.0.0` onwards.
 - [#147](https://github.com/brightsparklabs/appcli/issues/147) Remove ':' character from backup filenames, to allow tools like `tar` to work more easily with the unmodified filename.
 - [#165](https://github.com/brightsparklabs/appcli/issues/165) Added ability to start/shutdown/restart multiple services at a time with the `service` command.
 
+### Fixed
+
+- Minor fix to README example python script
+
 ---
 
 ## [1.3.4] - (14/05/2021)

@@ -2,10 +2,10 @@
 # # -*- coding: utf-8 -*-
 
 # standard libraries
+import re
 from pathlib import Path
 from subprocess import CompletedProcess
 from typing import Callable, Dict, FrozenSet, Iterable, NamedTuple
-import re
 
 # vendor libraries
 import click
@@ -86,12 +86,12 @@ class Configuration(NamedTuple):
     used to generate the final configuration files. These template files are expected to be
     modified as required on a per-deployment basis.
     """
-    
+
     app_name_shell_safe: str = None
-    """ 
+    """
     A shell safe version of the application name.
     The name should be set through this field, and called with the associated getter.
-    Not setting this field causes a default shell-safe name to be generated. 
+    Not setting this field causes a default shell-safe name to be generated.
     """
 
     hooks: Hooks = Hooks()
@@ -121,7 +121,7 @@ class Configuration(NamedTuple):
     """
 
     def get_app_name_shell_safe(self) -> str:
-        """ A shell safe version of the application name.
+        """A shell safe version of the application name.
         This transforms the app_name variable by replacing any unsafe shell
         characters with '_', and returning the new string.
 
@@ -130,9 +130,10 @@ class Configuration(NamedTuple):
             Or a custom shell-safe name provided by the user.
 
         """
-        if self.app_name_shell_safe == None: # User hasn't defined a custom shell-safe name.
-            return re.sub(r"[\s\-\.\{\}\[\]\"\'\,]","_",self.app_name)
-        return self.app_name_shell_safe # Return users custom name.
+        if self.app_name_shell_safe is None:
+            # User hasn't defined a custom shell-safe name.
+            return re.sub(r"[\s\-\.\{\}\[\]\"\'\,]", "_", self.app_name)
+        return self.app_name_shell_safe  # Return users custom name.
 
 
 def is_matching_dict_structure(dict_to_validate: Dict, clean_dict: Dict):
