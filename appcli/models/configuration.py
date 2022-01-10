@@ -137,11 +137,11 @@ class Configuration(NamedTuple):
         if self.app_name_shell_safe is None:  # Safe-name isn't set.
             return "".join(
                 [
-                    re.sub(r"[^a-zA-Z_]","_",self.app_name[0]),    # First character.
-                    re.sub(r"[^a-zA-Z0-9_]","_",self.app_name[1:]) # Other character(s).
+                    re.sub(r"[^a-zA-Z_]", "_", self.app_name[0]),  # First character.
+                    re.sub(r"[^a-zA-Z0-9_]", "_", self.app_name[1:]),
                 ]
             )
-        return self.app_name_shell_safe # Return shell-safe name.
+        return self.app_name_shell_safe  # Return shell-safe name.
 
 
 def is_matching_dict_structure(dict_to_validate: Dict, clean_dict: Dict):
