@@ -121,19 +121,23 @@ class Configuration(NamedTuple):
     """
 
     def get_app_name_shell_safe(self) -> str:
-        """A shell safe version of the application name.
+        """ A shell safe version of the application name.
         This transforms the app_name variable by replacing any unsafe shell
         characters with '_', and returning the new string.
+        Safe characters are: [a-z],[A-Z],[0-9] or '_'.
+        First character cannot be [0-9].
 
         Returns:
             The app_name with no unsafe shell characters (echo-server -> echo_server) etc.
             Or a custom shell-safe name provided by the user.
 
         """
-        if self.app_name_shell_safe is None:
-            # User hasn't defined a custom shell-safe name.
-            return re.sub(r"[\s\-\.\{\}\[\]\"\'\,]", "_", self.app_name)
-        return self.app_name_shell_safe  # Return users custom name.
+        try:
+            assert self.app_name_shell_safe is None  # Safe-name isn't set.
+            return "".join([re.sub(r"[^a-zA-Z_]","_",self.app_name[0]),      # First character.
+                            re.sub(r"[^a-zA-Z0-9_]","_",self.app_name[1:])]) # Other character(s).
+        except AssertionError: # User has defined shell-safe name.
+            return self.app_name # Return shell-safe name.
 
 
 def is_matching_dict_structure(dict_to_validate: Dict, clean_dict: Dict):
