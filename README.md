@@ -34,6 +34,13 @@ variables within the `settings.yml` file as described in the Installation sectio
 Stack variables can be set within the `stack-settings.yml` file as described in the
 `Build configuration template directories` section.
 
+A shell-safe name will be generated, and will be used whenever the program name is required to be called from a shell environment.
+This shell-safe name can be specified by the user by adding `app_name_shell_safe=my_app` to the configuration section of the main python3 script (see `Define the CLI for your application`.
+For the shell-safe name requirements, refer to:
+(https://unix.stackexchange.com/questions/428880/list-of-acceptable-initial-characters-for-a-bash-variable)
+(https://linuxhint.com/bash-variable-name-rules-legal-illegal/)
+
+
 ## Installation
 
 ### Add the library to your python CLI application
