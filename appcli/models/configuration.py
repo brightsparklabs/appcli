@@ -9,6 +9,7 @@ from typing import Callable, Dict, FrozenSet, Iterable, NamedTuple
 
 # vendor libraries
 import click
+from pydantic import BaseModel, validator
 
 # local libraries
 from appcli.orchestrators import Orchestrator
@@ -49,7 +50,7 @@ class Hooks(NamedTuple):
     """ Optional. Hook function to run after running 'configure apply'. """
 
 
-class Configuration(NamedTuple):
+class Configuration(BaseModel):
     """Configuration for building the CLI."""
 
     app_name: str
@@ -87,13 +88,6 @@ class Configuration(NamedTuple):
     modified as required on a per-deployment basis.
     """
 
-    app_name_shell_safe: str = None
-    """
-    A shell safe version of the application name.
-    The name should be set through this field, and called with the associated getter.
-    Not setting this field causes a default shell-safe name to be generated.
-    """
-
     hooks: Hooks = Hooks()
     """ Optional. Hooks to run before/after stages. """
 
@@ -120,29 +114,26 @@ class Configuration(NamedTuple):
     generated configuration directory.
     """
 
-    def get_app_name_shell_safe(self) -> str:
-        """A shell safe version of the application name.
-        This transforms the app_name variable by replacing any unsafe shell
-        characters with '_', and returning the new string.
-        Safe characters are: [a-z],[A-Z],[0-9] or '_'.
-        First character cannot be [0-9].
-        https://unix.stackexchange.com/questions/428880/list-of-acceptable-initial-characters-for-a-bash-variable
-        https://linuxhint.com/bash-variable-name-rules-legal-illegal/
-
-        Returns:
-            The app_name with no unsafe shell characters (echo-server -> echo_server) etc.
-            Or a custom shell-safe name provided by the user.
-
-        """
-        if self.app_name_shell_safe is None:  # Safe-name isn't set.
-            return "".join(
+    @validator("app_name")
+    def app_name_must_be_shell_safe(cls, value):
+        # Use a validator to create a shell-safe version of the application name.
+        # This transforms the app_name variable by replacing any unsafe shell
+        # characters with '_', and returning the new string.
+        # Safe characters are: [a-z],[A-Z],[0-9] or '_'.
+        # First character cannot be [0-9].
+        # https://unix.stackexchange.com/questions/428880/list-of-acceptable-initial-characters-for-a-bash-variable
+        # https://linuxhint.com/bash-variable-name-rules-legal-illegal/
+        return "".join(
                 [
-                    re.sub(r"[^a-zA-Z_]", "_", self.app_name[0]),  # First character.
-                    re.sub(r"[^a-zA-Z0-9_]", "_", self.app_name[1:]),
+                    re.sub(r"[^a-zA-Z_]", "_", value[0]),  # First character.
+                    re.sub(r"[^a-zA-Z0-9_]", "_", value[1:]),
                 ]
-            )
-        return self.app_name_shell_safe  # Return shell-safe name.
+            ).upper()
 
+    class Config:
+        # This is a requirement for pydantic to disable type checking for arbitrary user types for fields.
+        # This is necessary as one or more of the fields are custom classes (e.g. Orchestrator)
+        arbitrary_types_allowed = True
 
 def is_matching_dict_structure(dict_to_validate: Dict, clean_dict: Dict):
     """Validate the structure of a Dict against another Dict. Recursively checks the keys and

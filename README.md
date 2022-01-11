@@ -28,18 +28,18 @@ The library exposes the following environment variables to the `docker-compose.y
   `production` or `staging`. This allows multiple instances of the application to run on the same
   Docker daemon. Defaults to `production`.
 
+Note: the `APP_NAME` variable is derived from the `app_name` passed in to the `Configuration` object in the
+main python entrypoint to the application. In order for the application to work, the `app_name` is forced to conform
+with the shell variable name standard: `[a-zA-Z_][a-zA-Z_0-9]*`. Any characters that do not fit this regex will be
+replaced with `_`. Once the replacement is done, the entire field is capitalised. See:
+(https://unix.stackexchange.com/questions/428880/list-of-acceptable-initial-characters-for-a-bash-variable)
+(https://linuxhint.com/bash-variable-name-rules-legal-illegal/)
+
 The `docker-compose.yml` can be templated by renaming to `docker-compose.yml.j2`, and setting
 variables within the `settings.yml` file as described in the Installation section.
 
 Stack variables can be set within the `stack-settings.yml` file as described in the
 `Build configuration template directories` section.
-
-A shell-safe name will be generated, and will be used whenever the program name is required to be called from a shell environment.
-This shell-safe name can be specified by the user by adding `app_name_shell_safe=my_app` to the configuration section of the main python3 script (see `Define the CLI for your application`.
-For the shell-safe name requirements, refer to:
-(https://unix.stackexchange.com/questions/428880/list-of-acceptable-initial-characters-for-a-bash-variable)
-(https://linuxhint.com/bash-variable-name-rules-legal-illegal/)
-
 
 ## Installation
 

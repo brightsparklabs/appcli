@@ -69,7 +69,6 @@ class LauncherCli:
             render_variables = {
                 "app_version": os.environ.get("APP_VERSION", "latest"),
                 "app_name": configuration.app_name.upper(),
-                "app_name_shell_safe": configuration.get_app_name_shell_safe().upper(),
                 "cli_context": ctx.obj,
                 "configuration": self.configuration,
                 "current_datetime": f"{datetime.datetime.utcnow().isoformat()}+00:00",  # Since we're using utcnow(), we specify the offset manually
