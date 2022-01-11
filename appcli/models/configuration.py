@@ -124,16 +124,17 @@ class Configuration(BaseModel):
         # https://unix.stackexchange.com/questions/428880/list-of-acceptable-initial-characters-for-a-bash-variable
         # https://linuxhint.com/bash-variable-name-rules-legal-illegal/
         return "".join(
-                [
-                    re.sub(r"[^a-zA-Z_]", "_", value[0]),  # First character.
-                    re.sub(r"[^a-zA-Z0-9_]", "_", value[1:]),
-                ]
-            ).upper()
+            [
+                re.sub(r"[^a-zA-Z_]", "_", value[0]),  # First character.
+                re.sub(r"[^a-zA-Z0-9_]", "_", value[1:]),
+            ]
+        ).upper()
 
     class Config:
         # This is a requirement for pydantic to disable type checking for arbitrary user types for fields.
         # This is necessary as one or more of the fields are custom classes (e.g. Orchestrator)
         arbitrary_types_allowed = True
+
 
 def is_matching_dict_structure(dict_to_validate: Dict, clean_dict: Dict):
     """Validate the structure of a Dict against another Dict. Recursively checks the keys and
