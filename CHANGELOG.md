@@ -12,7 +12,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Added
 
-- Renaming the launcher script to create only 1 hidden file: `.<timestamp>_<app_name>_<app_version>`
+- Renaming the launcher script to create only 1 hidden file: `.<timestamp>_<app_name>_<app_version>`.
 - [#118](https://github.com/brightsparklabs/appcli/issues/118) Added `version` command to fetch version of app managed by appcli.
 - [#144](https://github.com/brightsparklabs/appcli/issues/144) Added `--lines/-n` option to the `logs` commands for orchestrators. This is the `n` number of lines from the end to start the tail.
 - [#147](https://github.com/brightsparklabs/appcli/issues/147) Remove ':' character from backup filenames, to allow tools like `tar` to work more easily with the unmodified filename.
@@ -20,8 +20,8 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Fixed
 
-- Fixed issue where applications with non-shell-safe `app_name` weren't able to be installed or run
-- Minor fix to README example python script
+- Fixed issue where applications with non-shell-safe `app_name` weren't able to be installed or run.
+- Minor fix to README example python script.
 
 ---
 
@@ -31,7 +31,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 - Stack settings file is no longer overwritten to the default when running `migrate` command.
 - [#130](https://github.com/brightsparklabs/appcli/issues/130) Added back in `docker` binary to the appcli Docker image, so tasks can now be run again.
-- [#115](https://github.com/brightsparklabs/appcli/issues/115) Fixed DockerSwarm orchestrator with the addition of the `docker` binary
+- [#115](https://github.com/brightsparklabs/appcli/issues/115) Fixed DockerSwarm orchestrator with the addition of the `docker` binary.
 
 ---
 
@@ -51,7 +51,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Fixed
 
-- Fixed [#89](https://github.com/brightsparklabs/appcli/issues/89): `configure get` on a boolean returns `None` if setting is `false`
+- Fixed [#89](https://github.com/brightsparklabs/appcli/issues/89): `configure get` on a boolean returns `None` if setting is `false`.
 
 ---
 
@@ -102,7 +102,7 @@ any python referring to the library will need to use full module path references
 ### Added
 
 - The launcher now supports `NO_INTERACTIVE` environment variable to disable interactive mode.
-- Expose the `APP_NAME` environment variable to the launcher container
+- Expose the `APP_NAME` environment variable to the launcher container.
 
 ### Fixed
 
