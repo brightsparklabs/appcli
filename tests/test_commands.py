@@ -33,7 +33,7 @@ from appcli.orchestrators import DockerComposeOrchestrator
 # CONSTANTS
 # ------------------------------------------------------------------------------
 
-APP_NAME = "test_app"
+APP_NAME = "TEST_APP"
 
 # directory containing this script
 BASE_DIR = Path(__file__).parent

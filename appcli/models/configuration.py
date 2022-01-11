@@ -2,12 +2,14 @@
 # # -*- coding: utf-8 -*-
 
 # standard libraries
+import re
 from pathlib import Path
 from subprocess import CompletedProcess
 from typing import Callable, Dict, FrozenSet, Iterable, NamedTuple
 
 # vendor libraries
 import click
+from pydantic import BaseModel, validator
 
 # local libraries
 from appcli.orchestrators import Orchestrator
@@ -48,7 +50,7 @@ class Hooks(NamedTuple):
     """ Optional. Hook function to run after running 'configure apply'. """
 
 
-class Configuration(NamedTuple):
+class Configuration(BaseModel):
     """Configuration for building the CLI."""
 
     app_name: str
@@ -111,6 +113,27 @@ class Configuration(NamedTuple):
     generated files. Paths are relative and will be resolved against the
     generated configuration directory.
     """
+
+    @validator("app_name")
+    def app_name_must_be_shell_safe(cls, value):
+        # Use a validator to create a shell-safe version of the application name.
+        # This transforms the app_name variable by replacing any unsafe shell
+        # characters with '_', and returning the new string.
+        # Safe characters are: [a-z],[A-Z],[0-9] or '_'.
+        # First character cannot be [0-9].
+        # https://unix.stackexchange.com/questions/428880/list-of-acceptable-initial-characters-for-a-bash-variable
+        # https://linuxhint.com/bash-variable-name-rules-legal-illegal/
+        return "".join(
+            [
+                re.sub(r"[^a-zA-Z_]", "_", value[0]),  # First character.
+                re.sub(r"[^a-zA-Z0-9_]", "_", value[1:]),
+            ]
+        ).upper()
+
+    class Config:
+        # This is a requirement for pydantic to disable type checking for arbitrary user types for fields.
+        # This is necessary as one or more of the fields are custom classes (e.g. Orchestrator)
+        arbitrary_types_allowed = True
 
 
 def is_matching_dict_structure(dict_to_validate: Dict, clean_dict: Dict):
