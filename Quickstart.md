@@ -1,0 +1,157 @@
+# QuickStart guide on how to setup AppCli with a sample application
+
+We'll be using the following packages to configure app cli so please ensure you have the following packages installed on your machiene.
+
+- python3
+- pip
+- virtualenv 
+
+### Setup a virtual env
+type in the following command to create an isolated virtual environment for our project
+
+`python -m venv venv`
+
+Now activate the virtual environment by typing the following 
+
+`source venv/bin/activate`
+
+### Setup the appcli enironment
+Create a src folder in your directory and create a new python file named myapp.py. Paste in the folllowing code into the newly created myapp.py file.
+
+```python
+#!/usr/bin/env python3
+# # -*- coding: utf-8 -*-
+
+# filename: myapp.py
+
+# standard libraries
+import os
+import sys
+from pathlib import Path
+
+# vendor libraries
+from appcli.cli_builder import create_cli
+from appcli.models.configuration import Configuration
+from appcli.orchestrators import DockerComposeOrchestrator
+
+# ------------------------------------------------------------------------------
+# CONSTANTS
+# ------------------------------------------------------------------------------
+
+# directory containing this script
+BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+
+# ------------------------------------------------------------------------------
+# PRIVATE METHODS
+# ------------------------------------------------------------------------------
+
+def main():
+    configuration = Configuration(
+        app_name='myapp',
+        docker_image='brightsparklabs/myapp',
+        seed_app_configuration_file=Path(BASE_DIR, 'resources/settings.yml'),
+        stack_configuration_file=Path(BASE_DIR, 'resources/stack-settings.yml'),
+        baseline_templates_dir=Path(BASE_DIR, 'resources/templates/baseline'),
+        configurable_templates_dir=Path(BASE_DIR, 'resources/templates/configurable'),
+        orchestrator=DockerComposeOrchestrator(
+            docker_compose_file = Path('docker-compose.yml')
+        ),
+        
+    )
+    cli = create_cli(configuration)
+    cli()
+
+# ------------------------------------------------------------------------------
+# ENTRYPOINT
+# ------------------------------------------------------------------------------
+
+if __name__ == '__main__':
+    main()
+```
+The above script will configure appcli for you and in order for it to run correctly we need to make sure you have following directory structure and files
+```
+├── src
+│   ├── resources
+│   │   ├── myapp.py
+│   │   ├── setting.yml
+│   │   ├── stack-settings.yml
+│   │   ├── templates
+|   |           ├── baseline
+|   |           ├── configurable     
+
+```
+Go ahead and create the above folders and files. Don't worry about populating the settings.yml and stack-settings.yml files yet, they just need to exist for now to ensure the myapp.py script runs correctly.
+
+Make sure the myapp.py has executable permission, this can be done by locating the script in your file system, right clicking the file and clicking properties. In the permissions tab, make sure the "allow executing file as a program is ticked". 
+
+### Dockerfile Setup
+
+Create a docker file and paste in the following settings so we can assemble our image
+
+```Dockerfile
+# filename: Dockerfile
+
+FROM brightsparklabs/appcli
+
+ENTRYPOINT ["./myapp.py"]
+WORKDIR /app
+
+# install compose if using it as the orchestrator
+RUN pip install docker-compose
+
+COPY requirements.txt .
+RUN pip install --requirement requirements.txt
+COPY src .
+
+ARG APP_VERSION=latest
+ENV APP_VERSION=${APP_VERSION}
+```
+
+We can see in the dockerfile, it is referring to a requirements.txt file which we will need to create. Go ahead and create a requirements.txt file and enter in the following `bsl-appcli==1.3.4` 
+This will install the appcli package in the image
+
+### Create a docker compose file
+You will need to create a docker compose file which will be placed in the baseline folder.
+
+We will be using an Echo-Server for our example application which is useful for testing purposes as it replicates the request sent by the client and sends it back. More information on this container can be found [here](https://ealenn.github.io/Echo-Server/pages/quick-start/docker.html#run)
+
+Paste in the following code into your docker compose file. You are welcome to change the name of the service and the container.
+
+```Dockerfile
+version: '3'
+services:
+  example:
+    container_name: example_app
+    image: ealen/echo-server:0.5.1
+```
+
+
+### Build the container
+`docker build -t brightsparklabs/myapp --build-arg APP_VERSION=latest .`
+
+### View and Run the installed script
+While it is not mandatory to view the script before running, it is highly recommended.
+
+`docker run --rm brightsparklabs/myapp:<version> install`
+
+Once you can successfully see the script printed on the command line, you are ready to install
+
+`docker run --rm brightsparklabs/myapp:<version> install | sudo bash` 
+
+### Intialise
+Once you've succesfully ran the install script you can initialise the app by typing in the following command
+
+`/opt/brightsparklabs/myapp/production/myapp configure init`
+
+### Main Commands
+Bfore starting the services we need to run the configure apply command which will apply  the settings from the configuration.
+
+`/opt/brightsparklabs/myapp/production/myapp configure apply`
+
+if you type in service, it will list all the commands you can use to control the services. The main ones are service start and service stop
+
+`/opt/brightsparklabs/myapp/production/myapp service start`
+
+More commands can be found in the appcli readme [here](https://github.com/brightsparklabs/appcli)
+
+
