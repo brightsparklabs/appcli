@@ -1,23 +1,27 @@
 # QuickStart guide on how to setup AppCli with a sample application
 
-### Requirements
+### Prerequisites
 
-- python3
-- pip
-- virtualenv 
+- python
+- docker
+- docker-compose
 
-### Setup a virtual env
-type in the following command to create an isolated virtual environment for our project
-
-`python3 -m venv venv`
-
-Now activate the virtual environment by typing the following 
-
-`source venv/bin/activate`
 
 ### Setup the appcli enironment
 
-Create an src folder in your directory. This is where you will create create a new python file named myapp.py. Paste in the folllowing code into the newly created myapp.py file.
+#### Create the required directory structure
+
+Run the following commands to create the required files and folders
+
+```
+mkdir -p src/resources/templates/{baseline,configurable}
+touch src/resources/myapp.py
+touch src/resources/settings.py
+touch src/resources/stack-settings.py
+```
+
+
+Navigate to the newly created myapp.py file. Paste in the folllowing code
 
 ```python
 #!/usr/bin/env python3
@@ -69,19 +73,6 @@ def main():
 if __name__ == '__main__':
     main()
 ```
-The above script will configure appcli for you and in order for it to run correctly we need to make sure you have following directory structure and files
-```
-├── src
-│   ├── resources
-│   │   ├── settings.yml
-│   │   ├── stack-settings.yml
-│   │   ├── templates
-|   |           ├── baseline
-|   |           ├── configurable
-│   ├── myapp.py     
-
-```
-Go ahead and create the above folders and files. Don't worry about populating the settings.yml and stack-settings.yml files yet, they just need to exist for now to ensure the myapp.py script runs correctly. Both the baseline and configurable folders can remain empty for now.
 
 Make sure the myapp.py has executable permission. In order to do this, you need to cd into the directory of myapp.py in your terminal and execute the following command
 
@@ -110,21 +101,20 @@ ARG APP_VERSION=latest
 ENV APP_VERSION=${APP_VERSION}
 ```
 
-We can see in the dockerfile, it is referring to a requirements.txt file which we will need to create. Go ahead and create a requirements.txt file in the same location as your dockerfile and enter in the following `bsl-appcli==1.3.4` 
-This will install the appcli package in the image
+We can see in the dockerfile, it is referring to a requirements.txt file which we will need to create. Go ahead and create a requirements.txt file in the same location as your Dockerfile and enter in the following `bsl-appcli==1.3.4` 
+This will install the appcli package in the image.
 
 ### Create a docker compose file
-You will need to create a docker compose file which will be placed in the baseline folder. You can give it the default name docker-compose.yml
+You will need to create a docker compose file which will be placed in the baseline folder. Give it the default name docker-compose.yml
 
 We will be using an Echo-Server for our example application which is useful for testing purposes as it replicates the request sent by the client and sends it back. More information on this container can be found [here](https://ealenn.github.io/Echo-Server/pages/quick-start/docker.html#run)
 
-Paste in the following code into your docker compose file. You are welcome to change the name of the service and the container.
+Paste in the following code into your docker compose file.
 
 ```Dockerfile
 version: '3'
 services:
-  example:
-    container_name: example_app
+  echo-server:
     image: ealen/echo-server:0.5.1
 ```
 
@@ -151,9 +141,11 @@ Before we build our application please make sure your directory reflects the fol
 
 
 ### Build the container
+
 `docker build -t brightsparklabs/myapp --build-arg APP_VERSION=latest .`
 
 ### View and Run the installed script
+
 While it is not mandatory to view the script before running, it is highly recommended.
 
 `docker run --rm brightsparklabs/myapp:latest install`
@@ -163,14 +155,18 @@ Once you can successfully see the script printed on the command line, you are re
 `docker run --rm brightsparklabs/myapp:latest install | sudo bash` 
 
 ### Intialise
+
 Once you've succesfully ran the install script you can initialise the app by typing in the following command
 
 `/opt/brightsparklabs/myapp/production/myapp configure init`
 
-### Main Commands
+### Applying the settings
+
 Before starting the services we need to run the configure apply command which will apply  the settings from the configuration.
 
 `/opt/brightsparklabs/myapp/production/myapp configure apply`
+
+### Running the service
 
 if you type in service, it will list all the commands you can use to control the services. The main ones are service start and service stop
 
