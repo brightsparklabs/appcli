@@ -76,7 +76,9 @@ if __name__ == '__main__':
 
 Make sure the myapp.py has executable permission. In order to do this, you need to cd into the directory of myapp.py in your terminal and execute the following command
 
-`chmod +x myapp.py`
+```
+chmod +x myapp.py
+```
 
 ### Dockerfile Setup
 
@@ -142,39 +144,53 @@ Before we build our application please make sure your directory reflects the fol
 
 ### Build the container
 
-`docker build -t brightsparklabs/myapp --build-arg APP_VERSION=latest .`
+```
+docker build -t brightsparklabs/myapp --build-arg APP_VERSION=latest .
+```
 
 ### View and Run the installed script
 
 While it is not mandatory to view the script before running, it is highly recommended.
 
-`docker run --rm brightsparklabs/myapp:latest install`
+```
+docker run --rm brightsparklabs/myapp:latest install
+```
 
 Once you can successfully see the script printed on the command line, you are ready to install
 
-`docker run --rm brightsparklabs/myapp:latest install | sudo bash` 
+```
+docker run --rm brightsparklabs/myapp:latest install | sudo bash` 
+```
 
 ### Intialise
 
 Once you've succesfully ran the install script you can initialise the app by typing in the following command
 
-`/opt/brightsparklabs/myapp/production/myapp configure init`
+```
+/opt/brightsparklabs/myapp/production/myapp configure init`
+```
 
 ### Applying the settings
 
 Before starting the services we need to run the configure apply command which will apply  the settings from the configuration.
 
-`/opt/brightsparklabs/myapp/production/myapp configure apply`
+```
+/opt/brightsparklabs/myapp/production/myapp configure apply
+```
 
 ### Running the service
 
 if you type in service, it will list all the commands you can use to control the services. The main ones are service start and service stop
 
-`/opt/brightsparklabs/myapp/production/myapp service start`
+```
+/opt/brightsparklabs/myapp/production/myapp service start
+```
 
 You can check to if your service is still running by typing in the following docker command
 
-`docker ps`
+```
+docker ps
+```
 
 More commands can be found in the appcli readme [here](https://github.com/brightsparklabs/appcli)
 
