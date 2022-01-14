@@ -6,13 +6,13 @@
  # www.brightsparklabs.com
  ##
 
-FROM alpine AS docker-binary-download
+FROM alpine:3.15.0 AS docker-binary-download
 
 WORKDIR /tmp
 
 # Download and extract the static docker binary
 RUN \
-    wget https://download.docker.com/linux/static/stable/x86_64/docker-20.10.6.tgz \
+    wget -q https://download.docker.com/linux/static/stable/x86_64/docker-20.10.6.tgz \
     && tar xf docker-20.10.6.tgz
 
 FROM python:3.8.2-slim-buster
@@ -32,8 +32,8 @@ RUN \
     # prepare for docker install
     && apt-get update \
     && apt-get -y install --no-install-recommends \
-        git \
-        vim-tiny \
+        git=1:2.20.1-2+deb10u3 \
+        vim-tiny=2:8.1.0875-5 \
     && apt-get -y autoremove \
     && apt-get -y clean \
     && rm -rf /var/lib/apt/lists/*
