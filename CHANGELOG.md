@@ -12,7 +12,6 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Added
 
-- Ran hadolint linter over Dockerfile.
 - Renaming the launcher script to create only 1 hidden file: `.<timestamp>_<app_name>_<app_version>`.
 - [#118](https://github.com/brightsparklabs/appcli/issues/118) Added `version` command to fetch version of app managed by appcli.
 - [#144](https://github.com/brightsparklabs/appcli/issues/144) Added `--lines/-n` option to the `logs` commands for orchestrators. This is the `n` number of lines from the end to start the tail.
@@ -22,6 +21,7 @@ The changelog is applicable from version `1.0.0` onwards.
 ### Fixed
 
 - Fixed issue where applications with non-shell-safe `app_name` weren't able to be installed or run.
+- Fix Dockerfile issues identified by [Hadolint](https://github.com/hadolint/hadolint).
 - Minor fix to README example python script.
 
 ---
