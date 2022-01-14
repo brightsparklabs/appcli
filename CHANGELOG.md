@@ -20,6 +20,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Fixed
 
+- Adjust logging header formatting misalignment
 - Fixed issue where applications with non-shell-safe `app_name` weren't able to be installed or run.
 - Fix Dockerfile issues identified by [Hadolint](https://github.com/hadolint/hadolint).
 - Minor fix to README example python script.
