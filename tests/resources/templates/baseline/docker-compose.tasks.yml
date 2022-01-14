@@ -1,0 +1,8 @@
+version: "3"
+services:
+  sleep-30:
+    image: bash
+    entrypoint: ["sleep", "30"]
+  sleep-150:
+    image: bash
+    entrypoint: ["sleep", "150"]
