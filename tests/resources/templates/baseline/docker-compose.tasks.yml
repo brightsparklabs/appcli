@@ -6,3 +6,6 @@ services:
   sleep-150:
     image: bash
     entrypoint: ["sleep", "150"]
+  sleep-1:
+    image: bash
+    entrypoint: ["sleep", "1"]

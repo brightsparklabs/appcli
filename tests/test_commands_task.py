@@ -12,7 +12,7 @@ www.brightsparklabs.com
 # standard libraries
 import subprocess
 from pathlib import Path
-from time import time
+from time import sleep, time
 from typing import List
 
 import pytest
@@ -41,7 +41,9 @@ BASE_DIR = Path(__file__).parent
 
 STACK_CONFIGURATION_FILE = Path(BASE_DIR, "resources/test_stack_settings.yml")
 
-DOCKER_COMPOSE_YML = Path(BASE_DIR, "resources/templates/baseline/docker-compose.yml")
+DOCKER_COMPOSE_YML = Path(
+    BASE_DIR, "resources/templates/baseline/docker-compose.tasks.yml"
+)
 
 DOCKER_COMPOSE_SERVICES = list(YAML().load(open(DOCKER_COMPOSE_YML))["services"].keys())
 
@@ -51,51 +53,38 @@ DOCKER_COMPOSE_SERVICES = list(YAML().load(open(DOCKER_COMPOSE_YML))["services"]
 
 
 class Test_TaskCommands:
-    def test_task_run(self, test_env):
-
-        result = test_env.invoke_task_command(["run", "sleep-30"])
-
-        assert result.exit_code == 0
-
     def test_task_run_headless_arg_long(self, test_env):
 
         TIME_START = time()
-        result = test_env.invoke_task_command(["run", "--detach", "sleep-30"])
+        result = test_env.invoke_task_command(["run", "--detach", "sleep-1"])
         TIME_END = time()
 
-        assert TIME_END - TIME_START > 30
+        assert TIME_END - TIME_START < 0.1
         assert result.exit_code == 0
 
     def test_task_run_headless_arg_short(self, test_env):
 
         TIME_START = time()
-        result = test_env.invoke_task_command(["run", "-d", "sleep-30"])
+        result = test_env.invoke_task_command(["run", "-d", "sleep-1"])
         TIME_END = time()
 
-        assert TIME_END - TIME_START > 30
+        assert TIME_END - TIME_START < 0.1
         assert result.exit_code == 0
 
     def test_task_run_not_headless(self, test_env):
 
         TIME_START = time()
-        result = test_env.invoke_task_command(["run", "sleep-30"])
+        result = test_env.invoke_task_command(["run", "sleep-1"])
         TIME_END = time()
 
-        assert TIME_END - TIME_START < 30
+        assert TIME_END - TIME_START > 0.1
         assert result.exit_code == 0
 
     def test_task_run_invalid_flag(self, test_env):
 
-        result = test_env.invoke_task_command(["run", "-x", "sleep-30"])
+        result = test_env.invoke_task_command(["run", "-x", "sleep-1"])
 
         assert "Error: No such option: -x" in result.output
-        assert result.exit_code == 2
-
-    def test_task_run_wrong_flag_location(self, test_env):
-
-        result = test_env.invoke_task_command(["-d", "run", "sleep-30"])
-
-        assert "Error: No such option: -d" in result.output
         assert result.exit_code == 2
 
 
@@ -114,21 +103,17 @@ def patch_subprocess(monkeypatch):
     def patched_subprocess_run(docker_compose_command, capture_output=True):
         # TODO: We should take advantage of the printed command to perform test validation
         logger.info(f"PYTEST_PATCHED_DOCKER_COMPOSE_COMMAND=[{docker_compose_command}]")
-        if all([x in docker_compose_command for x in ["config", "--services"]]):
-            # patch for fetching the valid service names, used by the verify_service_names orchestrator.
-            valid_services = "\n".join(DOCKER_COMPOSE_SERVICES) + "\n"
-            return subprocess.CompletedProcess(
-                returncode=0, args=None, stdout=bytes(valid_services, "utf-8")
-            )
-        elif all([x in docker_compose_command for x in ["up", "-d"]]):
-            # patch for starting all services, used by the start orchestrator.
+        if not any([x in docker_compose_command for x in ["--detach", "-d", "-x"]]):
+            # patch for running in standard mode.
+            sleep(0.1)
             return subprocess.CompletedProcess(returncode=0, args=None)
-        elif all([x in docker_compose_command for x in ["down"]]):
-            # patch for shutting down all services, used by the shutdown orchestrator for shutting down all services.
+        elif all([x in docker_compose_command for x in ["-d"]]):
+            # patch for run headless/detached
             return subprocess.CompletedProcess(returncode=0, args=None)
-        elif all([x in docker_compose_command for x in ["rm", "-fsv"]]):
-            # patch for shutting down all services, used by the shutdown orchestrator when given provided with specific services.
-            return subprocess.CompletedProcess(returncode=0, args=None)
+        elif all([x in docker_compose_command for x in ["-x"]]):
+            # patch for invalid flag being passed.
+            print("Error: No such option: %s", docker_compose_command)
+            return subprocess.CompletedProcess(returncode=2, args=None)
         else:
             # patch for unknown command action
             print("Unknown command: %s", docker_compose_command)
