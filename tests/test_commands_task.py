@@ -12,7 +12,6 @@ www.brightsparklabs.com
 # standard libraries
 import subprocess
 from pathlib import Path
-from time import sleep, time
 from typing import List
 
 import pytest
@@ -55,29 +54,23 @@ DOCKER_COMPOSE_SERVICES = list(YAML().load(open(DOCKER_COMPOSE_YML))["services"]
 class Test_TaskCommands:
     def test_task_run_headless_arg_long(self, test_env):
 
-        TIME_START = time()
         result = test_env.invoke_task_command(["run", "--detach", "sleep-1"])
-        TIME_END = time()
 
-        assert TIME_END - TIME_START < 0.1
+        assert "-d" in result.output
         assert result.exit_code == 0
 
     def test_task_run_headless_arg_short(self, test_env):
 
-        TIME_START = time()
         result = test_env.invoke_task_command(["run", "-d", "sleep-1"])
-        TIME_END = time()
 
-        assert TIME_END - TIME_START < 0.1
+        assert "-d" in result.output
         assert result.exit_code == 0
 
     def test_task_run_not_headless(self, test_env):
 
-        TIME_START = time()
         result = test_env.invoke_task_command(["run", "sleep-1"])
-        TIME_END = time()
 
-        assert TIME_END - TIME_START > 0.1
+        assert "-d" not in result.output
         assert result.exit_code == 0
 
 
@@ -98,7 +91,6 @@ def patch_subprocess(monkeypatch):
         logger.info(f"PYTEST_PATCHED_DOCKER_COMPOSE_COMMAND=[{docker_compose_command}]")
         if not any([x in docker_compose_command for x in ["--detach", "-d"]]):
             # patch for running in standard mode.
-            sleep(0.1)
             return subprocess.CompletedProcess(returncode=0, args=None)
         elif all([x in docker_compose_command for x in ["-d"]]):
             # patch for run headless/detached
