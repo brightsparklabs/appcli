@@ -61,7 +61,7 @@ class TaskCli:
             "-d",
             is_flag=True,
             default=False,
-            help="run the task in the background",
+            help="Run the task in the background.",
         )
         @click.argument("service_name", required=True, type=click.STRING)
         @click.argument("extra_args", nargs=-1, type=click.UNPROCESSED)

@@ -80,13 +80,6 @@ class Test_TaskCommands:
         assert TIME_END - TIME_START > 0.1
         assert result.exit_code == 0
 
-    def test_task_run_invalid_flag(self, test_env):
-
-        result = test_env.invoke_task_command(["run", "-x", "sleep-1"])
-
-        # assert "Error: No such option: -x" in result.output
-        assert result.exit_code == 2
-
 
 # ------------------------------------------------------------------------------
 # Fixtures
@@ -103,17 +96,13 @@ def patch_subprocess(monkeypatch):
     def patched_subprocess_run(docker_compose_command, capture_output=True):
         # TODO: We should take advantage of the printed command to perform test validation
         logger.info(f"PYTEST_PATCHED_DOCKER_COMPOSE_COMMAND=[{docker_compose_command}]")
-        if not any([x in docker_compose_command for x in ["--detach", "-d", "-x"]]):
+        if not any([x in docker_compose_command for x in ["--detach", "-d"]]):
             # patch for running in standard mode.
             sleep(0.1)
             return subprocess.CompletedProcess(returncode=0, args=None)
         elif all([x in docker_compose_command for x in ["-d"]]):
             # patch for run headless/detached
             return subprocess.CompletedProcess(returncode=0, args=None)
-        elif all([x in docker_compose_command for x in ["-x"]]):
-            # patch for invalid flag being passed.
-            print("Error: No such option: %s", docker_compose_command)
-            return subprocess.CompletedProcess(returncode=2, args=None)
         else:
             # patch for unknown command action
             print("Unknown command: %s", docker_compose_command)
