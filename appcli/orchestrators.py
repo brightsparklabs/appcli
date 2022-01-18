@@ -96,7 +96,29 @@ class Orchestrator:
             cli_context (CliContext): The current CLI context.
             container_options (ContainerRuntimeOptions) : List of options to apply to the container.
             service_name (str): Name of the container to run.
-            extra_args (Iterable[str]): Extra arguments for running the container
+            extra_args (Iterable[str]): Extra arguments for running the container.
+
+        Returns:
+            CompletedProcess: Result of the orchestrator command.
+        """
+        raise NotImplementedError
+
+    def exec(
+        self,
+        cli_context: CliContext,
+        service_name: str,
+        command_name: str,
+        extra_args: Iterable[str] = [],
+    ) -> CompletedProcess:
+        """
+        Runs a specified Docker container which is expected to exit
+        upon completing a short-lived task.
+
+        Args:
+            cli_context (CliContext): The current CLI context.
+            service_name (str): Name of the container to be acted upon.
+            service_name (str): Name of the command to be executed.
+            extra_args (Iterable[str]): Extra arguments for execution of the command.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -216,6 +238,19 @@ class DockerComposeOrchestrator(Orchestrator):
             command.append("-d")
         command.append("--rm")
         command.append(service_name)
+        command.extend(list(extra_args))
+        return self.__compose_task(cli_context, command)
+
+    def exec(
+        self,
+        cli_context: CliContext,
+        service_name: str,
+        command_name: str,
+        extra_args: Iterable[str] = [],
+    ) -> CompletedProcess:
+        command = ["exec"]  # Command is: exec SERVICE COMMAND [ARGS]
+        command.append(service_name)
+        command.append(command_name)
         command.extend(list(extra_args))
         return self.__compose_task(cli_context, command)
 
@@ -403,6 +438,19 @@ class DockerSwarmOrchestrator(Orchestrator):
             command.append("-d")
         command.append("--rm")
         command.append(service_name)
+        command.extend(list(extra_args))
+        return self.__compose_task(cli_context, command)
+
+    def exec(
+        self,
+        cli_context: CliContext,
+        service_name: str,
+        command_name: str,
+        extra_args: Iterable[str] = [],
+    ) -> CompletedProcess:
+        command = ["exec"]  # Command is: exec SERVICE COMMAND [ARGS]
+        command.append(service_name)
+        command.append(command_name)
         command.extend(list(extra_args))
         return self.__compose_task(cli_context, command)
 
