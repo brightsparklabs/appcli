@@ -55,17 +55,32 @@ class Test_TaskCommands:
     def test_task_run_headless_arg_long(self, test_env):
 
         result = test_env.invoke_task_command(["run", "--detach", "sleep-1"])
-        assert "'-d'" in result.output.split("PYTEST_PATCHED_DOCKER_COMPOSE_COMMAND=[")[1].split("]")[0]
+        assert (
+            "'-d'"
+            in result.output.split("PYTEST_PATCHED_DOCKER_COMPOSE_COMMAND=[")[1].split(
+                "]"
+            )[0]
+        )
 
     def test_task_run_headless_arg_short(self, test_env):
 
         result = test_env.invoke_task_command(["run", "-d", "sleep-1"])
-        assert "'-d'" in result.output.split("PYTEST_PATCHED_DOCKER_COMPOSE_COMMAND=[")[1].split("]")[0]
+        assert (
+            "'-d'"
+            in result.output.split("PYTEST_PATCHED_DOCKER_COMPOSE_COMMAND=[")[1].split(
+                "]"
+            )[0]
+        )
 
     def test_task_run_not_headless(self, test_env):
 
         result = test_env.invoke_task_command(["run", "sleep-1"])
-        assert "'-d'" not in result.output.split("PYTEST_PATCHED_DOCKER_COMPOSE_COMMAND=[")[1].split("]")[0]
+        assert (
+            "'-d'"
+            not in result.output.split("PYTEST_PATCHED_DOCKER_COMPOSE_COMMAND=[")[
+                1
+            ].split("]")[0]
+        )
 
 
 # ------------------------------------------------------------------------------
@@ -82,7 +97,9 @@ def test_env(tmp_path_factory):
 def patch_subprocess(monkeypatch):
     def patched_subprocess_run(docker_compose_command, capture_output=True):
         # Print out the docker-compose command to perform test validation
-        logger.error(f"PYTEST_PATCHED_DOCKER_COMPOSE_COMMAND=[{docker_compose_command}]")
+        logger.error(
+            f"PYTEST_PATCHED_DOCKER_COMPOSE_COMMAND=[{docker_compose_command}]"
+        )
         # Always succeed - we don't care if the command should have failed or not
         return subprocess.CompletedProcess(returncode=0, args=None)
 
