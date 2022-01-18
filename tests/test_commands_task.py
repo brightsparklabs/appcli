@@ -55,23 +55,17 @@ class Test_TaskCommands:
     def test_task_run_headless_arg_long(self, test_env):
 
         result = test_env.invoke_task_command(["run", "--detach", "sleep-1"])
-
-        assert "-d" in result.output
-        assert result.exit_code == 0
+        assert "'-d'" in result.output.split("PYTEST_PATCHED_DOCKER_COMPOSE_COMMAND=[")[1].split("]")[0]
 
     def test_task_run_headless_arg_short(self, test_env):
 
         result = test_env.invoke_task_command(["run", "-d", "sleep-1"])
-
-        assert "-d" in result.output
-        assert result.exit_code == 0
+        assert "'-d'" in result.output.split("PYTEST_PATCHED_DOCKER_COMPOSE_COMMAND=[")[1].split("]")[0]
 
     def test_task_run_not_headless(self, test_env):
 
         result = test_env.invoke_task_command(["run", "sleep-1"])
-
-        assert "-d" not in result.output
-        assert result.exit_code == 0
+        assert "'-d'" not in result.output.split("PYTEST_PATCHED_DOCKER_COMPOSE_COMMAND=[")[1].split("]")[0]
 
 
 # ------------------------------------------------------------------------------
@@ -87,18 +81,10 @@ def test_env(tmp_path_factory):
 @pytest.fixture(autouse=True)
 def patch_subprocess(monkeypatch):
     def patched_subprocess_run(docker_compose_command, capture_output=True):
-        # TODO: We should take advantage of the printed command to perform test validation
-        logger.info(f"PYTEST_PATCHED_DOCKER_COMPOSE_COMMAND=[{docker_compose_command}]")
-        if not any([x in docker_compose_command for x in ["--detach", "-d"]]):
-            # patch for running in standard mode.
-            return subprocess.CompletedProcess(returncode=0, args=None)
-        elif all([x in docker_compose_command for x in ["-d"]]):
-            # patch for run headless/detached
-            return subprocess.CompletedProcess(returncode=0, args=None)
-        else:
-            # patch for unknown command action
-            print("Unknown command: %s", docker_compose_command)
-            return subprocess.CompletedProcess(returncode=1, args=None)
+        # Print out the docker-compose command to perform test validation
+        logger.error(f"PYTEST_PATCHED_DOCKER_COMPOSE_COMMAND=[{docker_compose_command}]")
+        # Always succeed - we don't care if the command should have failed or not
+        return subprocess.CompletedProcess(returncode=0, args=None)
 
     monkeypatch.setattr(subprocess, "run", patched_subprocess_run)
 

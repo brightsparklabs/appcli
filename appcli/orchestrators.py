@@ -36,7 +36,7 @@ from appcli.models.cli_context import CliContext
 
 
 @dataclass
-class Container_Options:
+class ContainerRuntimeOptions:
     """Holds all the cli options that can be passed to a container."""
 
     detached: bool = False
@@ -84,7 +84,7 @@ class Orchestrator:
     def task(
         self,
         cli_context: CliContext,
-        container_options: Container_Options,
+        container_options: ContainerRuntimeOptions,
         service_name: str,
         extra_args: Iterable[str],
     ) -> CompletedProcess:
@@ -94,7 +94,7 @@ class Orchestrator:
 
         Args:
             cli_context (CliContext): The current CLI context.
-            container_options (Container_Options) : List of options to apply to the container.
+            container_options (ContainerRuntimeOptions) : List of options to apply to the container.
             service_name (str): Name of the container to run.
             extra_args (Iterable[str]): Extra arguments for running the container
 
@@ -207,12 +207,13 @@ class DockerComposeOrchestrator(Orchestrator):
     def task(
         self,
         cli_context: CliContext,
-        container_options: Container_Options,
+        container_options: ContainerRuntimeOptions,
         service_name: str,
         extra_args: Iterable[str],
     ) -> CompletedProcess:
         command = ["run"]  # Command is: run [OPTIONS] --rm TASK [ARGS]
-        command.append("-d" if container_options.detached else "")
+        if container_options.detached:
+            command.append("-d")
         command.append("--rm")
         command.append(service_name)
         command.extend(list(extra_args))
@@ -393,12 +394,13 @@ class DockerSwarmOrchestrator(Orchestrator):
     def task(
         self,
         cli_context: CliContext,
-        container_options: Container_Options,
+        container_options: ContainerRuntimeOptions,
         service_name: str,
         extra_args: Iterable[str],
     ) -> CompletedProcess:
         command = ["run"]  # Command is: run [OPTIONS] --rm TASK [ARGS]
-        command.append("-d" if container_options.detached else "")
+        if container_options.detached:
+            command.append("-d")
         command.append("--rm")
         command.append(service_name)
         command.extend(list(extra_args))
