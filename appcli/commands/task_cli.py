@@ -20,6 +20,7 @@ from appcli.commands.appcli_command import AppcliCommand
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
+from appcli.orchestrators import Container_Options
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -67,8 +68,7 @@ class TaskCli:
         @click.argument("extra_args", nargs=-1, type=click.UNPROCESSED)
         @click.pass_context
         def run(ctx, detach, service_name, extra_args):
-            container_options = []  # List of options to supply to "run".
-            container_options.append("-d") if detach else None
+            container_options = Container_Options(detached=detach)
             cli_context: CliContext = ctx.obj
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.TASK_RUN
