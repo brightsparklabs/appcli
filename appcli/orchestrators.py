@@ -15,6 +15,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from subprocess import CompletedProcess
 from tempfile import NamedTemporaryFile
@@ -32,6 +33,14 @@ from appcli.models.cli_context import CliContext
 # ------------------------------------------------------------------------------
 # CLASSES
 # ------------------------------------------------------------------------------
+
+
+@dataclass
+class ContainerRuntimeOptions:
+    """Holds all the cli options that can be passed to a container."""
+
+    detached: bool = False
+    """ If this container should be run detached from the console. """
 
 
 class Orchestrator:
@@ -73,7 +82,11 @@ class Orchestrator:
         raise NotImplementedError
 
     def task(
-        self, cli_context: CliContext, service_name: str, extra_args: Iterable[str]
+        self,
+        cli_context: CliContext,
+        container_options: ContainerRuntimeOptions,
+        service_name: str,
+        extra_args: Iterable[str],
     ) -> CompletedProcess:
         """
         Runs a specified Docker container which is expected to exit
@@ -81,6 +94,7 @@ class Orchestrator:
 
         Args:
             cli_context (CliContext): The current CLI context.
+            container_options (ContainerRuntimeOptions) : List of options to apply to the container.
             service_name (str): Name of the container to run.
             extra_args (Iterable[str]): Extra arguments for running the container
 
@@ -191,10 +205,18 @@ class DockerComposeOrchestrator(Orchestrator):
         return self.__compose_service(cli_context, ("down",))
 
     def task(
-        self, cli_context: CliContext, service_name: str, extra_args: Iterable[str]
+        self,
+        cli_context: CliContext,
+        container_options: ContainerRuntimeOptions,
+        service_name: str,
+        extra_args: Iterable[str],
     ) -> CompletedProcess:
-        command = ["run", "--rm", service_name]
-        command.extend(extra_args)
+        command = ["run"]  # Command is: run [OPTIONS] --rm TASK [ARGS]
+        if container_options.detached:
+            command.append("-d")
+        command.append("--rm")
+        command.append(service_name)
+        command.extend(list(extra_args))
         return self.__compose_task(cli_context, command)
 
     def verify_service_names(
@@ -370,11 +392,19 @@ class DockerSwarmOrchestrator(Orchestrator):
         return self.__docker_stack(cli_context, ("rm",))
 
     def task(
-        self, cli_context: CliContext, service_name: str, extra_args: Iterable[str]
+        self,
+        cli_context: CliContext,
+        container_options: ContainerRuntimeOptions,
+        service_name: str,
+        extra_args: Iterable[str],
     ) -> CompletedProcess:
-        return self.__compose_task(
-            cli_context, ["run", "--rm", service_name].extend(extra_args)
-        )
+        command = ["run"]  # Command is: run [OPTIONS] --rm TASK [ARGS]
+        if container_options.detached:
+            command.append("-d")
+        command.append("--rm")
+        command.append(service_name)
+        command.extend(list(extra_args))
+        return self.__compose_task(cli_context, command)
 
     def verify_service_names(
         self, cli_context: CliContext, service_names: tuple[str, ...]

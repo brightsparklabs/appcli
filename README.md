@@ -537,9 +537,9 @@ Runs application tasks. These are short-lived services which should exit when th
 
 usage: `./myapp task [OPTIONS] COMMAND [ARGS]`
 
-| Command | Description                        |
-| ------- | ---------------------------------- |
-| run     | Runs a specified application task. |
+| Command | Description                                                                                  |
+| ------- | -------------------------------------------------------------------------------------------- |
+| run     | Runs a specified application task. Optionally run in the background with `-d/--detach` flag. |
 
 | Option | Description                     |
 | ------ | ------------------------------- |
