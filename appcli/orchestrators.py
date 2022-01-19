@@ -107,18 +107,15 @@ class Orchestrator:
         self,
         cli_context: CliContext,
         service_name: str,
-        command_name: str,
-        extra_args: Iterable[str] = [],
+        command: Iterable[str],
     ) -> CompletedProcess:
         """
-        Runs a specified Docker container which is expected to exit
-        upon completing a short-lived task.
+        Executes a command in a running container.
 
         Args:
             cli_context (CliContext): The current CLI context.
             service_name (str): Name of the container to be acted upon.
-            service_name (str): Name of the command to be executed.
-            extra_args (Iterable[str]): Extra arguments for execution of the command.
+            command (str): The command to be executed, along with any arguments.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -245,14 +242,12 @@ class DockerComposeOrchestrator(Orchestrator):
         self,
         cli_context: CliContext,
         service_name: str,
-        command_name: str,
-        extra_args: Iterable[str] = [],
+        command: Iterable[str],
     ) -> CompletedProcess:
-        command = ["docker", "exec"]  # Command is: exec SERVICE COMMAND [ARGS]
-        command.append(service_name)
-        command.append(command_name)
-        command.extend(list(extra_args))
-        return self.__exec_command(" ".join(command))
+        cmd = ["docker", "exec"]  # Command is: exec SERVICE COMMAND
+        cmd.append(service_name)
+        cmd.extend(list(command))
+        return self.__exec_command(cmd)
 
     def verify_service_names(
         self, cli_context: CliContext, service_names: tuple[str, ...]
@@ -349,9 +344,9 @@ class DockerComposeOrchestrator(Orchestrator):
             self.docker_compose_task_override_directory,
         )
 
-    def __exec_command(self, command: str) -> CompletedProcess:
+    def __exec_command(self, command: Iterable[str]) -> CompletedProcess:
         logger.debug("Running [%s]", " ".join(command))
-        return subprocess.run(command.split(" "), capture_output=True)
+        return subprocess.run(command, capture_output=True)
 
 
 class DockerSwarmOrchestrator(Orchestrator):
@@ -449,14 +444,12 @@ class DockerSwarmOrchestrator(Orchestrator):
         self,
         cli_context: CliContext,
         service_name: str,
-        command_name: str,
-        extra_args: Iterable[str] = [],
+        command: Iterable[str],
     ) -> CompletedProcess:
-        command = ["docker", "exec"]  # Command is: exec SERVICE COMMAND [ARGS]
-        command.append(service_name)
-        command.append(command_name)
-        command.extend(list(extra_args))
-        return self.__exec_command(" ".join(command))
+        cmd = ["docker", "exec"]  # Command is: exec SERVICE COMMAND
+        cmd.append(service_name)
+        cmd.extend(list(command))
+        return self.__exec_command(cmd)
 
     def verify_service_names(
         self, cli_context: CliContext, service_names: tuple[str, ...]
@@ -542,9 +535,9 @@ class DockerSwarmOrchestrator(Orchestrator):
             self.docker_compose_task_override_directory,
         )
 
-    def __exec_command(self, command: str) -> CompletedProcess:
+    def __exec_command(self, command: Iterable[str]) -> CompletedProcess:
         logger.debug("Running [%s]", " ".join(command))
-        return subprocess.run(command.split(" "), capture_output=True)
+        return subprocess.run(command, capture_output=True)
 
 
 # ------------------------------------------------------------------------------
