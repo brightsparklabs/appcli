@@ -351,7 +351,7 @@ class DockerComposeOrchestrator(Orchestrator):
 
     def __exec_command(self, command: str) -> CompletedProcess:
         logger.debug("Running [%s]", " ".join(command))
-        return subprocess.run(command.split(" "))
+        return subprocess.run(command.split(" "), capture_output=True)
 
 
 class DockerSwarmOrchestrator(Orchestrator):
@@ -544,7 +544,7 @@ class DockerSwarmOrchestrator(Orchestrator):
 
     def __exec_command(self, command: str) -> CompletedProcess:
         logger.debug("Running [%s]", " ".join(command))
-        return subprocess.run(command.split(" "))
+        return subprocess.run(command.split(" "), capture_output=True)
 
 
 # ------------------------------------------------------------------------------
