@@ -248,12 +248,11 @@ class DockerComposeOrchestrator(Orchestrator):
         command_name: str,
         extra_args: Iterable[str] = [],
     ) -> CompletedProcess:
-        command = ["exec"]  # Command is: exec SERVICE COMMAND [ARGS]
+        command = ["docker", "exec"]  # Command is: exec SERVICE COMMAND [ARGS]
         command.append(service_name)
         command.append(command_name)
         command.extend(list(extra_args))
-        #return self.__compose_task(cli_context, command)
-        return execute_command(command)
+        return self.__exec_command(" ".join(command))
 
     def verify_service_names(
         self, cli_context: CliContext, service_names: tuple[str, ...]
@@ -349,6 +348,10 @@ class DockerComposeOrchestrator(Orchestrator):
             self.docker_compose_task_file,
             self.docker_compose_task_override_directory,
         )
+
+    def __exec_command(self, command: str) -> CompletedProcess:
+        logger.debug("Running [%s]", " ".join(command))
+        return subprocess.run(command.split(" "))
 
 
 class DockerSwarmOrchestrator(Orchestrator):
@@ -454,7 +457,6 @@ class DockerSwarmOrchestrator(Orchestrator):
         command.append(command_name)
         command.extend(list(extra_args))
         return self.__exec_command(" ".join(command))
-        #return self.__compose_task(cli_context, command)
 
     def verify_service_names(
         self, cli_context: CliContext, service_names: tuple[str, ...]
@@ -542,7 +544,7 @@ class DockerSwarmOrchestrator(Orchestrator):
 
     def __exec_command(self, command: str) -> CompletedProcess:
         logger.debug("Running [%s]", " ".join(command))
-        return subprocess.run(command)
+        return subprocess.run(command.split(" "))
 
 
 # ------------------------------------------------------------------------------
@@ -697,20 +699,4 @@ def execute_compose(
     logger.debug(docker_compose_command)
     logger.debug("Running [%s]", " ".join(docker_compose_command))
     result = subprocess.run(docker_compose_command, capture_output=True)
-    return result
-
-def execute_command(
-    command: Iterable[str],
-) -> CompletedProcess:
-    """Executes a custom command string through docker.
-
-    Args:
-        command (Iterable[str]): The command to execute with docker.
-
-    Returns:
-        CompletedProcess: The completed process and its exit code.
-    """
-    command.insert(0,"docker")
-    logger.debug("Running [%s]", command)
-    result = subprocess.run(command, capture_output=True)
     return result
