@@ -244,7 +244,7 @@ class DockerComposeOrchestrator(Orchestrator):
         service_name: str,
         command: Iterable[str],
     ) -> CompletedProcess:
-        cmd = ["docker", "exec"]  # Command is: exec SERVICE COMMAND
+        cmd = ["exec"]  # Command is: exec SERVICE COMMAND
         cmd.append(service_name)
         cmd.extend(list(command))
         return self.__compose_service(cli_context, cmd)
@@ -442,10 +442,11 @@ class DockerSwarmOrchestrator(Orchestrator):
         service_name: str,
         command: Iterable[str],
     ) -> CompletedProcess:
-        cmd = ["docker", "exec"]  # Command is: exec SERVICE COMMAND
-        cmd.append(service_name)
-        cmd.extend(list(command))
-        return self.__compose_service(cli_context, cmd)
+
+        # Running 'docker exec' on containers in a docker swarm is non-trivial
+        # due to the distributed nature of docker swarm, and the fact there could
+        # be replicas of a single service.
+        raise NotImplementedError
 
     def verify_service_names(
         self, cli_context: CliContext, service_names: tuple[str, ...]
@@ -533,7 +534,7 @@ class DockerSwarmOrchestrator(Orchestrator):
 
     def __exec_command(self, command: Iterable[str]) -> CompletedProcess:
         logger.debug("Running [%s]", " ".join(command))
-        return subprocess.run(command)
+        return subprocess.run(command, capture_output=True)
 
 
 # ------------------------------------------------------------------------------
