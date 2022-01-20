@@ -15,7 +15,6 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
-from dataclasses import dataclass
 from pathlib import Path
 from subprocess import CompletedProcess
 from tempfile import NamedTemporaryFile
@@ -33,14 +32,6 @@ from appcli.models.cli_context import CliContext
 # ------------------------------------------------------------------------------
 # CLASSES
 # ------------------------------------------------------------------------------
-
-
-@dataclass
-class ContainerRuntimeOptions:
-    """Holds all the cli options that can be passed to a container."""
-
-    detached: bool = False
-    """ If this container should be run detached from the console. """
 
 
 class Orchestrator:
@@ -84,9 +75,9 @@ class Orchestrator:
     def task(
         self,
         cli_context: CliContext,
-        container_options: ContainerRuntimeOptions,
         service_name: str,
         extra_args: Iterable[str],
+        detached: bool = False,
     ) -> CompletedProcess:
         """
         Runs a specified Docker container which is expected to exit
@@ -94,9 +85,9 @@ class Orchestrator:
 
         Args:
             cli_context (CliContext): The current CLI context.
-            container_options (ContainerRuntimeOptions) : List of options to apply to the container.
             service_name (str): Name of the container to run.
             extra_args (Iterable[str]): Extra arguments for running the container.
+            detached (bool): Optional - defaults to False. Whether the task should run in `--detached` mode or not.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -108,6 +99,7 @@ class Orchestrator:
         cli_context: CliContext,
         service_name: str,
         command: Iterable[str],
+        interactive: bool = False,
     ) -> CompletedProcess:
         """
         Executes a command in a running container.
@@ -116,6 +108,7 @@ class Orchestrator:
             cli_context (CliContext): The current CLI context.
             service_name (str): Name of the container to be acted upon.
             command (str): The command to be executed, along with any arguments.
+            interactive (bool): Optional - defaults to False. Whether to run the exec in interactive mode or not.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -226,12 +219,12 @@ class DockerComposeOrchestrator(Orchestrator):
     def task(
         self,
         cli_context: CliContext,
-        container_options: ContainerRuntimeOptions,
         service_name: str,
         extra_args: Iterable[str],
+        detached: bool = False,
     ) -> CompletedProcess:
         command = ["run"]  # Command is: run [OPTIONS] --rm TASK [ARGS]
-        if container_options.detached:
+        if detached:
             command.append("-d")
         command.append("--rm")
         command.append(service_name)
@@ -243,8 +236,11 @@ class DockerComposeOrchestrator(Orchestrator):
         cli_context: CliContext,
         service_name: str,
         command: Iterable[str],
+        interactive: bool = False,
     ) -> CompletedProcess:
         cmd = ["exec"]  # Command is: exec SERVICE COMMAND
+        if interactive:
+            cmd.append("--interactive")
         cmd.append(service_name)
         cmd.extend(list(command))
         return self.__compose_service(cli_context, cmd)
@@ -424,12 +420,12 @@ class DockerSwarmOrchestrator(Orchestrator):
     def task(
         self,
         cli_context: CliContext,
-        container_options: ContainerRuntimeOptions,
         service_name: str,
         extra_args: Iterable[str],
+        detached: bool = False,
     ) -> CompletedProcess:
         command = ["run"]  # Command is: run [OPTIONS] --rm TASK [ARGS]
-        if container_options.detached:
+        if detached:
             command.append("-d")
         command.append("--rm")
         command.append(service_name)
@@ -441,6 +437,7 @@ class DockerSwarmOrchestrator(Orchestrator):
         cli_context: CliContext,
         service_name: str,
         command: Iterable[str],
+        interactive: bool = False,
     ) -> CompletedProcess:
 
         # Running 'docker exec' on containers in a docker swarm is non-trivial

@@ -20,7 +20,6 @@ from appcli.commands.appcli_command import AppcliCommand
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
-from appcli.orchestrators import ContainerRuntimeOptions
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -77,9 +76,8 @@ class TaskCli:
                 service_name,
                 extra_args,
             )
-            container_options = ContainerRuntimeOptions(detached=detach)
             result = self.orchestrator.task(
-                ctx.obj, container_options, service_name, extra_args
+                cli_context, service_name, extra_args, detached=detach
             )
             logger.info("Task service finished with code [%i]", result.returncode)
             sys.exit(result.returncode)
