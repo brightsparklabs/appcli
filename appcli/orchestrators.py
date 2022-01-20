@@ -247,7 +247,7 @@ class DockerComposeOrchestrator(Orchestrator):
         cmd = ["docker", "exec"]  # Command is: exec SERVICE COMMAND
         cmd.append(service_name)
         cmd.extend(list(command))
-        return self.__exec_command(cmd)
+        return self.__compose_service(cli_context, cmd)
 
     def verify_service_names(
         self, cli_context: CliContext, service_names: tuple[str, ...]
@@ -449,7 +449,7 @@ class DockerSwarmOrchestrator(Orchestrator):
         cmd = ["docker", "exec"]  # Command is: exec SERVICE COMMAND
         cmd.append(service_name)
         cmd.extend(list(command))
-        return self.__exec_command(cmd)
+        return self.__compose_service(cli_context, cmd)
 
     def verify_service_names(
         self, cli_context: CliContext, service_names: tuple[str, ...]
