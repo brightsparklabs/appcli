@@ -344,10 +344,6 @@ class DockerComposeOrchestrator(Orchestrator):
             self.docker_compose_task_override_directory,
         )
 
-    def __exec_command(self, command: Iterable[str]) -> CompletedProcess:
-        logger.debug("Running [%s]", " ".join(command))
-        return subprocess.run(command, capture_output=True)
-
 
 class DockerSwarmOrchestrator(Orchestrator):
     """
@@ -537,7 +533,7 @@ class DockerSwarmOrchestrator(Orchestrator):
 
     def __exec_command(self, command: Iterable[str]) -> CompletedProcess:
         logger.debug("Running [%s]", " ".join(command))
-        return subprocess.run(command, capture_output=True)
+        return subprocess.run(command)
 
 
 # ------------------------------------------------------------------------------
