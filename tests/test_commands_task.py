@@ -95,7 +95,7 @@ def test_env(tmp_path_factory):
 
 @pytest.fixture(autouse=True)
 def patch_subprocess(monkeypatch):
-    def patched_subprocess_run(docker_compose_command, capture_output=True):
+    def patched_subprocess_run(docker_compose_command, capture_output=True, input=None):
         # Print out the docker-compose command to perform test validation
         logger.error(
             f"PYTEST_PATCHED_DOCKER_COMPOSE_COMMAND=[{docker_compose_command}]"

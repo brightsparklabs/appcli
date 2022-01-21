@@ -15,7 +15,6 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
-from dataclasses import dataclass
 from pathlib import Path
 from subprocess import CompletedProcess
 from tempfile import NamedTemporaryFile
@@ -33,14 +32,6 @@ from appcli.models.cli_context import CliContext
 # ------------------------------------------------------------------------------
 # CLASSES
 # ------------------------------------------------------------------------------
-
-
-@dataclass
-class ContainerRuntimeOptions:
-    """Holds all the cli options that can be passed to a container."""
-
-    detached: bool = False
-    """ If this container should be run detached from the console. """
 
 
 class Orchestrator:
@@ -84,9 +75,9 @@ class Orchestrator:
     def task(
         self,
         cli_context: CliContext,
-        container_options: ContainerRuntimeOptions,
         service_name: str,
         extra_args: Iterable[str],
+        detached: bool = False,
     ) -> CompletedProcess:
         """
         Runs a specified Docker container which is expected to exit
@@ -94,9 +85,30 @@ class Orchestrator:
 
         Args:
             cli_context (CliContext): The current CLI context.
-            container_options (ContainerRuntimeOptions) : List of options to apply to the container.
             service_name (str): Name of the container to run.
-            extra_args (Iterable[str]): Extra arguments for running the container
+            extra_args (Iterable[str]): Extra arguments for running the container.
+            detached (bool): Optional - defaults to False. Whether the task should run in `--detached` mode or not.
+
+        Returns:
+            CompletedProcess: Result of the orchestrator command.
+        """
+        raise NotImplementedError
+
+    def exec(
+        self,
+        cli_context: CliContext,
+        service_name: str,
+        command: Iterable[str],
+        stdin_input: str = None,
+    ) -> CompletedProcess:
+        """
+        Executes a command in a running container.
+
+        Args:
+            cli_context (CliContext): The current CLI context.
+            service_name (str): Name of the container to be acted upon.
+            command (str): The command to be executed, along with any arguments.
+            stdin_input (str): Optional - defaults to None. String passed through to the stdin of the exec command.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -207,17 +219,33 @@ class DockerComposeOrchestrator(Orchestrator):
     def task(
         self,
         cli_context: CliContext,
-        container_options: ContainerRuntimeOptions,
         service_name: str,
         extra_args: Iterable[str],
+        detached: bool = False,
     ) -> CompletedProcess:
         command = ["run"]  # Command is: run [OPTIONS] --rm TASK [ARGS]
-        if container_options.detached:
+        if detached:
             command.append("-d")
         command.append("--rm")
         command.append(service_name)
         command.extend(list(extra_args))
         return self.__compose_task(cli_context, command)
+
+    def exec(
+        self,
+        cli_context: CliContext,
+        service_name: str,
+        command: Iterable[str],
+        stdin_input: str = None,
+    ) -> CompletedProcess:
+        cmd = ["exec"]  # Command is: exec SERVICE COMMAND
+        # If there's stdin_input being piped to the command, we need to provide
+        # the -T flag to `docker-compose`: https://github.com/docker/compose/issues/7306
+        if stdin_input is not None:
+            cmd.append("-T")
+        cmd.append(service_name)
+        cmd.extend(list(command))
+        return self.__compose_service(cli_context, cmd, stdin_input)
 
     def verify_service_names(
         self, cli_context: CliContext, service_names: tuple[str, ...]
@@ -294,24 +322,28 @@ class DockerComposeOrchestrator(Orchestrator):
         self,
         cli_context: CliContext,
         command: Iterable[str],
+        stdin_input: str = None,
     ):
         return execute_compose(
             cli_context,
             command,
             self.docker_compose_file,
             self.docker_compose_override_directory,
+            stdin_input=stdin_input,
         )
 
     def __compose_task(
         self,
         cli_context: CliContext,
         command: Iterable[str],
+        stdin_input: str = None,
     ):
         return execute_compose(
             cli_context,
             command,
             self.docker_compose_task_file,
             self.docker_compose_task_override_directory,
+            stdin_input=stdin_input,
         )
 
 
@@ -394,17 +426,30 @@ class DockerSwarmOrchestrator(Orchestrator):
     def task(
         self,
         cli_context: CliContext,
-        container_options: ContainerRuntimeOptions,
         service_name: str,
         extra_args: Iterable[str],
+        detached: bool = False,
     ) -> CompletedProcess:
         command = ["run"]  # Command is: run [OPTIONS] --rm TASK [ARGS]
-        if container_options.detached:
+        if detached:
             command.append("-d")
         command.append("--rm")
         command.append(service_name)
         command.extend(list(extra_args))
         return self.__compose_task(cli_context, command)
+
+    def exec(
+        self,
+        cli_context: CliContext,
+        service_name: str,
+        command: Iterable[str],
+        stdin_input: str = None,
+    ) -> CompletedProcess:
+
+        # Running 'docker exec' on containers in a docker swarm is non-trivial
+        # due to the distributed nature of docker swarm, and the fact there could
+        # be replicas of a single service.
+        raise NotImplementedError
 
     def verify_service_names(
         self, cli_context: CliContext, service_names: tuple[str, ...]
@@ -482,17 +527,19 @@ class DockerSwarmOrchestrator(Orchestrator):
         self,
         cli_context: CliContext,
         command: Iterable[str],
+        stdin_input: str = None,
     ):
         return execute_compose(
             cli_context,
             command,
             self.docker_compose_task_file,
             self.docker_compose_task_override_directory,
+            stdin_input=stdin_input,
         )
 
-    def __exec_command(self, command: str) -> CompletedProcess:
+    def __exec_command(self, command: Iterable[str]) -> CompletedProcess:
         logger.debug("Running [%s]", " ".join(command))
-        return subprocess.run(command)
+        return subprocess.run(command, capture_output=True)
 
 
 # ------------------------------------------------------------------------------
@@ -604,6 +651,7 @@ def execute_compose(
     command: Iterable[str],
     docker_compose_file_relative_path: Path,
     docker_compose_override_directory_relative_path: Path,
+    stdin_input: str = None,
 ) -> CompletedProcess:
     """Builds and executes a docker-compose command.
 
@@ -614,6 +662,7 @@ def execute_compose(
             generated configuration directory.
         docker_compose_override_directory_relative_path (Path): The relative path to a directory containing
             docker-compose override files. Path is relative to the generated configuration directory.
+        stdin_input (str): Optional - defaults to None. String passed through to the subprocess via stdin.
 
     Returns:
         CompletedProcess: The completed process and its exit code.
@@ -646,5 +695,9 @@ def execute_compose(
 
     logger.debug(docker_compose_command)
     logger.debug("Running [%s]", " ".join(docker_compose_command))
-    result = subprocess.run(docker_compose_command, capture_output=True)
+    encoded_input = stdin_input.encode("utf-8") if stdin_input is not None else None
+    logger.debug(f"Encoded input: [{encoded_input}]")
+    result = subprocess.run(
+        docker_compose_command, capture_output=True, input=encoded_input
+    )
     return result
