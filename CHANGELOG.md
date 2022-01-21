@@ -12,6 +12,14 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Added
 
+### Fixed
+
+---
+
+## [1.3.5] - (21/01/2022)
+
+### Added
+
 - Enable custom commands to run `exec` commands on service containers via the orchestrator
 - Allow tasks to be run in detached mode with flag `-d/--detach`.
 - Renaming the launcher script to create only 1 hidden file: `.<timestamp>_<app_name>_<app_version>`.
