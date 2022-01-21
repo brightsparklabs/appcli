@@ -109,6 +109,80 @@ python3 implicit namespaced packages.
     if __name__ == '__main__':
         main()
 
+#### Custom Commands
+
+You can specify some custom top-level commands by adding click commands or command groups to the configuration object.
+Assuming 'web' is the name of the service in the docker-compose.yml file which you wish to exec against, we can create
+three custom commands in the following example:
+
+- `myapp ls-root` which lists the contents of the root directory within the `web` service container and prints it out.
+- `myapp ls-root-to-file` which lists the contents of the root directory within the `web` service container and dumps to file within the container.
+- `myapp tee-file` which takes some text and `tee`s it into another file the `web` service container.
+
+```python
+
+def get_ls_root_command(orchestrator: DockerComposeOrchestrator):
+    @click.command(
+        help="List files in the root directory",
+    )
+    @click.pass_context
+    def ls_root(ctx: click.Context):
+
+        # Equivalent command within the container:
+        # `ls -alh`
+        cli_context: CliContext = ctx.obj
+        output: CompletedProcess = orchestrator.exec(cli_context, "web", ["ls", "-alh", "/"])
+        print(output.stdout.decode())
+
+    return ls_root
+
+def get_tee_file_command(orchestrator: DockerComposeOrchestrator):
+    @click.command(
+        help="Tee some text into a file",
+    )
+    @click.pass_context
+    def tee_file(ctx: click.Context):
+
+        # Equivalent command within the container:
+        # `echo "Some data to tee into the custom file" | tee /ls-root.txt`
+        cli_context: CliContext = ctx.obj
+        output: CompletedProcess = orchestrator.exec(cli_context, "web", ["tee", "/my_custom_file.txt"], stdin_input="Some data to tee into the custom file")
+
+    return tee_file
+
+def get_ls_root_to_file_command(orchestrator: DockerComposeOrchestrator):
+    @click.command(
+        help="List files in the root directory and tee to file",
+    )
+    @click.pass_context
+    def ls_root_to_file(ctx: click.Context):
+
+        # Equivalent command within the container:
+        # `ls -alh | tee /ls-root.txt`
+        cli_context: CliContext = ctx.obj
+        output: CompletedProcess = orchestrator.exec(cli_context, "web", ["ls", "-alh", "/"])
+        data = output.stdout.decode()
+        orchestrator.exec(cli_context, "web", ["tee", "/ls-root.txt"], stdin_input=data)
+
+    return ls_root_to_file
+
+def main():
+    orchestrator = DockerComposeOrchestrator(Path("docker-compose.yml"))
+    configuration = Configuration(
+        app_name="appcli_nginx",
+        docker_image="thomas-anderson-bsl/appcli-nginx",
+        seed_app_configuration_file=Path(BASE_DIR, "resources/settings.yml"),
+        stack_configuration_file=Path(BASE_DIR, "resources/stack-settings.yml"),
+        baseline_templates_dir=Path(BASE_DIR, "resources/templates/baseline"),
+        configurable_templates_dir=Path(BASE_DIR, "resources/templates/configurable"),
+        orchestrator=orchestrator,
+        custom_commands={get_tee_file_command(orchestrator),get_ls_root_command(orchestrator),get_ls_root_to_file_command(orchestrator)}
+    )
+    cli = create_cli(configuration)
+    cli()
+
+```
+
 ### Build configuration template directories
 
 - Store any Jinja2 variable definitions you wish to use in your configuration
