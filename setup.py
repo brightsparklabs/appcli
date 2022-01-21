@@ -54,7 +54,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "boto3==1.18.44",
-        "click==8.0.1",
+        "click==8.0.3",
         "coloredlogs==15.0.1",
         "cronex==0.1.3.1",
         "dataclasses-json==0.5.6",
