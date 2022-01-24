@@ -128,7 +128,7 @@ class Configuration(BaseModel):
                 re.sub(r"[^a-zA-Z_]", "_", value[0]),  # First character.
                 re.sub(r"[^a-zA-Z0-9_]", "_", value[1:]),
             ]
-        ).upper()
+        )
 
     class Config:
         # This is a requirement for pydantic to disable type checking for arbitrary user types for fields.

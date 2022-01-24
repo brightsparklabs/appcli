@@ -31,7 +31,7 @@ The library exposes the following environment variables to the `docker-compose.y
 Note: the `APP_NAME` variable is derived from the `app_name` passed in to the `Configuration` object in the
 main python entrypoint to the application. In order for the application to work, the `app_name` is forced to conform
 with the shell variable name standard: `[a-zA-Z_][a-zA-Z_0-9]*`. Any characters that do not fit this regex will be
-replaced with `_`. Once the replacement is done, the entire field is capitalised. See:
+replaced with `_`. See:
 (https://unix.stackexchange.com/questions/428880/list-of-acceptable-initial-characters-for-a-bash-variable)
 (https://linuxhint.com/bash-variable-name-rules-legal-illegal/)
 

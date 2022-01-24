@@ -21,22 +21,17 @@ from appcli.orchestrators import DockerComposeOrchestrator
 # ------------------------------------------------------------------------------
 
 
-def test_app_name_capitalises():
-    # Capitalises
-    assert create_configuration("abc").app_name == "ABC"
-
-
 def test_app_name_replaces_leading_digits():
     # Replaces starting number with underscore
-    assert create_configuration("123abc").app_name == "_23ABC"
+    assert create_configuration("123abc").app_name == "_23abc"
 
 
 def test_app_name_replaces_invalid_characters():
     # Replaces unknown characters
-    assert create_configuration("a-B=c+D$e#f").app_name == "A_B_C_D_E_F"
+    assert create_configuration("a-B=c+D$e#f").app_name == "a_B_c_D_e_f"
     assert (
         create_configuration("abc~!@#$%^&*()_+`-=[]{}|;':,./<>?def").app_name
-        == "ABC______________________________DEF"
+        == "abc______________________________def"
     )
 
 
