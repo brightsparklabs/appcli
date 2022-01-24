@@ -16,6 +16,14 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ---
 
+## [1.3.6] - (24/01/2022)
+
+### Fixed
+
+- Remove automatic UPPERCASING of app_name, which breaks workflows that rely on a stable app_name.
+
+---
+
 ## [1.3.5] - (21/01/2022)
 
 ### Added
