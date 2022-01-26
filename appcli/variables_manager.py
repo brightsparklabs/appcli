@@ -115,7 +115,7 @@ class VariablesManager:
             if file.endswith(".yml"):  # Yaml file.
                 config_variables |= load_yml(file)
                 # TODO: log error.
-            elif file.endswith(".js"):  # Jinja2 file.
+            elif file.endswith(".j2"):  # Jinja2 file.
                 config_variables |= load_j2(file)
                 # TODO: log error.
             else:  # Unknown file type.
@@ -149,7 +149,15 @@ def load_yml(filename: Path) -> Dict:
     Returns:
         Dist: configuration data from the file.
     """
-    pass
+    raw_data = self.configuration_file.read_text(encoding="utf-8")
+
+    # If the file is empty, the YAML library will load as `None`. Since
+    # we expect this function to return a valid dict, we return an
+    # empty dictionary if it's empty.
+    yaml_data = self.yaml.load(raw_data)
+    if yaml_data is None:
+        return {}
+    return yaml_data
 
 
 def load_j2(filename: Path) -> Dict:
