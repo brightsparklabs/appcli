@@ -134,3 +134,27 @@ class VariablesManager:
         logger.debug(f"Saving configuration to [{full_path}] ...")
         with open(full_path, "w") as config_file:
             self.yaml.dump(variables, config_file)
+
+
+def load_yml(filename: Path) -> Dict:
+    """Loads configuration data from a yaml file (yml).
+
+    Args:
+        filename (Path): The location of the file to read from.
+
+    Returns:
+        Dist: configuration data from the file.
+    """
+    pass
+
+
+def load_j2(filename: Path) -> Dict:
+    """Loads configuration data from a jinja2 file (j2).
+
+    Args:
+        filename (Path): The location of the file to read from.
+
+    Returns:
+        Dist: configuration data from the file.
+    """
+    pass
