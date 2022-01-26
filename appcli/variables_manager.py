@@ -12,7 +12,7 @@ www.brightsparklabs.com
 # standard library
 from functools import reduce
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, Iterable, Union
 
 # vendor libraries
 from ruamel.yaml import YAML
@@ -30,14 +30,16 @@ from appcli.logger import logger
 class VariablesManager:
     """Manages the configuration variables"""
 
-    def __init__(self, configuration_file, key_file):
+    def __init__(self, configuration_file, key_file, extra_configuration_files: Iterable[str] = []):
         """Creates a manager for the specified file
 
         Args:
-            configuration_file (str): Path to the configuration file to manage
+            configuration_file (str): Path to the configuration file to manage.
+            extra_configuration_files (Iterable[str]): Path to extra configuration files to load.
         """
         self.configuration_file = Path(configuration_file)
         self.key_file = Path(key_file)
+        self.extra_configuration_files = list(map(Path, extra_configuration_files))
         self.yaml = YAML()
 
         # TODO: We want to be able to read this file in immediately, and allow a 'save' command.
