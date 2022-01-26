@@ -16,6 +16,7 @@ from typing import Dict, Iterable, Union
 
 # vendor libraries
 from ruamel.yaml import YAML
+from jinja2 import Template
 
 from appcli.crypto.crypto import decrypt_value
 
@@ -160,13 +161,21 @@ def load_yml(filename: Path) -> Dict:
     return yaml_data
 
 
-def load_j2(filename: Path) -> Dict:
+def load_j2(filename: Path, variables: dict) -> Dict:
     """Loads configuration data from a jinja2 file (j2).
 
     Args:
         filename (Path): The location of the file to read from.
+        variables (dict): Variables used to populate the template.
 
     Returns:
         Dist: configuration data from the file.
     """
-    pass
+    template = Template(
+        template_file.read_text(),
+        undefined=StrictUndefined,
+        trim_blocks=True,
+        lstrip_blocks=True,
+    )
+    output_text = template.render(variables)
+    return dict(output_text)#TODO: fix this, as it probably won't work without processing.
