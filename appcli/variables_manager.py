@@ -122,15 +122,23 @@ class VariablesManager:
             raise Exception(
                 f"Could not read configuration file at [{self.configuration_file}]"
             ) from ex
-        for file in self.extra_configuration_files:
+        for file in self.extra_configuration_files:  # Read extra configuration files.
             if file.endswith(".yml"):  # Yaml file.
-                config_variables.update(load_yml(file, self.yaml))
-                # TODO: log error.
+                try:
+                    config_variables.update(load_yml(file, self.yaml))
+                except Exception as ex:
+                    raise Exception(
+                        f"Could not read configuration file at [{file}]"
+                    ) from ex
             elif file.endswith(".j2"):  # Jinja2 file.
-                config_variables.update(load_j2(file, config_variables))
-                # TODO: log error.
+                try:
+                    config_variables.update(load_j2(file, config_variables))
+                except Exception as ex:
+                    raise Exception(
+                        f"Could not read configuration file at [{file}]"
+                    ) from ex
             else:  # Unknown file type.
-                pass  # TODO: log error.
+                raise Exception(f"Unknown filetype [{file}]")
         return config_variables
 
     def __save(self, variables: Dict):
