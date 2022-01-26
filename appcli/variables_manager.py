@@ -105,26 +105,28 @@ class VariablesManager:
         self.__save(variables)
 
     def __get_configuration(self) -> Dict:
-        """Get the current configuration from file
+        """Get the current configuration from file(s)
 
         Returns:
             Dict: the current configuration
         """
-        try:
-            raw_data = self.configuration_file.read_text(encoding="utf-8")
-
-            # If the file is empty, the YAML library will load as `None`. Since
-            # we expect this function to return a valid dict, we return an
-            # empty dictionary if it's empty.
-            yaml_data = self.yaml.load(raw_data)
-            if yaml_data is None:
-                return {}
-            return yaml_data
-
+        config_variables = dict()
+        for file in self.extra_configuration_files:
+            if file.endswith(".yml"):  # Yaml file.
+                config_variables |= load_yml(file)
+                # TODO: log error.
+            elif file.endswith(".js"):  # Jinja2 file.
+                config_variables |= load_j2(file)
+                # TODO: log error.
+            else:  # Unknown file type.
+                pass  # TODO: log error.
+        try:  # Read the main configuration file.
+            config_variables |= load_yml(self.configuration_file)
         except Exception as ex:
             raise Exception(
                 f"Could not read configuration file at [{self.configuration_file}]"
             ) from ex
+        return config_variables
 
     def __save(self, variables: Dict):
         """Saves the supplied Dict of variables to the configuration file
