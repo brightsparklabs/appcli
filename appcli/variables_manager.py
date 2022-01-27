@@ -150,6 +150,56 @@ class VariablesManager:
         with open(full_path, "w") as config_file:
             self.yaml.dump(variables, config_file)
 
+    def __read_configuration_source(self, configuration_filename: Path) -> str:
+        """Reads the given configuration file and returns its contents as a string
+
+        Args:
+            configuration_filename (Path): The location of the file to read from.
+
+        Returns:
+            str: A utf-8 encoded string of the files contents.
+
+        """
+        return configuration_file.read_text(encoding="utf-8")
+
+    def __convert_jinja_to_yaml(self, jinja_source: str, variables: dict) -> str:
+        """Loads configuration data from a jinja2 string and applies
+            the provided templates.
+
+        Args:
+            jinja_source (str): A utf-8 encoding of the contents of the jinja2 file.
+            variables (dict): Variables used to populate the template.
+
+        Returns:
+            str: A yaml string that has been templated with the provided variables.
+        """
+        template = Template(
+            jinja_source,
+            undefined=StrictUndefined,
+            trim_blocks=True,
+            lstrip_blocks=True,
+        )
+        return template.render(variables)
+
+    def __convert_yaml_to_dict(self, yaml_source: str, namespace: str) -> Dict:
+        """Loads configuration data from a provided yaml string.
+
+        Args:
+            yaml_source (str): A utf-8 encoding of some yaml data.
+            namespace (str): A unique namespace for this set of data.
+
+        Returns:
+            Dict: Configuration data from the file.
+        """
+        yaml_data: dict = {namespace: yaml.load(yaml_source)}
+
+        # If the file is empty, the YAML library will load as `None`. Since
+        # we expect this function to return a valid dict, we return an
+        # empty dictionary if it's empty.
+        if yaml_data is None:
+            return {}
+        return yaml_data
+
 
 def load_yml(filename: Path, yaml: YAML) -> Dict:
     """Loads configuration data from a yaml file (yml).
