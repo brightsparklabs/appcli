@@ -113,31 +113,38 @@ class VariablesManager:
             Dict: the current configuration
 
         """
+        config_variables_main = dict()
         config_variables = dict()
-        try:  # Read the main configuration file.
-            config_variables.update(load_yml(self.configuration_file, self.yaml))
+        # Read the main configuration file first,
+        # As we need it to use when templating the other configuration file.
+        try:
+            data_string = self.__read_configuration_source(self.configuration_file)
+            config_variables_main |= self.__convert_yaml_to_dict(
+                data_string, self.configuration_file.stem
+            )
         except Exception as ex:
             raise Exception(
-                f"Could not read configuration file at [{self.configuration_file}]"
+                f"Could not read main configuration file at [{self.configuration_file}]"
             ) from ex
-        for file in self.extra_configuration_files:  # Read extra configuration files.
-            if file.endswith(".yml"):  # Yaml file.
-                try:
-                    config_variables |= load_yml(file, self.yaml)
-                except Exception as ex:
-                    raise Exception(
-                        f"Could not read configuration file at [{file}]"
-                    ) from ex
-            elif file.endswith(".j2"):  # Jinja2 file.
-                try:
-                    config_variables |= load_j2(file, self.yaml, config_variables)
-                except Exception as ex:
-                    raise Exception(
-                        f"Could not read configuration file at [{file}]"
-                    ) from ex
-            else:  # Unknown file type.
-                raise Exception(f"Unknown filetype [{file}]")
-        return config_variables
+        # Once the main file is loaded we cna iterate through the other supplied files.
+        # We can pass in our main dict for templating, if we encounter a jinja2 (j2) file.
+        for (
+            config_file
+        ) in self.extra_configuration_files:  # Read extra configuration file(s).
+            try:
+                data_string = self.__read_configuration_source(config_file)
+                if config_file.endswith(".j2"):  # Jinja2 file.
+                    data_string = self.__convert_jinja_to_yaml(
+                        data_string, config_variables_main
+                    )
+                config_variables |= self.__convert_yaml_to_dict(
+                    data_string, config_file.stem
+                )
+            except Exception as ex:
+                raise Exception(
+                    f"Could not read configuration file at [{config_file}]"
+                ) from ex
+        return config_variables_main | config_variables
 
     def __save(self, variables: Dict):
         """Saves the supplied Dict of variables to the configuration file
@@ -160,7 +167,7 @@ class VariablesManager:
             str: A utf-8 encoded string of the files contents.
 
         """
-        return configuration_file.read_text(encoding="utf-8")
+        return self.configuration_file.read_text(encoding="utf-8")
 
     def __convert_jinja_to_yaml(self, jinja_source: str, variables: dict) -> str:
         """Loads configuration data from a jinja2 string and applies
@@ -191,7 +198,7 @@ class VariablesManager:
         Returns:
             Dict: Configuration data from the file.
         """
-        yaml_data: dict = {namespace: yaml.load(yaml_source)}
+        yaml_data: dict = {namespace: self.yaml.load(yaml_source)}
 
         # If the file is empty, the YAML library will load as `None`. Since
         # we expect this function to return a valid dict, we return an
@@ -199,47 +206,3 @@ class VariablesManager:
         if yaml_data is None:
             return {}
         return yaml_data
-
-
-def load_yml(filename: Path, yaml: YAML) -> Dict:
-    """Loads configuration data from a yaml file (yml).
-
-    Args:
-        filename (Path): The location of the file to read from.
-        yaml (YAML): A yaml object to use as the parser.
-
-    Returns:
-        Dict: Configuration data from the file.
-    """
-    raw_data = filename.read_text(encoding="utf-8")
-    yaml_data: dict = {filename.stem: yaml.load(raw_data)}
-    
-    # If the file is empty, the YAML library will load as `None`. Since
-    # we expect this function to return a valid dict, we return an
-    # empty dictionary if it's empty.
-    if yaml_data is None:
-        return {}
-    return yaml_data
-
-
-def load_j2(filename: Path, yaml: YAML, variables: dict) -> Dict:
-    """Loads configuration data from a jinja2 file (j2).
-
-    Args:
-        filename (Path): The location of the file to read from.
-        yaml (YAML): A yaml object to use as the parser.
-        variables (dict): Variables used to populate the template.
-
-    Returns:
-        Dict: Configuration data from the file.
-    """
-    template = Template(
-        filename.read_text(),
-        undefined=StrictUndefined,
-        trim_blocks=True,
-        lstrip_blocks=True,
-    )
-    output_text = template.render(variables)
-    yaml_filename = ".".join(filename.split(".")[:-1])  # Remove .j2 from extension.
-    yaml_filename.write_text(output_text)  # Write to .yml file.
-    return load_yml(yaml_filename, yaml)
