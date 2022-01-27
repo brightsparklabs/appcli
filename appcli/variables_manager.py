@@ -112,8 +112,6 @@ class VariablesManager:
         Returns:
             Dict: the current configuration
 
-        TODO:
-            Change dict update functions to `=|` once the python interpreter accepts it (v3.9+).
         """
         config_variables = dict()
         try:  # Read the main configuration file.
@@ -125,14 +123,14 @@ class VariablesManager:
         for file in self.extra_configuration_files:  # Read extra configuration files.
             if file.endswith(".yml"):  # Yaml file.
                 try:
-                    config_variables.update(load_yml(file, self.yaml))
+                    config_variables |= load_yml(file, self.yaml)
                 except Exception as ex:
                     raise Exception(
                         f"Could not read configuration file at [{file}]"
                     ) from ex
             elif file.endswith(".j2"):  # Jinja2 file.
                 try:
-                    config_variables.update(load_j2(file, self.yaml, config_variables))
+                    config_variables |= load_j2(file, self.yaml, config_variables)
                 except Exception as ex:
                     raise Exception(
                         f"Could not read configuration file at [{file}]"
