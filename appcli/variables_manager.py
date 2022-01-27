@@ -161,14 +161,19 @@ def load_yml(filename: Path, yaml: YAML) -> Dict:
         yaml (YAML): A yaml object to use as the parser.
 
     Returns:
-        Dist: configuration data from the file.
+        Dict: Configuration data from the file.
     """
     raw_data = filename.read_text(encoding="utf-8")
-
+    yaml_data = yaml.load(raw_data)
+    yaml_data = dict(  # Append filename to keys for namespacing.
+        zip(
+            list([filename.stem + "." + key for key in yaml_data.keys()]),
+            list(yaml_data.values()),
+        )
+    )
     # If the file is empty, the YAML library will load as `None`. Since
     # we expect this function to return a valid dict, we return an
     # empty dictionary if it's empty.
-    yaml_data = yaml.load(raw_data)
     if yaml_data is None:
         return {}
     return yaml_data
@@ -183,7 +188,7 @@ def load_j2(filename: Path, yaml: YAML, variables: dict) -> Dict:
         variables (dict): Variables used to populate the template.
 
     Returns:
-        Dist: configuration data from the file.
+        Dict: Configuration data from the file.
     """
     template = Template(
         filename.read_text(),
