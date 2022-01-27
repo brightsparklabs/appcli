@@ -162,13 +162,8 @@ def load_yml(filename: Path, yaml: YAML) -> Dict:
         Dict: Configuration data from the file.
     """
     raw_data = filename.read_text(encoding="utf-8")
-    yaml_data = yaml.load(raw_data)
-    yaml_data = dict(  # Append filename to keys for namespacing.
-        zip(
-            list([filename.stem + "." + key for key in yaml_data.keys()]),
-            list(yaml_data.values()),
-        )
-    )
+    yaml_data: dict = {filename.stem: yaml.load(raw_data)}
+    
     # If the file is empty, the YAML library will load as `None`. Since
     # we expect this function to return a valid dict, we return an
     # empty dictionary if it's empty.
