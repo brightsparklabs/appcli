@@ -51,7 +51,7 @@ class VariablesManager:
         """Gets a value from the configuration.
 
         Args:
-            path (str): Dot notation for the setting. E.g. insilico.external.database.host
+            path (str): Dot notation for the setting. E.g. settings.insilico.external.database.host
             decrypt (bool): Optional (defaults to False). Whether to decrypt the returned value (if it's encrypted).
 
         Throws:
