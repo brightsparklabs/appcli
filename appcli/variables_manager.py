@@ -113,37 +113,8 @@ class VariablesManager:
             Dict: the current configuration
 
         """
-        config_variables_main = dict()
-        config_variables = dict()
-        # Read the main configuration file first,
-        # As we need it to use when templating the other configuration file.
-        try:
-            data_string = self.__read_configuration_source(self.configuration_file)
-            config_variables_main |= self.__convert_yaml_to_dict(
-                data_string, self.configuration_file.stem
-            )
-        except Exception as ex:
-            raise Exception(
-                f"Could not read main configuration file at [{self.configuration_file}]"
-            ) from ex
-        # Once the main file is loaded we cna iterate through the other supplied files.
-        # We can pass in our main dict for templating, if we encounter a jinja2 (j2) file.
-        for (
-            config_file
-        ) in self.extra_configuration_files:  # Read extra configuration file(s).
-            try:
-                data_string = self.__read_configuration_source(config_file)
-                if config_file.endswith(".j2"):  # Jinja2 file.
-                    data_string = self.__convert_jinja_to_yaml(
-                        data_string, config_variables_main
-                    )
-                config_variables |= self.__convert_yaml_to_dict(
-                    data_string, config_file.stem
-                )
-            except Exception as ex:
-                raise Exception(
-                    f"Could not read configuration file at [{config_file}]"
-                ) from ex
+        config_variables_main = self.__get_configuration_main()
+        config_variables = self.__get_configuration_extra(config_variables_main)
         return config_variables_main | config_variables
 
     def __get_configuration_main(self) -> Dict:
@@ -152,16 +123,46 @@ class VariablesManager:
         Returns:
             Dict: The configuration data from the main configuration file.
         """
-        pass
+        config_variables_main = dict()
+        try:
+            data_string = self.__read_configuration_source(self.configuration_file)
+            config_variables_main |= self.__convert_yaml_to_dict(
+                data_string, self.configuration_file.stem
+            )            
+        except Exception as ex:
+            raise Exception(
+                f"Could not read main configuration file at [{self.configuration_file}]"
+            ) from ex
+        return config_variables_main        
 
-    def __get_configuration_extra(self) -> Dict:
+    def __get_configuration_extra(self, variables: Dict) -> Dict:
         """Gets the configuration from the additional configuration files.
+
+        Args:
+            variables (Dict): Variables used to populate the template(s).
 
         Returns:
             Dict: The configuration data from the additional configuration files.
                 Each config file is a seperate dictionary with its filename as the key.
         """
-        pass
+        config_variables = dict()
+        for (
+            config_file
+        ) in list(self.extra_configuration_files):  # Read extra configuration file(s).
+            try:
+                data_string = self.__read_configuration_source(config_file)
+                if config_file.endswith(".j2"):  # Jinja2 file.
+                    data_string = self.__convert_jinja_to_yaml(
+                        data_string, variables
+                    )
+                config_variables |= self.__convert_yaml_to_dict(
+                    data_string, config_file.stem
+                )
+            except Exception as ex:
+                raise Exception(
+                    f"Could not read configuration file at [{config_file}]"
+                ) from ex
+        return config_variables
 
     def __save(self, variables: Dict):
         """Saves the supplied Dict of variables to the configuration file
@@ -186,13 +187,13 @@ class VariablesManager:
         """
         return self.configuration_file.read_text(encoding="utf-8")
 
-    def __convert_jinja_to_yaml(self, jinja_source: str, variables: dict) -> str:
+    def __convert_jinja_to_yaml(self, jinja_source: str, variables: Dict) -> str:
         """Loads configuration data from a jinja2 string and applies
             the provided templates.
 
         Args:
             jinja_source (str): A utf-8 encoding of the contents of the jinja2 file.
-            variables (dict): Variables used to populate the template.
+            variables (Dict): Variables used to populate the template.
 
         Returns:
             str: A yaml string that has been templated with the provided variables.
