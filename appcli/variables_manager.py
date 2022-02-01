@@ -146,6 +146,23 @@ class VariablesManager:
                 ) from ex
         return config_variables_main | config_variables
 
+    def __get_configuration_main(self) -> Dict:
+        """Gets the configuration from the main `settings.yml` file.
+
+        Returns:
+            Dict: The configuration data from the main configuration file.
+        """
+        pass
+
+    def __get_configuration_extra(self) -> Dict:
+        """Gets the configuration from the additional configuration files.
+
+        Returns:
+            Dict: The configuration data from the additional configuration files.
+                Each config file is a seperate dictionary with its filename as the key.
+        """
+        pass
+
     def __save(self, variables: Dict):
         """Saves the supplied Dict of variables to the configuration file
 
