@@ -13,7 +13,7 @@ www.brightsparklabs.com
 import re
 from functools import reduce
 from pathlib import Path
-from typing import Dict, Iterable, Union
+from typing import Dict, Union
 
 from jinja2 import StrictUndefined, Template
 
@@ -129,12 +129,12 @@ class VariablesManager:
             data_string = self.__read_configuration_source(self.configuration_file)
             config_variables_main |= self.__convert_yaml_to_dict(
                 data_string, self.configuration_file.stem
-            )            
+            )
         except Exception as ex:
             raise Exception(
                 f"Could not read main configuration file at [{self.configuration_file}]"
             ) from ex
-        return config_variables_main        
+        return config_variables_main
 
     def __get_configuration_extra(self, variables: Dict) -> Dict:
         """Gets the configuration from the additional configuration files.
@@ -147,15 +147,11 @@ class VariablesManager:
                 Each config file is a seperate dictionary with its filename as the key.
         """
         config_variables = dict()
-        for (
-            config_file
-        ) in list(self.extra_configuration_files):  # Read extra configuration file(s).
+        for config_file in list(self.extra_configuration_files):
             try:
                 data_string = self.__read_configuration_source(config_file)
                 if config_file.endswith(".j2"):  # Jinja2 file.
-                    data_string = self.__convert_jinja_to_yaml(
-                        data_string, variables
-                    )
+                    data_string = self.__convert_jinja_to_yaml(data_string, variables)
                 config_variables |= self.__convert_yaml_to_dict(
                     data_string, config_file.stem
                 )
@@ -217,7 +213,7 @@ class VariablesManager:
         Returns:
             Dict: Configuration data from the file.
         """
-        if not re.compile(r'[a-zA-Z0-9_]+').match(namespace):  # Contains unsafe characters.
+        if not re.compile(r"[a-zA-Z0-9_]+").match(namespace):
             raise Exception(f"[{namespace}] conatins invalid characters.")
         yaml_data: dict = {namespace: self.yaml.load(yaml_source)}
 
