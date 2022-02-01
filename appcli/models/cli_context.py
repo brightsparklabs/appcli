@@ -148,6 +148,16 @@ class CliContext(NamedTuple):
         """
         return self.configuration_dir.joinpath("templates")
 
+    def get_additional_settings_dir(self) -> Path:
+        """Get the directory containing additional yml and j2 settings.
+
+        TODO: allow users to override this.
+
+        Returns:
+            Path: directory of additional settings
+        """
+        return self.configuration_dir.jointpath("templates/appcli/context")
+
     def get_project_name(self) -> str:
         """Get a unique name for the application and environment
 
