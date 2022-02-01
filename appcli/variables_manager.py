@@ -10,6 +10,7 @@ www.brightsparklabs.com
 """
 
 # standard library
+import re
 from functools import reduce
 from pathlib import Path
 from typing import Dict, Iterable, Union
@@ -216,6 +217,8 @@ class VariablesManager:
         Returns:
             Dict: Configuration data from the file.
         """
+        if not re.compile(r'[a-zA-Z0-9_]+').match(namespace):  # Contains unsafe characters.
+            raise Exception(f"[{namespace}] conatins invalid characters.")
         yaml_data: dict = {namespace: self.yaml.load(yaml_source)}
 
         # If the file is empty, the YAML library will load as `None`. Since
