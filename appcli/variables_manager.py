@@ -80,7 +80,7 @@ class VariablesManager:
             path (str): Dot notation for the setting. E.g. insilico.external.database.host
             value: value for the setting
         """
-        configuration = self.__get_configuration()
+        configuration = self.__get_configuration_main()
 
         path_elements = path.split(".")
         parent_path = path_elements[:-1]
@@ -97,7 +97,7 @@ class VariablesManager:
         parent_element = reduce(lambda e, k: e[k], parent_path, configuration)
         parent_element[path_elements[-1]] = value
 
-        self.__save(configuration)
+        self.__save(configuration | self.get_configuration_extra())
 
     def set_all_variables(self, variables: Dict):
         """Sets all values in the configuration
@@ -165,8 +165,9 @@ class VariablesManager:
         """Saves the supplied Dict of variables to the configuration file
 
         Args:
-            variables (Dict): the variables to save
+            variables (Dict): All the variables to save (main config dictionary will be extracted).
         """
+        variables = variables[self.configuration_file.stem]
         full_path = self.configuration_file.absolute().as_posix()
         logger.debug(f"Saving configuration to [{full_path}] ...")
         with open(full_path, "w") as config_file:
