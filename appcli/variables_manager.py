@@ -72,15 +72,17 @@ class VariablesManager:
         return self.__get_configuration()
 
     def set_variable(self, path: str, value: Union[str, bool, int, float]):
-        """Sets a value in the configuration.
+        """Sets a value in the configuration
 
         Type of value is not enforced but this might not serialise into yml in a deserialisable format.
 
         Args:
-            path (str): Dot notation for the setting. E.g. insilico.external.database.host
+            path (str): Dot notation for the setting. E.g. settings.insilico.external.database.host
             value: value for the setting
+
+        TODO: warn user if attempting to save variable not in main config.
         """
-        configuration = self.__get_configuration_main()
+        configuration = self.__get_configuration()
 
         path_elements = path.split(".")
         parent_path = path_elements[:-1]
@@ -97,7 +99,7 @@ class VariablesManager:
         parent_element = reduce(lambda e, k: e[k], parent_path, configuration)
         parent_element[path_elements[-1]] = value
 
-        self.__save(configuration | self.get_configuration_extra())
+        self.__save(configuration)
 
     def set_all_variables(self, variables: Dict):
         """Sets all values in the configuration
@@ -147,7 +149,7 @@ class VariablesManager:
                 Each config file is a seperate dictionary with its filename as the key.
         """
         config_variables = dict()
-        for config_file in list(self.extra_configuration_files):
+        for config_file in self.extra_configuration_files.glob("*"):
             try:
                 data_string = self.__read_configuration_source(config_file)
                 if config_file.endswith(".j2"):  # Jinja2 file.

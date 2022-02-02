@@ -156,7 +156,7 @@ class CliContext(NamedTuple):
         Returns:
             Path: directory of additional settings
         """
-        return self.configuration_dir.jointpath("templates/appcli/context")
+        return self.configuration_dir.joinpath("templates/appcli/context")
 
     def get_project_name(self) -> str:
         """Get a unique name for the application and environment
