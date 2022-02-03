@@ -80,7 +80,8 @@ class VariablesManager:
             path (str): Dot notation for the setting. E.g. settings.insilico.external.database.host
             value: value for the setting
 
-        TODO: warn user if attempting to save variable not in main config.
+        TODO: warn user if attempting to save variable outside of the main config file.
+        TODO: unit testing for nested variables etc...
         """
         configuration = self.__get_configuration()
         path_elements = path.split(".")  # Divide path into array.
@@ -95,7 +96,19 @@ class VariablesManager:
                 field
             ]  # Move sub pointer to next layer down.
 
-        self.__save(configuration | dictionary_main)
+        def recursive_dictionary_merge(d1: Dict, d2: Dict):
+            # Base case (either d1 or d2 is value).
+            if not hasattr(d1, "copy") or not hasattr(d2, "copy"):
+                return d2  # d2 overwrites fields in d1.
+            d0 = d1.copy()  # New return dictionary.
+            for sub in d2.keys():
+                if sub not in d1.keys():  # Item isn't a duplicate.
+                    d0 |= {sub: d2.get(sub)}
+                else:  # Item is a duplicate.
+                    d0 |= {sub: recursive_dictionary_merge(d1.get(sub), d2.get(sub))}
+            return d0
+
+        self.__save(recursive_dictionary_merge(configuration, dictionary_main))
 
     def set_all_variables(self, variables: Dict):
         """Sets all values in the configuration
