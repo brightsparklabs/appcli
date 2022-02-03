@@ -148,7 +148,7 @@ class CliContext(NamedTuple):
         """
         return self.configuration_dir.joinpath("templates")
 
-    def get_additional_settings_dir(self) -> Path:
+    def get_app_extra_configuration_dir(self) -> Path:
         """Get the directory containing additional yml and j2 settings.
 
         TODO: allow users to override this.
