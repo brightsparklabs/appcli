@@ -83,23 +83,19 @@ class VariablesManager:
         TODO: warn user if attempting to save variable not in main config.
         """
         configuration = self.__get_configuration()
+        path_elements = path.split(".")  # Divide path into array.
+        # Iterate through each context on path, to create a recursive dictionary.
+        # Main is a pointer to top dictionary object.
+        # Sub is a pointer to the current dictionary layer.
+        dictionary_main = dictionary_sub = {}
+        for field in path_elements:
+            # Apply value to bottom dictionary only.
+            dictionary_sub[field] = value if field is path_elements[-1] else {}
+            dictionary_sub = dictionary_sub[
+                field
+            ]  # Move sub pointer to next layer down.
 
-        path_elements = path.split(".")
-        parent_path = path_elements[:-1]
-
-        # ensure parent path exists
-        def ensure_path(parent, child):
-            if child not in parent:
-                parent[child] = {}
-            return parent[child]
-
-        reduce(ensure_path, parent_path, configuration)
-
-        # set the value
-        parent_element = reduce(lambda e, k: e[k], parent_path, configuration)
-        parent_element[path_elements[-1]] = value
-
-        self.__save(configuration)
+        self.__save(configuration | dictionary_main)
 
     def set_all_variables(self, variables: Dict):
         """Sets all values in the configuration
@@ -152,7 +148,7 @@ class VariablesManager:
         for config_file in self.extra_configuration_files.glob("*"):
             try:
                 data_string = self.__read_configuration_source(config_file)
-                if config_file.endswith(".j2"):  # Jinja2 file.
+                if config_file.name.endswith(".j2"):  # Jinja2 file.
                     data_string = self.__convert_jinja_to_yaml(data_string, variables)
                 config_variables |= self.__convert_yaml_to_dict(
                     data_string, config_file.stem
