@@ -45,7 +45,7 @@ class VariablesManager:
         if extra_configuration_dir is not None:
             if not Path(extra_configuration_dir).is_dir():
                 raise Exception(
-                    f"Extra config dir {extra_configuration_dir} is not accessible"
+                    f"Extra configuration directory {extra_configuration_dir} is not accessible"
                 )
             self.extra_configuration_files = Path(extra_configuration_dir).glob("*")
         else:
@@ -87,7 +87,6 @@ class VariablesManager:
             path (str): Dot notation for the setting. E.g. settings.insilico.external.database.host
             value: value for the setting
 
-        TODO: warn user if attempting to save variable outside of the main config file.
         TODO: remember to do unit testing for nested variables etc...
         """
         configuration = self._get_main_configuration()
