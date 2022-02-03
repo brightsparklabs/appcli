@@ -94,7 +94,7 @@ def test_apply_workflow(tmpdir):
     conf_manager.initialise_configuration()
 
     # Set a variable
-    password_variable_path = "test_app.test.identity.password"
+    password_variable_path = "settings.test.identity.password"
     new_password = "securepassword1"
     conf_manager.set_variable(password_variable_path, new_password)
 
@@ -196,6 +196,13 @@ def create_cli_context(tmpdir, app_version: str = "0.0.0") -> CliContext:
     data_dir.mkdir(exist_ok=True)
     backup_dir = Path(tmpdir, "backup")
     backup_dir.mkdir(exist_ok=True)
+    # Extra configuration directory.
+    templates_dir = Path(tmpdir, "conf/templates")
+    templates_dir.mkdir(exist_ok=True)
+    appcli_dir = Path(tmpdir, "conf/templates/appcli")
+    appcli_dir.mkdir(exist_ok=True)
+    context_dir = Path(tmpdir, "conf/templates/appcli/context")
+    context_dir.mkdir(exist_ok=True)
 
     return CliContext(
         configuration_dir=conf_dir,

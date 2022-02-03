@@ -78,6 +78,9 @@ class VariablesManager:
     def get_all_variables(self):
         return self._get_configuration()
 
+    def get_main_variables(self):
+        return self._get_main_configuration()[self.configuration_file.stem]
+
     def set_variable(self, path: str, value: Union[str, bool, int, float]):
         """Sets a value in the configuration
 
