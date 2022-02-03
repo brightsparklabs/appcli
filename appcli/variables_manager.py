@@ -42,10 +42,14 @@ class VariablesManager:
         """
         self.configuration_file = Path(configuration_file)
         self.key_file = Path(key_file)
-        try:
-            self.extra_configuration_dir = Path(extra_configuration_dir)
-        except:
-            self.extra_configuration_dir = None
+        if extra_configuration_dir is not None:
+            if not Path(extra_configuration_dir).is_dir():
+                raise Exception(
+                    f"Extra config dir {extra_configuration_dir} is not accessible"
+                )
+            self.extra_configuration_files = Path(extra_configuration_dir).glob("*")
+        else:
+            self.extra_configuration_files = []
         self.yaml = YAML()
 
         # TODO: We want to be able to read this file in immediately, and allow a 'save' command.
@@ -174,10 +178,8 @@ class VariablesManager:
             Dict: The configuration data from the additional configuration files.
                 Each config file is a seperate dictionary with its filename as the key.
         """
-        if self.extra_configuration_dir is None:
-            return {}  # User didn't provide additional config directory.
         config_variables = dict()
-        for config_file in self.extra_configuration_dir.glob("*"):
+        for config_file in self.extra_configuration_files:
             try:
                 data_string = config_file.read_text(encoding="utf-8")
             except Exception as ex:
@@ -186,7 +188,7 @@ class VariablesManager:
                 ) from ex
             if config_file.suffix == ".j2":  # Jinja2 file.
                 try:
-                    data_string = self._convert_jinja_to_yaml(data_string, variables)
+                    data_string = self._render_j2(data_string, variables)
                 except Exception as ex:
                     raise Exception(
                         f"There was a problem rendering the jinja2 file at [{config_file}]"
@@ -207,7 +209,7 @@ class VariablesManager:
         with open(full_path, "w") as config_file:
             self.yaml.dump(variables, config_file)
 
-    def _convert_jinja_to_yaml(self, jinja_source: str, variables: Dict) -> str:
+    def _render_j2(self, jinja_source: str, variables: Dict) -> str:
         """Loads configuration data from a jinja2 string and applies
             the provided templates.
 
@@ -216,7 +218,7 @@ class VariablesManager:
             variables (Dict): Variables used to populate the template.
 
         Returns:
-            str: A yaml string that has been templated with the provided variables.
+            str: A string that has been templated with the provided variables.
         """
         template = Template(
             jinja_source,

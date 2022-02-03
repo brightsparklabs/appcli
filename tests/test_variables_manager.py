@@ -100,15 +100,17 @@ def test_get_all_variables(tmpdir):
     name_of_test = "test_app_get_all_variables"
     var_manager = create_var_manager_from_resource(name_of_test)
     dictionary = {
-        "object": {
-            "booleans": {
-                "false_boolean": False,
-                "true_boolean": True,
+        name_of_test: {
+            "object": {
+                "booleans": {
+                    "false_boolean": False,
+                    "true_boolean": True,
+                },
+                "float": 12345.6789,
+                "int": 12345,
+                "string": "Value",
             },
-            "float": 12345.6789,
-            "int": 12345,
-            "string": "Value",
-        },
+        }
     }
     assert (
         DeepDiff(
@@ -129,7 +131,7 @@ def test_set_variable_empty(tmpdir):
     set_config_file = Path(tmpdir, name_of_test + ".yml")
     set_config_file.touch()
     var_manager = VariablesManager(set_config_file, key_file=TEST_KEY_PATH, extra_configuration_files=Path(ADDITIONAL_CONFIG_DIR))
-    variable_path = name_of_test+".empty"
+    variable_path = name_of_test + ".empty"
     var_manager.set_variable(variable_path, None)
     compare_file = Path(
         Path(__file__).parent,
@@ -144,7 +146,7 @@ def test_set_string_variable(tmpdir):
     set_config_file = Path(tmpdir, name_of_test + ".yml")
     set_config_file.touch()
     var_manager = VariablesManager(set_config_file, key_file=TEST_KEY_PATH, extra_configuration_files=Path(ADDITIONAL_CONFIG_DIR))
-    variable_path = name_of_test+".string"
+    variable_path = name_of_test + ".string"
     variable_value = "Value"
     var_manager.set_variable(variable_path, variable_value)
     compare_file = Path(
@@ -160,8 +162,8 @@ def test_set_bool_variable(tmpdir):
     set_config_file = Path(tmpdir, name_of_test + ".yml")
     set_config_file.touch()
     var_manager = VariablesManager(set_config_file, key_file=TEST_KEY_PATH, extra_configuration_files=Path(ADDITIONAL_CONFIG_DIR))
-    variable_path_false = name_of_test+".false_boolean"
-    variable_path_true = name_of_test+".true_boolean"
+    variable_path_false = name_of_test + ".false_boolean"
+    variable_path_true = name_of_test + ".true_boolean"
     var_manager.set_variable(variable_path_false, False)
     var_manager.set_variable(variable_path_true, True)
     compare_file = Path(
@@ -177,7 +179,7 @@ def test_set_float_variable(tmpdir):
     set_config_file = Path(tmpdir, name_of_test + ".yml")
     set_config_file.touch()
     var_manager = VariablesManager(set_config_file, key_file=TEST_KEY_PATH, extra_configuration_files=Path(ADDITIONAL_CONFIG_DIR))
-    variable_path = name_of_test+".float"
+    variable_path = name_of_test + ".float"
     variable_value = 12345.6789
     var_manager.set_variable(variable_path, variable_value)
     compare_file = Path(
@@ -193,7 +195,7 @@ def test_set_int_variable(tmpdir):
     set_config_file = Path(tmpdir, name_of_test + ".yml")
     set_config_file.touch()
     var_manager = VariablesManager(set_config_file, key_file=TEST_KEY_PATH, extra_configuration_files=Path(ADDITIONAL_CONFIG_DIR))
-    variable_path = name_of_test+".int"
+    variable_path = name_of_test + ".int"
     variable_value = 12345
     var_manager.set_variable(variable_path, variable_value)
     compare_file = Path(
@@ -210,15 +212,17 @@ def test_set_all_variables(tmpdir):
     set_config_file.touch()
     var_manager = VariablesManager(set_config_file, key_file=TEST_KEY_PATH, extra_configuration_files=Path(ADDITIONAL_CONFIG_DIR))
     dictionary = {
-        "object": {
-            "booleans": {
-                "false_boolean": False,
-                "true_boolean": True,
+        name_of_test: {
+            "object": {
+                "booleans": {
+                    "false_boolean": False,
+                    "true_boolean": True,
+                },
+                "float": 12345.6789,
+                "int": 12345,
+                "string": "Value",
             },
-            "float": 12345.6789,
-            "int": 12345,
-            "string": "Value",
-        },
+        }
     }
     var_manager.set_all_variables(dictionary)
     compare_file = Path(
