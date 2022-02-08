@@ -150,6 +150,9 @@ class ConfigureCli:
                 AppcliCommand.CONFIGURE_GET
             )
 
+            # We prompt for the key value so that the key doesn't show up in terminal history
+            # Without this, `history | grep password` might lead a potential attacker to easily find relevant
+            # credentials in the settings files. This just adds another layer of obfuscation.
             setting = click.prompt("Please enter the key to the setting", type=str)
 
             # Get settings value and print
