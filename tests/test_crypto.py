@@ -56,3 +56,20 @@ def test_decrypt_values_in_file(tmpdir):
     decrypted_text = decrypted_file.read_text()
 
     assert expected_decrypted_text == decrypted_text
+
+
+def test_decrypt_value(tmpdir):
+    key_file = Path(tmpdir, "key")
+    key_file.write_bytes(b"aabbccddeeffgghhiijjkkllmmnnoopp")
+    cipher = Cipher(key_file)
+
+    values = [
+        "a message to encrypt",
+        "another message",
+        "a repeated message",
+    ]
+
+    for value in values:
+        encrypted = cipher.encrypt(value)
+        decrypted = cipher.decrypt(encrypted)
+        assert value == decrypted
