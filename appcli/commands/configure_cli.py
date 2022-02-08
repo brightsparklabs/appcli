@@ -139,6 +139,23 @@ class ConfigureCli:
             configuration = ConfigurationManager(cli_context, self.cli_configuration)
             print(configuration.get_variable(setting))
 
+        @configure.command(
+            help="Reads a setting from the configuration and decrypts if necessary.",
+            hidden=True,
+        )
+        @click.pass_context
+        def get_secure(ctx):
+            cli_context: CliContext = ctx.obj
+            cli_context.get_configuration_dir_state().verify_command_allowed(
+                AppcliCommand.CONFIGURE_GET
+            )
+
+            setting = click.prompt("Please enter the key to the setting", type=str)
+
+            # Get settings value and print
+            configuration = ConfigurationManager(cli_context, self.cli_configuration)
+            print(configuration.get_variable(setting, decrypt=True))
+
         @configure.command(help="Saves a setting to the configuration.")
         @click.option(
             "-t",

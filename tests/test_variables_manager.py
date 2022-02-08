@@ -22,6 +22,15 @@ from ruamel import yaml
 from appcli.variables_manager import VariablesManager
 
 # ------------------------------------------------------------------------------
+# CONSTANTS
+# ------------------------------------------------------------------------------
+
+# Path to the test keyfile for encryption
+TEST_KEY_PATH: Path = Path(
+    Path(__file__).parent, "variables_manager_resources/test_key"
+)
+
+# ------------------------------------------------------------------------------
 # TESTS
 # ------------------------------------------------------------------------------
 
@@ -108,7 +117,7 @@ def test_set_variable_empty(tmpdir):
     """When we set a variable with a no value, we expect the variable to have no value in our yml file"""
     set_config_file = Path(tmpdir, "test_app_set_variable_empty.yml")
     set_config_file.touch()
-    var_manager = VariablesManager(set_config_file)
+    var_manager = VariablesManager(set_config_file, key_file=TEST_KEY_PATH)
     variable_path = "empty"
     var_manager.set_variable(variable_path, None)
     compare_file = Path(
@@ -122,7 +131,7 @@ def test_set_string_variable(tmpdir):
     """When we set a variable of type string, we expect the varible to be of type string in our yml file"""
     set_config_file = Path(tmpdir, "test_app_set_string_variable.yml")
     set_config_file.touch()
-    var_manager = VariablesManager(set_config_file)
+    var_manager = VariablesManager(set_config_file, key_file=TEST_KEY_PATH)
     variable_path = "string"
     variable_value = "Value"
     var_manager.set_variable(variable_path, variable_value)
@@ -137,7 +146,7 @@ def test_set_bool_variable(tmpdir):
     """When we set a variable of type bool, we expect the varible to be of type bool in our yml file"""
     set_config_file = Path(tmpdir, "test_app_set_bool_variable.yml")
     set_config_file.touch()
-    var_manager = VariablesManager(set_config_file)
+    var_manager = VariablesManager(set_config_file, key_file=TEST_KEY_PATH)
     variable_path_false = "false_boolean"
     variable_path_true = "true_boolean"
     var_manager.set_variable(variable_path_false, False)
@@ -153,7 +162,7 @@ def test_set_float_variable(tmpdir):
     """When we set a variable of type float, we expect the varible to be of type float in our yml file"""
     set_config_file = Path(tmpdir, "test_app_set_float_variable.yml")
     set_config_file.touch()
-    var_manager = VariablesManager(set_config_file)
+    var_manager = VariablesManager(set_config_file, key_file=TEST_KEY_PATH)
     variable_path = "float"
     variable_value = 12345.6789
     var_manager.set_variable(variable_path, variable_value)
@@ -168,7 +177,7 @@ def test_set_int_variable(tmpdir):
     """When we set a variable of type int, we expect the varible to be of type int in our yml file"""
     set_config_file = Path(tmpdir, "test_app_set_int_variable.yml")
     set_config_file.touch()
-    var_manager = VariablesManager(set_config_file)
+    var_manager = VariablesManager(set_config_file, key_file=TEST_KEY_PATH)
     variable_path = "int"
     variable_value = 12345
     var_manager.set_variable(variable_path, variable_value)
@@ -183,7 +192,7 @@ def test_set_all_variables(tmpdir):
     """The dictionary used to set set_all_variables() should be equal to the dictionary returned from it"""
     set_config_file = Path(tmpdir, "test_app_set_all_variables.yml")
     set_config_file.touch()
-    var_manager = VariablesManager(set_config_file)
+    var_manager = VariablesManager(set_config_file, key_file=TEST_KEY_PATH)
     dictionary = {
         "object": {
             "booleans": {
@@ -208,9 +217,12 @@ def test_set_all_variables(tmpdir):
 # ------------------------------------------------------------------------------
 
 
-def create_var_manager_from_resource(configFile) -> VariablesManager:
+def create_var_manager_from_resource(config_name) -> VariablesManager:
     """Creates a variables manager object from a file in our variables_manager_resources directory"""
     # directory containing this script
+    key_file = Path(Path(__file__).parent, f"{config_name}.keyfile")
+    key_file.touch()
     return VariablesManager(
-        Path(Path(__file__).parent, f"variables_manager_resources/{configFile}.yml")
+        Path(Path(__file__).parent, f"variables_manager_resources/{config_name}.yml"),
+        key_file=TEST_KEY_PATH,
     )

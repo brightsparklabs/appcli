@@ -59,3 +59,21 @@ def decrypt_values_in_file(encrypted_file: Path, decrypted_file: Path, key_file:
             replaced_lines.append(replaced_line)
 
     decrypted_file.write_text("".join(replaced_lines))
+
+
+def decrypt_value(encrypted_value: str, key_file: Path):
+    """Decrypts a given input value. If the value is unencrypted, will return
+    it verbatim.
+    """
+
+    if not isinstance(encrypted_value, str):
+        logger.debug(f"Did not decrypt non-string value [{encrypted_value}].")
+        return encrypted_value
+
+    regex = "^enc:[^:]+:[^:]+:end$"
+    if re.match(regex, encrypted_value) is None:
+        logger.debug(f"Did not decrypt unencrypted value [{encrypted_value}].")
+        return encrypted_value
+
+    cipher = Cipher(key_file)
+    return cipher.decrypt(encrypted_value)
