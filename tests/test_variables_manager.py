@@ -220,8 +220,6 @@ def test_set_all_variables(tmpdir):
 def create_var_manager_from_resource(config_name) -> VariablesManager:
     """Creates a variables manager object from a file in our variables_manager_resources directory"""
     # directory containing this script
-    key_file = Path(Path(__file__).parent, f"{config_name}.keyfile")
-    key_file.touch()
     return VariablesManager(
         Path(Path(__file__).parent, f"variables_manager_resources/{config_name}.yml"),
         key_file=TEST_KEY_PATH,
