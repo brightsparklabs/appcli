@@ -35,98 +35,78 @@ class VariablesManager:
 
     def __init__(
         self,
-        configuration_file: Union[str, Path],
-        key_file,
-        extra_configuration_dir: Union[str, Path] = None,
+        configuration_file: Path,
+        key_file: Path = None,
+        stack_configuration_file: Path = None,
+        extra_configuration_dir: Path = None,
     ):
-        """Creates a manager for the specified file
+        """A class which enables get, set, save for configuration variables of the application.
 
         Args:
-            configuration_file (str): Path to the configuration file to manage.
-            extra_configuration_dir (str): Path to a directory containing extra configuration files.
+            configuration_file (Path): Path to the main configuration file.
+            key_file (Path): Optional. Path to the key file for encryption.
+            stack_configuration_file (Path): Optional. Path to the stack configuration file.
+            extra_configuration_dir (Path): Optional. Path to a directory containing extra configuration files.
         """
         self.configuration_file = Path(configuration_file)
-        self.key_file = Path(key_file)
-        if extra_configuration_dir is not None:
-            if not Path(extra_configuration_dir).is_dir():
-                raise Exception(
-                    f"Extra configuration directory {extra_configuration_dir} is not accessible"
-                )
-            self.extra_configuration_dir = Path(extra_configuration_dir).glob("*")
+        self.key_file = Path(key_file) if key_file is not None else None
+        self.stack_configuration_file = Path(stack_configuration_file) if stack_configuration_file is not None else None
+
+        # If extra configuration directory is not set or doesn't exist, assume there's no extra configuration.
+        if (extra_configuration_dir is None) or (not Path(extra_configuration_dir).is_dir()):
+            self.extra_configuration_files = []
+            logger.debug("No additional configuration files found.")
         else:
-            self.extra_configuration_dir = []
+            self.extra_configuration_files = Path(extra_configuration_dir).glob("*")
+            logger.debug(f"Found extra configuration files [{self.extra_configuration_files}].")
+
         self.yaml = YAML()
 
-        # TODO: We want to be able to read this file in immediately, and allow a 'save' command.
+    ############################################################################
+    # MAIN CONFIGURATION FUNCTIONS
+    ############################################################################
 
     def get_variable(self, path: str, decrypt: bool = False):
-        """Gets a value from the configuration.
+        """Gets a value from the main configuration.
 
         Args:
-            path (str): Dot notation for the setting. E.g. settings.insilico.external.database.host
+            path (str): Dot notation for the setting. E.g. insilico.external.database.host
             decrypt (bool): Optional (defaults to False). Whether to decrypt the returned value (if it's encrypted).
 
         Throws:
             Exception: Failed to find the configuration key.
         """
-        configuration = self._get_configuration()
-        try:
-            variable = reduce(lambda e, k: e[k], path.split("."), configuration)
-        except KeyError as exc:
-            raise KeyError(f"Setting [{path}] not set in configuration.") from exc
-
-        if decrypt:
-            variable = decrypt_value(variable, key_file=self.key_file)
-
-        return variable
+        main_configuration = self._get_main_configuration()
+        return self._get_variable_from_dict(path, main_configuration, decrypt)
 
     def get_all_variables(self):
-        return self._get_configuration()
-
-    def get_main_variables(self):
-        return self._get_main_configuration()[self.configuration_file.stem]
+        return self._get_main_configuration()
 
     def set_variable(self, path: str, value: Union[str, bool, int, float]):
-        """Sets a value in the configuration
-
+        """Sets a value in the configuration.
         Type of value is not enforced but this might not serialise into yml in a deserialisable format.
-
         Args:
-            path (str): Dot notation for the setting. E.g. settings.insilico.external.database.host
+            path (str): Dot notation for the setting. E.g. insilico.external.database.host
             value: value for the setting
-
-        TODO: remember to do unit testing for nested variables etc...
         """
         configuration = self._get_main_configuration()
-        path_elements = path.split(".")  # Divide path into array.
-        # Iterate through each context on path, to create a recursive dictionary.
-        # Main is a pointer to top dictionary object.
-        # Sub is a pointer to the current dictionary layer.
-        dictionary_main = dictionary_sub = {}
-        for field in path_elements:
-            # Apply value to bottom dictionary only.
-            dictionary_sub[field] = value if field is path_elements[-1] else {}
-            dictionary_sub = dictionary_sub[
-                field
-            ]  # Move sub pointer to next layer down.
 
-        def recursive_dictionary_merge(d1: Dict, d2: Dict):
-            # Base case (either d1 or d2 is value).
-            if not hasattr(d1, "copy") or not hasattr(d2, "copy"):
-                return d2  # d2 overwrites fields in d1.
-            d0 = d1.copy()  # New return dictionary.
-            for sub in d2.keys():
-                if sub not in d1.keys():  # Item isn't a duplicate.
-                    d0 |= {sub: d2.get(sub)}
-                else:  # Item is a duplicate.
-                    d0 |= {sub: recursive_dictionary_merge(d1.get(sub), d2.get(sub))}
-            return d0
+        path_elements = path.split(".")
+        parent_path = path_elements[:-1]
 
-        self._save(
-            recursive_dictionary_merge(configuration, dictionary_main)[
-                self.configuration_file.stem
-            ]
-        )
+        # ensure parent path exists
+        def ensure_path(parent, child):
+            if child not in parent:
+                parent[child] = {}
+            return parent[child]
+
+        reduce(ensure_path, parent_path, configuration)
+
+        # set the value
+        parent_element = reduce(lambda e, k: e[k], parent_path, configuration)
+        parent_element[path_elements[-1]] = value
+
+        self._save(configuration)
 
     def set_all_variables(self, variables: Dict):
         """Sets all values in the configuration
@@ -134,20 +114,7 @@ class VariablesManager:
         Args:
             variables (Dict): the variables to set
         """
-        self._save(variables[self.configuration_file.stem])
-
-    def _get_configuration(self) -> Dict:
-        """Get the current configuration from file(s)
-
-        Returns:
-            Dict: the current configuration
-
-        """
-        main_configuration_variables = self._get_main_configuration()
-        extra_configuration_variables = self._get_extra_configuration(
-            main_configuration_variables
-        )
-        return main_configuration_variables | extra_configuration_variables
+        self._save(variables)
 
     def _get_main_configuration(self) -> Dict:
         """Gets the configuration from the main `settings.yml` file.
@@ -158,17 +125,96 @@ class VariablesManager:
         Returns:
             Dict: The configuration data from the main configuration file.
         """
-        config_variables_main = dict()
+        return self._load_yaml_to_dict(self.configuration_file)
+
+    ############################################################################
+    # STACK CONFIGURATION FUNCTIONS
+    ############################################################################
+
+    def get_stack_variable(self, path: str, decrypt: bool = False):
+        """Gets a value from the stack configuration.
+
+        Args:
+            path (str): Dot notation for the setting. E.g. insilico.external.database.host
+            decrypt (bool): Optional (defaults to False). Whether to decrypt the returned value (if it's encrypted).
+
+        Throws:
+            Exception: Failed to find the configuration key.
+        """
+        stack_configuration = self._get_stack_configuration()
+        return self._get_variable_from_dict(path, stack_configuration, decrypt)
+
+    def _get_stack_configuration(self) -> Dict:
+        """Gets the configuration from the stack configuration `stack-settings.yml` file.
+
+        Throws:
+            Exception: Unable to read the configuration file.
+
+        Returns:
+            Dict: The configuration data from the stack configuration file.
+        """
+        return self._load_yaml_to_dict(self.stack_configuration_file)
+
+    ############################################################################
+    # TEMPLATING CONFIGURATION FUNCTIONS
+    ############################################################################
+
+    def get_templating_configuration(self) -> Dict:
+        """Get the current configuration from file(s)
+
+        Returns:
+            Dict: the current configuration
+
+        """
+        main_configuration_variables = self._get_main_configuration()
+        extra_configuration_variables = self._get_extra_configuration(
+            main_configuration_variables
+        )
+        # TODO: Figure out namespacing
+        return main_configuration_variables | extra_configuration_variables
+
+    ############################################################################
+    # COMMON FUNCTIONS
+    ############################################################################
+
+    def _get_variable_from_dict(self, path: str, data: Dict, decrypt: bool = False):
         try:
-            data_string = self.configuration_file.read_text(encoding="utf-8")
+            variable = reduce(lambda e, k: e[k], path.split("."), data)
+        except KeyError as exc:
+            raise KeyError(f"Setting [{path}] not set in configuration.") from exc
+
+        if decrypt:
+            variable = decrypt_value(variable, key_file=self.key_file)
+
+        return variable
+
+    def _load_yaml_to_dict(self, file: Path) -> Dict:
+        """Reads in a YAML file into a Dict.
+
+        Throws:
+            Exception: Unable to read the file.
+
+        Returns:
+            Dict: The yaml data as a Dict.
+        """
+        if file is None:
+            return {}
+
+        try:
+            raw_data = file.read_text(encoding="utf-8")
+
+            # If the file is empty, the YAML library will load as `None`. Since
+            # we expect this function to return a valid dict, we return an
+            # empty dictionary if it's empty.
+            yaml_data = self.yaml.load(raw_data)
+            if yaml_data is None:
+                return {}
+            return yaml_data
+
         except Exception as ex:
             raise Exception(
-                f"Could not read main configuration file at [{self.configuration_file}]"
+                f"Could not read file at [{file}]"
             ) from ex
-        config_variables_main |= self._convert_yaml_to_dict(
-            data_string, self.configuration_file.stem
-        )
-        return config_variables_main
 
     def _get_extra_configuration(self, variables: Dict) -> Dict:
         """Gets the configuration from the additional configuration files.
@@ -186,7 +232,8 @@ class VariablesManager:
                 Each config file is a seperate dictionary with its filename as the key.
         """
         config_variables = dict()
-        for config_file in self.extra_configuration_dir:
+        for config_file in self.extra_configuration_files:
+            # TODO: Validate config_file.stem is a valid namespace
             try:
                 data_string = config_file.read_text(encoding="utf-8")
             except Exception as ex:
@@ -198,8 +245,12 @@ class VariablesManager:
                     data_string = self._render_j2(data_string, variables)
                 except Exception as ex:
                     raise Exception(
-                        f"There was a problem rendering the jinja2 file at [{config_file}]"
+                        f"Failed to render Jinja2 file [{config_file}]"
                     ) from ex
+            # TODO: Up to here in refactor
+            # config_variables |= {
+            #     config_file.stem:
+            # }
             config_variables |= self._convert_yaml_to_dict(
                 data_string, config_file.stem
             )
