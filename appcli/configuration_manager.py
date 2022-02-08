@@ -370,7 +370,7 @@ class ConfigurationManager:
                 self.__generate_from_template(
                     template_file,
                     target_file,
-                    self.variables_manager.get_all_variables(),
+                    self.variables_manager.get_templating_configuration(),
                 )
             else:
                 logger.debug("Copying configuration file to [%s] ...", target_file)

@@ -189,8 +189,9 @@ class VariablesManager:
         extra_configuration_variables = self._get_extra_configuration(
             main_configuration_variables
         )
-        # TODO: Figure out namespacing
-        return main_configuration_variables | extra_configuration_variables
+        return {
+            self.configuration_file.stem: main_configuration_variables
+        } | extra_configuration_variables
 
     ############################################################################
     # COMMON FUNCTIONS
@@ -270,7 +271,9 @@ class VariablesManager:
                     raise Exception(
                         f"Failed to render Jinja2 file [{config_file}]"
                     ) from ex
-            config_variables |= {config_file.stem: self._load_yaml_to_dict(data_string)}
+            config_variables |= {
+                config_file_yaml_key: self._load_yaml_to_dict(data_string)
+            }
         return config_variables
 
     def _render_j2(self, jinja_source: str, variables: Dict) -> str:
