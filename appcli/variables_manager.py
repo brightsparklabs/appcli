@@ -33,7 +33,12 @@ from appcli.logger import logger
 class VariablesManager:
     """Manages the configuration variables"""
 
-    def __init__(self, configuration_file: Union[str, Path], key_file, extra_configuration_dir: Union[str, Path] = None,):
+    def __init__(
+        self,
+        configuration_file: Union[str, Path],
+        key_file,
+        extra_configuration_dir: Union[str, Path] = None,
+    ):
         """Creates a manager for the specified file
 
         Args:
@@ -47,9 +52,9 @@ class VariablesManager:
                 raise Exception(
                     f"Extra configuration directory {extra_configuration_dir} is not accessible"
                 )
-            self.extra_configuration_files = Path(extra_configuration_dir).glob("*")
+            self.extra_configuration_dir = Path(extra_configuration_dir).glob("*")
         else:
-            self.extra_configuration_files = []
+            self.extra_configuration_dir = []
         self.yaml = YAML()
 
         # TODO: We want to be able to read this file in immediately, and allow a 'save' command.
@@ -181,7 +186,7 @@ class VariablesManager:
                 Each config file is a seperate dictionary with its filename as the key.
         """
         config_variables = dict()
-        for config_file in self.extra_configuration_files:
+        for config_file in self.extra_configuration_dir:
             try:
                 data_string = config_file.read_text(encoding="utf-8")
             except Exception as ex:

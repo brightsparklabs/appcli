@@ -207,7 +207,11 @@ class ConfigurationManager:
         """Get the variables manager for the current configuration"""
         app_configuration_file = self.cli_context.get_app_configuration_file()
         key_file = self.cli_context.get_key_file()
-        return VariablesManager(app_configuration_file, key_file=key_file, extra_configuration_files=self.cli_context.get_app_extra_configuration_dir())
+        return VariablesManager(
+            app_configuration_file,
+            key_file=key_file,
+            extra_configuration_dir=self.cli_context.get_app_extra_configuration_dir(),
+        )
 
     def get_stack_variable(self, variable: str):
         return self.__get_stack_variables_manager().get_variable(variable)
@@ -218,7 +222,11 @@ class ConfigurationManager:
     def __get_stack_variables_manager(self):
         stack_configuration_file = self.cli_context.get_stack_configuration_file()
         key_file = self.cli_context.get_key_file()
-        return VariablesManager(stack_configuration_file, key_file=key_file, extra_configuration_files=self.cli_context.get_additional_settings_dir())
+        return VariablesManager(
+            stack_configuration_file,
+            key_file=key_file,
+            extra_configuration_dir=self.cli_context.get_additional_settings_dir(),
+        )
 
     def __create_new_configuration_branch_and_files(self):
 

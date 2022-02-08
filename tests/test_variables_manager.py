@@ -31,7 +31,9 @@ TEST_KEY_PATH: Path = Path(
 )
 
 # Directory containing extra configuration files
-ADDITIONAL_CONFIG_DIR = "resources/template/appcli/empty"
+ADDITIONAL_CONFIG_DIR = Path(
+    Path(__file__).parent, "variables_manager_resources/context"
+)
 
 # ------------------------------------------------------------------------------
 # TESTS
@@ -130,7 +132,11 @@ def test_set_variable_empty(tmpdir):
     name_of_test = "test_app_set_variable_empty"
     set_config_file = Path(tmpdir, name_of_test + ".yml")
     set_config_file.touch()
-    var_manager = VariablesManager(set_config_file, key_file=TEST_KEY_PATH, extra_configuration_files=Path(ADDITIONAL_CONFIG_DIR))
+    var_manager = VariablesManager(
+        set_config_file,
+        key_file=TEST_KEY_PATH,
+        extra_configuration_dir=ADDITIONAL_CONFIG_DIR,
+    )
     variable_path = name_of_test + ".empty"
     var_manager.set_variable(variable_path, None)
     compare_file = Path(
@@ -145,7 +151,11 @@ def test_set_string_variable(tmpdir):
     name_of_test = "test_app_set_string_variable"
     set_config_file = Path(tmpdir, name_of_test + ".yml")
     set_config_file.touch()
-    var_manager = VariablesManager(set_config_file, key_file=TEST_KEY_PATH, extra_configuration_files=Path(ADDITIONAL_CONFIG_DIR))
+    var_manager = VariablesManager(
+        set_config_file,
+        key_file=TEST_KEY_PATH,
+        extra_configuration_dir=ADDITIONAL_CONFIG_DIR,
+    )
     variable_path = name_of_test + ".string"
     variable_value = "Value"
     var_manager.set_variable(variable_path, variable_value)
@@ -161,7 +171,11 @@ def test_set_bool_variable(tmpdir):
     name_of_test = "test_app_set_bool_variable"
     set_config_file = Path(tmpdir, name_of_test + ".yml")
     set_config_file.touch()
-    var_manager = VariablesManager(set_config_file, key_file=TEST_KEY_PATH, extra_configuration_files=Path(ADDITIONAL_CONFIG_DIR))
+    var_manager = VariablesManager(
+        set_config_file,
+        key_file=TEST_KEY_PATH,
+        extra_configuration_dir=ADDITIONAL_CONFIG_DIR,
+    )
     variable_path_false = name_of_test + ".false_boolean"
     variable_path_true = name_of_test + ".true_boolean"
     var_manager.set_variable(variable_path_false, False)
@@ -178,7 +192,11 @@ def test_set_float_variable(tmpdir):
     name_of_test = "test_app_set_float_variable"
     set_config_file = Path(tmpdir, name_of_test + ".yml")
     set_config_file.touch()
-    var_manager = VariablesManager(set_config_file, key_file=TEST_KEY_PATH, extra_configuration_files=Path(ADDITIONAL_CONFIG_DIR))
+    var_manager = VariablesManager(
+        set_config_file,
+        key_file=TEST_KEY_PATH,
+        extra_configuration_dir=ADDITIONAL_CONFIG_DIR,
+    )
     variable_path = name_of_test + ".float"
     variable_value = 12345.6789
     var_manager.set_variable(variable_path, variable_value)
@@ -194,7 +212,11 @@ def test_set_int_variable(tmpdir):
     name_of_test = "test_app_set_int_variable"
     set_config_file = Path(tmpdir, name_of_test + ".yml")
     set_config_file.touch()
-    var_manager = VariablesManager(set_config_file, key_file=TEST_KEY_PATH, extra_configuration_files=Path(ADDITIONAL_CONFIG_DIR))
+    var_manager = VariablesManager(
+        set_config_file,
+        key_file=TEST_KEY_PATH,
+        extra_configuration_dir=ADDITIONAL_CONFIG_DIR,
+    )
     variable_path = name_of_test + ".int"
     variable_value = 12345
     var_manager.set_variable(variable_path, variable_value)
@@ -210,7 +232,11 @@ def test_set_all_variables(tmpdir):
     name_of_test = "test_app_set_all_variables"
     set_config_file = Path(tmpdir, name_of_test + ".yml")
     set_config_file.touch()
-    var_manager = VariablesManager(set_config_file, key_file=TEST_KEY_PATH, extra_configuration_files=Path(ADDITIONAL_CONFIG_DIR))
+    var_manager = VariablesManager(
+        set_config_file,
+        key_file=TEST_KEY_PATH,
+        extra_configuration_dir=ADDITIONAL_CONFIG_DIR,
+    )
     dictionary = {
         name_of_test: {
             "object": {
@@ -243,5 +269,5 @@ def create_var_manager_from_resource(config_name) -> VariablesManager:
     return VariablesManager(
         Path(Path(__file__).parent, f"variables_manager_resources/{config_name}.yml"),
         key_file=TEST_KEY_PATH,
-        extra_configuration_files=Path(Path(__file__).parent, f"{ADDITIONAL_CONFIG_DIR}"),
+        extra_configuration_dir=ADDITIONAL_CONFIG_DIR,
     )
