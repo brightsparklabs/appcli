@@ -50,15 +50,23 @@ class VariablesManager:
         """
         self.configuration_file = Path(configuration_file)
         self.key_file = Path(key_file) if key_file is not None else None
-        self.stack_configuration_file = Path(stack_configuration_file) if stack_configuration_file is not None else None
+        self.stack_configuration_file = (
+            Path(stack_configuration_file)
+            if stack_configuration_file is not None
+            else None
+        )
 
         # If extra configuration directory is not set or doesn't exist, assume there's no extra configuration.
-        if (extra_configuration_dir is None) or (not Path(extra_configuration_dir).is_dir()):
+        if (extra_configuration_dir is None) or (
+            not Path(extra_configuration_dir).is_dir()
+        ):
             self.extra_configuration_files = []
             logger.debug("No additional configuration files found.")
         else:
             self.extra_configuration_files = Path(extra_configuration_dir).glob("*")
-            logger.debug(f"Found extra configuration files [{self.extra_configuration_files}].")
+            logger.debug(
+                f"Found extra configuration files [{self.extra_configuration_files}]."
+            )
 
         self.yaml = YAML()
 
@@ -127,6 +135,17 @@ class VariablesManager:
         """
         return self._load_yaml_to_dict(self.configuration_file)
 
+    def _save(self, variables: Dict):
+        """Saves the supplied Dict of variables to the configuration file.
+
+        Args:
+            variables (Dict): All the variables to save.
+        """
+        full_path = self.configuration_file.absolute().as_posix()
+        logger.debug(f"Saving configuration to [{full_path}] ...")
+        with open(full_path, "w") as config_file:
+            self.yaml.dump(variables, config_file)
+
     ############################################################################
     # STACK CONFIGURATION FUNCTIONS
     ############################################################################
@@ -188,7 +207,13 @@ class VariablesManager:
 
         return variable
 
-    def _load_yaml_to_dict(self, file: Path) -> Dict:
+    def _load_yaml_to_dict(self, data: str) -> Dict:
+        yaml_data = self.yaml.load(data)
+        if yaml_data is None:
+            return {}
+        return yaml_data
+
+    def _load_yaml_file_to_dict(self, file: Path) -> Dict:
         """Reads in a YAML file into a Dict.
 
         Throws:
@@ -202,19 +227,10 @@ class VariablesManager:
 
         try:
             raw_data = file.read_text(encoding="utf-8")
-
-            # If the file is empty, the YAML library will load as `None`. Since
-            # we expect this function to return a valid dict, we return an
-            # empty dictionary if it's empty.
-            yaml_data = self.yaml.load(raw_data)
-            if yaml_data is None:
-                return {}
-            return yaml_data
+            return self._load_yaml_to_dict(raw_data)
 
         except Exception as ex:
-            raise Exception(
-                f"Could not read file at [{file}]"
-            ) from ex
+            raise Exception(f"Could not read file at [{file}]") from ex
 
     def _get_extra_configuration(self, variables: Dict) -> Dict:
         """Gets the configuration from the additional configuration files.
@@ -233,7 +249,14 @@ class VariablesManager:
         """
         config_variables = dict()
         for config_file in self.extra_configuration_files:
-            # TODO: Validate config_file.stem is a valid namespace
+            # Validate config_file.stem is a valid key in YAML
+            config_file_yaml_key = config_file.stem
+            regex = "^[a-zA-Z0-9_.]+$"
+            if re.match(regex, config_file_yaml_key) is None:
+                raise Exception(
+                    f"Could not use extra config file name [{config_file_yaml_key}] as yaml key."
+                )
+
             try:
                 data_string = config_file.read_text(encoding="utf-8")
             except Exception as ex:
@@ -247,25 +270,8 @@ class VariablesManager:
                     raise Exception(
                         f"Failed to render Jinja2 file [{config_file}]"
                     ) from ex
-            # TODO: Up to here in refactor
-            # config_variables |= {
-            #     config_file.stem:
-            # }
-            config_variables |= self._convert_yaml_to_dict(
-                data_string, config_file.stem
-            )
+            config_variables |= {config_file.stem: self._load_yaml_to_dict(data_string)}
         return config_variables
-
-    def _save(self, variables: Dict):
-        """Saves the supplied Dict of variables to the configuration file
-
-        Args:
-            variables (Dict): All the variables to save.
-        """
-        full_path = self.configuration_file.absolute().as_posix()
-        logger.debug(f"Saving configuration to [{full_path}] ...")
-        with open(full_path, "w") as config_file:
-            self.yaml.dump(variables, config_file)
 
     def _render_j2(self, jinja_source: str, variables: Dict) -> str:
         """Loads configuration data from a jinja2 string and applies
@@ -285,32 +291,3 @@ class VariablesManager:
             lstrip_blocks=True,
         )
         return template.render(variables)
-
-    def _convert_yaml_to_dict(self, yaml_source: str, namespace: str) -> Dict:
-        """Loads configuration data from a provided yaml string.
-
-        Args:
-            yaml_source (str): A utf-8 encoding of some yaml data.
-            namespace (str): A unique namespace for this set of data.
-
-        Throws:
-            Exception: The namespace contains invalid character(s).
-
-        Returns:
-            Dict: Configuration data from the file.
-        """
-        if not self._is_namespace_valid(namespace):
-            raise Exception(f"[{namespace}] contains invalid characters.")
-        return {namespace: self.yaml.load(yaml_source)}
-
-    def _is_namespace_valid(self, namespace: str) -> bool:
-        """Checks if the given string can be used as a key in a dictionary.
-           A valid namespace can only contain [a-zA-Z0-9_].
-
-        Args:
-            namespace (str): The namespace to check the characters of.
-
-        Returns:
-            bool: True for a valid namespace, otherwise false.
-        """
-        return re.compile(r"[a-zA-Z0-9_]+").match(namespace)

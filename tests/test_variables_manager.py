@@ -44,7 +44,7 @@ def test_get_variable_before_set(tmpdir):
     """When the path to a variable does not exist we expect a KeyError exception"""
     name_of_test = "test_app"
     var_manager = create_var_manager_from_resource(name_of_test)
-    variable_path = name_of_test + ".nonexistant.variable"
+    variable_path = "nonexistant.variable"
     with pytest.raises(KeyError) as pytest_wrapped_e:
         var_manager.get_variable(variable_path)
     assert pytest_wrapped_e.type == KeyError
@@ -54,7 +54,7 @@ def test_get_variable_empty(tmpdir):
     """When we retrieve a variable with a no value, we expect the return type to be None"""
     name_of_test = "test_app_empty_value"
     var_manager = create_var_manager_from_resource(name_of_test)
-    variable_path = name_of_test + ".empty"
+    variable_path = "empty"
     assert var_manager.get_variable(variable_path) is None
 
 
@@ -62,7 +62,7 @@ def test_get_string_variable(tmpdir):
     """When retriving a string it should be equal to the value of an identical string"""
     name_of_test = "test_app_string_value"
     var_manager = create_var_manager_from_resource(name_of_test)
-    variable_path = name_of_test + ".string"
+    variable_path = "string"
     test_value = "Value"
     assert var_manager.get_variable(variable_path) == test_value
 
@@ -72,10 +72,10 @@ def test_get_bool_variable(tmpdir):
     name_of_test = "test_app_bool_value"
     var_manager = create_var_manager_from_resource(name_of_test)
     # test if booleans with value 'False' return as expected
-    variable_path = name_of_test + ".false_boolean"
+    variable_path = "false_boolean"
     assert not var_manager.get_variable(variable_path)
     # test if booleans with value 'True' return as expected
-    variable_path = name_of_test + ".true_boolean"
+    variable_path = "true_boolean"
     assert var_manager.get_variable(variable_path)
 
 
@@ -83,7 +83,7 @@ def test_get_float_variable(tmpdir):
     """When retriving a float it should be equal to the value of an identical float"""
     name_of_test = "test_app_float_value"
     var_manager = create_var_manager_from_resource(name_of_test)
-    variable_path = name_of_test + ".float"
+    variable_path = "float"
     test_value = 12345.6789
     assert var_manager.get_variable(variable_path) == test_value
 
@@ -92,7 +92,7 @@ def test_get_int_variable(tmpdir):
     """When retriving a int it should be equal to the value of an identical int"""
     name_of_test = "test_app_int_value"
     var_manager = create_var_manager_from_resource(name_of_test)
-    variable_path = name_of_test + ".int"
+    variable_path = "int"
     test_value = 12345
     assert var_manager.get_variable(variable_path) == test_value
 
@@ -102,17 +102,15 @@ def test_get_all_variables(tmpdir):
     name_of_test = "test_app_get_all_variables"
     var_manager = create_var_manager_from_resource(name_of_test)
     dictionary = {
-        name_of_test: {
-            "object": {
-                "booleans": {
-                    "false_boolean": False,
-                    "true_boolean": True,
-                },
-                "float": 12345.6789,
-                "int": 12345,
-                "string": "Value",
+        "object": {
+            "booleans": {
+                "false_boolean": False,
+                "true_boolean": True,
             },
-        }
+            "float": 12345.6789,
+            "int": 12345,
+            "string": "Value",
+        },
     }
     assert (
         DeepDiff(
@@ -137,7 +135,7 @@ def test_set_variable_empty(tmpdir):
         key_file=TEST_KEY_PATH,
         extra_configuration_dir=ADDITIONAL_CONFIG_DIR,
     )
-    variable_path = name_of_test + ".empty"
+    variable_path = "empty"
     var_manager.set_variable(variable_path, None)
     compare_file = Path(
         Path(__file__).parent,
@@ -156,7 +154,7 @@ def test_set_string_variable(tmpdir):
         key_file=TEST_KEY_PATH,
         extra_configuration_dir=ADDITIONAL_CONFIG_DIR,
     )
-    variable_path = name_of_test + ".string"
+    variable_path = "string"
     variable_value = "Value"
     var_manager.set_variable(variable_path, variable_value)
     compare_file = Path(
@@ -176,8 +174,8 @@ def test_set_bool_variable(tmpdir):
         key_file=TEST_KEY_PATH,
         extra_configuration_dir=ADDITIONAL_CONFIG_DIR,
     )
-    variable_path_false = name_of_test + ".false_boolean"
-    variable_path_true = name_of_test + ".true_boolean"
+    variable_path_false = "false_boolean"
+    variable_path_true = "true_boolean"
     var_manager.set_variable(variable_path_false, False)
     var_manager.set_variable(variable_path_true, True)
     compare_file = Path(
@@ -197,7 +195,7 @@ def test_set_float_variable(tmpdir):
         key_file=TEST_KEY_PATH,
         extra_configuration_dir=ADDITIONAL_CONFIG_DIR,
     )
-    variable_path = name_of_test + ".float"
+    variable_path = "float"
     variable_value = 12345.6789
     var_manager.set_variable(variable_path, variable_value)
     compare_file = Path(
@@ -217,7 +215,7 @@ def test_set_int_variable(tmpdir):
         key_file=TEST_KEY_PATH,
         extra_configuration_dir=ADDITIONAL_CONFIG_DIR,
     )
-    variable_path = name_of_test + ".int"
+    variable_path = "int"
     variable_value = 12345
     var_manager.set_variable(variable_path, variable_value)
     compare_file = Path(
@@ -238,17 +236,15 @@ def test_set_all_variables(tmpdir):
         extra_configuration_dir=ADDITIONAL_CONFIG_DIR,
     )
     dictionary = {
-        name_of_test: {
-            "object": {
-                "booleans": {
-                    "false_boolean": False,
-                    "true_boolean": True,
-                },
-                "float": 12345.6789,
-                "int": 12345,
-                "string": "Value",
+        "object": {
+            "booleans": {
+                "false_boolean": False,
+                "true_boolean": True,
             },
-        }
+            "float": 12345.6789,
+            "int": 12345,
+            "string": "Value",
+        },
     }
     var_manager.set_all_variables(dictionary)
     compare_file = Path(

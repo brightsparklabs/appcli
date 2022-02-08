@@ -94,7 +94,7 @@ def test_apply_workflow(tmpdir):
     conf_manager.initialise_configuration()
 
     # Set a variable
-    password_variable_path = "settings.test.identity.password"
+    password_variable_path = "test.identity.password"
     new_password = "securepassword1"
     conf_manager.set_variable(password_variable_path, new_password)
 
