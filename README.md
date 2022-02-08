@@ -508,15 +508,16 @@ Configures the application.
 
 usage: `./myapp configure [OPTIONS] COMMAND [ARGS]`
 
-| Command  | Description                                                                                                               |
-| -------- | ------------------------------------------------------------------------------------------------------------------------- |
-| apply    | Applies the settings from the configuration.                                                                              |
-| diff     | Get the differences between current and default configuration settings.                                                   |
-| get      | Reads a setting from the configuration.                                                                                   |
-| init     | Initialises the configuration directory.                                                                                  |
-| set      | Saves a setting to the configuration. Allows setting the type of value with option `--type`, and defaults to string type. |
-| template | Configures the baseline templates.                                                                                        |
-| edit     | Open the settings file for editing with vim-tiny.                                                                         |
+| Command    | Description                                                                                                               |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------- |
+| apply      | Applies the settings from the configuration.                                                                              |
+| diff       | Get the differences between current and default configuration settings.                                                   |
+| get        | Reads a setting from the configuration.                                                                                   |
+| get-secure | Reads a setting from the configuration, decrypting if it is encrypted. This will prompt for the setting key.              |
+| init       | Initialises the configuration directory.                                                                                  |
+| set        | Saves a setting to the configuration. Allows setting the type of value with option `--type`, and defaults to string type. |
+| template   | Configures the baseline templates.                                                                                        |
+| edit       | Open the settings file for editing with vim-tiny.                                                                         |
 
 | Option | Description                     |
 | ------ | ------------------------------- |

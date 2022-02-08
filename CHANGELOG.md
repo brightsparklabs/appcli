@@ -12,6 +12,8 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Added
 
+- Enable admins and developers to fetch decrypted values of encrypted values in settings.
+
 ### Fixed
 
 ---

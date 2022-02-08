@@ -17,6 +17,8 @@ from typing import Dict, Union
 # vendor libraries
 from ruamel.yaml import YAML
 
+from appcli.crypto.crypto import decrypt_value
+
 # local libraries
 from appcli.logger import logger
 
@@ -28,22 +30,24 @@ from appcli.logger import logger
 class VariablesManager:
     """Manages the configuration variables"""
 
-    def __init__(self, configuration_file):
+    def __init__(self, configuration_file, key_file):
         """Creates a manager for the specified file
 
         Args:
             configuration_file (str): Path to the configuration file to manage
         """
         self.configuration_file = Path(configuration_file)
+        self.key_file = Path(key_file)
         self.yaml = YAML()
 
         # TODO: We want to be able to read this file in immediately, and allow a 'save' command.
 
-    def get_variable(self, path):
+    def get_variable(self, path: str, decrypt: bool = False):
         """Gets a value from the configuration.
 
         Args:
             path (str): Dot notation for the setting. E.g. insilico.external.database.host
+            decrypt (bool): Optional (defaults to False). Whether to decrypt the returned value (if it's encrypted).
 
         Throws:
             Exception: Failed to find the configuration key.
@@ -53,6 +57,10 @@ class VariablesManager:
             variable = reduce(lambda e, k: e[k], path.split("."), configuration)
         except KeyError as exc:
             raise KeyError(f"Setting [{path}] not set in configuration.") from exc
+
+        if decrypt:
+            variable = decrypt_value(variable, key_file=self.key_file)
+
         return variable
 
     def get_all_variables(self):

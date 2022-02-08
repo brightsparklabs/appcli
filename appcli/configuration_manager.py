@@ -131,8 +131,9 @@ class ConfigurationManager:
         current_variables = self.__get_variables_manager().get_all_variables()
 
         # Compare migrated config to the 'clean config' of the new version, and make sure all variables have been set and are the same type.
+        key_file = self.cli_context.get_key_file()
         clean_new_version_variables = VariablesManager(
-            self.cli_configuration.seed_app_configuration_file
+            self.cli_configuration.seed_app_configuration_file, key_file=key_file
         ).get_all_variables()
 
         migrated_variables = self.cli_configuration.hooks.migrate_variables(
@@ -196,15 +197,17 @@ class ConfigurationManager:
             f"Migrated variables file from version [{config_version}] to version [{app_version}]"
         )
 
-    def get_variable(self, variable: str):
-        return self.__get_variables_manager().get_variable(variable)
+    def get_variable(self, variable: str, decrypt: bool = False):
+        return self.__get_variables_manager().get_variable(variable, decrypt=decrypt)
 
     def set_variable(self, variable: str, value: any):
         return self.__get_variables_manager().set_variable(variable, value)
 
     def __get_variables_manager(self):
         """Get the variables manager for the current configuration"""
-        return VariablesManager(self.cli_context.get_app_configuration_file())
+        app_configuration_file = self.cli_context.get_app_configuration_file()
+        key_file = self.cli_context.get_key_file()
+        return VariablesManager(app_configuration_file, key_file=key_file)
 
     def get_stack_variable(self, variable: str):
         return self.__get_stack_variables_manager().get_variable(variable)
@@ -213,7 +216,9 @@ class ConfigurationManager:
         return self.__get_stack_variables_manager().set_variable(variable, value)
 
     def __get_stack_variables_manager(self):
-        return VariablesManager(self.cli_context.get_stack_configuration_file())
+        stack_configuration_file = self.cli_context.get_stack_configuration_file()
+        key_file = self.cli_context.get_key_file()
+        return VariablesManager(stack_configuration_file, key_file=key_file)
 
     def __create_new_configuration_branch_and_files(self):
 
