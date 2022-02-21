@@ -65,7 +65,7 @@ setup(
         "pydantic==1.9.0",
         "python-keycloak==0.22.0",
         "python-slugify==6.0.1",
-        "ruamel-yaml==0.17.20",
+        "ruamel-yaml==0.17.21",
         "tabulate==0.8.9",
         "wheel==0.37.1",
     ],
