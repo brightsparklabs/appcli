@@ -30,6 +30,9 @@ class CliContext(NamedTuple):
     backup_dir: Path
     """ Directory to store backups in. """
 
+    app_extra_configuration_dir: Path
+    """ Directories containing extra configuration files. """
+
     additional_data_dirs: Iterable[Tuple[str, Path]]
     """ Additional directories to use for persistent data storage. """
 
@@ -149,16 +152,6 @@ class CliContext(NamedTuple):
         """
         return self.configuration_dir.joinpath("templates")
 
-    def get_app_extra_configuration_dir(self) -> Path:
-        """Get the directory containing additional yml and j2 settings.
-
-        Returns:
-            Path: directory of additional settings
-        """
-        return self.configuration_dir.joinpath(
-            self.get_configurable_templates_dir()
-        ).joinpath("appcli/context")
-
     def get_project_name(self) -> str:
         """Get a unique name for the application and environment
 
@@ -175,6 +168,7 @@ class CliContext(NamedTuple):
         """
         return VariablesManager(
             configuration_file=self.get_app_configuration_file(),
+            stack_configuration_file=self.get_stack_configuration_file(),
             key_file=self.get_key_file(),
-            extra_configuration_dir=self.get_app_extra_configuration_dir(),
+            extra_configuration_dir=self.app_extra_configuration_dir,
         )

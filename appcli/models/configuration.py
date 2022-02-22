@@ -81,6 +81,14 @@ class Configuration(BaseModel):
     orchestrator: Orchestrator
     """ Orchestrator to use to launch Docker containers. """
 
+    extra_app_configuration_files_dir: Path = None
+    """
+    Optional. Path to directory extra containing YAML files which are applied to
+    the templates to generate the final configuration files. These extra app
+    configuration files can be templates themselves, which are rendered by the
+    main app configuration file.
+    """
+
     configurable_templates_dir: Path = None
     """
     Optional. Directory containing a default initial set of configurable jinja2 templates

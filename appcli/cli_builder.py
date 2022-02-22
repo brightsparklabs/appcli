@@ -160,6 +160,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         ctx.obj = CliContext(
             configuration_dir=configuration_dir,
             data_dir=data_dir,
+            app_extra_configuration_dir=configuration.extra_app_configuration_files_dir,
             additional_data_dirs=additional_data_dir,
             additional_env_variables=additional_env_var,
             environment=environment,

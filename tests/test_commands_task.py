@@ -156,6 +156,7 @@ class Environment:
         return CliContext(
             configuration_dir=conf_dir,
             data_dir=data_dir,
+            app_extra_configuration_dir=None,
             additional_data_dirs=None,
             backup_dir=backup_dir,
             additional_env_variables=None,

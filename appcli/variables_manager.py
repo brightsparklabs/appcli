@@ -10,6 +10,7 @@ www.brightsparklabs.com
 """
 
 # standard library
+import os
 import re
 from functools import reduce
 from pathlib import Path
@@ -63,7 +64,7 @@ class VariablesManager:
             self.extra_configuration_files = []
             logger.debug("No additional configuration files found.")
         else:
-            self.extra_configuration_files = Path(extra_configuration_dir).glob("*")
+            self.extra_configuration_files = list(Path(extra_configuration_dir).glob("*"))
             logger.debug(
                 f"Found extra configuration files [{self.extra_configuration_files}]."
             )
@@ -186,12 +187,14 @@ class VariablesManager:
 
         """
         main_configuration_variables = self._get_main_configuration()
+        variables = {
+            self._filename_as_yaml_key(self.configuration_file): main_configuration_variables
+        }
+
         extra_configuration_variables = self._get_extra_configuration(
-            main_configuration_variables
+            variables
         )
-        return {
-            self.configuration_file.stem: main_configuration_variables
-        } | extra_configuration_variables
+        return variables | extra_configuration_variables
 
     ############################################################################
     # COMMON FUNCTIONS
@@ -250,13 +253,7 @@ class VariablesManager:
         """
         config_variables = dict()
         for config_file in self.extra_configuration_files:
-            # Validate config_file.stem is a valid key in YAML
-            config_file_yaml_key = config_file.stem
-            regex = "^[a-zA-Z0-9_.]+$"
-            if re.match(regex, config_file_yaml_key) is None:
-                raise Exception(
-                    f"Could not use extra config file name [{config_file_yaml_key}] as yaml key."
-                )
+            config_file_yaml_key = self._filename_as_yaml_key(config_file)
 
             try:
                 data_string = config_file.read_text(encoding="utf-8")
@@ -294,3 +291,12 @@ class VariablesManager:
             lstrip_blocks=True,
         )
         return template.render(variables)
+
+    def _filename_as_yaml_key(self, file: Path) -> str:
+        key = os.path.basename(file).split(".")[0]
+        regex = "^[a-zA-Z0-9_.]+$"
+        if re.match(regex, key) is None:
+            raise Exception(
+                f"Could not generate a valid yaml key from file [{file}]."
+            )
+        return key

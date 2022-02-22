@@ -354,6 +354,7 @@ class ConfigurationManager:
             template_path (Path): directory to the templates
             generated_configuration_dir (Path): directory to output generated files
         """
+        template_data = self.variables_manager.get_templating_configuration()
         for template_file in template_path.glob("**/*"):
             relative_file = template_file.relative_to(template_path)
             target_file = generated_configuration_dir.joinpath(relative_file)
@@ -370,7 +371,7 @@ class ConfigurationManager:
                 self.__generate_from_template(
                     template_file,
                     target_file,
-                    self.variables_manager.get_templating_configuration(),
+                    template_data,
                 )
             else:
                 logger.debug("Copying configuration file to [%s] ...", target_file)
