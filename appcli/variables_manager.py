@@ -270,8 +270,9 @@ class VariablesManager:
                     raise Exception(
                         f"Failed to render Jinja2 file [{config_file}]"
                     ) from ex
-            config_variables |= {
-                config_file_yaml_key: self._load_yaml_to_dict(data_string)
+            config_variables = {
+                **config_variables,
+                config_file_yaml_key: self._load_yaml_to_dict(data_string),
             }
         return config_variables
 
