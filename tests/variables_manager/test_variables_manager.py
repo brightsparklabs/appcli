@@ -27,12 +27,12 @@ from appcli.variables_manager import VariablesManager
 
 # Path to the test keyfile for encryption
 TEST_KEY_PATH: Path = Path(
-    Path(__file__).parent, "variables_manager_resources/test_key"
+    Path(__file__).parent, "resources/test_key"
 )
 
 # Directory containing extra configuration files
 ADDITIONAL_CONFIG_DIR = Path(
-    Path(__file__).parent, "variables_manager_resources/context"
+    Path(__file__).parent, "resources/context"
 )
 
 # ------------------------------------------------------------------------------
@@ -139,7 +139,7 @@ def test_set_variable_empty(tmpdir):
     var_manager.set_variable(variable_path, None)
     compare_file = Path(
         Path(__file__).parent,
-        "variables_manager_resources/test_app_empty_value.yml",
+        "resources/test_app_empty_value.yml",
     )
     assert filecmp.cmp(set_config_file, compare_file)
 
@@ -159,7 +159,7 @@ def test_set_string_variable(tmpdir):
     var_manager.set_variable(variable_path, variable_value)
     compare_file = Path(
         Path(__file__).parent,
-        "variables_manager_resources/test_app_string_value.yml",
+        "resources/test_app_string_value.yml",
     )
     assert filecmp.cmp(set_config_file, compare_file)
 
@@ -180,7 +180,7 @@ def test_set_bool_variable(tmpdir):
     var_manager.set_variable(variable_path_true, True)
     compare_file = Path(
         Path(__file__).parent,
-        "variables_manager_resources/test_app_bool_value.yml",
+        "resources/test_app_bool_value.yml",
     )
     assert filecmp.cmp(set_config_file, compare_file)
 
@@ -200,7 +200,7 @@ def test_set_float_variable(tmpdir):
     var_manager.set_variable(variable_path, variable_value)
     compare_file = Path(
         Path(__file__).parent,
-        "variables_manager_resources/test_app_float_value.yml",
+        "resources/test_app_float_value.yml",
     )
     assert filecmp.cmp(set_config_file, compare_file)
 
@@ -220,7 +220,7 @@ def test_set_int_variable(tmpdir):
     var_manager.set_variable(variable_path, variable_value)
     compare_file = Path(
         Path(__file__).parent,
-        "variables_manager_resources/test_app_int_value.yml",
+        "resources/test_app_int_value.yml",
     )
     assert filecmp.cmp(set_config_file, compare_file)
 
@@ -249,7 +249,7 @@ def test_set_all_variables(tmpdir):
     var_manager.set_all_variables(dictionary)
     compare_file = Path(
         Path(__file__).parent,
-        "variables_manager_resources/test_app_get_all_variables.yml",
+        "resources/test_app_get_all_variables.yml",
     )
     assert filecmp.cmp(set_config_file, compare_file)
 
@@ -260,10 +260,10 @@ def test_set_all_variables(tmpdir):
 
 
 def create_var_manager_from_resource(config_name) -> VariablesManager:
-    """Creates a variables manager object from a file in our variables_manager_resources directory"""
+    """Creates a variables manager object from a file in our resources directory"""
     # directory containing this script
     return VariablesManager(
-        Path(Path(__file__).parent, f"variables_manager_resources/{config_name}.yml"),
+        Path(Path(__file__).parent, f"resources/{config_name}.yml"),
         key_file=TEST_KEY_PATH,
         extra_configuration_dir=ADDITIONAL_CONFIG_DIR,
     )

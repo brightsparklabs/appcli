@@ -1,0 +1,4 @@
+The password to the identity server is securepassword1.
+
+Foo status: ENABLED
+Bar status: DISABLED

@@ -10,6 +10,7 @@ www.brightsparklabs.com
 """
 
 # standard libraries
+import filecmp
 from pathlib import Path
 
 # vendor libraries
@@ -30,7 +31,11 @@ APP_NAME = "test_app"
 # directory containing this script
 BASE_DIR = Path(__file__).parent
 
-STACK_CONFIGURATION_FILE = Path(BASE_DIR, "resources/test_stack_settings.yml")
+STACK_CONFIGURATION_FILE = Path(BASE_DIR, "resources/stack_settings.yml")
+
+EXTRA_CONFIGURATION_DIR = Path(BASE_DIR, "resources/templates/appcli/context/")
+
+EXPECTED_DIR = Path(BASE_DIR, "expected_generated/")
 
 # ------------------------------------------------------------------------------
 # TESTS
@@ -107,10 +112,18 @@ def test_apply_workflow(tmpdir):
 
     # Assert template files have been generated
     assert Path(tmpdir, "conf/.generated").exists()
-    assert Path(tmpdir, "conf/.generated/password_file").exists()
-    assert Path(tmpdir, "conf/.generated/password_file").read_text() == new_password
-    assert Path(tmpdir, "conf/.generated/baseline_file.txt").exists()
-    assert Path(tmpdir, "conf/.generated/nesting/nested_baseline_file.py").exists()
+    generated_configuration_dir = cli_context.get_generated_configuration_dir()
+    assert generated_file_matches_expected(generated_configuration_dir, "baseline_file.txt")
+    assert generated_file_matches_expected(generated_configuration_dir, "docker-compose.tasks.yml")
+    assert generated_file_matches_expected(generated_configuration_dir, "docker-compose.yml")
+    assert generated_file_matches_expected(generated_configuration_dir, "password_file")
+    assert generated_file_matches_expected(generated_configuration_dir, "references_extra_constants.txt")
+    assert generated_file_matches_expected(generated_configuration_dir, "references_extra_nonconstants.txt")
+    assert generated_file_matches_expected(generated_configuration_dir, "nesting/nested_baseline_file.py")
+
+
+def generated_file_matches_expected(generated_configuration_dir, filepath: str):
+    return filecmp.cmp(Path(generated_configuration_dir, filepath), Path(EXPECTED_DIR, filepath))
 
 
 def test_migration(tmpdir):
@@ -196,18 +209,11 @@ def create_cli_context(tmpdir, app_version: str = "0.0.0") -> CliContext:
     data_dir.mkdir(exist_ok=True)
     backup_dir = Path(tmpdir, "backup")
     backup_dir.mkdir(exist_ok=True)
-    # Extra configuration directory.
-    templates_dir = Path(tmpdir, "conf/templates")
-    templates_dir.mkdir(exist_ok=True)
-    appcli_dir = Path(tmpdir, "conf/templates/appcli")
-    appcli_dir.mkdir(exist_ok=True)
-    context_dir = Path(tmpdir, "conf/templates/appcli/context")
-    context_dir.mkdir(exist_ok=True)
 
     return CliContext(
         configuration_dir=conf_dir,
         data_dir=data_dir,
-        app_extra_configuration_dir=None,
+        app_extra_configuration_dir=EXTRA_CONFIGURATION_DIR,
         additional_data_dirs=None,
         backup_dir=backup_dir,
         additional_env_variables=None,
@@ -230,7 +236,8 @@ def create_conf_manager(tmpdir, cli_context: CliContext = None) -> Configuration
     configuration = Configuration(
         app_name=APP_NAME,
         docker_image="invalid-image-name",
-        seed_app_configuration_file=Path(BASE_DIR, "resources/test_app.yml"),
+        seed_app_configuration_file=Path(BASE_DIR, "resources/settings.yml"),
+        extra_app_configuration_files_dir=EXTRA_CONFIGURATION_DIR,
         baseline_templates_dir=Path(BASE_DIR, "resources/templates/baseline"),
         configurable_templates_dir=Path(BASE_DIR, "resources/templates/configurable"),
         orchestrator=DockerComposeOrchestrator("cli/docker-compose.yml", []),
