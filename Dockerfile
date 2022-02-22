@@ -32,8 +32,8 @@ RUN \
     # prepare for docker install
     && apt-get update \
     && apt-get -y install --no-install-recommends \
-        git=1:2.20.1-2+deb10u3 \
-        vim-tiny=2:8.1.0875-5 \
+        git \
+        vim-tiny \
     && apt-get -y autoremove \
     && apt-get -y clean \
     && rm -rf /var/lib/apt/lists/*
