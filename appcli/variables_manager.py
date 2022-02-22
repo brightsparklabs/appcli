@@ -196,7 +196,7 @@ class VariablesManager:
         }
 
         extra_configuration_variables = self._get_extra_configuration(variables)
-        return {**variables, **extra_configuration_variables}
+        return {**variables, "application": {**extra_configuration_variables}}
 
     ############################################################################
     # COMMON FUNCTIONS
