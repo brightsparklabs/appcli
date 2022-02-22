@@ -64,7 +64,9 @@ class VariablesManager:
             self.extra_configuration_files = []
             logger.debug("No additional configuration files found.")
         else:
-            self.extra_configuration_files = list(Path(extra_configuration_dir).glob("*"))
+            self.extra_configuration_files = list(
+                Path(extra_configuration_dir).glob("*")
+            )
             logger.debug(
                 f"Found extra configuration files [{self.extra_configuration_files}]."
             )
@@ -188,12 +190,12 @@ class VariablesManager:
         """
         main_configuration_variables = self._get_main_configuration()
         variables = {
-            self._filename_as_yaml_key(self.configuration_file): main_configuration_variables
+            self._filename_as_yaml_key(
+                self.configuration_file
+            ): main_configuration_variables
         }
 
-        extra_configuration_variables = self._get_extra_configuration(
-            variables
-        )
+        extra_configuration_variables = self._get_extra_configuration(variables)
         return variables | extra_configuration_variables
 
     ############################################################################
@@ -296,7 +298,5 @@ class VariablesManager:
         key = os.path.basename(file).split(".")[0]
         regex = "^[a-zA-Z0-9_.]+$"
         if re.match(regex, key) is None:
-            raise Exception(
-                f"Could not generate a valid yaml key from file [{file}]."
-            )
+            raise Exception(f"Could not generate a valid yaml key from file [{file}].")
         return key
