@@ -26,14 +26,10 @@ from appcli.variables_manager import VariablesManager
 # ------------------------------------------------------------------------------
 
 # Path to the test keyfile for encryption
-TEST_KEY_PATH: Path = Path(
-    Path(__file__).parent, "resources/test_key"
-)
+TEST_KEY_PATH: Path = Path(Path(__file__).parent, "resources/test_key")
 
 # Directory containing extra configuration files
-ADDITIONAL_CONFIG_DIR = Path(
-    Path(__file__).parent, "resources/context"
-)
+ADDITIONAL_CONFIG_DIR = Path(Path(__file__).parent, "resources/context")
 
 # ------------------------------------------------------------------------------
 # TESTS

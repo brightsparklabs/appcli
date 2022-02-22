@@ -113,17 +113,31 @@ def test_apply_workflow(tmpdir):
     # Assert template files have been generated
     assert Path(tmpdir, "conf/.generated").exists()
     generated_configuration_dir = cli_context.get_generated_configuration_dir()
-    assert generated_file_matches_expected(generated_configuration_dir, "baseline_file.txt")
-    assert generated_file_matches_expected(generated_configuration_dir, "docker-compose.tasks.yml")
-    assert generated_file_matches_expected(generated_configuration_dir, "docker-compose.yml")
+    assert generated_file_matches_expected(
+        generated_configuration_dir, "baseline_file.txt"
+    )
+    assert generated_file_matches_expected(
+        generated_configuration_dir, "docker-compose.tasks.yml"
+    )
+    assert generated_file_matches_expected(
+        generated_configuration_dir, "docker-compose.yml"
+    )
     assert generated_file_matches_expected(generated_configuration_dir, "password_file")
-    assert generated_file_matches_expected(generated_configuration_dir, "references_extra_constants.txt")
-    assert generated_file_matches_expected(generated_configuration_dir, "references_extra_nonconstants.txt")
-    assert generated_file_matches_expected(generated_configuration_dir, "nesting/nested_baseline_file.py")
+    assert generated_file_matches_expected(
+        generated_configuration_dir, "references_extra_constants.txt"
+    )
+    assert generated_file_matches_expected(
+        generated_configuration_dir, "references_extra_nonconstants.txt"
+    )
+    assert generated_file_matches_expected(
+        generated_configuration_dir, "nesting/nested_baseline_file.py"
+    )
 
 
 def generated_file_matches_expected(generated_configuration_dir, filepath: str):
-    return filecmp.cmp(Path(generated_configuration_dir, filepath), Path(EXPECTED_DIR, filepath))
+    return filecmp.cmp(
+        Path(generated_configuration_dir, filepath), Path(EXPECTED_DIR, filepath)
+    )
 
 
 def test_migration(tmpdir):
