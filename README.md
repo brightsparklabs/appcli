@@ -85,6 +85,7 @@ python3 implicit namespaced packages.
             app_name='myapp',
             docker_image='brightsparklabs/myapp',
             seed_app_configuration_file=Path(BASE_DIR, 'resources/settings.yml'),
+            extra_app_configuration_files_dir=Path(BASE_DIR, 'resources/templates/appcli/context'),
             stack_configuration_file=Path(BASE_DIR, 'resources/stack-settings.yml'),
             baseline_templates_dir=Path(BASE_DIR, 'resources/templates/baseline'),
             configurable_templates_dir=Path(BASE_DIR, 'resources/templates/configurable'),
@@ -187,12 +188,77 @@ def main():
 
 - Store any Jinja2 variable definitions you wish to use in your configuration
   template files in `resources/settings.yml`.
+- Store any application-level variable definition files in `resources/templates/appcli/context/`
 - Store any appcli stack specific keys in `resources/stack-settings.yml`.
 - Store your `docker-compose.yml`/`docker-compose.yml.j2` file in `resources/templates/baseline/`.
 - Configuration files (Jinja2 compatible templates or otherwise) can be stored in one
   of two locations:
   - `resources/templates/baseline` - for templates which the end user **is not** expected to modify.
   - `resources/templates/configurable` - for templates which the end user is expected to modify.
+
+#### Application-specific configuration files
+
+Template files are templated with Jinja2. The 'data' passed into the templating engine
+is a combination of the `settings.yml` and all application-specific configuration files
+(stored in `resources/templates/appcli/context`, and referenced in the `Configuration`
+object as `extra_app_configuration_files_dir`).
+
+These are combined to make the data for templating as follows:
+
+```json
+{
+  "settings": {
+    ... all settings from `settings.yml`
+  },
+  "application": {
+    <app_config_filename_1>: {
+      ... settings from `app_config_file_1`, optionally jinja2 templated using settings from `settings.yml`
+    },
+    ... additional app_config_files
+  }
+}
+```
+
+As a minimal example with the following YAML files:
+```yaml
+
+# ./settings.yml
+main_settings:
+  abc: 123
+
+# ./resources/templates/appcli/context/app_constants.yml
+other_settings:
+  hello: world
+
+# ./resources/templates/appcli/context/app_variables.yml.j2
+variables:
+  main_abc_setting: {{ settings.main_settings.abc }}
+
+```
+
+The templating data for Jinja2 will be:
+
+```json
+{
+  "settings": {
+    "main_settings": {
+      "abc": 123
+    }
+  },
+  "application": {
+    "app_constants": {
+      "other_settings": {
+        "hello": "world"
+      }
+    },
+    "app_variables": {
+      "variables": {
+        "main_abc_setting": 123
+      }
+    }
+  }
+}
+```
 
 ### Configure application backup
 
@@ -450,6 +516,19 @@ Where:
 The installation script will generate a launcher script for controlling the application. The script
 location will be printed out when running the install script. This script should now be used as the
 main entrypoint to all appcli functions for managing your application.
+
+## Migration from appcli version <=1.3.6 to version >1.3.6
+
+As a result of supporting application-level settings files, all references to
+settings in template files have moved.
+
+All settings in `settings.yml` used in templating are now namespaced under
+`settings`. All templates will need to change their references to use this new
+namespacing scheme. For example, in templates that refer to settings, change the
+references like so:
+
+- `my_app.server.hostname` -> `settings.my_app.server.hostname`
+- `my_app.server.http.port` -> `settings.my_app.server.http.port`
 
 ## Usage
 
