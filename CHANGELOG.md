@@ -17,7 +17,7 @@ settings in template files have moved. See the README for details on migration.
 
 ### Added
 
-- Support application context files, which enables application-specific Jinja2 templating contexts.
+- [#239](https://github.com/brightsparklabs/appcli/issues/239) Support application context files, which enables application-specific Jinja2 templating contexts.
 - Enable admins and developers to fetch decrypted values of encrypted values in settings.
 
 ### Fixed
@@ -29,7 +29,6 @@ settings in template files have moved. See the README for details on migration.
 ### Fixed
 
 - Remove automatic UPPERCASING of app_name, which breaks workflows that rely on a stable app_name.
-- [#239](https://github.com/brightsparklabs/appcli/issues/239) Allow loading of additional configuration files (both `yml` and `j2`) by placing in `templates/appcli/context`.
 
 ---
 
