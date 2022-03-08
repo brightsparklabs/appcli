@@ -17,7 +17,7 @@ settings in template files have moved. See the README for details on migration.
 
 ### Added
 
-- Support application-level settings files
+- Support application context files, which enables application-specific Jinja2 templating contexts.
 - Enable admins and developers to fetch decrypted values of encrypted values in settings.
 
 ### Fixed

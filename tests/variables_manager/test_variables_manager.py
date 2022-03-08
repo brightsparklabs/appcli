@@ -28,8 +28,8 @@ from appcli.variables_manager import VariablesManager
 # Path to the test keyfile for encryption
 TEST_KEY_PATH: Path = Path(Path(__file__).parent, "resources/test_key")
 
-# Directory containing extra configuration files
-ADDITIONAL_CONFIG_DIR = Path(Path(__file__).parent, "resources/context")
+# Directory containing application context files
+APP_CONTEXT_FILES_DIR = Path(Path(__file__).parent, "resources/context")
 
 # ------------------------------------------------------------------------------
 # TESTS
@@ -129,7 +129,7 @@ def test_set_variable_empty(tmpdir):
     var_manager = VariablesManager(
         set_config_file,
         key_file=TEST_KEY_PATH,
-        extra_configuration_dir=ADDITIONAL_CONFIG_DIR,
+        application_context_files_dir=APP_CONTEXT_FILES_DIR,
     )
     variable_path = "empty"
     var_manager.set_variable(variable_path, None)
@@ -148,7 +148,7 @@ def test_set_string_variable(tmpdir):
     var_manager = VariablesManager(
         set_config_file,
         key_file=TEST_KEY_PATH,
-        extra_configuration_dir=ADDITIONAL_CONFIG_DIR,
+        application_context_files_dir=APP_CONTEXT_FILES_DIR,
     )
     variable_path = "string"
     variable_value = "Value"
@@ -168,7 +168,7 @@ def test_set_bool_variable(tmpdir):
     var_manager = VariablesManager(
         set_config_file,
         key_file=TEST_KEY_PATH,
-        extra_configuration_dir=ADDITIONAL_CONFIG_DIR,
+        application_context_files_dir=APP_CONTEXT_FILES_DIR,
     )
     variable_path_false = "false_boolean"
     variable_path_true = "true_boolean"
@@ -189,7 +189,7 @@ def test_set_float_variable(tmpdir):
     var_manager = VariablesManager(
         set_config_file,
         key_file=TEST_KEY_PATH,
-        extra_configuration_dir=ADDITIONAL_CONFIG_DIR,
+        application_context_files_dir=APP_CONTEXT_FILES_DIR,
     )
     variable_path = "float"
     variable_value = 12345.6789
@@ -209,7 +209,7 @@ def test_set_int_variable(tmpdir):
     var_manager = VariablesManager(
         set_config_file,
         key_file=TEST_KEY_PATH,
-        extra_configuration_dir=ADDITIONAL_CONFIG_DIR,
+        application_context_files_dir=APP_CONTEXT_FILES_DIR,
     )
     variable_path = "int"
     variable_value = 12345
@@ -229,7 +229,7 @@ def test_set_all_variables(tmpdir):
     var_manager = VariablesManager(
         set_config_file,
         key_file=TEST_KEY_PATH,
-        extra_configuration_dir=ADDITIONAL_CONFIG_DIR,
+        application_context_files_dir=APP_CONTEXT_FILES_DIR,
     )
     dictionary = {
         "object": {
@@ -261,5 +261,5 @@ def create_var_manager_from_resource(config_name) -> VariablesManager:
     return VariablesManager(
         Path(Path(__file__).parent, f"resources/{config_name}.yml"),
         key_file=TEST_KEY_PATH,
-        extra_configuration_dir=ADDITIONAL_CONFIG_DIR,
+        application_context_files_dir=APP_CONTEXT_FILES_DIR,
     )

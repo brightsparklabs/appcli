@@ -30,8 +30,8 @@ class CliContext(NamedTuple):
     backup_dir: Path
     """ Directory to store backups in. """
 
-    app_extra_configuration_dir: Path
-    """ Directories containing extra configuration files. """
+    application_context_files_dir: Path
+    """ Directory containing application context files. """
 
     additional_data_dirs: Iterable[Tuple[str, Path]]
     """ Additional directories to use for persistent data storage. """
@@ -170,5 +170,5 @@ class CliContext(NamedTuple):
             configuration_file=self.get_app_configuration_file(),
             stack_configuration_file=self.get_stack_configuration_file(),
             key_file=self.get_key_file(),
-            extra_configuration_dir=self.app_extra_configuration_dir,
+            application_context_files_dir=self.application_context_files_dir,
         )

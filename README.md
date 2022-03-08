@@ -85,7 +85,7 @@ python3 implicit namespaced packages.
             app_name='myapp',
             docker_image='brightsparklabs/myapp',
             seed_app_configuration_file=Path(BASE_DIR, 'resources/settings.yml'),
-            extra_app_configuration_files_dir=Path(BASE_DIR, 'resources/templates/appcli/context'),
+            application_context_files_dir=Path(BASE_DIR, 'resources/templates/appcli/context'),
             stack_configuration_file=Path(BASE_DIR, 'resources/stack-settings.yml'),
             baseline_templates_dir=Path(BASE_DIR, 'resources/templates/baseline'),
             configurable_templates_dir=Path(BASE_DIR, 'resources/templates/configurable'),
@@ -188,7 +188,7 @@ def main():
 
 - Store any Jinja2 variable definitions you wish to use in your configuration
   template files in `resources/settings.yml`.
-- Store any application-level variable definition files in `resources/templates/appcli/context/`
+- Store any application context files in `resources/templates/appcli/context/`
 - Store any appcli stack specific keys in `resources/stack-settings.yml`.
 - Store your `docker-compose.yml`/`docker-compose.yml.j2` file in `resources/templates/baseline/`.
 - Configuration files (Jinja2 compatible templates or otherwise) can be stored in one
@@ -196,12 +196,13 @@ def main():
   - `resources/templates/baseline` - for templates which the end user **is not** expected to modify.
   - `resources/templates/configurable` - for templates which the end user is expected to modify.
 
-#### Application-specific configuration files
+#### Application context files
 
 Template files are templated with Jinja2. The 'data' passed into the templating engine
-is a combination of the `settings.yml` and all application-specific configuration files
+is a combination of the `settings.yml` and all application context files
 (stored in `resources/templates/appcli/context`, and referenced in the `Configuration`
-object as `extra_app_configuration_files_dir`).
+object as `application_context_files_dir`). Application context files that have the
+extension `.j2` are templated using the settings from `settings.yml`.
 
 These are combined to make the data for templating as follows:
 
@@ -211,10 +212,10 @@ These are combined to make the data for templating as follows:
     ... all settings from `settings.yml`
   },
   "application": {
-    <app_config_filename_1>: {
-      ... settings from `app_config_file_1`, optionally jinja2 templated using settings from `settings.yml`
+    <app_context_file_1>: {
+      ... settings from `app_context_file_1.yml`, optionally jinja2 templated using settings from `settings.yml`
     },
-    ... additional app_config_files
+    ... additional app_context_files
   }
 }
 ```
@@ -236,7 +237,7 @@ variables:
 
 ```
 
-The templating data for Jinja2 will be:
+The data for Jinja2 templating engine will be:
 
 ```json
 {
@@ -519,7 +520,7 @@ main entrypoint to all appcli functions for managing your application.
 
 ## Migration from appcli version <=1.3.6 to version >1.3.6
 
-As a result of supporting application-level settings files, all references to
+As a result of supporting application context files, all references to
 settings in template files have moved.
 
 All settings in `settings.yml` used in templating are now namespaced under

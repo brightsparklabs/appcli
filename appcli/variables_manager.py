@@ -39,7 +39,7 @@ class VariablesManager:
         configuration_file: Path,
         key_file: Path = None,
         stack_configuration_file: Path = None,
-        extra_configuration_dir: Path = None,
+        application_context_files_dir: Path = None,
     ):
         """A class which enables get, set, save for configuration variables of the application.
 
@@ -47,7 +47,7 @@ class VariablesManager:
             configuration_file (Path): Path to the main configuration file.
             key_file (Path): Optional. Path to the key file for encryption.
             stack_configuration_file (Path): Optional. Path to the stack configuration file.
-            extra_configuration_dir (Path): Optional. Path to a directory containing extra configuration files.
+            application_context_files_dir (Path): Optional. Path to directory containing application context files.
         """
         self.configuration_file = Path(configuration_file)
         self.key_file = Path(key_file) if key_file is not None else None
@@ -57,18 +57,17 @@ class VariablesManager:
             else None
         )
 
-        # If extra configuration directory is not set or doesn't exist, assume there's no extra configuration.
-        if (extra_configuration_dir is None) or (
-            not Path(extra_configuration_dir).is_dir()
+        if (application_context_files_dir is None) or (
+            not Path(application_context_files_dir).is_dir()
         ):
             self.extra_configuration_files = []
             logger.debug("No additional configuration files found.")
         else:
             self.extra_configuration_files = list(
-                Path(extra_configuration_dir).glob("*")
+                Path(application_context_files_dir).glob("*")
             )
             logger.debug(
-                f"Found extra configuration files [{self.extra_configuration_files}]."
+                f"Found application context files [{self.extra_configuration_files}]."
             )
 
         self.yaml = YAML()

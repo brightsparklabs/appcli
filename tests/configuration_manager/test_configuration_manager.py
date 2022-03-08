@@ -33,7 +33,7 @@ BASE_DIR = Path(__file__).parent
 
 STACK_CONFIGURATION_FILE = Path(BASE_DIR, "resources/stack_settings.yml")
 
-EXTRA_CONFIGURATION_DIR = Path(BASE_DIR, "resources/templates/appcli/context/")
+APP_CONTEXT_FILES_DIR = Path(BASE_DIR, "resources/templates/appcli/context/")
 
 EXPECTED_DIR = Path(BASE_DIR, "expected_generated/")
 
@@ -227,7 +227,7 @@ def create_cli_context(tmpdir, app_version: str = "0.0.0") -> CliContext:
     return CliContext(
         configuration_dir=conf_dir,
         data_dir=data_dir,
-        app_extra_configuration_dir=EXTRA_CONFIGURATION_DIR,
+        application_context_files_dir=APP_CONTEXT_FILES_DIR,
         additional_data_dirs=None,
         backup_dir=backup_dir,
         additional_env_variables=None,
@@ -251,7 +251,7 @@ def create_conf_manager(tmpdir, cli_context: CliContext = None) -> Configuration
         app_name=APP_NAME,
         docker_image="invalid-image-name",
         seed_app_configuration_file=Path(BASE_DIR, "resources/settings.yml"),
-        extra_app_configuration_files_dir=EXTRA_CONFIGURATION_DIR,
+        application_context_files_dir=APP_CONTEXT_FILES_DIR,
         baseline_templates_dir=Path(BASE_DIR, "resources/templates/baseline"),
         configurable_templates_dir=Path(BASE_DIR, "resources/templates/configurable"),
         orchestrator=DockerComposeOrchestrator("cli/docker-compose.yml", []),

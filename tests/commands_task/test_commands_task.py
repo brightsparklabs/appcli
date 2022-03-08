@@ -145,7 +145,6 @@ class Environment:
         data_dir.mkdir(exist_ok=True)
         backup_dir = Path(group_dir, "backup")
         backup_dir.mkdir(exist_ok=True)
-        # Extra configuration directory.
         templates_dir = Path(group_dir, "conf/templates")
         templates_dir.mkdir(exist_ok=True)
         appcli_dir = Path(group_dir, "conf/templates/appcli")
@@ -156,7 +155,7 @@ class Environment:
         return CliContext(
             configuration_dir=conf_dir,
             data_dir=data_dir,
-            app_extra_configuration_dir=None,
+            application_context_files_dir=None,
             additional_data_dirs=None,
             backup_dir=backup_dir,
             additional_env_variables=None,
