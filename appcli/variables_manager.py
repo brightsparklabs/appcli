@@ -60,14 +60,14 @@ class VariablesManager:
         if (application_context_files_dir is None) or (
             not Path(application_context_files_dir).is_dir()
         ):
-            self.extra_configuration_files = []
-            logger.debug("No additional configuration files found.")
+            self.application_context_files = []
+            logger.debug("No application context files found.")
         else:
-            self.extra_configuration_files = list(
+            self.application_context_files = list(
                 Path(application_context_files_dir).glob("*")
             )
             logger.debug(
-                f"Found application context files [{self.extra_configuration_files}]."
+                f"Found application context files [{self.application_context_files}]."
             )
 
         self.yaml = YAML()
@@ -80,7 +80,7 @@ class VariablesManager:
         """Gets a value from the main configuration.
 
         Args:
-            path (str): Dot notation for the setting. E.g. insilico.external.database.host
+            path (str): Dot notation for the setting. E.g. settings.insilico.external.database.host
             decrypt (bool): Optional (defaults to False). Whether to decrypt the returned value (if it's encrypted).
 
         Throws:
@@ -96,7 +96,7 @@ class VariablesManager:
         """Sets a value in the configuration.
         Type of value is not enforced but this might not serialise into yml in a deserialisable format.
         Args:
-            path (str): Dot notation for the setting. E.g. insilico.external.database.host
+            path (str): Dot notation for the setting. E.g. settings.insilico.external.database.host
             value: value for the setting
         """
         configuration = self._get_main_configuration()
@@ -156,7 +156,7 @@ class VariablesManager:
         """Gets a value from the stack configuration.
 
         Args:
-            path (str): Dot notation for the setting. E.g. insilico.external.database.host
+            path (str): Dot notation for the setting. E.g. settings.insilico.external.database.host
             decrypt (bool): Optional (defaults to False). Whether to decrypt the returned value (if it's encrypted).
 
         Throws:
@@ -194,8 +194,10 @@ class VariablesManager:
             ): main_configuration_variables
         }
 
-        extra_configuration_variables = self._get_extra_configuration(variables)
-        return {**variables, "application": {**extra_configuration_variables}}
+        application_context_variables = self._get_application_context_variables(
+            variables
+        )
+        return {**variables, "application": {**application_context_variables}}
 
     ############################################################################
     # COMMON FUNCTIONS
@@ -212,33 +214,19 @@ class VariablesManager:
 
         return variable
 
-    def _load_yaml_to_dict(self, data: str) -> Dict:
+    def _load_yaml_to_dict(self, data: Union[str, Path]) -> Dict:
+        """Reads in YAML to a Dict. Accepts data as a string or a Path to yaml file.
+
+        Returns:
+            Dict: The yaml data as a Dict. An empty file or empty data will return an empty dict.
+        """
         yaml_data = self.yaml.load(data)
         if yaml_data is None:
             return {}
         return yaml_data
 
-    def _load_yaml_file_to_dict(self, file: Path) -> Dict:
-        """Reads in a YAML file into a Dict.
-
-        Throws:
-            Exception: Unable to read the file.
-
-        Returns:
-            Dict: The yaml data as a Dict.
-        """
-        if file is None:
-            return {}
-
-        try:
-            raw_data = file.read_text(encoding="utf-8")
-            return self._load_yaml_to_dict(raw_data)
-
-        except Exception as ex:
-            raise Exception(f"Could not read file at [{file}]") from ex
-
-    def _get_extra_configuration(self, variables: Dict) -> Dict:
-        """Gets the configuration from the additional configuration files.
+    def _get_application_context_variables(self, variables: Dict) -> Dict:
+        """Gets the configuration from the application context files.
 
         Args:
             variables (Dict): Variables used to populate the template(s).
@@ -249,29 +237,29 @@ class VariablesManager:
                 Could not correctly render a jinja2 template.
 
         Returns:
-            Dict: The configuration data from the additional configuration files.
+            Dict: The configuration data from the application context files.
                 Each config file is a seperate dictionary with its filename as the key.
         """
-        config_variables = dict()
-        for config_file in self.extra_configuration_files:
-            config_file_yaml_key = self._filename_as_yaml_key(config_file)
+        config_variables = {}
+        for context_file in self.application_context_files:
+            context_file_yaml_key = self._filename_as_yaml_key(context_file)
 
             try:
-                data_string = config_file.read_text(encoding="utf-8")
+                data_string = context_file.read_text(encoding="utf-8")
             except Exception as ex:
                 raise Exception(
-                    f"Could not read configuration file at [{config_file}]"
+                    f"Could not read context file at [{context_file}]"
                 ) from ex
-            if config_file.suffix == ".j2":  # Jinja2 file.
+            if context_file.suffix == ".j2":  # Jinja2 file.
                 try:
                     data_string = self._render_j2(data_string, variables)
                 except Exception as ex:
                     raise Exception(
-                        f"Failed to render Jinja2 file [{config_file}]"
+                        f"Failed to render Jinja2 file [{context_file}]"
                     ) from ex
             config_variables = {
                 **config_variables,
-                config_file_yaml_key: self._load_yaml_to_dict(data_string),
+                context_file_yaml_key: self._load_yaml_to_dict(data_string),
             }
         return config_variables
 
