@@ -36,7 +36,7 @@ APP_CONTEXT_FILES_DIR = Path(Path(__file__).parent, "resources/context")
 # ------------------------------------------------------------------------------
 
 
-def test_get_variable_before_set(tmpdir):
+def test_get_missing_variable(tmpdir):
     """When the path to a variable does not exist we expect a KeyError exception"""
     name_of_test = "test_app"
     var_manager = create_var_manager_from_resource(name_of_test)
@@ -115,6 +115,42 @@ def test_get_all_variables(tmpdir):
             ignore_type_in_groups=[
                 (yaml.comments.CommentedMap, dict),
                 (yaml.scalarfloat.ScalarFloat, float),
+            ],
+        )
+        == {}
+    )
+
+
+def test_get_templating_configuration(tmpdir):
+    """The dictionary returned from get_templating_configuration()"""
+    name_of_test = "test_app_get_templating_configuration"
+    var_manager = create_var_manager_from_resource(name_of_test)
+    dictionary = {
+        "test_app_get_templating_configuration": {
+            "object": {
+                "booleans": {
+                    "false_boolean": False,
+                    "true_boolean": True,
+                },
+                "float": 12345.6789,
+                "int": 12345,
+                "string": "Value",
+            },
+            "loop": 5,
+        },
+        "application": {
+            "test_extra_settings": {"base": {"value": 1}},
+            "test_variable_context": {"loop": [0, 1, 2, 3, 4]},
+        },
+    }
+    assert (
+        DeepDiff(
+            var_manager.get_templating_configuration(),
+            dictionary,
+            ignore_type_in_groups=[
+                (yaml.comments.CommentedMap, dict),
+                (yaml.scalarfloat.ScalarFloat, float),
+                (yaml.comments.CommentedSeq, list),
             ],
         )
         == {}
