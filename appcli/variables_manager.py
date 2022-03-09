@@ -229,7 +229,7 @@ class VariablesManager:
         """Gets the configuration from the application context files.
 
         Args:
-            variables (Dict): Variables used to populate the template(s).
+            variables (Dict): Variables used to populate any Jinja2-templated application context files.
 
         Throws:
             Exception:
@@ -238,7 +238,7 @@ class VariablesManager:
 
         Returns:
             Dict: The configuration data from the application context files.
-                Each config file is a seperate dictionary with its filename as the key.
+                Each config file is a seperate dictionary with its yaml-safe filename as the key.
         """
         config_variables = {}
         for context_file in self.application_context_files:
@@ -283,6 +283,18 @@ class VariablesManager:
         return template.render(variables)
 
     def _filename_as_yaml_key(self, file: Path) -> str:
+        """Gets a valid yaml key from a filename.
+
+        Args:
+            file (Path): The file from which to derive a yaml key from the name.
+
+        Throws:
+            Exception:
+                Unable to get a valid yaml key from the file.
+
+        Returns:
+            str: The valid yaml key.
+        """
         key = os.path.basename(file).split(".")[0]
         regex = "^[a-zA-Z0-9_.]+$"
         if re.match(regex, key) is None:
