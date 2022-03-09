@@ -10,7 +10,10 @@ jobs:
         python-version: [3.8, 3.9, 3.10.2]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        # fetch all history for all branches and tags, so that our `make` targets can get tags
+        with:
+          fetch-depth: 0
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
@@ -27,8 +30,3 @@ jobs:
             ${{ runner.os }}-
       - name: Check python
         run: make check
-      # TODO: Build wheel and publish to pypi
-      # - name: Build wheel
-      #   run: make build-wheel
-      # Next step would be to publish the image with twine. We already have a `make` target available that calls twine. See:
-      # https://docs.github.com/en/actions/guides/building-and-testing-python#publishing-to-package-registries
