@@ -2,14 +2,18 @@ name: Build and publish wheel to PYPI
 
 on:
   push:
-    tags:
-      - "*"
+    branches:
+      - develop
+      - master
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        # fetch all history for all branches and tags, so that our `make` targets can get tags
+        with:
+          fetch-depth: 0
       - name: Set up Python 3.8
         uses: actions/setup-python@v2
         with:

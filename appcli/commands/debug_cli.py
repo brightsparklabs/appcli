@@ -54,9 +54,7 @@ class DebugCli:
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.DEBUG_INFO
             )
-            app_config_file = cli_context.get_app_configuration_file()
-            key_file = cli_context.get_key_file()
-            variables_manager = VariablesManager(app_config_file, key_file=key_file)
+            variables_manager: VariablesManager = cli_context.get_variables_manager()
 
             print()
             print("=== CLI CONTEXT ===")

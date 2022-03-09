@@ -28,6 +28,7 @@ def test_version_cli():
     cli_context = CliContext(
         configuration_dir=None,
         data_dir=None,
+        application_context_files_dir=None,
         additional_data_dirs=None,
         backup_dir=None,
         additional_env_variables=None,

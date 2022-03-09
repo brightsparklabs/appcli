@@ -183,6 +183,7 @@ def create_click_ctx(conf_dir, data_dir, backup_dir) -> click.Context:
     ctx = click.Context(
         obj=CliContext(
             configuration_dir=conf_dir,
+            application_context_files_dir=None,
             data_dir=data_dir,
             backup_dir=backup_dir,
             app_name="test_app",

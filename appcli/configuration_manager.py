@@ -58,6 +58,7 @@ class ConfigurationManager:
             cli_context.configuration_dir
         )
         self.cli_configuration: Configuration = configuration
+        self.variables_manager: VariablesManager = cli_context.get_variables_manager()
 
     def initialise_configuration(self):
         """Initialises the configuration repository"""
@@ -128,7 +129,7 @@ class ConfigurationManager:
         )
 
         # Migrate the current configuration variables
-        current_variables = self.__get_variables_manager().get_all_variables()
+        current_variables = self.variables_manager.get_all_variables()
 
         # Compare migrated config to the 'clean config' of the new version, and make sure all variables have been set and are the same type.
         key_file = self.cli_context.get_key_file()
@@ -183,7 +184,7 @@ class ConfigurationManager:
             )
 
         # Write out 'migrated' variables file
-        self.__get_variables_manager().set_all_variables(migrated_variables)
+        self.variables_manager.set_all_variables(migrated_variables)
 
         # If stack settings existed pre-migration, then replace the default with the existing settings
         if stack_settings_exists_pre_migration:
@@ -198,27 +199,13 @@ class ConfigurationManager:
         )
 
     def get_variable(self, variable: str, decrypt: bool = False):
-        return self.__get_variables_manager().get_variable(variable, decrypt=decrypt)
+        return self.variables_manager.get_variable(variable, decrypt=decrypt)
 
     def set_variable(self, variable: str, value: any):
-        return self.__get_variables_manager().set_variable(variable, value)
-
-    def __get_variables_manager(self):
-        """Get the variables manager for the current configuration"""
-        app_configuration_file = self.cli_context.get_app_configuration_file()
-        key_file = self.cli_context.get_key_file()
-        return VariablesManager(app_configuration_file, key_file=key_file)
+        return self.variables_manager.set_variable(variable, value)
 
     def get_stack_variable(self, variable: str):
-        return self.__get_stack_variables_manager().get_variable(variable)
-
-    def set_stack_variable(self, variable: str, value: any):
-        return self.__get_stack_variables_manager().set_variable(variable, value)
-
-    def __get_stack_variables_manager(self):
-        stack_configuration_file = self.cli_context.get_stack_configuration_file()
-        key_file = self.cli_context.get_key_file()
-        return VariablesManager(stack_configuration_file, key_file=key_file)
+        return self.variables_manager.get_stack_variable(variable)
 
     def __create_new_configuration_branch_and_files(self):
 
@@ -367,6 +354,7 @@ class ConfigurationManager:
             template_path (Path): directory to the templates
             generated_configuration_dir (Path): directory to output generated files
         """
+        template_data = self.variables_manager.get_templating_configuration()
         for template_file in template_path.glob("**/*"):
             relative_file = template_file.relative_to(template_path)
             target_file = generated_configuration_dir.joinpath(relative_file)
@@ -383,7 +371,7 @@ class ConfigurationManager:
                 self.__generate_from_template(
                     template_file,
                     target_file,
-                    self.__get_variables_manager().get_all_variables(),
+                    template_data,
                 )
             else:
                 logger.debug("Copying configuration file to [%s] ...", target_file)

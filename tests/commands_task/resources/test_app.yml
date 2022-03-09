@@ -1,0 +1,22 @@
+test:
+    server:
+        host: some.host
+        admin_email: admin@someemail.test
+        http:
+            port: 80
+        https:
+            enabled: false
+            port: 443
+
+    identity:
+        password: password1
+
+metadata:
+    # the version of the schema this file conforms to
+    schema_version: 1
+
+custom:
+    hello-world: "hi there"
+    background-colour: "#2e8cea"
+    title-page:
+        header: "Special Report #007"

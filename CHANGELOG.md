@@ -10,8 +10,14 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ## [Unreleased]
 
+### Breaking Changes from 1.3.6
+
+As a result of supporting application-level settings files, all references to
+settings in template files have moved. See the README for details on migration.
+
 ### Added
 
+- [#239](https://github.com/brightsparklabs/appcli/issues/239) Support application context files, which enables application-specific Jinja2 templating contexts.
 - Enable admins and developers to fetch decrypted values of encrypted values in settings.
 
 ### Fixed

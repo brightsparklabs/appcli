@@ -11,6 +11,7 @@ from appcli.configuration.configuration_dir_state import (
     ConfigurationDirStateFactory,
 )
 from appcli.logger import logger
+from appcli.variables_manager import VariablesManager
 
 
 class CliContext(NamedTuple):
@@ -28,6 +29,9 @@ class CliContext(NamedTuple):
 
     backup_dir: Path
     """ Directory to store backups in. """
+
+    application_context_files_dir: Path
+    """ Directory containing application context files. """
 
     additional_data_dirs: Iterable[Tuple[str, Path]]
     """ Additional directories to use for persistent data storage. """
@@ -155,3 +159,16 @@ class CliContext(NamedTuple):
             str: the project name
         """
         return f"{self.app_name}_{self.environment}"
+
+    def get_variables_manager(self) -> VariablesManager:
+        """Get the Variables Manager for the current cli context.
+
+        Returns:
+            VariablesManager: the variables manager for the current cli context.
+        """
+        return VariablesManager(
+            configuration_file=self.get_app_configuration_file(),
+            stack_configuration_file=self.get_stack_configuration_file(),
+            key_file=self.get_key_file(),
+            application_context_files_dir=self.application_context_files_dir,
+        )
