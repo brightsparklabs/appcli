@@ -22,6 +22,8 @@ settings in template files have moved. See the README for details on migration.
 
 ### Fixed
 
+- On tag commits, Docker images and python wheels should now be correctly published.
+
 ---
 
 ## [1.3.6] - (24/01/2022)
