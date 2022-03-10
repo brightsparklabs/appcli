@@ -13,9 +13,10 @@ www.brightsparklabs.com
 from codecs import open
 from os import path
 
+from dunamai import Version
+
 # always prefer setuptools over distutils
 from setuptools import find_namespace_packages, setup
-from dunamai import Version
 
 # ------------------------------------------------------------------------------
 # SETUP DEFINITION
@@ -41,7 +42,9 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="bsl-appcli",
-    version=Version.from_any_vcs(pattern=_VERSION_PATTERN).serialize(format="{base}+{distance}.{commit}"),
+    version=Version.from_any_vcs(pattern=_VERSION_PATTERN).serialize(
+        format="{base}+{distance}.{commit}"
+    ),
     description="A library for adding CLI interfaces to applications in the brightSPARK Labs style",
     long_description=long_description,
     long_description_content_type="text/markdown",
