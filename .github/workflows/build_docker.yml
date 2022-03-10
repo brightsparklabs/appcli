@@ -2,9 +2,8 @@ name: Build and publish docker image
 
 on:
   push:
-    branches:
-      - develop
-      - master
+    tags:
+      - "*"
 
 jobs:
   build:

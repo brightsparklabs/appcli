@@ -26,20 +26,7 @@ def get_version():
     try:
         process = run(["git", "describe", "--dirty", "--always"], stdout=PIPE)
         line = process.stdout.strip().decode("utf-8")
-
-        # Generate correct python version based on PEP440
-        # https://peps.python.org/pep-0440
-
-        version_split = line.split("-")
-        public_version_identifier = version_split[0]
-
-        if len(version_split) == 1:
-            # This commit references a tag, so only reference the public version identifier
-            return public_version_identifier
-
-        local_version_label = ".".join(version_split[1:])
-        return f"{public_version_identifier}+{local_version_label}"
-
+        return line
     except Exception:
         return "UNKNOWN"
 

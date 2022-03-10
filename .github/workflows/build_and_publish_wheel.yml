@@ -2,9 +2,8 @@ name: Build and publish wheel to PYPI
 
 on:
   push:
-    branches:
-      - develop
-      - master
+    tags:
+      - "*"
 
 jobs:
   build:
