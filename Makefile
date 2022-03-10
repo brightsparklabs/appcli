@@ -67,6 +67,9 @@ format: venv
 format-check: venv
 	${PYTHON} -m black . --diff --check
 
+pre-commit: venv
+	pre-commit install --config .github/.pre-commit-config.yaml
+
 clean:
 	rm -rf build/ dist/ bsl_appcli.egg-info/
 
@@ -89,6 +92,6 @@ docker-publish: docker
 	docker push brightsparklabs/appcli:${APP_VERSION}
 	docker push brightsparklabs/appcli:latest
 
-all: format isort lint test
+all: format isort lint test pre-commit
 
 check: format-check isort-check lint test
