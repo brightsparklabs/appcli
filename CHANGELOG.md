@@ -17,6 +17,7 @@ settings in template files have moved. See the README for details on migration.
 
 ### Added
 
+- Add a CI pipeline check to lint the `Dockerfile` using [Hadolint](https://github.com/hadolint/hadolint).
 - [#239](https://github.com/brightsparklabs/appcli/issues/239) Support application context files, which enables application-specific Jinja2 templating contexts.
 - Enable admins and developers to fetch decrypted values of encrypted values in settings.
 
