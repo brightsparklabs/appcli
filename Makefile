@@ -45,7 +45,6 @@ venv: $(VENV_NAME)/bin/activate
 $(VENV_NAME)/bin/activate: setup.py
 	test -d $(VENV_NAME) || python -m venv $(VENV_NAME)
 	${PYTHON} -m pip install -U pip
-	${PYTHON} -m pip install dunamai==1.10.0
 	${PYTHON} -m pip install -e .
 	${PYTHON} -m pip install -e '.[dev]'
 	touch $(VENV_NAME)/bin/activate

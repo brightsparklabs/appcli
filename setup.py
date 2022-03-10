@@ -12,24 +12,24 @@ www.brightsparklabs.com
 # to use a consistent encoding
 from codecs import open
 from os import path
-
-from dunamai import Version
+from subprocess import PIPE, run
 
 # always prefer setuptools over distutils
 from setuptools import find_namespace_packages, setup
 
 # ------------------------------------------------------------------------------
-# SETUP DEFINITION
+# UTILITY FUNCTIONS
 # ------------------------------------------------------------------------------
 
-# Custom version pattern for dunamai.
-# Copied from dunamai's __init__.py, and removed the `v` prefix since we don't use it on our tags.
-_VERSION_PATTERN = r"""
-    (?x)                                                        (?# ignore whitespace)
-    ^((?P<epoch>\d+)!)?(?P<base>\d+(\.\d+)*)                   (?# v1.2.3 or v1!2000.1.2)
-    ([-._]?((?P<stage>[a-zA-Z]+)[-._]?(?P<revision>\d+)?))?     (?# b0)
-    (\+(?P<tagged_metadata>.+))?$                               (?# +linux)
-""".strip()
+
+def get_version():
+    try:
+        process = run(["git", "describe", "--dirty", "--always"], stdout=PIPE)
+        line = process.stdout.strip().decode("utf-8")
+        return line
+    except Exception:
+        return "UNKNOWN"
+
 
 # ------------------------------------------------------------------------------
 # SETUP DEFINITION
@@ -42,9 +42,7 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="bsl-appcli",
-    version=Version.from_any_vcs(pattern=_VERSION_PATTERN).serialize(
-        format="{base}+{distance}.{commit}"
-    ),
+    version=get_version(),
     description="A library for adding CLI interfaces to applications in the brightSPARK Labs style",
     long_description=long_description,
     long_description_content_type="text/markdown",
