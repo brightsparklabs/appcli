@@ -12,37 +12,23 @@ www.brightsparklabs.com
 # to use a consistent encoding
 from codecs import open
 from os import path
-from subprocess import PIPE, run
 
 # always prefer setuptools over distutils
 from setuptools import find_namespace_packages, setup
+from dunamai import Version
 
 # ------------------------------------------------------------------------------
-# UTILITY FUNCTIONS
+# SETUP DEFINITION
 # ------------------------------------------------------------------------------
 
-
-def get_version():
-    try:
-        process = run(["git", "describe", "--dirty", "--always"], stdout=PIPE)
-        line = process.stdout.strip().decode("utf-8")
-
-        # Generate correct python version based on PEP440
-        # https://peps.python.org/pep-0440
-
-        version_split = line.split("-")
-        public_version_identifier = version_split[0]
-
-        if len(version_split) == 1:
-            # This commit references a tag, so only reference the public version identifier
-            return public_version_identifier
-
-        local_version_label = ".".join(version_split[1:])
-        return f"{public_version_identifier}+{local_version_label}"
-
-    except Exception:
-        return "UNKNOWN"
-
+# Custom version pattern for dunamai.
+# Copied from dunamai's __init__.py, and removed the `v` prefix since we don't use it on our tags.
+_VERSION_PATTERN = r"""
+    (?x)                                                        (?# ignore whitespace)
+    ^((?P<epoch>\d+)!)?(?P<base>\d+(\.\d+)*)                   (?# v1.2.3 or v1!2000.1.2)
+    ([-._]?((?P<stage>[a-zA-Z]+)[-._]?(?P<revision>\d+)?))?     (?# b0)
+    (\+(?P<tagged_metadata>.+))?$                               (?# +linux)
+""".strip()
 
 # ------------------------------------------------------------------------------
 # SETUP DEFINITION
@@ -55,7 +41,7 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="bsl-appcli",
-    version=get_version(),
+    version=Version.from_any_vcs(pattern=_VERSION_PATTERN).serialize(format="{base}+{distance}.{commit}"),
     description="A library for adding CLI interfaces to applications in the brightSPARK Labs style",
     long_description=long_description,
     long_description_content_type="text/markdown",
