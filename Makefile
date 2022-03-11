@@ -47,7 +47,7 @@ $(VENV_NAME)/bin/activate: setup.py .github/.pre-commit-config.yaml
 	${PYTHON} -m pip install -U pip
 	${PYTHON} -m pip install -e .
 	${PYTHON} -m pip install -e '.[dev]'
-	pre-commit install --config .github/.pre-commit-config.yaml
+	${PYHTON} ${VENV_NAME}/bin/pre-commit install --config .github/.pre-commit-config.yaml
 	touch $(VENV_NAME)/bin/activate
 
 test: venv
