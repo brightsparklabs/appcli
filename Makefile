@@ -42,11 +42,12 @@ help:
 
 # Requirements are in setup.py, so whenever setup.py is changed, re-run installation of dependencies.
 venv: $(VENV_NAME)/bin/activate
-$(VENV_NAME)/bin/activate: setup.py
+$(VENV_NAME)/bin/activate: setup.py .github/.pre-commit-config.yaml
 	test -d $(VENV_NAME) || python -m venv $(VENV_NAME)
 	${PYTHON} -m pip install -U pip
 	${PYTHON} -m pip install -e .
 	${PYTHON} -m pip install -e '.[dev]'
+	pre-commit install --config .github/.pre-commit-config.yaml
 	touch $(VENV_NAME)/bin/activate
 
 test: venv
@@ -66,9 +67,6 @@ format: venv
 
 format-check: venv
 	${PYTHON} -m black . --diff --check
-
-pre-commit: venv
-	pre-commit install --config .github/.pre-commit-config.yaml
 
 clean:
 	rm -rf build/ dist/ bsl_appcli.egg-info/
@@ -92,6 +90,6 @@ docker-publish: docker
 	docker push brightsparklabs/appcli:${APP_VERSION}
 	docker push brightsparklabs/appcli:latest
 
-all: format isort lint test pre-commit
+all: format isort lint test
 
 check: format-check isort-check lint test

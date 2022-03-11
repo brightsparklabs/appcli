@@ -12,7 +12,6 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Breaking Changes from 1.3.6
 
-- Either `make all` or `make pre-commit` needs to be run when this repo is cloned to setup the pre-commit hooks.
 - As a result of supporting application-level settings files, all references to settings in template files have moved. See the README for details on migration.
 
 ### Added
