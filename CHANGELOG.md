@@ -20,6 +20,7 @@ The changelog is applicable from version `1.0.0` onwards.
 - Add a CI pipeline check to lint the `Dockerfile` using [Hadolint](https://github.com/hadolint/hadolint).
 - [#239](https://github.com/brightsparklabs/appcli/issues/239) Support application context files, which enables application-specific Jinja2 templating contexts.
 - Enable admins and developers to fetch decrypted values of encrypted values in settings.
+- Add `quickstart.md` file, a guide on setting up a sample appcli application.
 
 ### Fixed
 
@@ -41,6 +42,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 - Enable custom commands to run `exec` commands on service containers via the orchestrator
 - Allow tasks to be run in detached mode with flag `-d/--detach`.
+>>>>>>> origin/develop
 - Renaming the launcher script to create only 1 hidden file: `.<timestamp>_<app_name>_<app_version>`.
 - [#118](https://github.com/brightsparklabs/appcli/issues/118) Added `version` command to fetch version of app managed by appcli.
 - [#144](https://github.com/brightsparklabs/appcli/issues/144) Added `--lines/-n` option to the `logs` commands for orchestrators. This is the `n` number of lines from the end to start the tail.
