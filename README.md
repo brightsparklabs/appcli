@@ -41,6 +41,12 @@ variables within the `settings.yml` file as described in the Installation sectio
 Stack variables can be set within the `stack-settings.yml` file as described in the
 `Build configuration template directories` section.
 
+## Quick Start
+
+Refer to the [quick start guide](quickstart.md) to get a basic application running.
+
+Otherwise refer to the Installation section below to see all options.
+
 ## Installation
 
 ### Add the library to your python CLI application
@@ -60,8 +66,6 @@ python3 implicit namespaced packages.
     # # -*- coding: utf-8 -*-
 
     # standard libraries
-    import os
-    import sys
     from pathlib import Path
 
     # vendor libraries
@@ -74,7 +78,7 @@ python3 implicit namespaced packages.
     # ------------------------------------------------------------------------------
 
     # directory containing this script
-    BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+    BASE_DIR = Path(__file__).parent
 
     # ------------------------------------------------------------------------------
     # PRIVATE METHODS
@@ -84,18 +88,17 @@ python3 implicit namespaced packages.
         configuration = Configuration(
             app_name='myapp',
             docker_image='brightsparklabs/myapp',
-            seed_app_configuration_file=Path(BASE_DIR, 'resources/settings.yml'),
-            application_context_files_dir=Path(BASE_DIR, 'resources/templates/appcli/context'),
-            stack_configuration_file=Path(BASE_DIR, 'resources/stack-settings.yml'),
-            baseline_templates_dir=Path(BASE_DIR, 'resources/templates/baseline'),
-            configurable_templates_dir=Path(BASE_DIR, 'resources/templates/configurable'),
+            seed_app_configuration_file=BASE_DIR / 'resources/settings.yml',
+            application_context_files_dir=BASE_DIR / 'resources/templates/appcli/context',
+            stack_configuration_file=BASE_DIR / 'resources/stack-settings.yml',
+            baseline_templates_dir=BASE_DIR / 'resources/templates/baseline',
+            configurable_templates_dir=BASE_DIR / 'resources/templates/configurable',
             orchestrator=DockerComposeOrchestrator(
+                # NOTE: These paths are relative to `resources/templates/baseline`.
                 docker_compose_file = Path('docker-compose.yml'),
                 docker_compose_override_directory = Path('docker-compose.override.d/'),
                 docker_compose_task_file = Path('docker-compose.tasks.yml'),
-                docker_compose_task_override_directory = Path(
-                    'docker-compose.tasks.override.d/'
-                ),
+                docker_compose_task_override_directory = Path( 'docker-compose.tasks.override.d/'),
             ),
             mandatory_additional_data_dirs=['EXTRA_DATA',],
             mandatory_additional_env_variables=['ENV_VAR_2',],
