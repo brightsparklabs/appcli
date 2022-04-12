@@ -81,6 +81,14 @@ class Configuration(BaseModel):
     orchestrator: Orchestrator
     """ Orchestrator to use to launch Docker containers. """
 
+    application_context_files_dir: Path = None
+    """
+    Optional. Path to directory containing YAML files which are applied to
+    templates to generate the final configuration files. These application
+    context files can be templates themselves, which are rendered by the
+    main app configuration file.
+    """
+
     configurable_templates_dir: Path = None
     """
     Optional. Directory containing a default initial set of configurable jinja2 templates
@@ -128,7 +136,7 @@ class Configuration(BaseModel):
                 re.sub(r"[^a-zA-Z_]", "_", value[0]),  # First character.
                 re.sub(r"[^a-zA-Z0-9_]", "_", value[1:]),
             ]
-        ).upper()
+        )
 
     class Config:
         # This is a requirement for pydantic to disable type checking for arbitrary user types for fields.

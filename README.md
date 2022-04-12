@@ -31,7 +31,7 @@ The library exposes the following environment variables to the `docker-compose.y
 Note: the `APP_NAME` variable is derived from the `app_name` passed in to the `Configuration` object in the
 main python entrypoint to the application. In order for the application to work, the `app_name` is forced to conform
 with the shell variable name standard: `[a-zA-Z_][a-zA-Z_0-9]*`. Any characters that do not fit this regex will be
-replaced with `_`. Once the replacement is done, the entire field is capitalised. See:
+replaced with `_`. See:
 (https://unix.stackexchange.com/questions/428880/list-of-acceptable-initial-characters-for-a-bash-variable)
 (https://linuxhint.com/bash-variable-name-rules-legal-illegal/)
 
@@ -85,6 +85,7 @@ python3 implicit namespaced packages.
             app_name='myapp',
             docker_image='brightsparklabs/myapp',
             seed_app_configuration_file=Path(BASE_DIR, 'resources/settings.yml'),
+            application_context_files_dir=Path(BASE_DIR, 'resources/templates/appcli/context'),
             stack_configuration_file=Path(BASE_DIR, 'resources/stack-settings.yml'),
             baseline_templates_dir=Path(BASE_DIR, 'resources/templates/baseline'),
             configurable_templates_dir=Path(BASE_DIR, 'resources/templates/configurable'),
@@ -109,16 +110,156 @@ python3 implicit namespaced packages.
     if __name__ == '__main__':
         main()
 
+#### Custom Commands
+
+You can specify some custom top-level commands by adding click commands or command groups to the configuration object.
+Assuming 'web' is the name of the service in the docker-compose.yml file which you wish to exec against, we can create
+three custom commands in the following example:
+
+- `myapp ls-root` which lists the contents of the root directory within the `web` service container and prints it out.
+- `myapp ls-root-to-file` which lists the contents of the root directory within the `web` service container and dumps to file within the container.
+- `myapp tee-file` which takes some text and `tee`s it into another file the `web` service container.
+
+```python
+
+def get_ls_root_command(orchestrator: DockerComposeOrchestrator):
+    @click.command(
+        help="List files in the root directory",
+    )
+    @click.pass_context
+    def ls_root(ctx: click.Context):
+
+        # Equivalent command within the container:
+        # `ls -alh`
+        cli_context: CliContext = ctx.obj
+        output: CompletedProcess = orchestrator.exec(cli_context, "web", ["ls", "-alh", "/"])
+        print(output.stdout.decode())
+
+    return ls_root
+
+def get_tee_file_command(orchestrator: DockerComposeOrchestrator):
+    @click.command(
+        help="Tee some text into a file",
+    )
+    @click.pass_context
+    def tee_file(ctx: click.Context):
+
+        # Equivalent command within the container:
+        # `echo "Some data to tee into the custom file" | tee /ls-root.txt`
+        cli_context: CliContext = ctx.obj
+        output: CompletedProcess = orchestrator.exec(cli_context, "web", ["tee", "/my_custom_file.txt"], stdin_input="Some data to tee into the custom file")
+
+    return tee_file
+
+def get_ls_root_to_file_command(orchestrator: DockerComposeOrchestrator):
+    @click.command(
+        help="List files in the root directory and tee to file",
+    )
+    @click.pass_context
+    def ls_root_to_file(ctx: click.Context):
+
+        # Equivalent command within the container:
+        # `ls -alh | tee /ls-root.txt`
+        cli_context: CliContext = ctx.obj
+        output: CompletedProcess = orchestrator.exec(cli_context, "web", ["ls", "-alh", "/"])
+        data = output.stdout.decode()
+        orchestrator.exec(cli_context, "web", ["tee", "/ls-root.txt"], stdin_input=data)
+
+    return ls_root_to_file
+
+def main():
+    orchestrator = DockerComposeOrchestrator(Path("docker-compose.yml"))
+    configuration = Configuration(
+        app_name="appcli_nginx",
+        docker_image="thomas-anderson-bsl/appcli-nginx",
+        seed_app_configuration_file=Path(BASE_DIR, "resources/settings.yml"),
+        stack_configuration_file=Path(BASE_DIR, "resources/stack-settings.yml"),
+        baseline_templates_dir=Path(BASE_DIR, "resources/templates/baseline"),
+        configurable_templates_dir=Path(BASE_DIR, "resources/templates/configurable"),
+        orchestrator=orchestrator,
+        custom_commands={get_tee_file_command(orchestrator),get_ls_root_command(orchestrator),get_ls_root_to_file_command(orchestrator)}
+    )
+    cli = create_cli(configuration)
+    cli()
+
+```
+
 ### Build configuration template directories
 
 - Store any Jinja2 variable definitions you wish to use in your configuration
   template files in `resources/settings.yml`.
+- Store any application context files in `resources/templates/appcli/context/`
 - Store any appcli stack specific keys in `resources/stack-settings.yml`.
 - Store your `docker-compose.yml`/`docker-compose.yml.j2` file in `resources/templates/baseline/`.
 - Configuration files (Jinja2 compatible templates or otherwise) can be stored in one
   of two locations:
   - `resources/templates/baseline` - for templates which the end user **is not** expected to modify.
   - `resources/templates/configurable` - for templates which the end user is expected to modify.
+
+#### Application context files
+
+Template files are templated with Jinja2. The 'data' passed into the templating engine
+is a combination of the `settings.yml` and all application context files
+(stored in `resources/templates/appcli/context`, and referenced in the `Configuration`
+object as `application_context_files_dir`). Application context files that have the
+extension `.j2` are templated using the settings from `settings.yml`.
+
+These are combined to make the data for templating as follows:
+
+```json
+{
+  "settings": {
+    ... all settings from `settings.yml`
+  },
+  "application": {
+    <app_context_file_1>: {
+      ... settings from `app_context_file_1.yml`, optionally jinja2 templated using settings from `settings.yml`
+    },
+    ... additional app_context_files
+  }
+}
+```
+
+As a minimal example with the following YAML files:
+```yaml
+
+# ./settings.yml
+main_settings:
+  abc: 123
+
+# ./resources/templates/appcli/context/app_constants.yml
+other_settings:
+  hello: world
+
+# ./resources/templates/appcli/context/app_variables.yml.j2
+variables:
+  main_abc_setting: {{ settings.main_settings.abc }}
+
+```
+
+The data for Jinja2 templating engine will be:
+
+```json
+{
+  "settings": {
+    "main_settings": {
+      "abc": 123
+    }
+  },
+  "application": {
+    "app_constants": {
+      "other_settings": {
+        "hello": "world"
+      }
+    },
+    "app_variables": {
+      "variables": {
+        "main_abc_setting": 123
+      }
+    }
+  }
+}
+```
 
 ### Configure application backup
 
@@ -377,6 +518,19 @@ The installation script will generate a launcher script for controlling the appl
 location will be printed out when running the install script. This script should now be used as the
 main entrypoint to all appcli functions for managing your application.
 
+## Migration from appcli version <=1.3.6 to version >1.3.6
+
+As a result of supporting application context files, all references to
+settings in template files have moved.
+
+All settings in `settings.yml` used in templating are now namespaced under
+`settings`. All templates will need to change their references to use this new
+namespacing scheme. For example, in templates that refer to settings, change the
+references like so:
+
+- `my_app.server.hostname` -> `settings.my_app.server.hostname`
+- `my_app.server.http.port` -> `settings.my_app.server.http.port`
+
 ## Usage
 
 This section details what commands and options are available.
@@ -434,15 +588,16 @@ Configures the application.
 
 usage: `./myapp configure [OPTIONS] COMMAND [ARGS]`
 
-| Command  | Description                                                                                                               |
-| -------- | ------------------------------------------------------------------------------------------------------------------------- |
-| apply    | Applies the settings from the configuration.                                                                              |
-| diff     | Get the differences between current and default configuration settings.                                                   |
-| get      | Reads a setting from the configuration.                                                                                   |
-| init     | Initialises the configuration directory.                                                                                  |
-| set      | Saves a setting to the configuration. Allows setting the type of value with option `--type`, and defaults to string type. |
-| template | Configures the baseline templates.                                                                                        |
-| edit     | Open the settings file for editing with vim-tiny.                                                                         |
+| Command    | Description                                                                                                               |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------- |
+| apply      | Applies the settings from the configuration.                                                                              |
+| diff       | Get the differences between current and default configuration settings.                                                   |
+| get        | Reads a setting from the configuration.                                                                                   |
+| get-secure | Reads a setting from the configuration, decrypting if it is encrypted. This will prompt for the setting key.              |
+| init       | Initialises the configuration directory.                                                                                  |
+| set        | Saves a setting to the configuration. Allows setting the type of value with option `--type`, and defaults to string type. |
+| template   | Configures the baseline templates.                                                                                        |
+| edit       | Open the settings file for editing with vim-tiny.                                                                         |
 
 | Option | Description                     |
 | ------ | ------------------------------- |
@@ -537,9 +692,9 @@ Runs application tasks. These are short-lived services which should exit when th
 
 usage: `./myapp task [OPTIONS] COMMAND [ARGS]`
 
-| Command | Description                        |
-| ------- | ---------------------------------- |
-| run     | Runs a specified application task. |
+| Command | Description                                                                                  |
+| ------- | -------------------------------------------------------------------------------------------- |
+| run     | Runs a specified application task. Optionally run in the background with `-d/--detach` flag. |
 
 | Option | Description                     |
 | ------ | ------------------------------- |

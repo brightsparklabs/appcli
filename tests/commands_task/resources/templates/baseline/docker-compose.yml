@@ -1,0 +1,19 @@
+---
+##
+# Docker Compose file for running services.
+# ____________________________________________________________________________
+#
+# Created by brightSPARK Labs
+# www.brightsparklabs.com
+##
+version: "3.7"
+services:
+  service_1:
+    image: alpine
+    container_name: appcli_testing_container_service_1
+  service_2:
+    image: alpine
+    container_name: appcli_testing_container_service_2
+  service_3:
+    image: alpine
+    container_name: appcli_testing_container_service_3

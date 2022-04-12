@@ -1,0 +1,6 @@
+{% if test_app_get_templating_configuration.loop is defined %}
+loop:
+{% for val in range(test_app_get_templating_configuration.loop) %}
+    - {{ val }}
+{% endfor %}
+{% endif %}

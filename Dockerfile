@@ -6,16 +6,16 @@
  # www.brightsparklabs.com
  ##
 
-FROM alpine AS docker-binary-download
+FROM alpine:3.15.0 AS docker-binary-download
 
 WORKDIR /tmp
 
 # Download and extract the static docker binary
 RUN \
-    wget https://download.docker.com/linux/static/stable/x86_64/docker-20.10.6.tgz \
+    wget -q https://download.docker.com/linux/static/stable/x86_64/docker-20.10.6.tgz \
     && tar xf docker-20.10.6.tgz
 
-FROM python:3.8.2-slim-buster
+FROM python:3.10.2-slim-bullseye
 
 ENV LANG=C.UTF-8
 
