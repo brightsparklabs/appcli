@@ -8,5 +8,6 @@ updates:
   open-pull-requests-limit: 20
   reviewers:
   - thomas-anderson-bsl
+  - benjamin-wiffen
   labels:
   - dependencies
