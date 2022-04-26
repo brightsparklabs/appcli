@@ -3,10 +3,11 @@ updates:
 - package-ecosystem: pip
   directory: /
   schedule:
-    # Defaults to Monday 5am UTC.
-    interval: weekly
+    # Defaults to the first of the month.
+    interval: monthly
   open-pull-requests-limit: 20
   reviewers:
   - thomas-anderson-bsl
+  - benjamin-wiffen
   labels:
   - dependencies
