@@ -43,7 +43,6 @@ The changelog is applicable from version `1.0.0` onwards.
 
 - Enable custom commands to run `exec` commands on service containers via the orchestrator
 - Allow tasks to be run in detached mode with flag `-d/--detach`.
-  > > > > > > > origin/develop
 - Renaming the launcher script to create only 1 hidden file: `.<timestamp>_<app_name>_<app_version>`.
 - [#118](https://github.com/brightsparklabs/appcli/issues/118) Added `version` command to fetch version of app managed by appcli.
 - [#144](https://github.com/brightsparklabs/appcli/issues/144) Added `--lines/-n` option to the `logs` commands for orchestrators. This is the `n` number of lines from the end to start the tail.
