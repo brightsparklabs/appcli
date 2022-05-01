@@ -60,7 +60,7 @@ setup(
         "dataclasses-json==0.5.7",
         "deepdiff==5.8.0",
         "GitPython==3.1.27",
-        "jinja2==3.1.1",
+        "jinja2==3.1.2",
         "pre-commit==2.18.1",
         "pycryptodome==3.14.1",
         "pydantic==1.9.0",
