@@ -16,8 +16,8 @@ Run the following commands to create the required files and folders
 
 ```bash
 mkdir -p src/resources/templates/{baseline,configurable}
-touch src/resources/settings.py
-touch src/resources/stack-settings.py
+touch src/resources/settings.yml
+touch src/resources/stack-settings.yml
 ```
 
 #### Create the appcli application
@@ -60,7 +60,7 @@ def main():
         baseline_templates_dir=BASE_DIR / 'resources/templates/baseline',
         configurable_templates_dir=BASE_DIR / 'resources/templates/configurable',
         orchestrator=DockerComposeOrchestrator(
-            # NOTE: These paths are relative to `resources/templates/baseline`.
+            # NOTE: These paths are relative to 'resources/templates/baseline'.
             docker_compose_file = Path('docker-compose.yml')
         ),
     )
