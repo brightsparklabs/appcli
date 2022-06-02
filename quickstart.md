@@ -146,7 +146,7 @@ Before we build our application please make sure your directory reflects the fol
 ### Build the container
 
 ```
-docker build -t brightsparklabs/myapp --build-arg APP_VERSION=latest .
+docker build -t brightsparklabs/myapp:latest --build-arg APP_VERSION=latest .
 ```
 
 ### Run the installed script.
