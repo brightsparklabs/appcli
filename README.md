@@ -60,6 +60,7 @@ internal classes and methods is now by a full path, rather than being exposed
 at the root. This was done to allow access to all methods and classes using
 python3 implicit namespaced packages.
 
+```python
     # filename: myapp.py
 
     #!/usr/bin/env python3
@@ -94,7 +95,7 @@ python3 implicit namespaced packages.
             baseline_templates_dir=BASE_DIR / 'resources/templates/baseline',
             configurable_templates_dir=BASE_DIR / 'resources/templates/configurable',
             orchestrator=DockerComposeOrchestrator(
-                # NOTE: These paths are relative to `resources/templates/baseline`.
+                # NOTE: These paths are relative to 'resources/templates/baseline'.
                 docker_compose_file = Path('docker-compose.yml'),
                 docker_compose_override_directory = Path('docker-compose.override.d/'),
                 docker_compose_task_file = Path('docker-compose.tasks.yml'),
@@ -112,7 +113,7 @@ python3 implicit namespaced packages.
 
     if __name__ == '__main__':
         main()
-
+```
 #### Custom Commands
 
 You can specify some custom top-level commands by adding click commands or command groups to the configuration object.
