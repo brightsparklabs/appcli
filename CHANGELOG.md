@@ -26,6 +26,7 @@ The changelog is applicable from version `1.0.0` onwards.
 ### Fixed
 
 - On tag commits, Docker images and python wheels should now be correctly published.
+- Update the list of commands used in the `quickstart.md` guide to appropriately reflect the required steps and functionality needed to get a sample appcli application running.
 
 ---
 
