@@ -23,10 +23,10 @@ touch src/resources/stack-settings.yml
 #### Create the appcli application
 
 ```bash
-touch src/resources/myapp.py
-chmod +x src/resources/myapp.py
+touch src/myapp.py
+chmod +x src/myapp.py
 
-cat <<EOF >src/resources/myapp.py
+cat <<EOF >src/myapp.py
 #!/usr/bin/env python3
 # # -*- coding: utf-8 -*-
 
