@@ -94,7 +94,7 @@ RUN pip install --requirement requirements.txt
 COPY src .
 
 ARG APP_VERSION=latest
-ENV APP_VERSION=${APP_VERSION}
+ENV APP_VERSION=\${APP_VERSION}
 
 EOF
 ```
