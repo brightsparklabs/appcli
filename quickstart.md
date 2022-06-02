@@ -160,7 +160,7 @@ docker run --rm brightsparklabs/myapp:latest install
 Once you can successfully see the script printed on the command line, you are ready to install
 
 ```bash
-docker run --rm brightsparklabs/myapp:latest install | sudo bash`
+docker run --rm brightsparklabs/myapp:latest install | sudo bash
 ```
 
 ### Initialise
@@ -169,7 +169,7 @@ Once you have successfully ran the install script you can initialise the app by 
 following command:
 
 ```bash
-/opt/brightsparklabs/myapp/production/myapp configure init`
+/opt/brightsparklabs/myapp/production/myapp configure init
 ```
 
 ### Applying the settings
