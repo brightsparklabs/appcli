@@ -110,13 +110,15 @@ echo "bsl-appcli==${APPCLI_VERSION}" >> requirements.txt
 
 ### Create  docker-compose.yml
 
-```
+```bash
 cat <<EOF >src/resources/templates/baseline/docker-compose.yml
 
 version: '3'
 services:
   echo-server:
     image: ealen/echo-server:0.5.1
+
+EOF
 ```
 
 The above uses [Echo-Server](https://ealenn.github.io/Echo-Server/pages/quick-start/docker.html#run)
