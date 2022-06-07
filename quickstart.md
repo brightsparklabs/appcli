@@ -16,17 +16,17 @@ Run the following commands to create the required files and folders
 
 ```bash
 mkdir -p src/resources/templates/{baseline,configurable}
-touch src/resources/settings.py
-touch src/resources/stack-settings.py
+touch src/resources/settings.yml
+touch src/resources/stack-settings.yml
 ```
 
 #### Create the appcli application
 
 ```bash
-touch src/resources/myapp.py
-chmod +x src/resources/myapp.py
+touch src/myapp.py
+chmod +x src/myapp.py
 
-cat <<EOF >src/resources/myapp.py
+cat <<EOF >src/myapp.py
 #!/usr/bin/env python3
 # # -*- coding: utf-8 -*-
 
@@ -60,7 +60,7 @@ def main():
         baseline_templates_dir=BASE_DIR / 'resources/templates/baseline',
         configurable_templates_dir=BASE_DIR / 'resources/templates/configurable',
         orchestrator=DockerComposeOrchestrator(
-            # NOTE: These paths are relative to `resources/templates/baseline`.
+            # NOTE: These paths are relative to 'resources/templates/baseline'.
             docker_compose_file = Path('docker-compose.yml')
         ),
     )
@@ -94,7 +94,7 @@ RUN pip install --requirement requirements.txt
 COPY src .
 
 ARG APP_VERSION=latest
-ENV APP_VERSION=${APP_VERSION}
+ENV APP_VERSION=\${APP_VERSION}
 
 EOF
 ```
@@ -110,13 +110,15 @@ echo "bsl-appcli==${APPCLI_VERSION}" >> requirements.txt
 
 ### Create  docker-compose.yml
 
-```
+```bash
 cat <<EOF >src/resources/templates/baseline/docker-compose.yml
 
 version: '3'
 services:
   echo-server:
     image: ealen/echo-server:0.5.1
+
+EOF
 ```
 
 The above uses [Echo-Server](https://ealenn.github.io/Echo-Server/pages/quick-start/docker.html#run)
@@ -144,7 +146,7 @@ Before we build our application please make sure your directory reflects the fol
 ### Build the container
 
 ```
-docker build -t brightsparklabs/myapp --build-arg APP_VERSION=latest .
+docker build -t brightsparklabs/myapp:latest --build-arg APP_VERSION=latest .
 ```
 
 ### Run the installed script.
@@ -158,7 +160,7 @@ docker run --rm brightsparklabs/myapp:latest install
 Once you can successfully see the script printed on the command line, you are ready to install
 
 ```bash
-docker run --rm brightsparklabs/myapp:latest install | sudo bash`
+docker run --rm brightsparklabs/myapp:latest install | sudo bash
 ```
 
 ### Initialise
@@ -167,7 +169,7 @@ Once you have successfully ran the install script you can initialise the app by 
 following command:
 
 ```bash
-/opt/brightsparklabs/myapp/production/myapp configure init`
+/opt/brightsparklabs/myapp/production/myapp configure init
 ```
 
 ### Applying the settings
