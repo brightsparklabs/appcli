@@ -172,3 +172,32 @@ class CliContext(NamedTuple):
             key_file=self.get_key_file(),
             application_context_files_dir=self.application_context_files_dir,
         )
+
+    # ---------------------------------
+    # additional data
+    # ---------------------------------
+
+    additional_data = {}
+    """ Additional data storage. """
+
+    def put(self, key, obj):
+        """Store a new 'key: value' pair in the additional_data dictionary.
+
+        Args:
+            key (str): Key to store value at.
+            obj: Object to store at the key.
+        """
+        self.additional_data[key] = obj
+        logger.debug(f"Setting additional data for `{key}`.")
+
+    def get(self, key):
+        """Get object associated with key from additional_data dictionary.
+
+        Args:
+            key (str): Key to retrieve value from.
+
+        Returns:
+            object: The object stored at key.
+        """
+        logger.debug(f"Getting additional data for `{key}`.")
+        return self.additional_data[key]
