@@ -663,6 +663,13 @@ All commands are defined within the orchestrators themselves. Run `./myapp orche
 | ------ | ------------------------------ |
 | --help | Show the help message and exit |
 
+For example, the following commands are available to docker-compose:
+
+| Command | Description                   |
+| ------- | ----------------------------- |
+| ps      | List containers.              |
+| compose | Run a docker compose command. |
+
 #### Command: `restore`
 
 Restores a specified backup `.tgz` file from the configured backup folder.
