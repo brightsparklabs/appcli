@@ -238,7 +238,7 @@ other_settings:
 
 # ./resources/templates/appcli/context/app_variables.yml.j2
 variables:
-  main_abc_setting: { { settings.main_settings.abc } }
+  main_abc_setting: {{ settings.main_settings.abc }}
 ```
 
 The data for Jinja2 templating engine will be:
