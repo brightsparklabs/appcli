@@ -114,6 +114,7 @@ python3 implicit namespaced packages.
     if __name__ == '__main__':
         main()
 ```
+
 #### Custom Commands
 
 You can specify some custom top-level commands by adding click commands or command groups to the configuration object.
@@ -225,8 +226,8 @@ These are combined to make the data for templating as follows:
 ```
 
 As a minimal example with the following YAML files:
-```yaml
 
+```yaml
 # ./settings.yml
 main_settings:
   abc: 123
@@ -237,8 +238,7 @@ other_settings:
 
 # ./resources/templates/appcli/context/app_variables.yml.j2
 variables:
-  main_abc_setting: {{ settings.main_settings.abc }}
-
+  main_abc_setting: { { settings.main_settings.abc } }
 ```
 
 The data for Jinja2 templating engine will be:
@@ -586,6 +586,7 @@ usage: `./myapp backup [OPTIONS] [ARGS]`
 
 The `backup` command optionally takes an argument corresponding to the `name` of the backup to run. If no `name` is
 provided, all backups will attempt to run.
+
 #### Command Group: `configure`
 
 Configures the application.
@@ -659,16 +660,16 @@ usage: `./myapp orchestrator [OPTIONS] COMMAND [ARGS]`
 
 All commands are defined within the orchestrators themselves. Run `./myapp orchestrator` to list available commands.
 
+For example, the following commands are available to docker-compose:
+
+| Command | Description                                                                                                        |
+| ------- | ------------------------------------------------------------------------------------------------------------------ |
+| ps      | List containers for the appcli project, with current status and exposed ports.                                     |
+| compose | Run a docker compose command. See [docker compose](https://docs.docker.com/engine/reference/commandline/compose/). |
+
 | Option | Description                    |
 | ------ | ------------------------------ |
 | --help | Show the help message and exit |
-
-For example, the following commands are available to docker-compose:
-
-| Command | Description                   |
-| ------- | ----------------------------- |
-| ps      | List containers.              |
-| compose | Run a docker compose command. |
 
 #### Command: `restore`
 

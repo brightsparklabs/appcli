@@ -22,7 +22,7 @@ The changelog is applicable from version `1.0.0` onwards.
 - [#239](https://github.com/brightsparklabs/appcli/issues/239) Support application context files, which enables application-specific Jinja2 templating contexts.
 - Enable admins and developers to fetch decrypted values of encrypted values in settings.
 - Add `quickstart.md` file, a guide on setting up a sample appcli application.
-- Add docker-compose orchestrator commands to `README.md`.
+- Add [docker-compose](https://docs.docker.com/engine/reference/commandline/compose/) orchestrator commands to `README.md`.
 
 ### Fixed
 
