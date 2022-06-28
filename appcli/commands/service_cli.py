@@ -43,6 +43,7 @@ class ServiceAction(enum.Enum):
 
     START = enum.auto()
     SHUTDOWN = enum.auto()
+    STATUS = enum.auto()
 
 
 class ServiceCli:
@@ -176,6 +177,25 @@ class ServiceCli:
             )
             self._action_orchestrator(ctx, ServiceAction.SHUTDOWN, service_names)
 
+        @service.command(help="Gets the status of services.")
+        @click.option(
+            "--force",
+            is_flag=True,
+            help="Force status check even if validation checks fail.",
+        )
+        @click.argument(
+            "service_names",
+            required=False,
+            type=click.STRING,
+            nargs=-1,
+            callback=self._validate_service_names,
+        )
+        @click.pass_context
+        def status(ctx: Context, force: bool, service_names: tuple[str, ...]):
+            cli_context: CliContext = ctx.obj
+            
+            self._action_orchestrator(ctx, ServiceAction.STATUS, service_names)
+
         # Add the 'logs' subcommand
         service.add_command(self.orchestrator.get_logs_command())
 
@@ -239,6 +259,12 @@ class ServiceCli:
             pre_hook = hooks.pre_shutdown
             post_hook = hooks.post_shutdown
 
+        elif action == ServiceAction.STATUS:
+            action_run_function = self.orchestrator.status
+            pre_hook = None
+            post_hook = None
+
+
         else:
             error_and_exit(f"Unhandled action called: [{action.name}]")
 
@@ -253,14 +279,17 @@ class ServiceCli:
         )
         post_run_log_message = f"{action.name} command finished with code [%i]"
 
-        logger.debug(f"Running pre-{action.name} hook")
-        pre_hook(ctx)
+        if pre_hook is not None:
+            logger.debug(f"Running pre-{action.name} hook")
+            pre_hook(ctx)
 
         logger.info(pre_run_log_message)
         result = action_run_function(ctx.obj, service_names)
 
-        logger.debug(f"Running post-{action.name} hook")
-        post_hook(ctx, result)
+        if post_hook is not None:
+            logger.debug(f"Running post-{action.name} hook")
+            post_hook(ctx, result)
 
+        click.echo(result.stdout)
         logger.info(post_run_log_message, result.returncode)
         sys.exit(result.returncode)
