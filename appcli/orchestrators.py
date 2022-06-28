@@ -72,6 +72,21 @@ class Orchestrator:
         """
         raise NotImplementedError
 
+    def status(
+        self, cli_context: CliContext, service_name: tuple[str, ...] = None
+    ) -> CompletedProcess:
+        """
+        Gets the status of Docker containers (services). Optionally accepts a tuple of service names to get the status of.
+
+        Args:
+            cli_context (CliContext): The current CLI context.
+            service_names (tuple[str,...], optional): Names of the services to get the status of. If not provided, gets the status of all services.
+
+        Returns:
+            CompletedProcess: Result of the orchestrator command.
+        """
+        raise NotImplementedError
+
     def task(
         self,
         cli_context: CliContext,
@@ -215,6 +230,14 @@ class DockerComposeOrchestrator(Orchestrator):
             command = ("rm", "-fsv") + service_names
             return self.__compose_service(cli_context, command)
         return self.__compose_service(cli_context, ("down",))
+
+    def status(
+        self, cli_context: CliContext, service_names: tuple[str, ...] = None
+    ) -> CompletedProcess:
+        command = ("ps",)
+        if service_names is not None and len(service_names) > 0:
+            command += service_names
+        return self.__compose_service(cli_context, command)
 
     def task(
         self,
@@ -422,6 +445,7 @@ class DockerSwarmOrchestrator(Orchestrator):
             return CompletedProcess(args=None, returncode=1)
 
         return self.__docker_stack(cli_context, ("rm",))
+
 
     def task(
         self,
