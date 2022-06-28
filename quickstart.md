@@ -108,7 +108,7 @@ APPCLI_VERSION=<version>
 echo "bsl-appcli==${APPCLI_VERSION}" >> requirements.txt
 ```
 
-### Create  docker-compose.yml
+### Create docker-compose.yml
 
 ```bash
 cat <<EOF >src/resources/templates/baseline/docker-compose.yml
@@ -141,7 +141,6 @@ Before we build our application please make sure your directory reflects the fol
 ├── requirements.txt
 └── Dockerfile
 ```
-
 
 ### Build the container
 
@@ -197,3 +196,25 @@ docker ps
 ```
 
 More commands can be found in the [appcli README](https://github.com/brightsparklabs/appcli).
+
+## Local Development
+
+Instead of fetching appcli from the PIP repository, you can import appcli from the local filesystem into your project (this can help during development).
+
+First, clone the appcli repository into the same directory as the `requirements.txt` file:
+
+```bash
+git clone git@github.com:brightsparklabs/appcli.git
+```
+
+Change the `requirements.txt` file to reference the local appcli repository:
+
+```
+-e . /appcli
+```
+
+Finally, copy the appcli repo to the docker image (in the `Dockerfile`):
+
+```
+COPY appcli .
+```

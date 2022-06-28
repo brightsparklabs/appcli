@@ -23,6 +23,7 @@ The changelog is applicable from version `1.0.0` onwards.
 - Enable admins and developers to fetch decrypted values of encrypted values in settings.
 - Add `quickstart.md` file, a guide on setting up a sample appcli application.
 - Add [docker-compose](https://docs.docker.com/engine/reference/commandline/compose/) orchestrator commands to `README.md`.
+- Update `quickstart.md` to include section about development with a local APPCLI instance.
 
 ### Fixed
 
