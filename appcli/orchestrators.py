@@ -446,6 +446,17 @@ class DockerSwarmOrchestrator(Orchestrator):
 
         return self.__docker_stack(cli_context, ("rm",))
 
+    def status(
+        self, cli_context: CliContext, service_names: tuple[str, ...] = None
+    ) -> CompletedProcess:
+        if service_names is not None and len(service_names) > 0:
+            logger.error(
+                "Docker Swarm orchestrator cannot check the status of individual services. Attempted to get the status of [%s].",
+                service_names,
+            )
+            return CompletedProcess(args=None, returncode=1)
+
+        return self.__docker_stack(cli_context, ("ps",))
 
     def task(
         self,
