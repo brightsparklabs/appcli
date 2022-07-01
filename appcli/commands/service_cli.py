@@ -188,7 +188,9 @@ class ServiceCli:
         @click.pass_context
         def status(ctx: Context, service_names: tuple[str, ...]):
             cli_context: CliContext = ctx.obj
-            
+            cli_context.get_configuration_dir_state().verify_command_allowed(
+                AppcliCommand.SERVICE_STATUS
+            )
             self._action_orchestrator(ctx, ServiceAction.STATUS, service_names)
 
         # Add the 'logs' subcommand
