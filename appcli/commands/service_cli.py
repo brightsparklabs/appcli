@@ -178,11 +178,6 @@ class ServiceCli:
             self._action_orchestrator(ctx, ServiceAction.SHUTDOWN, service_names)
 
         @service.command(help="Gets the status of services.")
-        @click.option(
-            "--force",
-            is_flag=True,
-            help="Force status check even if validation checks fail.",
-        )
         @click.argument(
             "service_names",
             required=False,
@@ -191,7 +186,7 @@ class ServiceCli:
             callback=self._validate_service_names,
         )
         @click.pass_context
-        def status(ctx: Context, force: bool, service_names: tuple[str, ...]):
+        def status(ctx: Context, service_names: tuple[str, ...]):
             cli_context: CliContext = ctx.obj
             
             self._action_orchestrator(ctx, ServiceAction.STATUS, service_names)
