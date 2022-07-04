@@ -308,6 +308,41 @@ class Test_ServiceCommands:
         assert "Service [INVALID_SERVICE_2] does not exist" in result.output
         assert result.exit_code == 1
 
+    # --------------------------------------------------------------------------
+    # SERVICE STATUS
+    # --------------------------------------------------------------------------
+    def test_service_status_no_input(self, test_env):
+
+        result = test_env.invoke_service_command(["status"])
+
+        assert f"STATUS {APP_NAME} ..." in result.output
+        assert result.exit_code == 0
+
+    def test_service_status_single_input(self, test_env):
+
+        result = test_env.invoke_service_command(["status", "service_2"])
+
+        assert "STATUS service_2 ..." in result.output
+        assert result.exit_code == 0
+
+    def test_service_status_multiple_inputs(self, test_env):
+
+        result = test_env.invoke_service_command(
+            ["status", "service_3", "service_1"],
+        )
+
+        assert "STATUS service_3, service_1 ..." in result.output
+        assert result.exit_code == 0
+
+    def test_service_status_invalid_input(self, test_env):
+
+        result = test_env.invoke_service_command(
+            ["status", "service_1", "service_2", "INVALID_SERVICE_1"],
+        )
+
+        assert "Service [INVALID_SERVICE_1] does not exist" in result.output
+        assert result.exit_code == 1
+
 
 # ------------------------------------------------------------------------------
 # Fixtures
@@ -338,6 +373,9 @@ def patch_subprocess(monkeypatch):
             return subprocess.CompletedProcess(returncode=0, args=None)
         elif all([x in docker_compose_command for x in ["rm", "-fsv"]]):
             # patch for shutting down all services, used by the shutdown orchestrator when given provided with specific services.
+            return subprocess.CompletedProcess(returncode=0, args=None)
+        elif all([x in docker_compose_command for x in ["ps", "-a"]]):
+            # patch for getting the status of all services, used by the status orchestrator for getting the status all services.
             return subprocess.CompletedProcess(returncode=0, args=None)
         else:
             # patch for unknown command action
