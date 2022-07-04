@@ -261,7 +261,6 @@ class ServiceCli:
             pre_hook = None
             post_hook = None
 
-
         else:
             error_and_exit(f"Unhandled action called: [{action.name}]")
 
