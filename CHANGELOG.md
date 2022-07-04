@@ -23,6 +23,7 @@ The changelog is applicable from version `1.0.0` onwards.
 - Enable admins and developers to fetch decrypted values of encrypted values in settings.
 - Add `quickstart.md` file, a guide on setting up a sample appcli application.
 - Add [docker-compose](https://docs.docker.com/engine/reference/commandline/compose/) orchestrator commands to `README.md`.
+- [#167](https://github.com/brightsparklabs/appcli/issues/167) Added the service status command, which details the current status of the system.
 
 ### Fixed
 
