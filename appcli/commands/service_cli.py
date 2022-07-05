@@ -39,6 +39,7 @@ class ServiceAction(enum.Enum):
     Options:
         START: Start service(s)
         SHUTDOWN: Shutdown service(s)
+        STATUS: Get status of service(s)
     """
 
     START = enum.auto()
