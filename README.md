@@ -693,6 +693,8 @@ usage: `./myapp service [OPTIONS] COMMAND [ARGS]`
 | shutdown | Shuts down the system. If one or more service names are provided, shuts down the specified service(s) only.                                                                                                             |
 | start    | Starts the system. If one or more service names are provided, starts the specified service(s) only.                                                                                                                     |
 | restart  | Restarts service(s) (`shutdown` followed by `start`). Optionally run a `configure apply` during the restart with the `--apply` flag. If one or more service names are provided, restarts the specified service(s) only. |
+| status   | Lists all containers for the appcli project, with current status and exposed ports. If one or more service names are provided, lists the status and 
+ exposed ports of the specified service(s) only. |
 
 | Option | Description                     |
 | ------ | ------------------------------- |
