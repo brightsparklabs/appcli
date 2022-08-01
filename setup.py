@@ -61,7 +61,7 @@ setup(
         "deepdiff==5.8.1",
         "GitPython==3.1.27",
         "jinja2==3.1.2",
-        "pre-commit==2.19.0",
+        "pre-commit==2.20.0",
         "pycryptodome==3.15.0",
         "pydantic==1.9.1",
         "python-keycloak==0.22.0",
