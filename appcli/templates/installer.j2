@@ -7,6 +7,12 @@
  ##
 
 # ------------------------------------------------------------------------------
+# VARIABLES
+# ------------------------------------------------------------------------------
+
+AUTO_CONFIGURE={{ configuration.auto_configure_on_install|lower }}
+
+# ------------------------------------------------------------------------------
 # FUNCTIONS
 # ------------------------------------------------------------------------------
 
@@ -16,6 +22,22 @@ function main()
     [[ -w "{{ install_dir }}" ]] || print_error_and_exit "No permissions to write to [{{ install_dir }}]"
 
     cd "{{ install_dir }}"
+
+    # Check if AUTO_CONFIGURE has been overwritten.
+    for arg in "$@"
+    do
+        case "${arg}" in
+            "--auto-configure=true") set -- "$@" "-t" ;;
+            "--auto-configure=false") set -- "$@" "-f" ;;
+        esac
+    done
+    while getopts 't:f' flag
+    do
+        case ${flag} in
+            t) AUTO_CONFIGURE=true ;;
+            f) AUTO_CONFIGURE=false ;;
+        esac
+    done
 
     # Create versioned launcher
     local _launcher_versioned=".$(date -Isec --utc)_{{ cli_context.app_name|lower }}_{{ cli_context.app_version }}"
@@ -30,6 +52,12 @@ function main()
     # Update the symlink to the generic launcher
     rm -f "${_launcher_generic}" || print_error_and_exit "No permissions to delete to [${_launcher_generic}]"
     ln -s "${_launcher_versioned}" "${_launcher_generic}"
+
+    # Auto configure if enabled.
+    if [ $AUTO_CONFIGURE = true ]; then
+        {{ install_dir }}/{{ cli_context.app_name|lower }} configure init
+        {{ install_dir }}/{{ cli_context.app_name|lower }} configure apply        
+    fi
 
     >&2 cat <<EOF
     $(date -Isec --utc) INFO: {{ cli_context.app_name|lower }} version [{{ cli_context.app_version }}] can be launched via:
