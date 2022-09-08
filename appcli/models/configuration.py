@@ -124,7 +124,7 @@ class Configuration(BaseModel):
 
     auto_configure_on_install: bool = True
     """
-    Optional. Whether to run the corresponding install and configure 
+    Optional. Whether to run the corresponding install and configure
     commands on the application. Equivalent to:
         docker run --rm brightsparklabs/myapp:<version> install | sudo bash
         /opt/brightsparklabs/myapp/production/myapp configure init
