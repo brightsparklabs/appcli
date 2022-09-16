@@ -175,8 +175,8 @@ def get_ls_root_to_file_command(orchestrator: DockerComposeOrchestrator):
 def main():
     orchestrator = DockerComposeOrchestrator(Path("docker-compose.yml"))
     configuration = Configuration(
-        app_name="appcli_nginx",
-        docker_image="thomas-anderson-bsl/appcli-nginx",
+        app_name="myapp",
+        docker_image='brightsparklabs/myapp',
         seed_app_configuration_file=Path(BASE_DIR, "resources/settings.yml"),
         stack_configuration_file=Path(BASE_DIR, "resources/stack-settings.yml"),
         baseline_templates_dir=Path(BASE_DIR, "resources/templates/baseline"),
@@ -186,7 +186,65 @@ def main():
     )
     cli = create_cli(configuration)
     cli()
+```
 
+#### Utilising Hooks
+
+Hooks can be used to execute code at different points during the application's lifecycle.
+Appcli comes with the following list of hooks by default, with their names identifying
+at what point they are executed.
+
+- `Pre_Configure_Init`
+- `Post_Configure_Init`
+- `Pre_Configure_Apply`
+- `Post_Configure_Apply`
+- `Pre_Start`
+- `Post_Start`
+- `Pre_Stop`
+- `Post_Stop`
+
+You can define what hooks you want to utilise as part of a `get_hooks` method. It serves
+to define a series of hooks which are then passed to the `hooks` inside of the configuration.
+
+
+The following example shows how to define a series of hooks and provide them to the
+configuration of the Appcli project. When run with these hooks defined, the text "Pre-Start"
+will be printed before the line indicating the start of the application and the "Post-Start"
+text will be printed after. 
+
+```python
+def get_hooks() -> Hooks:
+    def pre_start(ctx: click.Context):
+        """
+        The pre-start hook which prints before the application has started.
+        """
+        print("Pre-Start")
+
+    def post_start(ctx: click.Context, result: CompletedProcess):
+        """
+        The post-start hook which prints after the application has started. 
+        """
+        print("Post-Start")
+        
+    return Hooks(
+        pre_start=pre_start,
+        post_start=post_start,
+    )
+
+def main():
+    orchestrator = DockerComposeOrchestrator(Path("docker-compose.yml"))
+    configuration = Configuration(
+        app_name="myapp",
+        docker_image='brightsparklabs/myapp',
+        seed_app_configuration_file=Path(BASE_DIR, "resources/settings.yml"),
+        stack_configuration_file=Path(BASE_DIR, "resources/stack-settings.yml"),
+        baseline_templates_dir=Path(BASE_DIR, "resources/templates/baseline"),
+        configurable_templates_dir=Path(BASE_DIR, "resources/templates/configurable"),
+        orchestrator=orchestrator,
+        hooks=get_hooks(),
+    )
+    cli = create_cli(configuration)
+    cli()
 ```
 
 ### Build configuration template directories
