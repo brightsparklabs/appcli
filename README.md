@@ -115,6 +115,17 @@ python3 implicit namespaced packages.
         main()
 ```
 
+A lot of the fields in the appcli constructor can be defaulted, resulting in less code.
+
+```python
+configuration = Configuration(
+    app_name='myapp',
+    docker_image='brightsparklabs/myapp',
+)
+cli = create_cli(configuration)
+cli()
+```
+
 #### Custom Commands
 
 You can specify some custom top-level commands by adding click commands or command groups to the configuration object.
