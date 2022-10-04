@@ -24,16 +24,18 @@ The library exposes the following environment variables to the `docker-compose.y
 - `<APP_NAME>_DATA_DIR` - the directory containing data produced/consumed by the system.
 - `<APP_NAME>_GENERATED_CONFIG_DIR` - the directory containing configuration files generated from
   the templates in `<APP_NAME>_CONFIG_DIR`.
+- `<APP_NAME>_BACKUP_DIR` - the directory to use for system backups.
 - `<APP_NAME>_ENVIRONMENT` - the deployment environment the system is running in. For example
   `production` or `staging`. This allows multiple instances of the application to run on the same
   Docker daemon. Defaults to `production`.
 
-Note: the `APP_NAME` variable is derived from the `app_name` passed in to the `Configuration` object in the
-main python entrypoint to the application. In order for the application to work, the `app_name` is forced to conform
-with the shell variable name standard: `[a-zA-Z_][a-zA-Z_0-9]*`. Any characters that do not fit this regex will be
-replaced with `_`. See:
-(https://unix.stackexchange.com/questions/428880/list-of-acceptable-initial-characters-for-a-bash-variable)
-(https://linuxhint.com/bash-variable-name-rules-legal-illegal/)
+NOTE:
+The `APP_NAME` variable is derived from the `app_name` passed in to the `Configuration` object in
+the main python entrypoint to the application. In order for the application to work, the `app_name`
+is forced to conform with the shell variable name standard: `[a-zA-Z_][a-zA-Z_0-9]*`. Any characters
+that do not fit this regex will be replaced with `_`. See
+[here](https://unix.stackexchange.com/questions/428880/list-of-acceptable-initial-characters-for-a-bash-variable)
+or [here](https://linuxhint.com/bash-variable-name-rules-legal-illegal/) for details.
 
 The `docker-compose.yml` can be templated by renaming to `docker-compose.yml.j2`, and setting
 variables within the `settings.yml` file as described in the Installation section.
@@ -128,13 +130,16 @@ cli()
 
 #### Custom Commands
 
-You can specify some custom top-level commands by adding click commands or command groups to the configuration object.
-Assuming 'web' is the name of the service in the docker-compose.yml file which you wish to exec against, we can create
-three custom commands in the following example:
+You can specify some custom top-level commands by adding click commands or command groups to the
+configuration object.  Assuming 'web' is the name of the service in the docker-compose.yml file
+which you wish to exec against, we can create three custom commands in the following example:
 
-- `myapp ls-root` which lists the contents of the root directory within the `web` service container and prints it out.
-- `myapp ls-root-to-file` which lists the contents of the root directory within the `web` service container and dumps to file within the container.
-- `myapp tee-file` which takes some text and `tee`s it into another file the `web` service container.
+- `myapp ls-root` which lists the contents of the root directory within the `web` service container
+  and prints it out.
+- `myapp ls-root-to-file` which lists the contents of the root directory within the `web` service
+  container and dumps to file within the container.
+- `myapp tee-file` which takes some text and `tee`s it into another file the `web` service
+  container.
 
 ```python
 
@@ -278,8 +283,9 @@ The data for Jinja2 templating engine will be:
 
 ### Configure application backup
 
-Appcli's `backup` command creates backups of configuration and data of an application, stored locally in the
-backup directory. The settings for backups are configured through entries in a `backups` block in `stack-settings.yml`.
+Appcli's `backup` command creates backups of configuration and data of an application, stored
+locally in the backup directory. The settings for backups are configured through entries in a
+`backups` block in `stack-settings.yml`.
 
 The available keys for entries in the `backups` block are:
 
@@ -340,16 +346,18 @@ being overwritten. e.g. `s3#1` and `s3&1` will both translate internally to
 
 #### Backup limit
 
-A rolling deletion strategy is used to remove local backups, in order to keep `backup_limit` number of backups.
+A rolling deletion strategy is used to remove local backups, in order to keep `backup_limit` number
+of backups.
 
-If more than `backup_limit` number of backups exist in the backup directory, the oldest backups will be deleted.
+If more than `backup_limit` number of backups exist in the backup directory, the oldest backups will
+be deleted.
 
 Set this value to `0` to keep all backups.
 
 #### File filter
 
-The `file_filter` block enables filtering of files to backup from `conf` and `data` directories. For more details
-including examples, see [here](/README_BACKUP_FILE_FILTER.md).
+The `file_filter` block enables filtering of files to backup from `conf` and `data` directories. For
+more details including examples, see [here](/README_BACKUP_FILE_FILTER.md).
 
     # filename: stack-settings.yml
     # Includes all log files from data dir only
@@ -371,7 +379,8 @@ including examples, see [here](/README_BACKUP_FILE_FILTER.md).
 
 #### Freqency
 
-Appcli supports limiting individual backups to run on only specific days using a cron-like frequency filter.
+Appcli supports limiting individual backups to run on only specific days using a cron-like frequency
+filter.
 
 When the `backup` command is run, each backup strategy will check if the `frequency` pattern matches
 today's date. Only strategies whose `frequency` pattern match today's date will execute.
@@ -383,12 +392,13 @@ Examples:
 
 - `"* * *"` (cron equivalent `"* * * * *"`) will always run.
 - `"* * 0"` (cron equivalent `"* * * * 0"`) will only run on Sunday.
-- `"1 */3 *"` (cron equivalent `"* * 1 */3 *"`) will only run on the first day-of-month of every 3rd month.
+- `"1 */3 *"` (cron equivalent `"* * 1 */3 *"`) will only run on the first day-of-month of every 3rd
+  month.
 
 #### Remote backup
 
-Appcli supports pushing local backups to remote storage. The list of strategies for pushing to remote storage are
-defined within the `remote_backups` block.
+Appcli supports pushing local backups to remote storage. The list of strategies for pushing to
+remote storage are defined within the `remote_backups` block.
 
 The available keys for every remote backup strategy are:
 
@@ -399,9 +409,10 @@ The available keys for every remote backup strategy are:
 | frequency     | The cron-like frequency at which remote backups will execute. Behaves the same as local backup `frequency`. |
 | configuration | Custom configuration block that is specific to each remote backup strategy.                                 |
 
-N.B. remote backups will only run for a local backup that has run. Therefore the `frequency` of the local backup
-will apply first, followed by the `frequency` of the remote backup. This means that it's possible to write a remote
-backup frequency that will never execute. e.g. Local `* * 0` and remote `* * 1`.
+N.B. remote backups will only run for a local backup that has run. Therefore the `frequency` of the
+local backup will apply first, followed by the `frequency` of the remote backup. This means that
+it's possible to write a remote backup frequency that will never execute. e.g. Local `* * 0` and
+remote `* * 1`.
 
 ##### Strategies
 
@@ -440,10 +451,13 @@ The available configuration keys for an S3 backup are:
 
 To restore from a remote backup:
 
-1. Acquire the remote backup (`.tgz` file) that you wish to restore. For S3 this can be done by downloading the backup from the specified bucket.
-2. Place the backup `myapp_date.tgz` file in the backup directory. By default this will be `/opt/brightsparklabs/${APP_NAME}/production/backup/`
+1. Acquire the remote backup (`.tgz` file) that you wish to restore. For S3 this can be done by
+   downloading the backup from the specified bucket.
+2. Place the backup `myapp_date.tgz` file in the backup directory. By default this will be
+   `/opt/brightsparklabs/${APP_NAME}/production/backup/`
 3. Confirm that appcli can access the backup by running the `view-backups` command
-4. Run the restore command `./myapp restore BACKUP_FILE.tgz` e.g. `./myapp restore APP_2021-02-02T10:55:48+00:00.tgz`. The restore process will trigger a backup.
+4. Run the restore command `./myapp restore BACKUP_FILE.tgz` e.g.
+   `./myapp restore APP_2021-02-02T10:55:48+00:00.tgz`. The restore process will trigger a backup.
 
 ### Define a container for your CLI application
 
@@ -488,7 +502,9 @@ The credentials file path can be passed as an option via `--docker-credentials-f
     docker run --rm brightsparklabs/myapp:<version> install
 
     # or if using a private registry for images
-    docker run --rm brightsparklabs/myapp:<version> --docker-credentials-file ~/.docker/config.json install
+    docker run --rm brightsparklabs/myapp:<version> \
+      --docker-credentials-file ~/.docker/config.json \
+      install
 
 While it is not mandatory to view the script before running, it is highly recommended.
 
@@ -584,8 +600,9 @@ To be used in conjunction with your application `./myapp <command>` e.g. `./myap
 
 #### Command: `backup`
 
-Creates a backup `.tgz` file in the backup directory that contains files from the configuration and data directory, as
-configured in `stack-settings.yml`. After the backup is taken, remote backup strategies will be executed (if applicable).
+Creates a backup `.tgz` file in the backup directory that contains files from the configuration and
+data directory, as configured in `stack-settings.yml`. After the backup is taken, remote backup
+strategies will be executed (if applicable).
 
 usage: `./myapp backup [OPTIONS] [ARGS]`
 
@@ -595,8 +612,8 @@ usage: `./myapp backup [OPTIONS] [ARGS]`
 | --post-start-services/--no-post-start-services | Whether to start services after performing backup. |
 | --help                                         | Show the help message and exit.                    |
 
-The `backup` command optionally takes an argument corresponding to the `name` of the backup to run. If no `name` is
-provided, all backups will attempt to run.
+The `backup` command optionally takes an argument corresponding to the `name` of the backup to run.
+If no `name` is provided, all backups will attempt to run.
 
 #### Command Group: `configure`
 
@@ -669,7 +686,8 @@ Perform tasks defined by the orchestrator.
 
 usage: `./myapp orchestrator [OPTIONS] COMMAND [ARGS]`
 
-All commands are defined within the orchestrators themselves. Run `./myapp orchestrator` to list available commands.
+All commands are defined within the orchestrators themselves. Run `./myapp orchestrator` to list
+available commands.
 
 For example, the following commands are available to docker-compose:
 
@@ -743,8 +761,9 @@ usage: `./myapp view-backups`
 
 ### Usage within scripts and cron
 
-By default, the generated `appcli` launcher script will run the CLI container with a virtual terminal session (tty).
-This may interfere with crontab entries or scripts that use the appcli launcher.
+By default, the generated `appcli` launcher script will run the CLI container with a virtual
+terminal session (tty).  This may interfere with crontab entries or scripts that use the appcli
+launcher.
 
 To disable tty when running the launcher script, set `NO_TTY` environment variable to `true`.
 
@@ -797,15 +816,20 @@ rebuild a container each time you update it.
 - Ensure docker is installed (more specifically a docker socket at `/var/run/docker.sock`).
 - Set the environment variables which the CLI usually sets for you:
 
-        export MYAPP_CONFIG_DIR=/tmp/myapp/config \
-               MYAPP_DATA_DIR=/tmp/myapp/data
-
+        export \
+            MYAPP_DATA_DIR=/tmp/myapp/data \
+            MYAPP_CONFIG_DIR=/tmp/myapp/config \
+            MYAPP_GENERATED_CONFIG_DIR=/tmp/myapp/config/.generated \
+            MYAPP_BACKUP_DIR=/tmp/myapp/backup \
+            MYAPP_ENVIRONMENT=dev
 - Run your CLI application:
 
-        ./myapp \
-          --debug \
-          --configuration-dir "${MYAPP_CONFIG_DIR}" \
-          --data-dir "${MYAPP_DATA_DIR}"
+        ./src/myapp.py \
+              --debug \
+              --configuration-dir "${MYAPP_CONFIG_DIR}" \
+              --data-dir "${MYAPP_DATA_DIR}" \
+              --backup-dir "${MYAPP_BACKUP_DIR}" \
+              --environment "${MYAPP_ENVIRONMENT}
 
 ## Contributing
 
