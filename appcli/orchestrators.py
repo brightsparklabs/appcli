@@ -15,6 +15,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+import textwrap
 from pathlib import Path
 from subprocess import CompletedProcess
 from tempfile import NamedTemporaryFile
@@ -731,8 +732,15 @@ def execute_compose(
     logger.debug(docker_compose_command)
     logger.debug("Running [%s]", " ".join(docker_compose_command))
     encoded_input = stdin_input.encode("utf-8") if stdin_input is not None else None
-    logger.debug(f"Encoded input: [{encoded_input}]")
+    logger.debug("Encoded input: [%s]", encoded_input)
     result = subprocess.run(
-        docker_compose_command, capture_output=True, input=encoded_input
+        docker_compose_command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        input=encoded_input,
     )
+    if result.returncode != 0:
+        logger.error("Command failed:\n%s", textwrap.indent(result.stdout, "    "))
+
     return result
