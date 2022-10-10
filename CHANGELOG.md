@@ -10,9 +10,28 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ## [Unreleased]
 
+### Breaking Changes from 1.3.6
+
+- As a result of supporting application-level settings files, all references to settings in template files have moved. See the README for details on migration.
+
 ### Added
 
+- Disable `CHANGELOG.md` github action enforcement for `dependabot`.
+- Run hadolint on every commit with the use of [pre-commit](https://pre-commit.com/).
+- Add a CI pipeline check to lint the `Dockerfile` using [Hadolint](https://github.com/hadolint/hadolint).
+- [#239](https://github.com/brightsparklabs/appcli/issues/239) Support application context files, which enables application-specific Jinja2 templating contexts.
+- Enable admins and developers to fetch decrypted values of encrypted values in settings.
+- Add `quickstart.md` file, a guide on setting up a sample appcli application.
+- Add [docker-compose](https://docs.docker.com/engine/reference/commandline/compose/) orchestrator commands to `README.md`.
+- Update `quickstart.md` to include section about development with a local APPCLI instance.
+- [#167](https://github.com/brightsparklabs/appcli/issues/167) Added the service status command, which details the current status of the system.
+- Setup default values for `seed_app_configuration`, `stack_configuration_file`, `baseline_templates_dir`, `configurable_templates_dir` and `orchestrator` in the appcli constructor.
+
 ### Fixed
+
+- On tag commits, Docker images and python wheels should now be correctly published.
+- Update the list of commands used in the `quickstart.md` guide to appropriately reflect the required functionality needed to get a sample appcli application running.
+- Minor updates to styling in `README.md`
 
 ---
 

@@ -15,7 +15,7 @@ RUN \
     wget -q https://download.docker.com/linux/static/stable/x86_64/docker-20.10.6.tgz \
     && tar xf docker-20.10.6.tgz
 
-FROM python:3.8.2-slim-buster
+FROM python:3.10.2-slim-bullseye
 
 ENV LANG=C.UTF-8
 
@@ -32,8 +32,8 @@ RUN \
     # prepare for docker install
     && apt-get update \
     && apt-get -y install --no-install-recommends \
-        git=1:2.20.1-2+deb10u3 \
-        vim-tiny=2:8.1.0875-5 \
+        git \
+        vim-tiny \
     && apt-get -y autoremove \
     && apt-get -y clean \
     && rm -rf /var/lib/apt/lists/*

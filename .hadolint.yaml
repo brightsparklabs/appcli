@@ -1,0 +1,8 @@
+# Rule severity threshold for pipeline failure. One of [error | warning | info | style | ignore].
+failure-threshold: style
+
+# The output format. One of [tty | json | checkstyle | codeclimate | gitlab_codeclimate].
+format: tty
+
+# Space separated list of Hadolint rules ot ignore (https://github.com/hadolint/hadolint#rules).
+ignored: ["DL3008"]

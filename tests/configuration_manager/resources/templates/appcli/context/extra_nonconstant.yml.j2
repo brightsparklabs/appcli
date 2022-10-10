@@ -1,0 +1,4 @@
+secrets:
+    identity_password: {{ settings.test.identity.password }}
+foo: {{ 'ENABLED' if settings.test.foo_enabled else 'DISABLED' }}
+bar: {{ 'ENABLED' if settings.test.bar_enabled else 'DISABLED' }}

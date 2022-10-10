@@ -48,6 +48,7 @@ class AppcliCommand(Enum):
     SERVICE_START = auto()
     SERVICE_SHUTDOWN = auto()
     SERVICE_LOGS = auto()
+    SERVICE_STATUS = auto()
 
     TASK_RUN = auto()
 
