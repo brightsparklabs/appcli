@@ -735,12 +735,26 @@ def execute_compose(
     logger.debug("Encoded input: [%s]", encoded_input)
     result = subprocess.run(
         docker_compose_command,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
+        capture_output=True,
         input=encoded_input,
     )
+    # For failures, error log both stdout/stderr if present.
     if result.returncode != 0:
-        logger.error("Command failed:\n%s", textwrap.indent(result.stdout, "    "))
+        if result.stdout:
+            logger.error(
+                "Command failed - stdout:\n%s",
+                textwrap.indent(result.stdout.decode("utf-8"), "    "),
+            )
+        if result.stderr:
+            logger.error(
+                "Command failed - stderr:\n%s",
+                textwrap.indent(result.stdout.decode("utf-8"), "    "),
+            )
+    # For normal exits, just debug log the stdout if present.
+    elif result.stdout:
+        logger.debug(
+            "Command output:\n%s",
+            textwrap.indent(result.stdout.decode("utf-8"), "    "),
+        )
 
     return result
