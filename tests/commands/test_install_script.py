@@ -25,17 +25,17 @@ from appcli.orchestrators import DockerComposeOrchestrator
 # ------------------------------------------------------------------------------
 
 
-def test_install_autoconfig_default(self):
+def test_install_autoconfig_default():
     """Check if autoconfig defaults to `True` when unspecified."""
     assert create_configuration().auto_configure_on_install is True
 
 
-def test_install_autoconfig_false(self):
+def test_install_autoconfig_false():
     """Check if autoconfig can be set to `False`."""
     assert create_configuration(False).auto_configure_on_install is False
 
 
-def test_install_autoconfig_cli(self):
+def test_install_autoconfig_cli():
     """Check if autoconfig can be overwritten by providing
     `--auto-configure=false` to the cli.
     """
@@ -46,6 +46,7 @@ def test_install_autoconfig_cli(self):
 # ------------------------------------------------------------------------------
 # FIXTURES
 # ------------------------------------------------------------------------------
+
 
 def create_configuration(auto_configure_on_install: bool = None) -> Configuration:
 
@@ -68,5 +69,5 @@ def create_configuration(auto_configure_on_install: bool = None) -> Configuratio
             configurable_templates_dir=Path("resources/templates/configurable"),
             orchestrator=DockerComposeOrchestrator("cli/docker-compose.yml", []),
             stack_configuration_file=Path("resources/stack-configuration.yml"),
-            auto_configure_on_install=auto_configure_on_install
+            auto_configure_on_install=auto_configure_on_install,
         )

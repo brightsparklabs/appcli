@@ -162,21 +162,25 @@ Once you can successfully see the script printed on the command line, you are re
 docker run --rm brightsparklabs/myapp:latest install | sudo bash
 ```
 
-### Initialise
+### Initialising and Applying settings.
 
-Once you have successfully ran the install script you can initialise the app by typing in the
-following command:
+By default, appcli will auto `init` and auto `apply` itself. It is possible to manually perform
+these steps by disabling `auto_configure` in __either__ the `my-app.py` script, or when generating
+the install script:
 
-```bash
-/opt/brightsparklabs/myapp/production/myapp configure init
+```python
+# Disable auto_configure in the `myapp.py` script.
+configuration = Configuration(
+    app_name="myapp",
+    auto_configure_on_install=False,
+)
 ```
 
-### Applying the settings
-
-Before starting the services we need to run the `configure apply` command which will apply the
-settings from the configuration.
-
 ```bash
+# Disable auto_configure in the `install` script.
+docker run --rm brightsparklabs/myapp:latest install | sudo bash --auto-configure=false
+# Manually apply the connfigurations.
+/opt/brightsparklabs/myapp/production/myapp configure init
 /opt/brightsparklabs/myapp/production/myapp configure apply
 ```
 
