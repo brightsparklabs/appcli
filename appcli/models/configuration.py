@@ -2,6 +2,8 @@
 # # -*- coding: utf-8 -*-
 
 # standard libraries
+import inspect
+import os
 import re
 from pathlib import Path
 from subprocess import CompletedProcess
@@ -12,7 +14,7 @@ import click
 from pydantic import BaseModel, validator
 
 # local libraries
-from appcli.orchestrators import Orchestrator
+from appcli.orchestrators import DockerComposeOrchestrator, Orchestrator
 
 
 class Hooks(NamedTuple):
@@ -59,26 +61,44 @@ class Configuration(BaseModel):
     docker_image: str
     """ The docker image used to run the CLI. """
 
-    seed_app_configuration_file: Path
+    seed_app_configuration_file: Path = Path(
+        os.path.dirname(
+            inspect.stack()[-1].filename
+        ),  # Filename at the top of the call-stack.
+        "resources/settings.yml",
+    )
     """
     Path to a seed YAML file containing variables which are applied to the
     templates to generate the final configuration files.
     """
 
-    stack_configuration_file: Path
+    stack_configuration_file: Path = Path(
+        os.path.dirname(
+            inspect.stack()[-1].filename
+        ),  # Filename at the top of the call-stack.
+        "resources/stack-settings.yml",
+    )
     """
     Path to the stack configuration file which contains variables which are used to
     configure the stack.
     """
 
-    baseline_templates_dir: Path
+    baseline_templates_dir: Path = Path(
+        os.path.dirname(
+            inspect.stack()[-1].filename
+        ),  # Filename at the top of the call-stack.
+        "resources/templates/baseline",
+    )
     """
     Directory containing the baseline set of jinja2 templates used to generate the final
     configuration files. These template files are expected to remain static and should
     only be overridden as a hotfix.
     """
 
-    orchestrator: Orchestrator
+    orchestrator: Orchestrator = DockerComposeOrchestrator(
+        docker_compose_file=Path("docker-compose.yml"),
+        docker_compose_task_file=Path("docker-compose.tasks.yml"),
+    )
     """ Orchestrator to use to launch Docker containers. """
 
     application_context_files_dir: Path = None
@@ -89,7 +109,12 @@ class Configuration(BaseModel):
     main app configuration file.
     """
 
-    configurable_templates_dir: Path = None
+    configurable_templates_dir: Path = Path(
+        os.path.dirname(
+            inspect.stack()[-1].filename
+        ),  # Filename at the top of the call-stack.
+        "resources/templates/configurable",
+    )
     """
     Optional. Directory containing a default initial set of configurable jinja2 templates
     used to generate the final configuration files. These template files are expected to be
