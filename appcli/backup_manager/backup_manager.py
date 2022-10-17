@@ -471,51 +471,36 @@ class BackupManager:
         try:
             with tarfile.open(backup_name) as tar:
                 conf_dir: Path = cli_context.configuration_dir
+                data_dir: Path = cli_context.data_dir
+
                 def is_within_directory(directory, target):
-                    
+
                     abs_directory = os.path.abspath(directory)
                     abs_target = os.path.abspath(target)
-                
+
                     prefix = os.path.commonprefix([abs_directory, abs_target])
-                    
+
                     return prefix == abs_directory
-                
+
                 def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
-                
+
                     for member in tar.getmembers():
                         member_path = os.path.join(path, member.name)
                         if not is_within_directory(path, member_path):
                             raise Exception("Attempted Path Traversal in Tar File")
-                
-                    tar.extractall(path, members, numeric_owner=numeric_owner) 
-                    
-                
-                safe_extract(tar, conf_dir, members=self.__members(tar,os.path.basename(conf_dir)))
-                    conf_dir, members=self.__members(tar, os.path.basename(conf_dir))
+
+                    tar.extractall(path, members, numeric_owner=numeric_owner)
+
+                safe_extract(
+                    tar=tar,
+                    path=conf_dir,
+                    members=self.__members(tar, os.path.basename(conf_dir)),
                 )
 
-                data_dir: Path = cli_context.data_dir
-                def is_within_directory(directory, target):
-                    
-                    abs_directory = os.path.abspath(directory)
-                    abs_target = os.path.abspath(target)
-                
-                    prefix = os.path.commonprefix([abs_directory, abs_target])
-                    
-                    return prefix == abs_directory
-                
-                def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
-                
-                    for member in tar.getmembers():
-                        member_path = os.path.join(path, member.name)
-                        if not is_within_directory(path, member_path):
-                            raise Exception("Attempted Path Traversal in Tar File")
-                
-                    tar.extractall(path, members, numeric_owner=numeric_owner) 
-                    
-                
-                safe_extract(tar, data_dir, members=self.__members(tar,os.path.basename(data_dir)))
-                    data_dir, members=self.__members(tar, os.path.basename(data_dir))
+                safe_extract(
+                    tar=tar,
+                    path=data_dir,
+                    members=self.__members(tar, os.path.basename(data_dir)),
                 )
 
         except Exception as e:
