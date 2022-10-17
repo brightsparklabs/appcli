@@ -562,6 +562,7 @@ class ConfigurationManager:
             basename = os.path.basename(source_dir)
             output_filename = os.path.join(
                 os.path.dirname(source_dir),
+                Path(".generated-archive/"),
                 f"{basename}_{clean_additional_filename_descriptor}_{current_datetime}.tgz",
             )
 
