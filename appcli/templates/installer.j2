@@ -23,22 +23,6 @@ function main()
 
     cd "{{ install_dir }}"
 
-    # Check if AUTO_CONFIGURE has been overwritten.
-    for arg in "$@"
-    do
-        case "${arg}" in
-            "--auto-configure=true") set -- "$@" "-t" ;;
-            "--auto-configure=false") set -- "$@" "-f" ;;
-        esac
-    done
-    while getopts 't:f' flag
-    do
-        case ${flag} in
-            t) AUTO_CONFIGURE=true ;;
-            f) AUTO_CONFIGURE=false ;;
-        esac
-    done
-
     # Create versioned launcher
     local _launcher_versioned=".$(date -Isec --utc)_{{ cli_context.app_name|lower }}_{{ cli_context.app_version }}"
     generate_launcher > "${_launcher_versioned}" || print_error_and_exit "No permissions to write to [${_launcher_versioned}]"
@@ -54,9 +38,9 @@ function main()
     ln -s "${_launcher_versioned}" "${_launcher_generic}"
 
     # Auto configure if enabled.
-    if [ $AUTO_CONFIGURE = true ]; then
-        {{ install_dir }}/{{ cli_context.app_name|lower }} configure init
-        {{ install_dir }}/{{ cli_context.app_name|lower }} configure apply        
+    if [[ $AUTO_CONFIGURE = true ]]; then
+        NO_TTY=true {{ install_dir }}/${_launcher_generic} configure init
+        NO_TTY=true {{ install_dir }}/${_launcher_generic} configure apply
     fi
 
     >&2 cat <<EOF
@@ -113,8 +97,27 @@ function print_error_and_exit()
     exit 1
 }
 
+function args()
+{
+    options=$(getopt --long auto-configure --long no-auto-configure -- "$@")
+    [ $? -eq 0 ] || {
+        echo "Incorrect option provided"
+        exit 1
+    }
+    eval set -- "$options"
+    while true; do
+        case "$1" in
+        --auto-configure) AUTO_CONFIGURE=true ;;
+        --no-auto-configure) AUTO_CONFIGURE=false ;;
+        --) shift; break; ;;
+        esac
+        shift
+    done
+}
+
 # ------------------------------------------------------------------------------
 # LOGIC
 # ------------------------------------------------------------------------------
 
-main $@
+args $0 "$@"
+main

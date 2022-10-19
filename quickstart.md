@@ -168,6 +168,8 @@ By default, appcli will auto `init` and auto `apply` itself. It is possible to m
 these steps by disabling `auto_configure` in __either__ the `my-app.py` script, or when generating
 the install script:
 
+#### Option 1: In Python Script
+
 ```python
 # Disable auto_configure in the `myapp.py` script.
 configuration = Configuration(
@@ -175,6 +177,8 @@ configuration = Configuration(
     auto_configure_on_install=False,
 )
 ```
+
+#### Option 2: In Bash Script
 
 ```bash
 # Disable auto_configure in the `install` script.

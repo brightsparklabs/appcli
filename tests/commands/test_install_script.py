@@ -9,12 +9,8 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-# vendor libraries
-from pathlib import Path
-
 # local libraries
 from appcli.models.configuration import Configuration
-from appcli.orchestrators import DockerComposeOrchestrator
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
@@ -54,20 +50,10 @@ def create_configuration(auto_configure_on_install: bool = None) -> Configuratio
         return Configuration(
             app_name="my-app",
             docker_image="invalid-image-name",
-            seed_app_configuration_file=Path("resources/test_app.yml"),
-            baseline_templates_dir=Path("resources/templates/baseline"),
-            configurable_templates_dir=Path("resources/templates/configurable"),
-            orchestrator=DockerComposeOrchestrator("cli/docker-compose.yml", []),
-            stack_configuration_file=Path("resources/stack-configuration.yml"),
         )
     else:
         return Configuration(
             app_name="my-app",
             docker_image="invalid-image-name",
-            seed_app_configuration_file=Path("resources/test_app.yml"),
-            baseline_templates_dir=Path("resources/templates/baseline"),
-            configurable_templates_dir=Path("resources/templates/configurable"),
-            orchestrator=DockerComposeOrchestrator("cli/docker-compose.yml", []),
-            stack_configuration_file=Path("resources/stack-configuration.yml"),
             auto_configure_on_install=auto_configure_on_install,
         )
