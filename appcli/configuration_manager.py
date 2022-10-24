@@ -562,11 +562,15 @@ class ConfigurationManager:
             basename = os.path.basename(source_dir)
             output_filename = os.path.join(
                 os.path.dirname(source_dir),
+                Path(".generated-archive/"),
                 f"{basename}_{clean_additional_filename_descriptor}_{current_datetime}.tgz",
             )
 
             # Create the backup
             logger.debug(f"Backing up directory [{source_dir}] to [{output_filename}]")
+            output_dir = os.path.dirname(output_filename)
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
             with tarfile.open(output_filename, "w:gz") as tar:
                 tar.add(source_dir, arcname=os.path.basename(source_dir))
 

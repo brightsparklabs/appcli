@@ -26,6 +26,7 @@ The changelog is applicable from version `1.0.0` onwards.
 - Update `quickstart.md` to include section about development with a local APPCLI instance.
 - [#167](https://github.com/brightsparklabs/appcli/issues/167) Added the service status command, which details the current status of the system.
 - Setup default values for `seed_app_configuration`, `stack_configuration_file`, `baseline_templates_dir`, `configurable_templates_dir` and `orchestrator` in the appcli constructor.
+- Store generated `config` backups in nested `.generated-archive` directory.
 - Configure and apply on install by default.
 
 ### Fixed
