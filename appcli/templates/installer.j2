@@ -10,14 +10,22 @@
 # VARIABLES
 # ------------------------------------------------------------------------------
 
+# 'true' if the script should automatically initialise and apply configuration. 'false' otherwise.
 AUTO_CONFIGURE={{ configuration.auto_configure_on_install|lower }}
 
 # ------------------------------------------------------------------------------
 # FUNCTIONS
 # ------------------------------------------------------------------------------
 
+##
+ # Main entrypoint.
+ #
+ # @param $@ Arguments passed in on the command line.
+ ##
 function main()
 {
+    process_args $@
+
     mkdir -p "{{ install_dir }}" || print_error_and_exit "Could not create [{{ install_dir }}]"
     [[ -w "{{ install_dir }}" ]] || print_error_and_exit "No permissions to write to [{{ install_dir }}]"
 
@@ -50,6 +58,28 @@ function main()
 EOF
 }
 
+##
+ # Processes the arguments passed in on the command line.
+ #
+ # @param $@ Arguments passed in on the command line.
+ ##
+function process_args()
+{
+    # Process long options. Not using 'getopt' as that is non-POSIX and not built-in to bash.
+    local _arg
+    for _arg in "$@"
+    do
+        shift
+        case "${_arg}" in
+               "--auto-configure") AUTO_CONFIGURE=true ;;
+            "--no-auto-configure") AUTO_CONFIGURE=false ;;
+        esac
+    done
+}
+
+##
+ # Creates the launcher script and prints it to stdout.
+ ##
 function generate_launcher()
 {
     docker run \
@@ -75,6 +105,15 @@ function generate_launcher()
             launcher
 }
 
+##
+ # Upgrades an existing installation of the application.
+ #
+ # This will stop the system (if running), migrate configuration and apply it.
+ # The system will be left in a stopped state.
+ #
+ # @param $1 The path of the existing launcher script.
+ # @param $1 The path of the new launcher script.
+ ##
 function upgrade_existing_application()
 {
     local _launcher_existing="$(realpath ${1})"
@@ -91,33 +130,19 @@ function upgrade_existing_application()
     NO_TTY=true ${_launcher_upgrade} configure apply --force
 }
 
+##
+ # Prints an error message and exits with a non-zero exit code.
+ #
+ # @param $@ The error message to print.
+ ##
 function print_error_and_exit()
 {
     >&2 echo "$(date -Isec --utc) ERROR: $@"
     exit 1
 }
 
-function args()
-{
-    options=$(getopt --long auto-configure --long no-auto-configure -- "$@")
-    [ $? -eq 0 ] || {
-        echo "Incorrect option provided"
-        exit 1
-    }
-    eval set -- "$options"
-    while true; do
-        case "$1" in
-        --auto-configure) AUTO_CONFIGURE=true ;;
-        --no-auto-configure) AUTO_CONFIGURE=false ;;
-        --) shift; break; ;;
-        esac
-        shift
-    done
-}
-
 # ------------------------------------------------------------------------------
 # LOGIC
 # ------------------------------------------------------------------------------
 
-args $0 "$@"
-main
+main $@
