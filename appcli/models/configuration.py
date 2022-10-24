@@ -147,6 +147,15 @@ class Configuration(BaseModel):
     generated configuration directory.
     """
 
+    auto_configure_on_install: bool = True
+    """
+    Optional. Whether to run the corresponding install and configure
+    commands on the application. Equivalent to:
+        docker run --rm brightsparklabs/myapp:<version> install | sudo bash
+        /opt/brightsparklabs/myapp/production/myapp configure init
+        /opt/brightsparklabs/myapp/production/myapp configure apply
+    """
+
     @validator("app_name")
     def app_name_must_be_shell_safe(cls, value):
         # Use a validator to create a shell-safe version of the application name.
