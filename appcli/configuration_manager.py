@@ -16,7 +16,6 @@ import shutil
 import tarfile
 import tempfile
 from datetime import datetime, timezone
-from distutils.dir_util import copy_tree
 from pathlib import Path
 from typing import Iterable
 
@@ -407,7 +406,7 @@ class ConfigurationManager:
         # Due to a limitation with 'copytree', it fails to copy if the root directory exists
         # before copying. So we delete the temp dir prior to copying.
         os.rmdir(temp_dir)
-        copy_tree(str(directory_to_backup), str(temp_dir))
+        shutil.copytree(str(directory_to_backup), str(temp_dir), dirs_exist_ok=True)
 
         return temp_dir
 
@@ -433,7 +432,7 @@ class ConfigurationManager:
             return
 
         os.mkdir(target_dir)
-        copy_tree(str(source_dir), str(target_dir))
+        shutil.copytree(str(source_dir), str(target_dir), dirs_exist_ok=True)
 
     def __backup_and_create_new_generated_config_dir(
         self, current_config_version

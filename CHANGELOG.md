@@ -18,6 +18,8 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Fixed
 
+- APPCLI-108: Remove the depricated `distutils` package.
+
 ---
 
 ## [1.4.0] - (10/10/2022)
