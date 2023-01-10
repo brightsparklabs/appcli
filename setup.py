@@ -63,7 +63,7 @@ setup(
         "jinja2==3.1.2",
         "pre-commit==2.21.0",
         "pycryptodome==3.16.0",
-        "pydantic==1.10.2",
+        "pydantic==1.10.4",
         "python-keycloak==0.22.0",
         "python-slugify==7.0.0",
         "ruamel-yaml==0.17.21",
