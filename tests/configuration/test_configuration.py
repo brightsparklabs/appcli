@@ -45,7 +45,6 @@ def test_app_name_replaces_invalid_characters():
 
 
 def create_configuration(app_name: str) -> Configuration:
-
     return Configuration(
         app_name=app_name,
         docker_image="invalid-image-name",

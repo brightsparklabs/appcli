@@ -53,7 +53,6 @@ DOCKER_COMPOSE_SERVICES = list(YAML().load(open(DOCKER_COMPOSE_YML))["services"]
 
 class Test_TaskCommands:
     def test_task_run_headless_arg_long(self, test_env):
-
         result = test_env.invoke_task_command(["run", "--detach", "sleep-1"])
         assert (
             "'-d'"
@@ -63,7 +62,6 @@ class Test_TaskCommands:
         )
 
     def test_task_run_headless_arg_short(self, test_env):
-
         result = test_env.invoke_task_command(["run", "-d", "sleep-1"])
         assert (
             "'-d'"
@@ -73,7 +71,6 @@ class Test_TaskCommands:
         )
 
     def test_task_run_not_headless(self, test_env):
-
         result = test_env.invoke_task_command(["run", "sleep-1"])
         assert (
             "'-d'"

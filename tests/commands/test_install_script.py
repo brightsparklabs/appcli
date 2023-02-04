@@ -45,7 +45,6 @@ def test_install_autoconfig_cli():
 
 
 def create_configuration(auto_configure_on_install: bool = None) -> Configuration:
-
     if auto_configure_on_install is None:
         return Configuration(
             app_name="my-app",

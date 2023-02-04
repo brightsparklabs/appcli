@@ -242,7 +242,6 @@ def create_cli_context(tmpdir, app_version: str = "0.0.0") -> CliContext:
 
 
 def create_conf_manager(tmpdir, cli_context: CliContext = None) -> ConfigurationManager:
-
     # If not supplied, create default CliContext.
     if cli_context is None:
         cli_context = create_cli_context(tmpdir)

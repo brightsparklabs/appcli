@@ -207,7 +207,6 @@ class ConfigurationManager:
         return self.variables_manager.get_stack_variable(variable)
 
     def __create_new_configuration_branch_and_files(self):
-
         app_version: str = self.cli_context.app_version
         app_version_branch: str = self.config_repo.generate_branch_name(app_version)
 

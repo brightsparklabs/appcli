@@ -481,7 +481,6 @@ class DockerSwarmOrchestrator(Orchestrator):
         command: Iterable[str],
         stdin_input: str = None,
     ) -> CompletedProcess:
-
         # Running 'docker exec' on containers in a docker swarm is non-trivial
         # due to the distributed nature of docker swarm, and the fact there could
         # be replicas of a single service.

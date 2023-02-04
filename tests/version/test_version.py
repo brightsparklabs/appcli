@@ -18,7 +18,6 @@ from appcli.models.cli_context import CliContext
 
 
 def test_version_cli():
-
     # Unfortunately, there's no easy way to get access to the main cli command,
     # so we have to test the version command directly. This requires initialising
     # the CliContext into the desired state, including setting the `app_version`.

@@ -268,7 +268,6 @@ class BackupConfig(DataClassExtensions):
         backup_strategies: List[RemoteBackup] = []
 
         for remote_configuration in self.remote_backups:
-
             try:
                 remote_backup: RemoteBackup = RemoteBackup.from_dict(
                     remote_configuration
@@ -474,7 +473,6 @@ class BackupManager:
                 data_dir: Path = cli_context.data_dir
 
                 def is_within_directory(directory, target):
-
                     abs_directory = os.path.abspath(directory)
                     abs_target = os.path.abspath(target)
 
@@ -483,7 +481,6 @@ class BackupManager:
                     return prefix == abs_directory
 
                 def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
-
                     for member in tar.getmembers():
                         member_path = os.path.join(path, member.name)
                         if not is_within_directory(path, member_path):

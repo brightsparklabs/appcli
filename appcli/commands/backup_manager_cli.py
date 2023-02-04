@@ -40,13 +40,11 @@ BACKUP = "backups"
 
 
 class BackupManagerCli:
-
     # --------------------------------------------------------------------------
     # CONSTRUCTOR
     # --------------------------------------------------------------------------
 
     def __init__(self, configuration: Configuration):
-
         self.cli_configuration: Configuration = configuration
 
         # ------------------------------------------------------------------------------
@@ -172,7 +170,6 @@ class BackupManagerCli:
         )
         @click.pass_context
         def view_backups(ctx, force):
-
             cli_context: CliContext = ctx.obj
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.VIEW_BACKUPS, force
