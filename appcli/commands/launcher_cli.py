@@ -41,13 +41,11 @@ LAUNCHER_TEMPLATE_FILENAME = "launcher.j2"
 
 
 class LauncherCli:
-
     # ------------------------------------------------------------------------------
     # CONSTRUCTOR
     # ------------------------------------------------------------------------------
 
     def __init__(self, configuration: Configuration):
-
         self.configuration: Configuration = configuration
 
         @click.command(help="Outputs an appropriate launcher bash script to stdout.")

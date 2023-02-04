@@ -26,13 +26,11 @@ from appcli.models.configuration import Configuration
 
 
 class VersionCli:
-
     # --------------------------------------------------------------------------
     # CONSTRUCTOR
     # --------------------------------------------------------------------------
 
     def __init__(self, configuration: Configuration):
-
         self.configuration: Configuration = configuration
 
         @click.command(help="Fetches app version")

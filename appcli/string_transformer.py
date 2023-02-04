@@ -43,7 +43,6 @@ def strtobool(val):
 
 
 class StringTransformer:
-
     # The 'type' string for string to string transformation (i.e. identity function)
     STRING_TRANSFORMER_TYPE = "str"
 
