@@ -58,7 +58,7 @@ setup(
         "coloredlogs==15.0.1",
         "cronex==0.1.3.1",
         "dataclasses-json==0.5.7",
-        "deepdiff==6.2.3",
+        "deepdiff==6.3.0",
         "GitPython==3.1.31",
         "jinja2==3.1.2",
         "pre-commit==3.2.1",
