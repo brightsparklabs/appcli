@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
+{% set app_name_slug_lower = cli_context.app_name_slug|lower %}
+
 ##
- # Pipe this through bash to install {{ cli_context.app_name|lower }}.
+ # Pipe this through bash to install {{ app_name_slug_lower }}.
  #
  # Application version: {{ cli_context.app_version }}
  ##
@@ -32,11 +34,11 @@ function main()
     cd "{{ install_dir }}"
 
     # Create versioned launcher
-    local _launcher_versioned=".$(date -Isec --utc)_{{ cli_context.app_name|lower }}_{{ cli_context.app_version }}"
+    local _launcher_versioned=".$(date -Isec --utc)_{{ app_name_slug_lower }}_{{ cli_context.app_version }}"
     generate_launcher > "${_launcher_versioned}" || print_error_and_exit "No permissions to write to [${_launcher_versioned}]"
     chmod a+x "${_launcher_versioned}"
 
-    local _launcher_generic="{{ cli_context.app_name|lower }}"
+    local _launcher_generic="{{ app_name_slug_lower }}"
 
     # If the generic launcher already exists, upgrade the existing application
     [[ -e "${_launcher_generic}" ]] && upgrade_existing_application "${_launcher_generic}" "${_launcher_versioned}"
@@ -52,9 +54,9 @@ function main()
     fi
 
     >&2 cat <<EOF
-    $(date -Isec --utc) INFO: {{ cli_context.app_name|lower }} version [{{ cli_context.app_version }}] can be launched via:
+    $(date -Isec --utc) INFO: {{ app_name_slug_lower }} version [{{ cli_context.app_version }}] can be launched via:
 
-        {{ install_dir }}/{{ cli_context.app_name|lower }}
+        {{ install_dir }}/{{ app_name_slug_lower }}
 EOF
 }
 
@@ -83,7 +85,7 @@ function process_args()
 function generate_launcher()
 {
     docker run \
-        --name {{ cli_context.app_name }}_{{ cli_context.environment }}_launcher_$(date +%s) \
+        --name {{ app_name_slug_lower }}_{{ cli_context.environment }}_launcher_$(date +%s) \
         --rm \
         {{ configuration.docker_image }}:{{ cli_context.app_version }} \
             --configuration-dir "{{ cli_context.configuration_dir }}" \

@@ -35,7 +35,7 @@ def test_version_cli():
         docker_credentials_file=None,
         subcommand_args=None,
         debug=True,
-        app_name="APP_NAME",
+        app_name_slug="APP_NAME",
         app_version=f"{version}",
         commands=None,
     )

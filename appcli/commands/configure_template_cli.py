@@ -36,8 +36,6 @@ class ConfigureTemplateCli:
     def __init__(self, configuration: Configuration):
         self.cli_configuration: Configuration = configuration
 
-        self.app_name = self.cli_configuration.app_name
-
         # ------------------------------------------------------------------------------
         # CLI METHODS
         # ------------------------------------------------------------------------------

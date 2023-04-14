@@ -198,52 +198,52 @@ class KeycloakManager:
         roles = [role for role in all_realm_roles if role["name"] == role_name]
         kc.assign_realm_roles(user_id, None, roles)
 
-    def configure_default(self, app_name):
+    def configure_default(self, app_name_slug):
         """Applies the default opinionated configuration to Keycloak
 
         This does the following:
-         - Creates a realm named '<app_name>'
-         - For realm '<app_name>', creates a client with the name '<app_name>', which has an audience mapper to itself,
+         - Creates a realm named '<app_name_slug>'
+         - For realm '<app_name_slug>', creates a client with the name '<app_name_slug>', which has an audience mapper to itself,
            and redirect URIs of ["*"]
-         - For realm '<app_name>', creates a realm role '<app_name>-admin'
-         - For realm '<app_name>', creates a user 'test.user' with password 'password', and assigns the realm role
-           '<app_name>-admin'
+         - For realm '<app_name_slug>', creates a realm role '<app_name_slug>-admin'
+         - For realm '<app_name_slug>', creates a user 'test.user' with password 'password', and assigns the realm role
+           '<app_name_slug>-admin'
 
         """
-        self.create_realm(app_name)
-        logger.debug(f"Created realm [{app_name}]")
+        self.create_realm(app_name_slug)
+        logger.debug(f"Created realm [{app_name_slug}]")
 
         client_payload = {
             "redirectUris": ["*"],
             "protocolMappers": [
                 {
-                    "name": f"{app_name}-audience",
+                    "name": f"{app_name_slug}-audience",
                     "protocol": "openid-connect",
                     "protocolMapper": "oidc-audience-mapper",
                     "consentRequired": "false",
                     "config": {
-                        "included.client.audience": app_name,
+                        "included.client.audience": app_name_slug,
                         "id.token.claim": "false",
                         "access.token.claim": "true",
                     },
                 }
             ],
         }
-        self.create_client(app_name, app_name, client_payload)
-        secret = self.get_client_secret(app_name, app_name)
-        logger.debug(f"Created client [{app_name}] with secret [{secret}]")
+        self.create_client(app_name_slug, app_name_slug, client_payload)
+        secret = self.get_client_secret(app_name_slug, app_name_slug)
+        logger.debug(f"Created client [{app_name_slug}] with secret [{secret}]")
 
-        realm_role = f"{app_name}-admin"
-        self.create_realm_role(app_name, realm_role)
+        realm_role = f"{app_name_slug}-admin"
+        self.create_realm_role(app_name_slug, realm_role)
         logger.debug(f"Created realm role [{realm_role}]")
 
         username = "test.user"
         self.create_user(
-            app_name, username, "password", "Test", "User", "test.user@email.test"
+            app_name_slug, username, "password", "Test", "User", "test.user@email.test"
         )
         logger.debug(
-            f"Created user [test.user] with password [password] in realm [{app_name}]"
+            f"Created user [test.user] with password [password] in realm [{app_name_slug}]"
         )
 
-        self.assign_realm_role(app_name, username, realm_role)
+        self.assign_realm_role(app_name_slug, username, realm_role)
         logger.debug(f"Assigned realm role [{realm_role}] to user [test.user]")

@@ -18,7 +18,8 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Fixed
 
-- APPCLI-108: Remove the depricated `distutils` package.
+- APPCLI-108: Remove the deprecated `distutils` package.
+- APPCLI-110: Fix appcli not working with docker-compose >= 2.6.0.
 
 ---
 

@@ -55,7 +55,7 @@ class CliContext(NamedTuple):
     # CLI build data
     # ---------------------------------
 
-    app_name: str
+    app_name_slug: str
     """ The application's name """
 
     app_version: str
@@ -158,7 +158,8 @@ class CliContext(NamedTuple):
         Returns:
             str: the project name
         """
-        return f"{self.app_name}_{self.environment}"
+        # NOTE: Must be lowercase, see https://github.com/brightsparklabs/appcli/issues/301
+        return f"{self.app_name_slug}_{self.environment}".lower()
 
     def get_variables_manager(self) -> VariablesManager:
         """Get the Variables Manager for the current cli context.
