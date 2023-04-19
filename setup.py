@@ -10,6 +10,7 @@ www.brightsparklabs.com
 """
 
 import re
+
 # to use a consistent encoding
 from codecs import open
 from os import path
