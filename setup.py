@@ -9,6 +9,7 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
+import re
 # to use a consistent encoding
 from codecs import open
 from os import path
@@ -26,7 +27,9 @@ def get_version():
     try:
         process = run(["git", "describe", "--dirty", "--always"], stdout=PIPE)
         line = process.stdout.strip().decode("utf-8")
-        return line
+        # Needs to be PEP 440 compliant.
+        compliant_version = re.sub("-.*", "", line)
+        return compliant_version
     except Exception:
         return "UNKNOWN"
 
