@@ -15,6 +15,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+import textwrap
 from pathlib import Path
 from subprocess import CompletedProcess
 from tempfile import NamedTemporaryFile
@@ -480,7 +481,6 @@ class DockerSwarmOrchestrator(Orchestrator):
         command: Iterable[str],
         stdin_input: str = None,
     ) -> CompletedProcess:
-
         # Running 'docker exec' on containers in a docker swarm is non-trivial
         # due to the distributed nature of docker swarm, and the fact there could
         # be replicas of a single service.
@@ -731,8 +731,29 @@ def execute_compose(
     logger.debug(docker_compose_command)
     logger.debug("Running [%s]", " ".join(docker_compose_command))
     encoded_input = stdin_input.encode("utf-8") if stdin_input is not None else None
-    logger.debug(f"Encoded input: [{encoded_input}]")
+    logger.debug("Encoded input: [%s]", encoded_input)
     result = subprocess.run(
-        docker_compose_command, capture_output=True, input=encoded_input
+        docker_compose_command,
+        capture_output=True,
+        input=encoded_input,
     )
+    # For failures, error log both stdout/stderr if present.
+    if result.returncode != 0:
+        if result.stdout:
+            logger.error(
+                "Command failed - stdout:\n%s",
+                textwrap.indent(result.stdout.decode("utf-8"), "    "),
+            )
+        if result.stderr:
+            logger.error(
+                "Command failed - stderr:\n%s",
+                textwrap.indent(result.stdout.decode("utf-8"), "    "),
+            )
+    # For normal exits, just debug log the stdout if present.
+    elif result.stdout:
+        logger.debug(
+            "Command output:\n%s",
+            textwrap.indent(result.stdout.decode("utf-8"), "    "),
+        )
+
     return result

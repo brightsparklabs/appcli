@@ -125,7 +125,6 @@ class NoDirectoryProvidedConfigurationDirState(ConfigurationDirState):
     """Represents the configuration dir state where appcli doesn't know the path to configuration dir."""
 
     def __init__(self) -> None:
-
         default_error_message = (
             "No configuration directory provided to appcli. Run 'install'."
         )
@@ -143,7 +142,6 @@ class NoDirectoryProvidedBackupDirState(ConfigurationDirState):
     """Represents the backup dir state where appcli doesn't know the path to backup dir."""
 
     def __init__(self) -> None:
-
         disallowed_command = {
             AppcliCommand.BACKUP: "Cannot backup due to missing backup directory. Run 'install'.",
             AppcliCommand.RESTORE: "Cannot restore due to missing backup directory. Run 'install'.",
@@ -158,7 +156,6 @@ class BackupDirectoryDoesNotExist(ConfigurationDirState):
     """Represents the backup dir state where the backup directory does not exist."""
 
     def __init__(self) -> None:
-
         disallowed_command = {
             AppcliCommand.RESTORE: "Cannot restore due to missing backup directory. Run 'backup'.",
             AppcliCommand.VIEW_BACKUPS: "Cannot view backups due to missing backup directory. Run 'backup'.",
@@ -172,7 +169,6 @@ class UninitialisedConfigurationDirState(ConfigurationDirState):
     """Represents the configuration dir state where config directory hasn't been initialised."""
 
     def __init__(self) -> None:
-
         default_error_message = "Cannot run command against uninitialised application. Run 'configure init'."
 
         disallowed_command = get_disallowed_command_from_allowed_commands(
@@ -195,7 +191,6 @@ class UnappliedConfigurationDirState(ConfigurationDirState):
     configuration doesn't exist."""
 
     def __init__(self) -> None:
-
         disallowed_command = {
             AppcliCommand.CONFIGURE_INIT: "Cannot initialise an existing configuration.",
             AppcliCommand.SERVICE_START: "Cannot start services due to missing generated configuration. Run 'configure apply'.",
@@ -227,7 +222,6 @@ class DirtyConfConfigurationDirState(ConfigurationDirState):
     """Represents the configuration dir state where config directory is dirty."""
 
     def __init__(self) -> None:
-
         disallowed_command = {
             AppcliCommand.CONFIGURE_INIT: "Cannot initialise an existing configuration.",
             AppcliCommand.MIGRATE: "Cannot migrate with a dirty configuration. Run 'configure apply'.",
@@ -245,7 +239,6 @@ class DirtyGenConfigurationDirState(ConfigurationDirState):
     """Represents the configuration dir state where generated directory is dirty."""
 
     def __init__(self) -> None:
-
         disallowed_command = {
             AppcliCommand.CONFIGURE_INIT: "Cannot initialise an existing configuration.",
             AppcliCommand.MIGRATE: "Cannot migrate with a dirty generated configuration. Run 'configure apply'.",
@@ -264,7 +257,6 @@ class DirtyConfAndGenConfigurationDirState(ConfigurationDirState):
     """Represents the configuration dir state where both the conf and generated directory are dirty."""
 
     def __init__(self) -> None:
-
         disallowed_command = {
             AppcliCommand.CONFIGURE_INIT: "Cannot initialise an existing configuration.",
             AppcliCommand.MIGRATE: "Cannot migrate with a dirty generated configuration. Run 'configure apply'.",
@@ -283,7 +275,6 @@ class RequiresMigrationConfigurationDirState(ConfigurationDirState):
     """Represents the configuration dir state where configuration and application versions are misaligned."""
 
     def __init__(self, error: str) -> None:
-
         disallowed_command = get_disallowed_command_from_allowed_commands(
             [AppcliCommand.MIGRATE], error
         )
@@ -296,7 +287,6 @@ class InvalidConfigurationDirState(ConfigurationDirState):
     """Represents the configuration dir state where configuration is invalid and incompatible with appcli."""
 
     def __init__(self, error: str) -> None:
-
         default_error_message = f"Invalid configuration state, this error must be rectified before continuing. {error}"
 
         # Remove the 'VIEW_BACKUPS' and 'RESTORE' commands from the set of 'disallowed' commands so that we can add them

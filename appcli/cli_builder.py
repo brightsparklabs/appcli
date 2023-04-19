@@ -54,7 +54,8 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     Args:
         configuration (Configuration): the application's configuration settings
     """
-    APP_NAME = configuration.app_name.upper()
+    APP_NAME = configuration.app_name
+    APP_NAME_SLUG = configuration.app_name_slug
     APP_VERSION = os.environ.get("APP_VERSION", "latest")
 
     # --------------------------------------------------------------------------
@@ -167,7 +168,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             docker_credentials_file=docker_credentials_file,
             subcommand_args=ctx.obj,
             debug=debug,
-            app_name=APP_NAME,
+            app_name_slug=APP_NAME_SLUG,
             app_version=APP_VERSION,
             commands=default_commands,
             backup_dir=backup_dir,
@@ -240,7 +241,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     def run():
         """Run the entry-point click CLI command"""
         cli(  # pylint: disable=no-value-for-parameter,unexpected-keyword-arg
-            prog_name=configuration.app_name
+            prog_name=configuration.app_name_slug
         )
 
     def check_docker_socket():
@@ -252,11 +253,13 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     def check_environment():
         """Confirm that mandatory environment variables and additional data directories are defined."""
 
-        ENV_VAR_CONFIG_DIR = f"{APP_NAME}_CONFIG_DIR"
-        ENV_VAR_GENERATED_CONFIG_DIR = f"{APP_NAME}_GENERATED_CONFIG_DIR"
-        ENV_VAR_DATA_DIR = f"{APP_NAME}_DATA_DIR"
-        ENV_VAR_BACKUP_DIR = f"{APP_NAME}_BACKUP_DIR"
-        ENV_VAR_ENVIRONMENT = f"{APP_NAME}_ENVIRONMENT"
+        app_name_slug_upper = APP_NAME_SLUG.upper()
+
+        ENV_VAR_CONFIG_DIR = f"{app_name_slug_upper}_CONFIG_DIR"
+        ENV_VAR_GENERATED_CONFIG_DIR = f"{app_name_slug_upper}_GENERATED_CONFIG_DIR"
+        ENV_VAR_DATA_DIR = f"{app_name_slug_upper}_DATA_DIR"
+        ENV_VAR_BACKUP_DIR = f"{app_name_slug_upper}_BACKUP_DIR"
+        ENV_VAR_ENVIRONMENT = f"{app_name_slug_upper}_ENVIRONMENT"
         launcher_set_mandatory_env_vars = [
             ENV_VAR_CONFIG_DIR,
             ENV_VAR_GENERATED_CONFIG_DIR,

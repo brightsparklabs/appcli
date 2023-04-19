@@ -27,13 +27,11 @@ from appcli.models.configuration import Configuration
 
 
 class EncryptCli:
-
     # --------------------------------------------------------------------------
     # CONSTRUCTOR
     # --------------------------------------------------------------------------
 
     def __init__(self, configuration: Configuration):
-
         self.configuration: Configuration = configuration
 
         @click.command(help="Encrypts the specified string.")

@@ -26,7 +26,8 @@ from appcli.orchestrators import DockerComposeOrchestrator
 # CONSTANTS
 # ------------------------------------------------------------------------------
 
-APP_NAME = "test_app"
+APP_NAME = "Test App"
+APP_NAME_SLUG = "Test_App"
 
 # directory containing this script
 BASE_DIR = Path(__file__).parent
@@ -235,14 +236,13 @@ def create_cli_context(tmpdir, app_version: str = "0.0.0") -> CliContext:
         docker_credentials_file=None,
         subcommand_args=None,
         debug=True,
-        app_name=APP_NAME,
+        app_name_slug=APP_NAME_SLUG,
         app_version=app_version,
         commands={},
     )
 
 
 def create_conf_manager(tmpdir, cli_context: CliContext = None) -> ConfigurationManager:
-
     # If not supplied, create default CliContext.
     if cli_context is None:
         cli_context = create_cli_context(tmpdir)

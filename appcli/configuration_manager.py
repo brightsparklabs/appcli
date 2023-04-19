@@ -16,7 +16,6 @@ import shutil
 import tarfile
 import tempfile
 from datetime import datetime, timezone
-from distutils.dir_util import copy_tree
 from pathlib import Path
 from typing import Iterable
 
@@ -208,7 +207,6 @@ class ConfigurationManager:
         return self.variables_manager.get_stack_variable(variable)
 
     def __create_new_configuration_branch_and_files(self):
-
         app_version: str = self.cli_context.app_version
         app_version_branch: str = self.config_repo.generate_branch_name(app_version)
 
@@ -407,7 +405,7 @@ class ConfigurationManager:
         # Due to a limitation with 'copytree', it fails to copy if the root directory exists
         # before copying. So we delete the temp dir prior to copying.
         os.rmdir(temp_dir)
-        copy_tree(str(directory_to_backup), str(temp_dir))
+        shutil.copytree(str(directory_to_backup), str(temp_dir), dirs_exist_ok=True)
 
         return temp_dir
 
@@ -433,7 +431,7 @@ class ConfigurationManager:
             return
 
         os.mkdir(target_dir)
-        copy_tree(str(source_dir), str(target_dir))
+        shutil.copytree(str(source_dir), str(target_dir), dirs_exist_ok=True)
 
     def __backup_and_create_new_generated_config_dir(
         self, current_config_version
@@ -562,11 +560,15 @@ class ConfigurationManager:
             basename = os.path.basename(source_dir)
             output_filename = os.path.join(
                 os.path.dirname(source_dir),
+                Path(".generated-archive/"),
                 f"{basename}_{clean_additional_filename_descriptor}_{current_datetime}.tgz",
             )
 
             # Create the backup
             logger.debug(f"Backing up directory [{source_dir}] to [{output_filename}]")
+            output_dir = os.path.dirname(output_filename)
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
             with tarfile.open(output_filename, "w:gz") as tar:
                 tar.add(source_dir, arcname=os.path.basename(source_dir))
 

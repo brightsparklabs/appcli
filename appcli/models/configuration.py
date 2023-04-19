@@ -11,7 +11,7 @@ from typing import Callable, Dict, FrozenSet, Iterable, NamedTuple
 
 # vendor libraries
 import click
-from pydantic import BaseModel, validator
+from pydantic import BaseModel
 
 # local libraries
 from appcli.orchestrators import DockerComposeOrchestrator, Orchestrator
@@ -147,19 +147,31 @@ class Configuration(BaseModel):
     generated configuration directory.
     """
 
-    @validator("app_name")
-    def app_name_must_be_shell_safe(cls, value):
-        # Use a validator to create a shell-safe version of the application name.
-        # This transforms the app_name variable by replacing any unsafe shell
-        # characters with '_', and returning the new string.
-        # Safe characters are: [a-z],[A-Z],[0-9] or '_'.
-        # First character cannot be [0-9].
-        # https://unix.stackexchange.com/questions/428880/list-of-acceptable-initial-characters-for-a-bash-variable
-        # https://linuxhint.com/bash-variable-name-rules-legal-illegal/
+    auto_configure_on_install: bool = True
+    """
+    Optional. Whether to run the corresponding install and configure
+    commands on the application. Equivalent to:
+        docker run --rm brightsparklabs/myapp:<version> install | sudo bash
+        /opt/brightsparklabs/myapp/production/myapp configure init
+        /opt/brightsparklabs/myapp/production/myapp configure apply
+    """
+
+    @property
+    def app_name_slug(self) -> str:
+        """
+        Returns a slug version of the application name which is shell safe.
+
+        This transforms the app_name variable by replacing any unsafe shell
+        characters with '_', and returning the new string.
+        Safe characters are: [a-z],[A-Z],[0-9] or '_'.
+        First character cannot be [0-9].
+        https://unix.stackexchange.com/questions/428880/list-of-acceptable-initial-characters-for-a-bash-variable
+        https://linuxhint.com/bash-variable-name-rules-legal-illegal/
+        """
         return "".join(
             [
-                re.sub(r"[^a-zA-Z_]", "_", value[0]),  # First character.
-                re.sub(r"[^a-zA-Z0-9_]", "_", value[1:]),
+                re.sub(r"[^a-zA-Z_]", "_", self.app_name[0]),  # First character.
+                re.sub(r"[^a-zA-Z0-9_]", "_", self.app_name[1:]),
             ]
         )
 

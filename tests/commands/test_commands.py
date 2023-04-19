@@ -33,7 +33,8 @@ from appcli.orchestrators import DockerComposeOrchestrator
 # CONSTANTS
 # ------------------------------------------------------------------------------
 
-APP_NAME = "TEST_APP"
+APP_NAME = "Test App"
+APP_NAME_SLUG = "Test_App"
 
 # directory containing this script
 BASE_DIR = Path(__file__).parent
@@ -50,13 +51,11 @@ DOCKER_COMPOSE_SERVICES = list(YAML().load(open(DOCKER_COMPOSE_YML))["services"]
 
 
 class Test_ServiceCommands:
-
     # --------------------------------------------------------------------------
     # SERVICE START
     # --------------------------------------------------------------------------
 
     def test_service_start_no_input(self, test_env):
-
         result = test_env.invoke_service_command(["start"])
 
         assert "force is [False]" in result.output
@@ -64,7 +63,6 @@ class Test_ServiceCommands:
         assert result.exit_code == 0
 
     def test_service_start_single_input(self, test_env):
-
         result = test_env.invoke_service_command(["start", "service_2"])
 
         assert "force is [False]" in result.output
@@ -72,7 +70,6 @@ class Test_ServiceCommands:
         assert result.exit_code == 0
 
     def test_service_start_multiple_inputs(self, test_env):
-
         result = test_env.invoke_service_command(["start", "service_2", "service_1"])
 
         assert "force is [False]" in result.output
@@ -80,7 +77,6 @@ class Test_ServiceCommands:
         assert result.exit_code == 0
 
     def test_service_start_invalid_input(self, test_env):
-
         result = test_env.invoke_service_command(
             ["start", "INVALID_SERVICE_1", "service_1", "INVALID_SERVICE_2"]
         )
@@ -90,7 +86,6 @@ class Test_ServiceCommands:
         assert result.exit_code == 1
 
     def test_service_start_force_flag_no_inputs(self, test_env):
-
         result = test_env.invoke_service_command(["start", "--force"])
 
         assert "force is [True]" in result.output
@@ -98,7 +93,6 @@ class Test_ServiceCommands:
         assert result.exit_code == 0
 
     def test_service_start_force_flag_multiple_inputs(self, test_env):
-
         result = test_env.invoke_service_command(
             ["start", "--force", "service_1", "service_2", "service_3"],
         )
@@ -108,7 +102,6 @@ class Test_ServiceCommands:
         assert result.exit_code == 0
 
     def test_service_start_force_flag_invalid_inputs(self, test_env):
-
         result = test_env.invoke_service_command(
             [
                 "start",
@@ -129,14 +122,12 @@ class Test_ServiceCommands:
     # --------------------------------------------------------------------------
 
     def test_service_shutdown_no_input(self, test_env):
-
         result = test_env.invoke_service_command(["shutdown"])
 
         assert f"SHUTDOWN {APP_NAME} ..." in result.output
         assert result.exit_code == 0
 
     def test_service_shutdown_multiple_inputs(self, test_env):
-
         result = test_env.invoke_service_command(
             ["shutdown", "service_3", "service_1"],
         )
@@ -145,7 +136,6 @@ class Test_ServiceCommands:
         assert result.exit_code == 0
 
     def test_service_shutdown_invalid_input(self, test_env):
-
         result = test_env.invoke_service_command(
             ["shutdown", "service_1", "service_2", "INVALID_SERVICE_1"],
         )
@@ -158,7 +148,6 @@ class Test_ServiceCommands:
     # --------------------------------------------------------------------------
 
     def test_service_restart_no_input(self, test_env):
-
         result = test_env.invoke_service_command(["restart"])
 
         assert "force is [False]" in result.output
@@ -167,7 +156,6 @@ class Test_ServiceCommands:
         assert result.exit_code == 0
 
     def test_service_restart_single_input(self, test_env):
-
         result = test_env.invoke_service_command(
             ["restart", "service_1"],
         )
@@ -178,7 +166,6 @@ class Test_ServiceCommands:
         assert result.exit_code == 0
 
     def test_service_restart_multiple_inputs(self, test_env):
-
         result = test_env.invoke_service_command(
             ["restart", "service_1", "service_2"],
         )
@@ -189,7 +176,6 @@ class Test_ServiceCommands:
         assert result.exit_code == 0
 
     def test_service_restart_invalid_input(self, test_env):
-
         result = test_env.invoke_service_command(
             ["restart", "service_1", "service_2", "INVALID_SERVICE_1"],
         )
@@ -198,7 +184,6 @@ class Test_ServiceCommands:
         assert result.exit_code == 1
 
     def test_service_restart_force_flag_no_inputs(self, test_env):
-
         result = test_env.invoke_service_command(["restart", "--force"])
 
         assert "force is [True]" in result.output
@@ -207,7 +192,6 @@ class Test_ServiceCommands:
         assert result.exit_code == 0
 
     def test_service_restart_force_flag_multiple_inputs(self, test_env):
-
         result = test_env.invoke_service_command(
             ["restart", "--force", "service_1", "service_2"],
         )
@@ -218,7 +202,6 @@ class Test_ServiceCommands:
         assert result.exit_code == 0
 
     def test_service_restart_force_flag_invalid_inputs(self, test_env):
-
         result = test_env.invoke_service_command(
             ["restart", "--force", "INVALID_SERVICE_1", "service_1", "service_2"],
         )
@@ -227,7 +210,6 @@ class Test_ServiceCommands:
         assert result.exit_code == 1
 
     def test_service_restart_apply_flag_no_inputs(self, test_env):
-
         result = test_env.invoke_service_command(["restart", "--apply"])
         print(result.output)
 
@@ -238,7 +220,6 @@ class Test_ServiceCommands:
         assert result.exit_code == 0
 
     def test_service_restart_apply_flag_multiple_inputs(self, test_env):
-
         result = test_env.invoke_service_command(
             ["restart", "--apply", "service_1", "service_2"],
         )
@@ -250,7 +231,6 @@ class Test_ServiceCommands:
         assert result.exit_code == 0
 
     def test_service_restart_apply_flag_invalid_inputs(self, test_env):
-
         result = test_env.invoke_service_command(
             [
                 "restart",
@@ -267,7 +247,6 @@ class Test_ServiceCommands:
         assert result.exit_code == 1
 
     def test_service_restart_force_apply_flag_no_inputs(self, test_env):
-
         result = test_env.invoke_service_command(
             ["restart", "--force", "--apply"],
         )
@@ -279,7 +258,6 @@ class Test_ServiceCommands:
         assert result.exit_code == 0
 
     def test_service_restart_force_apply_flag_multiple_inputs(self, test_env):
-
         result = test_env.invoke_service_command(
             ["restart", "--force", "--apply", "service_1", "service_2"],
         )
@@ -291,7 +269,6 @@ class Test_ServiceCommands:
         assert result.exit_code == 0
 
     def test_service_restart_force_apply_flag_invalid_inputs(self, test_env):
-
         result = test_env.invoke_service_command(
             [
                 "restart",
@@ -312,21 +289,18 @@ class Test_ServiceCommands:
     # SERVICE STATUS
     # --------------------------------------------------------------------------
     def test_service_status_no_input(self, test_env):
-
         result = test_env.invoke_service_command(["status"])
 
         assert f"STATUS {APP_NAME} ..." in result.output
         assert result.exit_code == 0
 
     def test_service_status_single_input(self, test_env):
-
         result = test_env.invoke_service_command(["status", "service_2"])
 
         assert "STATUS service_2 ..." in result.output
         assert result.exit_code == 0
 
     def test_service_status_multiple_inputs(self, test_env):
-
         result = test_env.invoke_service_command(
             ["status", "service_3", "service_1"],
         )
@@ -335,7 +309,6 @@ class Test_ServiceCommands:
         assert result.exit_code == 0
 
     def test_service_status_invalid_input(self, test_env):
-
         result = test_env.invoke_service_command(
             ["status", "service_1", "service_2", "INVALID_SERVICE_1"],
         )
@@ -442,7 +415,7 @@ class Environment:
             docker_credentials_file=None,
             subcommand_args=None,
             debug=True,
-            app_name=APP_NAME,
+            app_name_slug=APP_NAME,
             app_version="0.0.0",
             commands=ConfigureCli(config).commands,
         )

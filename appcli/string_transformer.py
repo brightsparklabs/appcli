@@ -10,8 +10,32 @@ www.brightsparklabs.com
 """
 
 # standard library
-from distutils.util import strtobool
 from typing import List
+
+# ------------------------------------------------------------------------------
+# FUNCTIONS
+# ------------------------------------------------------------------------------
+
+
+# NOTE: This is a copy of the `distutils.util.strtobool` function.
+# `distutils` is depricated and removed in python-3.12.
+# See https://docs.python.org/3/whatsnew/3.10.html#distutils-deprecated
+# And https://github.com/python/cpython/blob/3.10/Lib/distutils/util.py#L308
+# And https://stackoverflow.com/questions/42248342/yes-no-prompt-in-python3-using-strtobool
+def strtobool(val):
+    """Convert a string representation of truth to true (1) or false (0).
+    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
+    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
+    'val' is anything else.
+    """
+    val = val.lower()
+    if val in ("y", "yes", "t", "true", "on", "1"):
+        return 1
+    elif val in ("n", "no", "f", "false", "off", "0"):
+        return 0
+    else:
+        raise ValueError("invalid truth value %r" % (val,))
+
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -19,7 +43,6 @@ from typing import List
 
 
 class StringTransformer:
-
     # The 'type' string for string to string transformation (i.e. identity function)
     STRING_TRANSFORMER_TYPE = "str"
 

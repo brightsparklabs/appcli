@@ -43,14 +43,15 @@ INSTALLER_TEMPLATE_FILENAME = "installer.j2"
 
 
 class InstallCli:
-
     # ------------------------------------------------------------------------------
     # CONSTRUCTOR
     # ------------------------------------------------------------------------------
 
     def __init__(self, configuration: Configuration):
         self.configuration: Configuration = configuration
-        default_install_dir = f"/opt/brightsparklabs/{configuration.app_name.lower()}"
+        default_install_dir = (
+            f"/opt/brightsparklabs/{configuration.app_name_slug.lower()}"
+        )
 
         @click.command(
             hidden=True, help="Outputs an appropriate installer bash script to stdout."

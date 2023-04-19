@@ -1,28 +1,44 @@
 #!/usr/bin/env bash
 
+{% set app_name_slug_lower = cli_context.app_name_slug|lower %}
+
 ##
- # Pipe this through bash to install {{ cli_context.app_name|lower }}.
+ # Pipe this through bash to install {{ app_name_slug_lower }}.
  #
  # Application version: {{ cli_context.app_version }}
  ##
 
 # ------------------------------------------------------------------------------
+# VARIABLES
+# ------------------------------------------------------------------------------
+
+# 'true' if the script should automatically initialise and apply configuration. 'false' otherwise.
+AUTO_CONFIGURE={{ configuration.auto_configure_on_install|lower }}
+
+# ------------------------------------------------------------------------------
 # FUNCTIONS
 # ------------------------------------------------------------------------------
 
+##
+ # Main entrypoint.
+ #
+ # @param $@ Arguments passed in on the command line.
+ ##
 function main()
 {
+    process_args $@
+
     mkdir -p "{{ install_dir }}" || print_error_and_exit "Could not create [{{ install_dir }}]"
     [[ -w "{{ install_dir }}" ]] || print_error_and_exit "No permissions to write to [{{ install_dir }}]"
 
     cd "{{ install_dir }}"
 
     # Create versioned launcher
-    local _launcher_versioned=".$(date -Isec --utc)_{{ cli_context.app_name|lower }}_{{ cli_context.app_version }}"
+    local _launcher_versioned=".$(date -Isec --utc)_{{ app_name_slug_lower }}_{{ cli_context.app_version }}"
     generate_launcher > "${_launcher_versioned}" || print_error_and_exit "No permissions to write to [${_launcher_versioned}]"
     chmod a+x "${_launcher_versioned}"
 
-    local _launcher_generic="{{ cli_context.app_name|lower }}"
+    local _launcher_generic="{{ app_name_slug_lower }}"
 
     # If the generic launcher already exists, upgrade the existing application
     [[ -e "${_launcher_generic}" ]] && upgrade_existing_application "${_launcher_generic}" "${_launcher_versioned}"
@@ -31,17 +47,45 @@ function main()
     rm -f "${_launcher_generic}" || print_error_and_exit "No permissions to delete to [${_launcher_generic}]"
     ln -s "${_launcher_versioned}" "${_launcher_generic}"
 
-    >&2 cat <<EOF
-    $(date -Isec --utc) INFO: {{ cli_context.app_name|lower }} version [{{ cli_context.app_version }}] can be launched via:
+    # Auto configure if enabled.
+    if [[ $AUTO_CONFIGURE = true ]]; then
+        NO_TTY=true {{ install_dir }}/${_launcher_generic} configure init
+        NO_TTY=true {{ install_dir }}/${_launcher_generic} configure apply
+    fi
 
-        {{ install_dir }}/{{ cli_context.app_name|lower }}
+    >&2 cat <<EOF
+    $(date -Isec --utc) INFO: {{ app_name_slug_lower }} version [{{ cli_context.app_version }}] can be launched via:
+
+        {{ install_dir }}/{{ app_name_slug_lower }}
 EOF
 }
 
+##
+ # Processes the arguments passed in on the command line.
+ #
+ # @param $@ Arguments passed in on the command line.
+ ##
+function process_args()
+{
+    # Process long options. Not using 'getopt' as that is non-POSIX and not built-in to bash.
+    local _arg
+    for _arg in "$@"
+    do
+        shift
+        case "${_arg}" in
+               "--auto-configure") AUTO_CONFIGURE=true ;;
+            "--no-auto-configure") AUTO_CONFIGURE=false ;;
+        esac
+    done
+}
+
+##
+ # Creates the launcher script and prints it to stdout.
+ ##
 function generate_launcher()
 {
     docker run \
-        --name {{ cli_context.app_name }}_{{ cli_context.environment }}_launcher_$(date +%s) \
+        --name {{ app_name_slug_lower }}_{{ cli_context.environment }}_launcher_$(date +%s) \
         --rm \
         {{ configuration.docker_image }}:{{ cli_context.app_version }} \
             --configuration-dir "{{ cli_context.configuration_dir }}" \
@@ -63,6 +107,15 @@ function generate_launcher()
             launcher
 }
 
+##
+ # Upgrades an existing installation of the application.
+ #
+ # This will stop the system (if running), migrate configuration and apply it.
+ # The system will be left in a stopped state.
+ #
+ # @param $1 The path of the existing launcher script.
+ # @param $1 The path of the new launcher script.
+ ##
 function upgrade_existing_application()
 {
     local _launcher_existing="$(realpath ${1})"
@@ -79,6 +132,11 @@ function upgrade_existing_application()
     NO_TTY=true ${_launcher_upgrade} configure apply --force
 }
 
+##
+ # Prints an error message and exits with a non-zero exit code.
+ #
+ # @param $@ The error message to print.
+ ##
 function print_error_and_exit()
 {
     >&2 echo "$(date -Isec --utc) ERROR: $@"

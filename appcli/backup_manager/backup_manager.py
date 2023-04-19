@@ -148,7 +148,7 @@ class BackupConfig(DataClassExtensions):
         backup_name: Path = os.path.join(
             sub_backup_dir,
             self.__create_backup_filename(
-                cli_context.app_name, self.get_filesystem_safe_name()
+                cli_context.app_name_slug, self.get_filesystem_safe_name()
             ),
         )
 
@@ -268,7 +268,6 @@ class BackupConfig(DataClassExtensions):
         backup_strategies: List[RemoteBackup] = []
 
         for remote_configuration in self.remote_backups:
-
             try:
                 remote_backup: RemoteBackup = RemoteBackup.from_dict(
                     remote_configuration
@@ -281,12 +280,12 @@ class BackupConfig(DataClassExtensions):
 
         return backup_strategies
 
-    def __create_backup_filename(self, app_name: str, backup_name: str) -> str:
+    def __create_backup_filename(self, app_name_slug: str, backup_name: str) -> str:
         """Generate the filename of the backup .tgz file.
-            Format is "<APP_NAME>_<BACKUP_NAME>_<datetime.now>.tgz".
+            Format is "<APP_NAME_SLUG>_<BACKUP_NAME>_<datetime.now>.tgz".
 
         Args:
-            app_name: (str). The application name to be used in the naming of the tgz file.
+            app_name_slug: (str). The application name to be used in the naming of the tgz file.
             backup_name: (str). The name of the backup being taken.
         Returns:
             The formatted .tgz filename.
@@ -302,7 +301,7 @@ class BackupConfig(DataClassExtensions):
             .isoformat()
             .replace(":", "")
         )
-        return f"{app_name.upper()}_{backup_name.upper()}_{now}.tgz"
+        return f"{app_name_slug.upper()}_{backup_name.upper()}_{now}.tgz"
 
     def __rolling_backup_deletion(self, backup_dir: Path):
         """Delete old backups, will only keep the most recent backups.
@@ -471,13 +470,34 @@ class BackupManager:
         try:
             with tarfile.open(backup_name) as tar:
                 conf_dir: Path = cli_context.configuration_dir
-                tar.extractall(
-                    conf_dir, members=self.__members(tar, os.path.basename(conf_dir))
+                data_dir: Path = cli_context.data_dir
+
+                def is_within_directory(directory, target):
+                    abs_directory = os.path.abspath(directory)
+                    abs_target = os.path.abspath(target)
+
+                    prefix = os.path.commonprefix([abs_directory, abs_target])
+
+                    return prefix == abs_directory
+
+                def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+                    for member in tar.getmembers():
+                        member_path = os.path.join(path, member.name)
+                        if not is_within_directory(path, member_path):
+                            raise Exception("Attempted Path Traversal in Tar File")
+
+                    tar.extractall(path, members, numeric_owner=numeric_owner)
+
+                safe_extract(
+                    tar=tar,
+                    path=conf_dir,
+                    members=self.__members(tar, os.path.basename(conf_dir)),
                 )
 
-                data_dir: Path = cli_context.data_dir
-                tar.extractall(
-                    data_dir, members=self.__members(tar, os.path.basename(data_dir))
+                safe_extract(
+                    tar=tar,
+                    path=data_dir,
+                    members=self.__members(tar, os.path.basename(data_dir)),
                 )
 
         except Exception as e:

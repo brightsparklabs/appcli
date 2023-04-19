@@ -21,16 +21,16 @@ from appcli.orchestrators import DockerComposeOrchestrator
 # ------------------------------------------------------------------------------
 
 
-def test_app_name_replaces_leading_digits():
+def test_app_name_slug_replaces_leading_digits():
     # Replaces starting number with underscore
-    assert create_configuration("123abc").app_name == "_23abc"
+    assert create_configuration("123abc").app_name_slug == "_23abc"
 
 
-def test_app_name_replaces_invalid_characters():
+def test_app_name_slug_replaces_invalid_characters():
     # Replaces unknown characters
-    assert create_configuration("a-B=c+D$e#f").app_name == "a_B_c_D_e_f"
+    assert create_configuration("a-B=c+D$e#f").app_name_slug == "a_B_c_D_e_f"
     assert (
-        create_configuration("abc~!@#$%^&*()_+`-=[]{}|;':,./<>?def").app_name
+        create_configuration("abc~!@#$%^&*()_+`-=[]{}|;':,./<>?def").app_name_slug
         == "abc______________________________def"
     )
 
@@ -45,7 +45,6 @@ def test_app_name_replaces_invalid_characters():
 
 
 def create_configuration(app_name: str) -> Configuration:
-
     return Configuration(
         app_name=app_name,
         docker_image="invalid-image-name",
