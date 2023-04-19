@@ -12,6 +12,14 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Added
 
+### Fixed
+
+---
+
+## [1.5.0] - 2023-04-19
+
+### Added
+
 - APPCLI-104: Store generated `config` backups in nested `.generated-archive` directory.
 - APPCLI-106: Configure and apply on install by default.
 - APPCLI-100: Be more explicit when appcli instance fails to start.
@@ -23,7 +31,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ---
 
-## [1.4.0] - (10/10/2022)
+## [1.4.0] - 2022-10-10
 
 ### Breaking Changes from 1.3.6
 
@@ -58,7 +66,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ---
 
-## [1.3.6] - (24/01/2022)
+## [1.3.6] - 2022-01-24
 
 ### Fixed
 
@@ -66,7 +74,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ---
 
-## [1.3.5] - (21/01/2022)
+## [1.3.5] - 2022-01-21
 
 ### Added
 
@@ -92,7 +100,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ---
 
-## [1.3.4] - (14/05/2021)
+## [1.3.4] - 2021-05-14
 
 ### Fixed
 
@@ -104,7 +112,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ---
 
-## [1.3.3] - (07/05/2021)
+## [1.3.3] - 2021-05-07
 
 ### Added
 
@@ -112,7 +120,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ---
 
-## [1.3.2] - (06/05/2021)
+## [1.3.2] - 2021-05-06
 
 ### Added
 
@@ -126,7 +134,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ---
 
-## [1.3.1] - (18/03/2021)
+## [1.3.1] - 2021-03-18
 
 ### Added
 
@@ -134,7 +142,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ---
 
-## [1.3.0] - (17/03/2021)
+## [1.3.0] - 2021-03-17
 
 ### Added
 
@@ -148,7 +156,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ---
 
-## [1.2.0] - (18/02/2021)
+## [1.2.0] - 2021-02-18
 
 ### Breaking Changes from 1.1
 
@@ -162,7 +170,7 @@ and methods, any python referring to the library will need to use full module pa
 
 ---
 
-## [1.1.3] - (17/02/2021) [BROKEN - DO NOT USE THIS VERSION]
+## [1.1.3] - 2021-02-17 [BROKEN - DO NOT USE THIS VERSION]
 
 ### Added
 
@@ -170,7 +178,7 @@ and methods, any python referring to the library will need to use full module pa
 
 ---
 
-## [1.1.2] - (10/02/2021) [BROKEN - DO NOT USE THIS VERSION]
+## [1.1.2] - 2021-02-10 [BROKEN - DO NOT USE THIS VERSION]
 
 ### Added
 
@@ -183,7 +191,7 @@ and methods, any python referring to the library will need to use full module pa
 
 ---
 
-## [1.1.1] - (26/11/2020)
+## [1.1.1] - 2020-11-26
 
 ### Added
 
@@ -195,7 +203,7 @@ and methods, any python referring to the library will need to use full module pa
 
 ---
 
-## [1.1.0] - (26/11/2020)
+## [1.1.0] - 2020-11-26
 
 ### Added
 
@@ -227,7 +235,7 @@ and methods, any python referring to the library will need to use full module pa
 
 ---
 
-## [1.0.1] - (08/10/2020)
+## [1.0.1] - 2020-10-08
 
 ### Added
 
@@ -238,6 +246,6 @@ and methods, any python referring to the library will need to use full module pa
 
 ---
 
-## [1.0.0] - (07/10/2020)
+## [1.0.0] - 2020-10-07
 
 _No changelog for this release._
