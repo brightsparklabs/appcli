@@ -27,7 +27,7 @@ from appcli.models.configuration import Configuration
 
 class InitCli:
     def __init__(self, configuration: Configuration):
-        self.app_name = configuration.app_name
+        self.app_name_slug = configuration.app_name_slug
 
         # ------------------------------------------------------------------------------
         # CLI METHODS
@@ -60,7 +60,7 @@ class InitCli:
         @click.pass_context
         def keycloak(ctx, url, username, password, insecure):
             keycloak = KeycloakManager(url, username, password, insecure=insecure)
-            keycloak.configure_default(self.app_name)
+            keycloak.configure_default(self.app_name_slug)
 
         self.commands = {"init": init}
 

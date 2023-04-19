@@ -33,7 +33,8 @@ from appcli.orchestrators import DockerComposeOrchestrator
 # CONSTANTS
 # ------------------------------------------------------------------------------
 
-APP_NAME = "TEST_APP"
+APP_NAME = "Test App"
+APP_NAME_SLUG = "Test_App"
 
 # directory containing this script
 BASE_DIR = Path(__file__).parent
@@ -160,7 +161,7 @@ class Environment:
             docker_credentials_file=None,
             subcommand_args=None,
             debug=True,
-            app_name=APP_NAME,
+            app_name_slug=APP_NAME_SLUG,
             app_version="0.0.0",
             commands=ConfigureCli(config).commands,
         )

@@ -148,7 +148,7 @@ class BackupConfig(DataClassExtensions):
         backup_name: Path = os.path.join(
             sub_backup_dir,
             self.__create_backup_filename(
-                cli_context.app_name, self.get_filesystem_safe_name()
+                cli_context.app_name_slug, self.get_filesystem_safe_name()
             ),
         )
 
@@ -280,12 +280,12 @@ class BackupConfig(DataClassExtensions):
 
         return backup_strategies
 
-    def __create_backup_filename(self, app_name: str, backup_name: str) -> str:
+    def __create_backup_filename(self, app_name_slug: str, backup_name: str) -> str:
         """Generate the filename of the backup .tgz file.
-            Format is "<APP_NAME>_<BACKUP_NAME>_<datetime.now>.tgz".
+            Format is "<APP_NAME_SLUG>_<BACKUP_NAME>_<datetime.now>.tgz".
 
         Args:
-            app_name: (str). The application name to be used in the naming of the tgz file.
+            app_name_slug: (str). The application name to be used in the naming of the tgz file.
             backup_name: (str). The name of the backup being taken.
         Returns:
             The formatted .tgz filename.
@@ -301,7 +301,7 @@ class BackupConfig(DataClassExtensions):
             .isoformat()
             .replace(":", "")
         )
-        return f"{app_name.upper()}_{backup_name.upper()}_{now}.tgz"
+        return f"{app_name_slug.upper()}_{backup_name.upper()}_{now}.tgz"
 
     def __rolling_backup_deletion(self, backup_dir: Path):
         """Delete old backups, will only keep the most recent backups.

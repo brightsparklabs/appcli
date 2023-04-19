@@ -186,7 +186,7 @@ def create_click_ctx(conf_dir, data_dir, backup_dir) -> click.Context:
             application_context_files_dir=None,
             data_dir=data_dir,
             backup_dir=backup_dir,
-            app_name="test_app",
+            app_name_slug="test_app",
             additional_data_dirs=None,
             additional_env_variables=None,
             environment="test",
