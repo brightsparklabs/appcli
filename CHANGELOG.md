@@ -16,6 +16,16 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ---
 
+## [2.0.0] - 2023-05-18
+
+Marked as a major release as `1.4.0` should have been due to breaking changes.
+
+### Fixed
+
+- TERA-1325: Fix incorrect stream printing and class names.
+
+---
+
 ## [1.5.0] - 2023-04-19
 
 ### Added
