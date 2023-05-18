@@ -747,7 +747,7 @@ def execute_compose(
         if result.stderr:
             logger.error(
                 "Command failed - stderr:\n%s",
-                textwrap.indent(result.stdout.decode("utf-8"), "    "),
+                textwrap.indent(result.stderr.decode("utf-8"), "    "),
             )
     # For normal exits, just debug log the stdout if present.
     elif result.stdout:

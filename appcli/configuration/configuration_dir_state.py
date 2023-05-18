@@ -51,7 +51,7 @@ class ConfigurationDirState:
                 " If this command supports it, use '--force' to ignore error."
             )
         logger.debug(
-            f"Allowed command [{command}] with current configuration state [{self}], where force is [{force}]."
+            f"Allowed command [{command}] with current configuration state [{self.__class__.__name__}], where force is [{force}]."
         )
 
 
