@@ -91,7 +91,7 @@ class CliContext(NamedTuple):
                 self.backup_dir,
             )
         )
-        logger.debug(f"Derived configuration state [{configuration_dir_state}]")
+        logger.debug(f"Derived configuration state [{configuration_dir_state.__class__.__name__}]")
         return configuration_dir_state
 
     def get_key_file(self) -> Path:

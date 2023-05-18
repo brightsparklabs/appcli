@@ -13,6 +13,12 @@ jobs:
         # fetch all history for all branches and tags, so that our `make` targets can get tags
         with:
           fetch-depth: 0
+      - name: Fix tag
+        # Workaround actions/checkout bug
+        # https://github.com/actions/checkout/issues/290
+        # https://github.com/actions/checkout/issues/882
+        if: github.ref_type == 'tag'
+        run: git fetch -fv origin tag "${GITHUB_REF_NAME}"
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
