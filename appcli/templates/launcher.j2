@@ -22,8 +22,17 @@ MOUNTED_DATA_DIR="{{ '${' }}{{ app_name_slug_upper }}_DATA_DIR:-{{ cli_context.d
 MOUNTED_BACKUP_DIR="{{ '${' }}{{ app_name_slug_upper }}_BACKUP_DIR:-{{ cli_context.backup_dir }}{{ '}' }}"
 ENVIRONMENT="{{ '${' }}{{ app_name_slug_upper }}_ENVIRONMENT:-{{ cli_context.environment }}{{ '}' }}"
 
+if [[ -e /var/run/docker.sock ]]; then
+    DOCKER_SOCKET=/var/run/docker.sock
+elif [[ -e /run/podman/podman.sock ]]; then
+    DOCKER_SOCKET=/run/podman/podman.sock
+else
+    echo "ERROR: No docker socket found on host"
+    exit 1
+fi
+
 # ------------------------------------------------------------------------------
-# LOGIC
+# FUNCTIONS
 # ------------------------------------------------------------------------------
 
 function main()
@@ -44,7 +53,8 @@ function main()
         --env {{ name }}="{{ path }}" \
         --volume "{{ path }}:{{ path }}" \
 {% endfor %}
-        --volume /var/run/docker.sock:/var/run/docker.sock \
+        --volume "${DOCKER_SOCKET}:/var/run/docker.sock" \
+        --volume "${MOUNTED_DATA_DIR}/cli/home:/root" \
         --env APP_NAME="{{ app_name }}" \
         --env {{ app_name_slug_upper }}_CONFIG_DIR="${MOUNTED_CONFIG_DIR}" \
         --volume "${MOUNTED_CONFIG_DIR}:${MOUNTED_CONFIG_DIR}" \

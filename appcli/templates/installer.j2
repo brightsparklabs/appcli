@@ -35,7 +35,7 @@ function main()
 
     # Create versioned launcher
     local _launcher_versioned=".$(date -Isec --utc)_{{ app_name_slug_lower }}_{{ cli_context.app_version }}"
-    generate_launcher > "${_launcher_versioned}" || print_error_and_exit "No permissions to write to [${_launcher_versioned}]"
+    generate_launcher > "${_launcher_versioned}" || print_error_and_exit "Could not generate launcher at $(pwd)/[${_launcher_versioned}]"
     chmod a+x "${_launcher_versioned}"
 
     local _launcher_generic="{{ app_name_slug_lower }}"
