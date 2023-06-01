@@ -32,7 +32,7 @@ from appcli.commands.migrate_cli import MigrateCli
 from appcli.commands.service_cli import ServiceCli
 from appcli.commands.task_cli import TaskCli
 from appcli.commands.version_cli import VersionCli
-from appcli.dev_mode import print_dev_mode
+from appcli.dev_mode import wrap_dev_mode
 from appcli.functions import error_and_exit, extract_valid_environment_variable_names
 from appcli.logger import enable_debug_logging, logger
 from appcli.models.cli_context import CliContext
@@ -69,22 +69,23 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     ENV_VAR_ENVIRONMENT = f"{APP_NAME_SLUG_UPPER}_ENVIRONMENT"
 
     if IS_DEV_MODE:
-        install_dir = Path("/tmp/") / APP_NAME_SLUG.lower()
+        with wrap_dev_mode():
+            environment = "local-dev"
+            install_dir = Path("/tmp/") / APP_NAME_SLUG.lower() / environment
+            install_dir.mkdir(parents=True, exist_ok=True)
 
-        overrides = {
-            f"{APP_NAME_SLUG_UPPER}_CLI_DEBUG": True,
-            f"{APP_NAME_SLUG_UPPER}_CLI_CONFIGURATION_DIR": install_dir / "conf",
-            f"{APP_NAME_SLUG_UPPER}_CLI_DATA_DIR": install_dir / "data",
-            f"{APP_NAME_SLUG_UPPER}_CLI_BACKUP_DIR": install_dir / "backup",
-            f"{APP_NAME_SLUG_UPPER}_CLI_ENVIRONMENT": "local-dev",
-        }
+            overrides = {
+                f"{APP_NAME_SLUG_UPPER}_CLI_DEBUG": True,
+                f"{APP_NAME_SLUG_UPPER}_CLI_CONFIGURATION_DIR": install_dir / "conf",
+                f"{APP_NAME_SLUG_UPPER}_CLI_DATA_DIR": install_dir / "data",
+                f"{APP_NAME_SLUG_UPPER}_CLI_BACKUP_DIR": install_dir / "backup",
+                f"{APP_NAME_SLUG_UPPER}_CLI_ENVIRONMENT": environment,
+            }
 
-        message = "Overriding CLI options via environment variables"
-        for key, value in overrides.items():
-            message += f"\n  {key}={value}"
-            os.environ[key] = str(value)
-
-        print_dev_mode(message)
+            logger.info("Overriding CLI options via environment variables")
+            for key, value in overrides.items():
+                logger.info(f"  {key}={value}")
+                os.environ[key] = str(value)
 
     # --------------------------------------------------------------------------
     # CREATE_CLI: LOGIC
@@ -182,11 +183,14 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         additional_env_var,
         backup_dir,
     ):
+        title = pyfiglet.figlet_format(APP_NAME, font="slant")
+        logger.info(f"\n{title}")
+
         if debug:
             logger.info("Enabling debug logging")
             enable_debug_logging()
 
-        ctx.obj = CliContext(
+        cli_context: CliContext = CliContext(
             configuration_dir=configuration_dir,
             data_dir=data_dir,
             application_context_files_dir=configuration.application_context_files_dir,
@@ -202,17 +206,18 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             commands=default_commands,
             backup_dir=backup_dir,
         )
+        ctx.obj = cli_context
 
         if ctx.invoked_subcommand is None:
             click.echo(ctx.get_help())
             sys.exit(1)
 
-        __set_environment(ctx.obj, desired_environment)
-
         # For the `installer`/`launcher` commands, no further output/checks required.
         if ctx.invoked_subcommand in ("launcher", "install"):
             # Don't execute this function any further, continue to run subcommand with the current CLI context
             return
+
+        __set_environment(cli_context, desired_environment)
 
         __check_docker_socket()
         __check_environment()
@@ -221,20 +226,19 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         table = [
             ["Application", f"{APP_NAME} (slug: {APP_NAME_SLUG})"],
             ["Version", APP_VERSION],
-            ["Environment", f"{ctx.obj.environment}"],
-            ["Configuration directory", f"{ctx.obj.configuration_dir}"],
+            ["Environment", f"{cli_context.environment}"],
+            ["Configuration directory", f"{cli_context.configuration_dir}"],
             [
                 "Generated Configuration directory",
-                f"{ctx.obj.get_generated_configuration_dir()}",
+                f"{cli_context.get_generated_configuration_dir()}",
             ],
-            ["Data directory", f"{ctx.obj.data_dir}"],
-            ["Backup directory", f"{ctx.obj.backup_dir}"],
+            ["Data directory", f"{cli_context.data_dir}"],
+            ["Backup directory", f"{cli_context.backup_dir}"],
         ]
 
         # Print out the configuration values as an aligned table
-        title = pyfiglet.figlet_format(APP_NAME, font="slant")
         details = tabulate(table, colalign=("right",))
-        logger.info(f"\n{title}\n{details}\n")
+        logger.info(f"Current context:\n{details}\n")
         if additional_data_dir:
             logger.info(
                 "Additional data directories:\n\n%s\n",
@@ -253,6 +257,25 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
                     colalign=("right",),
                 ),
             )
+
+        if IS_DEV_MODE:
+            with wrap_dev_mode():
+                # Auto configure init/apply if not specified.
+                if ctx.invoked_subcommand not in ("configure",):
+                    configure_cli = cli_context.commands["configure"]
+                    try:
+                        ctx.invoke(configure_cli.commands["init"])
+                    except SystemExit:
+                        # At completion, the invoked command tries to exit the script, so we have to catch
+                        # the SystemExit.
+                        pass
+
+                    try:
+                        ctx.invoke(configure_cli.commands["apply"], force=True)
+                    except SystemExit:
+                        # At completion, the invoked command tries to exit the script, so we have to catch
+                        # the SystemExit.
+                        pass
 
     def run():
         """Run the entry-point click CLI command"""
