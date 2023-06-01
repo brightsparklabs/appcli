@@ -70,7 +70,7 @@ setup(
         "pydantic==1.10.7",
         "python-keycloak==0.22.0",
         "python-slugify==8.0.1",
-        "ruamel-yaml==0.17.21",
+        "ruamel-yaml==0.17.31",
         "tabulate==0.9.0",
         "wheel==0.40.0",
     ],
