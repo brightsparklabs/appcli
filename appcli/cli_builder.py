@@ -17,6 +17,7 @@ from typing import Dict, Iterable
 
 # vendor libraries
 import click
+import pyfiglet
 from tabulate import tabulate
 
 # local libraries
@@ -31,6 +32,7 @@ from appcli.commands.migrate_cli import MigrateCli
 from appcli.commands.service_cli import ServiceCli
 from appcli.commands.task_cli import TaskCli
 from appcli.commands.version_cli import VersionCli
+from appcli.dev_mode import print_dev_mode
 from appcli.functions import error_and_exit, extract_valid_environment_variable_names
 from appcli.logger import enable_debug_logging, logger
 from appcli.models.cli_context import CliContext
@@ -56,7 +58,33 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     """
     APP_NAME = configuration.app_name
     APP_NAME_SLUG = configuration.app_name_slug
+    APP_NAME_SLUG_UPPER = APP_NAME_SLUG.upper()
     APP_VERSION = os.environ.get("APP_VERSION", "latest")
+    IS_DEV_MODE: bool = f"{APP_NAME_SLUG_UPPER}_DEV_MODE" in os.environ
+
+    ENV_VAR_CONFIG_DIR = f"{APP_NAME_SLUG_UPPER}_CONFIG_DIR"
+    ENV_VAR_GENERATED_CONFIG_DIR = f"{APP_NAME_SLUG_UPPER}_GENERATED_CONFIG_DIR"
+    ENV_VAR_DATA_DIR = f"{APP_NAME_SLUG_UPPER}_DATA_DIR"
+    ENV_VAR_BACKUP_DIR = f"{APP_NAME_SLUG_UPPER}_BACKUP_DIR"
+    ENV_VAR_ENVIRONMENT = f"{APP_NAME_SLUG_UPPER}_ENVIRONMENT"
+
+    if IS_DEV_MODE:
+        install_dir = Path("/tmp/") / APP_NAME_SLUG.lower()
+
+        overrides = {
+            f"{APP_NAME_SLUG_UPPER}_CLI_DEBUG": True,
+            f"{APP_NAME_SLUG_UPPER}_CLI_CONFIGURATION_DIR": install_dir / "conf",
+            f"{APP_NAME_SLUG_UPPER}_CLI_DATA_DIR": install_dir / "data",
+            f"{APP_NAME_SLUG_UPPER}_CLI_BACKUP_DIR": install_dir / "backup",
+            f"{APP_NAME_SLUG_UPPER}_CLI_ENVIRONMENT": "local-dev",
+        }
+
+        message = "Overriding CLI options via environment variables"
+        for key, value in overrides.items():
+            message += f"\n  {key}={value}"
+            os.environ[key] = str(value)
+
+        print_dev_mode(message)
 
     # --------------------------------------------------------------------------
     # CREATE_CLI: LOGIC
@@ -168,6 +196,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             docker_credentials_file=docker_credentials_file,
             subcommand_args=ctx.obj,
             debug=debug,
+            is_dev_mode=IS_DEV_MODE,
             app_name_slug=APP_NAME_SLUG,
             app_version=APP_VERSION,
             commands=default_commands,
@@ -178,30 +207,21 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             click.echo(ctx.get_help())
             sys.exit(1)
 
-        # attempt to set desired environment
-        initialised_environment = {}
-        for k, v in desired_environment.items():
-            if v is None:
-                logger.warning("Environment variable [%s] has not been set", k)
-            else:
-                logger.debug("Exporting environment variable [%s]", k)
-                os.environ[k] = v
-                initialised_environment[k] = v
-        if len(initialised_environment) != len(desired_environment):
-            error_and_exit(
-                "Could not set desired environment. Please ensure specified environment variables are set."
-            )
+        __set_environment(ctx.obj, desired_environment)
 
         # For the `installer`/`launcher` commands, no further output/checks required.
         if ctx.invoked_subcommand in ("launcher", "install"):
             # Don't execute this function any further, continue to run subcommand with the current CLI context
             return
 
-        check_docker_socket()
-        check_environment()
+        __check_docker_socket()
+        __check_environment()
 
         # Table of configuration variables to print
         table = [
+            ["Application", f"{APP_NAME} (slug: {APP_NAME_SLUG})"],
+            ["Version", APP_VERSION],
+            ["Environment", f"{ctx.obj.environment}"],
             ["Configuration directory", f"{ctx.obj.configuration_dir}"],
             [
                 "Generated Configuration directory",
@@ -209,16 +229,12 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             ],
             ["Data directory", f"{ctx.obj.data_dir}"],
             ["Backup directory", f"{ctx.obj.backup_dir}"],
-            ["Environment", f"{ctx.obj.environment}"],
         ]
 
         # Print out the configuration values as an aligned table
-        logger.info(
-            "%s (version: %s) CLI running with:\n\n%s\n",
-            APP_NAME,
-            APP_VERSION,
-            tabulate(table, colalign=("right",)),
-        )
+        title = pyfiglet.figlet_format(APP_NAME, font="slant")
+        details = tabulate(table, colalign=("right",))
+        logger.info(f"\n{title}\n{details}\n")
         if additional_data_dir:
             logger.info(
                 "Additional data directories:\n\n%s\n",
@@ -241,25 +257,46 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     def run():
         """Run the entry-point click CLI command"""
         cli(  # pylint: disable=no-value-for-parameter,unexpected-keyword-arg
-            prog_name=configuration.app_name_slug
+            prog_name=configuration.app_name_slug,
+            auto_envvar_prefix=f"{APP_NAME_SLUG_UPPER}_CLI",
         )
 
-    def check_docker_socket():
+    def __check_docker_socket():
         """Check that the docker socket exists, and exit if it does not"""
         if not os.path.exists("/var/run/docker.sock"):
             error_msg = """Docker socket not present. Please launch with a mounted /var/run/docker.sock"""
             error_and_exit(error_msg)
 
-    def check_environment():
+    def __set_environment(
+        cli_context: CliContext, desired_environment: Dict[str, str] = {}
+    ):
+        mandatory_environment = {
+            ENV_VAR_CONFIG_DIR: cli_context.configuration_dir,
+            ENV_VAR_GENERATED_CONFIG_DIR: cli_context.get_generated_configuration_dir(),
+            ENV_VAR_DATA_DIR: cli_context.data_dir,
+            ENV_VAR_BACKUP_DIR: cli_context.backup_dir,
+            ENV_VAR_ENVIRONMENT: cli_context.environment,
+        }
+
+        final_environment = mandatory_environment | desired_environment
+
+        # Attempt to set desired environment.
+        initialised_environment = {}
+        for k, v in final_environment.items():
+            if v is None:
+                logger.warning(f"Environment variable `{k}` has not been set")
+            else:
+                logger.debug(f"Exporting environment variable: {k}={v}")
+                os.environ[k] = str(v)
+                initialised_environment[k] = str(v)
+        if len(initialised_environment) != len(final_environment):
+            error_and_exit(
+                "Could not set desired environment. Please ensure specified environment variables are set."
+            )
+
+    def __check_environment():
         """Confirm that mandatory environment variables and additional data directories are defined."""
 
-        app_name_slug_upper = APP_NAME_SLUG.upper()
-
-        ENV_VAR_CONFIG_DIR = f"{app_name_slug_upper}_CONFIG_DIR"
-        ENV_VAR_GENERATED_CONFIG_DIR = f"{app_name_slug_upper}_GENERATED_CONFIG_DIR"
-        ENV_VAR_DATA_DIR = f"{app_name_slug_upper}_DATA_DIR"
-        ENV_VAR_BACKUP_DIR = f"{app_name_slug_upper}_BACKUP_DIR"
-        ENV_VAR_ENVIRONMENT = f"{app_name_slug_upper}_ENVIRONMENT"
         launcher_set_mandatory_env_vars = [
             ENV_VAR_CONFIG_DIR,
             ENV_VAR_GENERATED_CONFIG_DIR,
@@ -317,7 +354,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
                 result = False
             else:
                 logger.debug(
-                    f"Confirmed environment variable is set - '{env_variable}' = '{value}'"
+                    f"Confirmed environment variable is set: {env_variable}={value}"
                 )
         if not result:
             logger.error(exit_message)
@@ -357,8 +394,13 @@ class NotRequiredOn(click.Option):
         subcommand = args[0] if len(args) > 0 else ""
         if subcommand in self.not_required_on:
             self.prompt = None
-        elif self.name not in opts:
+            return super(NotRequiredOn, self).handle_parse_result(ctx, opts, args)
+
+        # Delegate to super to try and populate value from opts/env vars, etc.
+        result = super(NotRequiredOn, self).handle_parse_result(ctx, opts, args)
+        # First item in the tuple is the parsed value for the option. Fail if missing.
+        if result[0] is None:
             options = " / ".join([f"'{x}'" for x in self.opts])
             raise click.UsageError(f"Error: Missing option {options}.")
 
-        return super(NotRequiredOn, self).handle_parse_result(ctx, opts, args)
+        return result

@@ -415,6 +415,7 @@ class Environment:
             docker_credentials_file=None,
             subcommand_args=None,
             debug=True,
+            is_dev_mode=False,
             app_name_slug=APP_NAME,
             app_version="0.0.0",
             commands=ConfigureCli(config).commands,
