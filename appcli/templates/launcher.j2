@@ -31,6 +31,15 @@ else
     exit 1
 fi
 
+CLI_USER=${USER:-unknown}
+[[ -n "${SUDO_USER:-}" ]] && CLI_USER=${SUDO_USER}
+
+CLI_UID=$(id -u)
+[[ -n "${SUDO_UID:-}" ]] && CLI_UID=${SUDO_UID}
+
+CLI_GID=$(id -g)
+[[ -n "${SUDO_GID:-}" ]] && CLI_GID=${SUDO_GID}
+
 # ------------------------------------------------------------------------------
 # FUNCTIONS
 # ------------------------------------------------------------------------------
@@ -65,6 +74,9 @@ function main()
         --env {{ app_name_slug_upper }}_BACKUP_DIR="${MOUNTED_BACKUP_DIR}" \
         --volume "${MOUNTED_BACKUP_DIR}:${MOUNTED_BACKUP_DIR}" \
         --env {{ app_name_slug_upper }}_ENVIRONMENT="${ENVIRONMENT}" \
+        --env {{ app_name_slug_upper }}_CLI_USER="${CLI_USER}" \
+        --env {{ app_name_slug_upper }}_CLI_UID="${CLI_UID}" \
+        --env {{ app_name_slug_upper }}_CLI_GID="${CLI_GID}" \
         --network host \
         {{ configuration.docker_image }}:{{ app_version }} \
             --configuration-dir "${MOUNTED_CONFIG_DIR}" \

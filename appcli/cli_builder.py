@@ -11,6 +11,7 @@ www.brightsparklabs.com
 
 # standard libraries
 import os
+import pwd
 import sys
 from pathlib import Path
 from typing import Dict, Iterable
@@ -62,6 +63,14 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     APP_VERSION = os.environ.get("APP_VERSION", "latest")
     IS_DEV_MODE: bool = f"{APP_NAME_SLUG_UPPER}_DEV_MODE" in os.environ
 
+    # Details of the user who ran the CLI app.
+    CLI_USER = os.environ.get(
+        f"{APP_NAME_SLUG_UPPER}_CLI_USER", pwd.getpwuid(os.getuid()).pw_name
+    )
+    CLI_UID = os.environ.get(f"{APP_NAME_SLUG_UPPER}_CLI_UID", str(os.getuid()))
+    CLI_GID = os.environ.get(f"{APP_NAME_SLUG_UPPER}_CLI_GID", str(os.getgid()))
+
+    # Mandatory environment variables this script will set.
     ENV_VAR_CONFIG_DIR = f"{APP_NAME_SLUG_UPPER}_CONFIG_DIR"
     ENV_VAR_GENERATED_CONFIG_DIR = f"{APP_NAME_SLUG_UPPER}_GENERATED_CONFIG_DIR"
     ENV_VAR_DATA_DIR = f"{APP_NAME_SLUG_UPPER}_DATA_DIR"
@@ -234,6 +243,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             ],
             ["Data directory", f"{cli_context.data_dir}"],
             ["Backup directory", f"{cli_context.backup_dir}"],
+            ["Current user", f"{CLI_USER} (uid: {CLI_UID} / gid: {CLI_GID})"],
         ]
 
         # Print out the configuration values as an aligned table
