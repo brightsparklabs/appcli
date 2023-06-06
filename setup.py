@@ -66,7 +66,7 @@ setup(
         "GitPython==3.1.31",
         "jinja2==3.1.2",
         "pre-commit==3.3.2",
-        "pycryptodome==3.17",
+        "pycryptodome==3.18.0",
         "pydantic==1.10.8",
         "python-keycloak==0.22.0",
         "python-slugify==8.0.1",
