@@ -10,6 +10,7 @@ www.brightsparklabs.com
 """
 
 # standard library
+import os
 from pprint import pprint
 
 # vendor libraries
@@ -71,6 +72,13 @@ class DebugCli:
             print()
             print("=== VARIABLES ===")
             pprint(variables_manager.get_all_variables())
+
+        @debug.command(
+            help="Drops into a shell within the launcher for advanced debugging.",
+        )
+        @click.pass_context
+        def shell(ctx):
+            os.system("bash")
 
         # Expose the commands
         self.commands = {"debug": debug}

@@ -49,7 +49,10 @@ class CliContext(NamedTuple):
     """ Arguments passed to CLI subcommand. """
 
     debug: bool
-    """ Whether to print debug logs. """
+    """ True to enable debug level logging. """
+
+    is_dev_mode: bool
+    """ True if the application is running in DEV MODE. """
 
     # ---------------------------------
     # CLI build data
