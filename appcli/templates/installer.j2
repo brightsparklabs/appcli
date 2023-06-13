@@ -35,13 +35,17 @@ function main()
 
     # Create versioned launcher
     local _launcher_versioned=".$(date -Isec --utc)_{{ app_name_slug_lower }}_{{ cli_context.app_version }}"
-    generate_launcher > "${_launcher_versioned}" || print_error_and_exit "No permissions to write to [${_launcher_versioned}]"
+    generate_launcher > "${_launcher_versioned}" || print_error_and_exit "Could not generate launcher at $(pwd)/[${_launcher_versioned}]"
     chmod a+x "${_launcher_versioned}"
 
     local _launcher_generic="{{ app_name_slug_lower }}"
 
-    # If the generic launcher already exists, upgrade the existing application
-    [[ -e "${_launcher_generic}" ]] && upgrade_existing_application "${_launcher_generic}" "${_launcher_versioned}"
+    # If the generic launcher already exists, upgrade the existing application.
+    local _install_type=install
+    if [[ -e "${_launcher_generic}" ]]; then
+        _install_type=upgrade
+        upgrade_existing_application "${_launcher_generic}" "${_launcher_versioned}"
+    fi
 
     # Update the symlink to the generic launcher
     rm -f "${_launcher_generic}" || print_error_and_exit "No permissions to delete to [${_launcher_generic}]"
@@ -49,7 +53,9 @@ function main()
 
     # Auto configure if enabled.
     if [[ $AUTO_CONFIGURE = true ]]; then
-        NO_TTY=true {{ install_dir }}/${_launcher_generic} configure init
+        # Only need to init if an install (i.e. not an upgrade)
+        [[ "${_install_type}" == "install" ]] && NO_TTY=true {{ install_dir }}/${_launcher_generic} configure init
+
         NO_TTY=true {{ install_dir }}/${_launcher_generic} configure apply
     fi
 
@@ -57,6 +63,7 @@ function main()
     $(date -Isec --utc) INFO: {{ app_name_slug_lower }} version [{{ cli_context.app_version }}] can be launched via:
 
         {{ install_dir }}/{{ app_name_slug_lower }}
+
 EOF
 }
 
@@ -121,7 +128,7 @@ function upgrade_existing_application()
     local _launcher_existing="$(realpath ${1})"
     local _launcher_upgrade="$(realpath ${2})"
 
-    >&2 echo "Installing an upgrade on existing application..."
+    >&2 echo "$(date -Isec --utc) INFO: Installing an upgrade on existing application..."
 
     # Stop services and apply with the old launcher
     NO_TTY=true ${_launcher_existing} service stop

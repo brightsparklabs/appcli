@@ -193,6 +193,7 @@ def create_click_ctx(conf_dir, data_dir, backup_dir) -> click.Context:
             docker_credentials_file=None,
             subcommand_args=None,
             debug=True,
+            is_dev_mode=False,
             app_version="1.0",
             commands=commands,
         ),

@@ -12,6 +12,12 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Added
 
+- AF-97:
+    - Support mapping in podman socket.
+    - Add `debug shell` command.
+    - Add `DEV MODE` to facilitate running/testing outside of docker container.
+    - Pass details of calling user into appcli.
+
 ### Fixed
 
 ---

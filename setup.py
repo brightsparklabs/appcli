@@ -68,6 +68,7 @@ setup(
         "pre-commit==3.3.2",
         "pycryptodome==3.18.0",
         "pydantic==1.10.8",
+        "pyfiglet==0.8.post1",
         "python-keycloak==0.22.0",
         "python-slugify==8.0.1",
         "ruamel-yaml==0.17.31",
