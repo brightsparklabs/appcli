@@ -175,7 +175,7 @@ class Configuration(BaseModel):
             ]
         )
 
-    model_config: dict = {'arbitrary_types_allowed': True}
+    model_config: dict = {"arbitrary_types_allowed": True}
     """
     This is a requirement for pydantic to disable type checking for arbitrary user types for fields.
     This is necessary as one or more of the fields are custom classes (e.g. Orchestrator).
