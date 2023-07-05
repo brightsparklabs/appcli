@@ -175,10 +175,13 @@ class Configuration(BaseModel):
             ]
         )
 
-    class Config:
-        # This is a requirement for pydantic to disable type checking for arbitrary user types for fields.
-        # This is necessary as one or more of the fields are custom classes (e.g. Orchestrator)
-        arbitrary_types_allowed = True
+    model_config: dict = {'arbitrary_types_allowed': True}
+    """
+    This is a requirement for pydantic to disable type checking for arbitrary user types for fields.
+    This is necessary as one or more of the fields are custom classes (e.g. Orchestrator).
+    NOTE: This was updated in `pydantic==2.0`.
+    See class attribute
+    """
 
 
 def is_matching_dict_structure(dict_to_validate: Dict, clean_dict: Dict):
