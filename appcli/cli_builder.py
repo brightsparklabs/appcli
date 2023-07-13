@@ -117,6 +117,9 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         commands = cli_class(configuration).commands
         default_commands.update(**commands)
 
+    for disabled_command in configuration.orchestrator.get_disabled_commands():
+        default_commands.pop(disabled_command)
+
     # --------------------------------------------------------------------------
     # CREATE_CLI: NESTED METHODS
     # --------------------------------------------------------------------------

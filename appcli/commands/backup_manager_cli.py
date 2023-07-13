@@ -74,7 +74,14 @@ class BackupManagerCli:
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.BACKUP
             )
-            services_cli = cli_context.commands["service"]
+
+            try:
+                services_cli = cli_context.commands["service"]
+            except KeyError:
+                logger.info("No services to stop.")
+                services_cli = None
+                pre_stop_services = None
+                post_start_services = None
 
             if pre_stop_services:
                 logger.info("Stopping application services ...")
@@ -135,7 +142,13 @@ class BackupManagerCli:
             if not backup_manager.backup_file_exists(ctx, backup_file):
                 error_and_exit(f"Backup file [{backup_file}] not found.")
 
-            services_cli = cli_context.commands["service"]
+            try:
+                services_cli = cli_context.commands["service"]
+            except KeyError:
+                logger.info("No services to stop.")
+                services_cli = None
+                pre_stop_services = None
+                post_start_services = None
 
             if pre_stop_services:
                 logger.info("Stopping application services ...")
