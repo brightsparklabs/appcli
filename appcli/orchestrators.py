@@ -176,6 +176,18 @@ class Orchestrator:
         """
         raise NotImplementedError
 
+    def get_disabled_commands(self) -> list[str]:
+        """
+        Returns the list of default appcli commands which this orchestrator wants to disable.
+        E.g. ['init', 'backup'].
+
+        This allows orchestrators to prevent commands being run which are not supported.
+
+        Returns:
+            list[str]: The disabled command names.
+        """
+        return []
+
 
 class DockerComposeOrchestrator(Orchestrator):
     """
@@ -575,6 +587,79 @@ class DockerSwarmOrchestrator(Orchestrator):
     def __exec_command(self, command: Iterable[str]) -> CompletedProcess:
         logger.debug("Running [%s]", " ".join(command))
         return subprocess.run(command, capture_output=True)
+
+
+class NullOrchestrator(Orchestrator):
+    """
+    Orchestrator which has no services to orchestrate. This is useful for appcli applications which
+    consist only of the launcher container containing various additional CLI command groups.
+    """
+
+    def start(
+        self, cli_context: CliContext, service_name: tuple[str, ...] = None
+    ) -> CompletedProcess:
+        logger.info("NullOrchestrator has no services to start.")
+        return None
+
+    def shutdown(
+        self, cli_context: CliContext, service_name: tuple[str, ...] = None
+    ) -> CompletedProcess:
+        logger.info("NullOrchestrator has no services to shutdown.")
+        return None
+
+    def status(
+        self, cli_context: CliContext, service_name: tuple[str, ...] = None
+    ) -> CompletedProcess:
+        logger.info("NullOrchestrator has no services to get the status of.")
+        return None
+
+    def task(
+        self,
+        cli_context: CliContext,
+        service_name: str,
+        extra_args: Iterable[str],
+        detached: bool = False,
+    ) -> CompletedProcess:
+        logger.info("NullOrchestrator has no services to run tasks for.")
+        return None
+
+    def exec(
+        self,
+        cli_context: CliContext,
+        service_name: str,
+        command: Iterable[str],
+        stdin_input: str = None,
+    ) -> CompletedProcess:
+        logger.info(
+            "NullOrchestrator has no running containers to execute commands in."
+        )
+        return None
+
+    def get_logs_command(self) -> click.Command:
+        @click.command()
+        def log():
+            logger.info("NullOrchestrator has no services to get logs of.")
+            return None
+
+        return log
+
+    def get_name(self) -> str:
+        return "null_orchestrator"
+
+    def verify_service_names(
+        self, cli_context: CliContext, service_names: tuple[str, ...]
+    ) -> bool:
+        if service_names is None or len(service_names) == 0:
+            return True
+        logger.info("NullOrchestrator has no services.")
+        return False
+
+    def get_disabled_commands(self) -> list[str]:
+        # The `service` and `task` commands are disabled because they are used for managing and interacting with
+        # services, and this orchestrator has no services.
+        # The `init` command is disabled because it's used to initialise additional services, and this orchestrator
+        # has no services. NOTE: The `init` command will be removed in the future.
+        return ["init", "service", "task"]
 
 
 # ------------------------------------------------------------------------------

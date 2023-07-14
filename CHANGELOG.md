@@ -12,6 +12,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Added
 
+- APED-25: Add `NullOrchestrator` to support standalone applications.
 - AF-97:
     - Support mapping in podman socket.
     - Add `debug shell` command.
