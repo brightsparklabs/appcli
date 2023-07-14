@@ -129,6 +129,16 @@ cli = create_cli(configuration)
 cli()
 ```
 
+#### NullOrchestrator
+
+For applications with no services to orchestrate, the `NullOrchestrator` can be used. This is useful
+for appcli applications which consist only of the launcher container containing various additional CLI 
+command groups. The `NullOrchestrator` disables commands related to managing services.
+
+```python
+orchestrator=NullOrchestrator()
+```
+
 #### Custom Commands
 
 You can specify some custom top-level commands by adding click commands or command groups to the
