@@ -178,7 +178,10 @@ class Orchestrator:
 
     def get_disabled_commands(self) -> list[str]:
         """
-        Returns the list of commands disabled by this orchestrator.
+        Returns the list of default appcli commands which this orchestrator wants to disable.
+        E.g. ['init', 'backup'].
+
+        This allows orchestrators to prevent commands being run which are not supported.
 
         Returns:
             list[str]: The disabled command names.
@@ -588,7 +591,8 @@ class DockerSwarmOrchestrator(Orchestrator):
 
 class NullOrchestrator(Orchestrator):
     """
-    Orchestrator for standalone applications.
+    Orchestrator which has no services to orchestrate. This is useful for appcli applications which
+    consist only of the launcher container containing various additional CLI command groups.
     """
 
     def start(
@@ -640,7 +644,7 @@ class NullOrchestrator(Orchestrator):
         return log
 
     def get_name(self) -> str:
-        return "null"
+        return "null_orchestrator"
 
     def verify_service_names(
         self, cli_context: CliContext, service_names: tuple[str, ...]
@@ -651,6 +655,10 @@ class NullOrchestrator(Orchestrator):
         return False
 
     def get_disabled_commands(self) -> list[str]:
+        # The `service` and `task` commands are disabled because they are used for managing and interacting with
+        # services, and this orchestrator has no services.
+        # The `init` command is disabled because it's used to initialise additional services, and this orchestrator
+        # has no services. NOTE: The `init` command will be removed in the future.
         return ["init", "service", "task"]
 
 
