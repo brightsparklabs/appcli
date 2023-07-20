@@ -10,16 +10,29 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ## [Unreleased]
 
+### Fixed
+
+- APED-37: Prevent quoted arguments with spaces splitting into multiple arguments in the launcher script.
+
+---
+
+## [2.2.0]
+
 ### Added
 
 - APED-25: Add `NullOrchestrator` to support standalone applications.
+
+---
+
+## [2.1.0]
+
+### Added
+
 - AF-97:
     - Support mapping in podman socket.
     - Add `debug shell` command.
     - Add `DEV MODE` to facilitate running/testing outside of docker container.
     - Pass details of calling user into appcli.
-
-### Fixed
 
 ---
 
