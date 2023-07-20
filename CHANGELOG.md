@@ -16,7 +16,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ---
 
-## [2.2.0]
+## [2.2.0] - 2023-07-14
 
 ### Added
 
@@ -24,7 +24,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ---
 
-## [2.1.0]
+## [2.1.0] - 2023-06-14
 
 ### Added
 
