@@ -10,6 +10,10 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ## [Unreleased]
 
+### Added
+
+- APPCLI-133: Add fix for Git repository ownership issue to the AppCli Dockerfile.
+
 ### Fixed
 
 - APED-37: Prevent quoted arguments with spaces splitting into multiple arguments in the launcher script.
