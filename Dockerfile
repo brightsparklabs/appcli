@@ -36,4 +36,15 @@ RUN \
         vim-tiny \
     && apt-get -y autoremove \
     && apt-get -y clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    # Git has recently added more strict requirements for directory ownership
+    # of Git managed directories. This has caused issues with updating to new
+    # releases as the '/conf' directory is managed by Git. To address this
+    # ownership issue, we can define directories as safe in the git config
+    # settings. Currently, it does not support defining directories in the
+    # following way: '/opt/brightsparklabs/*'. Instead, we have to define
+    # all directories as safe, which given this is only within the context
+    # of a docker image, is acceptable. In future, when the above means of
+    # defining safe directories is added, we should update this command to
+    #be more explicit around what directories should be considered safe.
+    && git config --global --add safe.directory '*'
