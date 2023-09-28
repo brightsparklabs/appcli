@@ -16,22 +16,26 @@
 {% set app_name_slug_upper = app_name_slug|upper %}
 
 # Variables are defaulted so that they can be overridden at runtime if desired
-MOUNTED_CONFIG_DIR="{{ '${' }}{{ app_name_slug_upper }}_CONFIG_DIR:-{{ cli_context.configuration_dir }}{{ '}' }}"
-MOUNTED_GENERATED_CONFIG_DIR="{{ '${' }}{{ app_name_slug_upper }}_GENERATED_CONFIG_DIR:-{{ cli_context.get_generated_configuration_dir() }}{{ '}' }}"
-MOUNTED_DATA_DIR="{{ '${' }}{{ app_name_slug_upper }}_DATA_DIR:-{{ cli_context.data_dir }}{{ '}' }}"
-MOUNTED_BACKUP_DIR="{{ '${' }}{{ app_name_slug_upper }}_BACKUP_DIR:-{{ cli_context.backup_dir }}{{ '}' }}"
+MOUNTED_CONFIG_DIR="{{ '${' }}{{ app_name_slug_upper }}_CONFIG_DIR:-$(cygpath -u '{{ cli_context.configuration_dir }}'){{ '}' }}"
+MOUNTED_GENERATED_CONFIG_DIR="{{ '${' }}{{ app_name_slug_upper }}_GENERATED_CONFIG_DIR:-$(cygpath -u '{{ cli_context.get_generated_configuration_dir() }}'){{ '}' }}"
+MOUNTED_DATA_DIR="{{ '${' }}{{ app_name_slug_upper }}_DATA_DIR:-$(cygpath -u '{{ cli_context.data_dir }}'){{ '}' }}"
+MOUNTED_BACKUP_DIR="{{ '${' }}{{ app_name_slug_upper }}_BACKUP_DIR:-$(cygpath -u '{{ cli_context.backup_dir }}'){{ '}' }}"
 ENVIRONMENT="{{ '${' }}{{ app_name_slug_upper }}_ENVIRONMENT:-{{ cli_context.environment }}{{ '}' }}"
 
 if [[ -e /var/run/docker.sock ]]; then
     DOCKER_SOCKET=/var/run/docker.sock
 elif [[ -e /run/podman/podman.sock ]]; then
     DOCKER_SOCKET=/run/podman/podman.sock
+elif [[ $OSTYPE == "msys" ]] && (docker ps &> /dev/null); then
+    # If running on Windows, we check `docker ps` because `docker.sock` doesn't exist.
+    # An error will be thrown if Docker Engine is not running.
+    DOCKER_SOCKET=//var/run/docker.sock
 else
     echo "ERROR: No docker socket found on host"
     exit 1
 fi
 
-CLI_USER=${USER:-unknown}
+CLI_USER=$(id -un)
 [[ -n "${SUDO_USER:-}" ]] && CLI_USER=${SUDO_USER}
 
 CLI_UID=$(id -u)

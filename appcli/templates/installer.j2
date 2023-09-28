@@ -26,7 +26,7 @@ AUTO_CONFIGURE={{ configuration.auto_configure_on_install|lower }}
  ##
 function main()
 {
-    process_args $@
+        process_args $@
 
     mkdir -p "{{ install_dir }}" || print_error_and_exit "Could not create [{{ install_dir }}]"
     [[ -w "{{ install_dir }}" ]] || print_error_and_exit "No permissions to write to [{{ install_dir }}]"
@@ -49,20 +49,26 @@ function main()
 
     # Update the symlink to the generic launcher
     rm -f "${_launcher_generic}" || print_error_and_exit "No permissions to delete to [${_launcher_generic}]"
-    ln -s "${_launcher_versioned}" "${_launcher_generic}"
+    if [[ $OSTYPE == "msys" ]]; then
+        # Soft links can't be created using `ln` on Windows, so we use the `cmd` command `mklink`.
+        cmd <<< "mklink \"${_launcher_generic}\" \"${_launcher_versioned}\"" > /dev/null
+    else
+        ln -s "${_launcher_versioned}" "${_launcher_generic}"
+    fi
 
     # Auto configure if enabled.
     if [[ $AUTO_CONFIGURE = true ]]; then
         # Only need to init if an install (i.e. not an upgrade)
-        [[ "${_install_type}" == "install" ]] && NO_TTY=true {{ install_dir }}/${_launcher_generic} configure init
+        [[ "${_install_type}" == "install" ]] && NO_TTY=true "{{ install_dir }}"/${_launcher_generic} configure init
 
-        NO_TTY=true {{ install_dir }}/${_launcher_generic} configure apply
+        NO_TTY=true "{{ install_dir }}"/${_launcher_generic} configure apply
     fi
 
+    # TODO APED-67: Print `bash ${launcher}` on Windows.
     >&2 cat <<EOF
     $(date -Isec --utc) INFO: {{ app_name_slug_lower }} version [{{ cli_context.app_version }}] can be launched via:
 
-        {{ install_dir }}/{{ app_name_slug_lower }}
+        "{{ install_dir }}/{{ app_name_slug_lower }}"
 
 EOF
 }
@@ -131,12 +137,12 @@ function upgrade_existing_application()
     >&2 echo "$(date -Isec --utc) INFO: Installing an upgrade on existing application..."
 
     # Stop services and apply with the old launcher
-    NO_TTY=true ${_launcher_existing} service stop
-    NO_TTY=true ${_launcher_existing} configure apply --force
+    NO_TTY=true "${_launcher_existing}" service stop
+    NO_TTY=true "${_launcher_existing}" configure apply --force
 
     # Migrate and apply with the new launcher
-    NO_TTY=true ${_launcher_upgrade} migrate
-    NO_TTY=true ${_launcher_upgrade} configure apply --force
+    NO_TTY=true "${_launcher_upgrade}" migrate
+    NO_TTY=true "${_launcher_upgrade}" configure apply --force
 }
 
 ##

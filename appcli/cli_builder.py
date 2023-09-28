@@ -11,10 +11,12 @@ www.brightsparklabs.com
 
 # standard libraries
 import os
-import pwd
+import getpass
+import subprocess
 import sys
 from pathlib import Path
 from typing import Dict, Iterable
+from appcli.orchestrators import NullOrchestrator
 
 # vendor libraries
 import click
@@ -46,6 +48,20 @@ from appcli.models.configuration import Configuration
 # directory containing this script
 BASE_DIR = Path(__file__).parent
 
+# TODO APED-67: Remove duplicate constants in `install_cli.py`.
+HOST_OSTYPE = os.environ.get('HOST_OSTYPE')
+"""
+The value of the `HOST_OSTYPE` environment variable. This environment variable is used to
+pass through the `OSTYPE` of the underlying system when running Docker.
+"""
+
+IS_PLATFORM_WINDOWS = HOST_OSTYPE == 'msys' if HOST_OSTYPE is not None else sys.platform == 'win32'
+"""
+Whether to treat the underlying system as Windows. If running from a Docker image, this will be
+True if the image was built for Windows. Otherwise, the platform will be deduced from the system
+executing this Python code.
+"""
+
 # ------------------------------------------------------------------------------
 # PUBLIC METHODS
 # ------------------------------------------------------------------------------
@@ -64,11 +80,15 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     IS_DEV_MODE: bool = f"{APP_NAME_SLUG_UPPER}_DEV_MODE" in os.environ
 
     # Details of the user who ran the CLI app.
-    CLI_USER = os.environ.get(
-        f"{APP_NAME_SLUG_UPPER}_CLI_USER", pwd.getpwuid(os.getuid()).pw_name
-    )
-    CLI_UID = os.environ.get(f"{APP_NAME_SLUG_UPPER}_CLI_UID", str(os.getuid()))
-    CLI_GID = os.environ.get(f"{APP_NAME_SLUG_UPPER}_CLI_GID", str(os.getgid()))
+    CLI_USER = os.environ.get(f"{APP_NAME_SLUG_UPPER}_CLI_USER", getpass.getuser())
+    system_uid = "unknown"
+    system_gid = "unknown"
+    if not IS_PLATFORM_WINDOWS:
+        # NOTE: `os.getuid` and `os.getgid` are not available on Windows.
+        system_uid = str(os.getuid())
+        system_gid = str(os.getgid())
+    CLI_UID = os.environ.get(f"{APP_NAME_SLUG_UPPER}_CLI_UID", system_uid)
+    CLI_GID = os.environ.get(f"{APP_NAME_SLUG_UPPER}_CLI_GID", system_gid)
 
     # Mandatory environment variables this script will set.
     ENV_VAR_CONFIG_DIR = f"{APP_NAME_SLUG_UPPER}_CONFIG_DIR"
@@ -232,7 +252,9 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
 
         __set_environment(cli_context, desired_environment)
 
-        __check_docker_socket()
+        if not isinstance(configuration.orchestrator, NullOrchestrator):
+            # Ensure the docker socket exists when using orchestrators that require it.
+            __check_docker_socket()
         __check_environment()
 
         # Table of configuration variables to print
@@ -300,6 +322,17 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
 
     def __check_docker_socket():
         """Check that the docker socket exists, and exit if it does not"""
+
+        if IS_PLATFORM_WINDOWS:
+            try:
+                subprocess.check_output("docker ps", shell=True, stderr=subprocess.STDOUT)
+            except subprocess.CalledProcessError as e:
+                # Strip the newline at the end of the error message.
+                docker_ps_error_msg = e.output.decode('utf-8').strip()
+                error_msg = f"""Failed to connect to the Docker Engine. Please ensure Docker Desktop is running.\n{docker_ps_error_msg}"""
+                error_and_exit(error_msg)
+            return
+
         if not os.path.exists("/var/run/docker.sock"):
             error_msg = """Docker socket not present. Please launch with a mounted /var/run/docker.sock"""
             error_and_exit(error_msg)
