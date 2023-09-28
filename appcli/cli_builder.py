@@ -9,14 +9,14 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
+import getpass
+
 # standard libraries
 import os
-import getpass
 import subprocess
 import sys
 from pathlib import Path
 from typing import Dict, Iterable
-from appcli.orchestrators import NullOrchestrator
 
 # vendor libraries
 import click
@@ -40,6 +40,7 @@ from appcli.functions import error_and_exit, extract_valid_environment_variable_
 from appcli.logger import enable_debug_logging, logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
+from appcli.orchestrators import NullOrchestrator
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
@@ -49,13 +50,15 @@ from appcli.models.configuration import Configuration
 BASE_DIR = Path(__file__).parent
 
 # TODO APED-67: Remove duplicate constants in `install_cli.py`.
-HOST_OSTYPE = os.environ.get('HOST_OSTYPE')
+HOST_OSTYPE = os.environ.get("HOST_OSTYPE")
 """
 The value of the `HOST_OSTYPE` environment variable. This environment variable is used to
 pass through the `OSTYPE` of the underlying system when running Docker.
 """
 
-IS_PLATFORM_WINDOWS = HOST_OSTYPE == 'msys' if HOST_OSTYPE is not None else sys.platform == 'win32'
+IS_PLATFORM_WINDOWS = (
+    HOST_OSTYPE == "msys" if HOST_OSTYPE is not None else sys.platform == "win32"
+)
 """
 Whether to treat the underlying system as Windows. If running from a Docker image, this will be
 True if the image was built for Windows. Otherwise, the platform will be deduced from the system
@@ -325,10 +328,12 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
 
         if IS_PLATFORM_WINDOWS:
             try:
-                subprocess.check_output("docker ps", shell=True, stderr=subprocess.STDOUT)
+                subprocess.check_output(
+                    "docker ps", shell=True, stderr=subprocess.STDOUT
+                )
             except subprocess.CalledProcessError as e:
                 # Strip the newline at the end of the error message.
-                docker_ps_error_msg = e.output.decode('utf-8').strip()
+                docker_ps_error_msg = e.output.decode("utf-8").strip()
                 error_msg = f"""Failed to connect to the Docker Engine. Please ensure Docker Desktop is running.\n{docker_ps_error_msg}"""
                 error_and_exit(error_msg)
             return
