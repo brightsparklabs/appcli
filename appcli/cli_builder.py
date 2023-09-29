@@ -9,11 +9,9 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-import getpass
-
 # standard libraries
+import getpass
 import os
-import subprocess
 import sys
 from pathlib import Path
 from typing import Dict, Iterable
@@ -46,24 +44,11 @@ from appcli.orchestrators import NullOrchestrator
 # CONSTANTS
 # ------------------------------------------------------------------------------
 
-# directory containing this script
 BASE_DIR = Path(__file__).parent
+""" The directory containing this script. """
 
-# TODO APED-67: Remove duplicate constants in `install_cli.py`.
-HOST_OSTYPE = os.environ.get("HOST_OSTYPE")
-"""
-The value of the `HOST_OSTYPE` environment variable. This environment variable is used to
-pass through the `OSTYPE` of the underlying system when running Docker.
-"""
-
-IS_PLATFORM_WINDOWS = (
-    HOST_OSTYPE == "msys" if HOST_OSTYPE is not None else sys.platform == "win32"
-)
-"""
-Whether to treat the underlying system as Windows. If running from a Docker image, this will be
-True if the image was built for Windows. Otherwise, the platform will be deduced from the system
-executing this Python code.
-"""
+IS_PLATFORM_WINDOWS = sys.platform == "win32"
+""" True if the system running this Python code is Windows. """
 
 # ------------------------------------------------------------------------------
 # PUBLIC METHODS
@@ -76,6 +61,13 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     Args:
         configuration (Configuration): the application's configuration settings
     """
+
+    # We currently only support the `NullOrchestrator` on Windows.
+    # TODO APED-69: Add support for Docker orchestrators on Windows.
+    if IS_PLATFORM_WINDOWS and not isinstance(configuration.orchestrator, NullOrchestrator):
+        error_msg = f"Unsupported Windows orchestrator `{type(configuration.orchestrator).__name__}`. Only `NullOrchestrator` is supported on Windows systems."
+        error_and_exit(error_msg)
+
     APP_NAME = configuration.app_name
     APP_NAME_SLUG = configuration.app_name_slug
     APP_NAME_SLUG_UPPER = APP_NAME_SLUG.upper()
@@ -83,6 +75,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     IS_DEV_MODE: bool = f"{APP_NAME_SLUG_UPPER}_DEV_MODE" in os.environ
 
     # Details of the user who ran the CLI app.
+    # NOTE: We use `getpass` to get the username because it works on both Linux and Windows.
     CLI_USER = os.environ.get(f"{APP_NAME_SLUG_UPPER}_CLI_USER", getpass.getuser())
     system_uid = "unknown"
     system_gid = "unknown"
@@ -258,6 +251,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         if not isinstance(configuration.orchestrator, NullOrchestrator):
             # Ensure the docker socket exists when using orchestrators that require it.
             __check_docker_socket()
+            
         __check_environment()
 
         # Table of configuration variables to print
@@ -325,19 +319,6 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
 
     def __check_docker_socket():
         """Check that the docker socket exists, and exit if it does not"""
-
-        if IS_PLATFORM_WINDOWS:
-            try:
-                subprocess.check_output(
-                    "docker ps", shell=True, stderr=subprocess.STDOUT
-                )
-            except subprocess.CalledProcessError as e:
-                # Strip the newline at the end of the error message.
-                docker_ps_error_msg = e.output.decode("utf-8").strip()
-                error_msg = f"""Failed to connect to the Docker Engine. Please ensure Docker Desktop is running.\n{docker_ps_error_msg}"""
-                error_and_exit(error_msg)
-            return
-
         if not os.path.exists("/var/run/docker.sock"):
             error_msg = """Docker socket not present. Please launch with a mounted /var/run/docker.sock"""
             error_and_exit(error_msg)

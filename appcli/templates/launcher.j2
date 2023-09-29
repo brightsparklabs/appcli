@@ -15,44 +15,23 @@
 
 {% set app_name_slug_upper = app_name_slug|upper %}
 
-# NOTE: Paths pulled from `cli_context` will be either Unix or Windows paths depending on the host
-# operating system.
-DEFAULT_CONFIG_DIR="{{ cli_context.configuration_dir }}"
-DEFAULT_GENERATED_CONFIG_DIR="{{ cli_context.get_generated_configuration_dir() }}"
-DEFAULT_DATA_DIR="{{ cli_context.data_dir }}"
-DEFAULT_BACKUP_DIR="{{ cli_context.backup_dir }}"
-
-if [[ "${OSTYPE}" == "msys" ]]; then
-    # Windows filepaths are converted to Unix filepaths because Docker cannot parse Windows filepaths.
-    # NOTE: `cygpath` is a Windows utility, and will not run on Linux. This block should only be
-    # called on Windows systems.
-    DEFAULT_CONFIG_DIR=$(cygpath -u "${DEFAULT_CONFIG_DIR}")
-    DEFAULT_GENERATED_CONFIG_DIR=$(cygpath -u "${DEFAULT_GENERATED_CONFIG_DIR}")
-    DEFAULT_DATA_DIR=$(cygpath -u "${DEFAULT_DATA_DIR}")
-    DEFAULT_BACKUP_DIR=$(cygpath -u "${DEFAULT_BACKUP_DIR}")
-fi
-
 # Variables are defaulted so that they can be overridden at runtime if desired
-MOUNTED_CONFIG_DIR="{{ '${' }}{{ app_name_slug_upper }}_CONFIG_DIR:-${DEFAULT_CONFIG_DIR}{{ '}' }}"
-MOUNTED_GENERATED_CONFIG_DIR="{{ '${' }}{{ app_name_slug_upper }}_GENERATED_CONFIG_DIR:-${DEFAULT_GENERATED_CONFIG_DIR}{{ '}' }}"
-MOUNTED_DATA_DIR="{{ '${' }}{{ app_name_slug_upper }}_DATA_DIR:-${DEFAULT_DATA_DIR}{{ '}' }}"
-MOUNTED_BACKUP_DIR="{{ '${' }}{{ app_name_slug_upper }}_BACKUP_DIR:-${DEFAULT_BACKUP_DIR}{{ '}' }}"
+MOUNTED_CONFIG_DIR="{{ '${' }}{{ app_name_slug_upper }}_CONFIG_DIR:-{{ cli_context.configuration_dir }}{{ '}' }}"
+MOUNTED_GENERATED_CONFIG_DIR="{{ '${' }}{{ app_name_slug_upper }}_GENERATED_CONFIG_DIR:-{{ cli_context.get_generated_configuration_dir() }}{{ '}' }}"
+MOUNTED_DATA_DIR="{{ '${' }}{{ app_name_slug_upper }}_DATA_DIR:-{{ cli_context.data_dir }}{{ '}' }}"
+MOUNTED_BACKUP_DIR="{{ '${' }}{{ app_name_slug_upper }}_BACKUP_DIR:-{{ cli_context.backup_dir }}{{ '}' }}"
 ENVIRONMENT="{{ '${' }}{{ app_name_slug_upper }}_ENVIRONMENT:-{{ cli_context.environment }}{{ '}' }}"
 
 if [[ -e /var/run/docker.sock ]]; then
     DOCKER_SOCKET=/var/run/docker.sock
 elif [[ -e /run/podman/podman.sock ]]; then
     DOCKER_SOCKET=/run/podman/podman.sock
-elif [[ "${OSTYPE}" == "msys" ]] && (docker ps &> /dev/null); then
-    # If running on Windows, we check `docker ps` because `docker.sock` doesn't exist.
-    # An error will be thrown if Docker Engine is not running.
-    DOCKER_SOCKET=//var/run/docker.sock
 else
     echo "ERROR: No docker socket found on host"
     exit 1
 fi
 
-CLI_USER=$(id -un)
+CLI_USER=${USER:-unknown}
 [[ -n "${SUDO_USER:-}" ]] && CLI_USER=${SUDO_USER}
 
 CLI_UID=$(id -u)
@@ -74,7 +53,6 @@ function main()
         $( [[ "${NO_INTERACTIVE}" != "true" ]] && echo "--interactive") \
         $( [[ "${NO_TTY}" != "true" ]] && echo "--tty") \
 {% if cli_context.docker_credentials_file %}
-        # TODO APED-67: Convert Windows paths to Unix.
         --volume "{{ cli_context.docker_credentials_file }}:/root/.docker/config.json" \
 {% endif %}
 {% for name, value in cli_context.additional_env_variables %}
@@ -82,7 +60,6 @@ function main()
 {% endfor %}
 {% for name, path in cli_context.additional_data_dirs %}
         --env {{ name }}="{{ path }}" \
-        # TODO APED-67: Convert Windows paths to Unix.
         --volume "{{ path }}:{{ path }}" \
 {% endfor %}
         --volume "${DOCKER_SOCKET}:/var/run/docker.sock" \
@@ -107,7 +84,6 @@ function main()
             --backup-dir "${MOUNTED_BACKUP_DIR}" \
             --environment "${ENVIRONMENT}" \
 {% for name, path in cli_context.additional_data_dirs %}
-            # TODO APED-67: Convert Windows paths to Unix.
             --additional-data-dir {{ name }}="{{ path }}" \
 {% endfor %}
 {% for name, value in cli_context.additional_env_variables %}

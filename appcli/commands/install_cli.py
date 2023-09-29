@@ -16,8 +16,6 @@ www.brightsparklabs.com
 
 # standard library
 import importlib.resources as pkg_resources
-import os
-import sys
 from pathlib import Path
 
 # vendor libraries
@@ -39,22 +37,6 @@ from appcli.models.configuration import Configuration
 INSTALLER_TEMPLATE_FILENAME = "installer.j2"
 """ The filename of the installer template """
 
-# TODO APED-67: Remove duplicate constants in `cli_builder.py`.
-HOST_OSTYPE = os.environ.get("HOST_OSTYPE")
-"""
-The value of the `HOST_OSTYPE` environment variable. This environment variable is used to
-pass through the `OSTYPE` of the underlying system when running Docker.
-"""
-
-IS_PLATFORM_WINDOWS = (
-    HOST_OSTYPE == "msys" if HOST_OSTYPE is not None else sys.platform == "win32"
-)
-"""
-Whether to treat the underlying system as Windows. If running from a Docker image, this will be
-True if the image was built for Windows. Otherwise, the platform will be deduced from the system
-executing this Python code.
-"""
-
 # ------------------------------------------------------------------------------
 # CLASSES
 # ------------------------------------------------------------------------------
@@ -67,13 +49,8 @@ class InstallCli:
 
     def __init__(self, configuration: Configuration):
         self.configuration: Configuration = configuration
-
-        install_dir_root = "/opt"
-        if IS_PLATFORM_WINDOWS:
-            install_dir_root = "/c/Program Files"
-
         default_install_dir = (
-            f"{install_dir_root}/brightsparklabs/{configuration.app_name_slug.lower()}"
+            f"/opt/brightsparklabs/{configuration.app_name_slug.lower()}"
         )
 
         @click.command(
