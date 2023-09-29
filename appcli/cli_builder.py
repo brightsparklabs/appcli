@@ -64,7 +64,9 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
 
     # We currently only support the `NullOrchestrator` on Windows.
     # TODO APED-69: Add support for Docker orchestrators on Windows.
-    if IS_PLATFORM_WINDOWS and not isinstance(configuration.orchestrator, NullOrchestrator):
+    if IS_PLATFORM_WINDOWS and not isinstance(
+        configuration.orchestrator, NullOrchestrator
+    ):
         error_msg = f"Unsupported Windows orchestrator `{type(configuration.orchestrator).__name__}`. Only `NullOrchestrator` is supported on Windows systems."
         error_and_exit(error_msg)
 
@@ -251,7 +253,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         if not isinstance(configuration.orchestrator, NullOrchestrator):
             # Ensure the docker socket exists when using orchestrators that require it.
             __check_docker_socket()
-            
+
         __check_environment()
 
         # Table of configuration variables to print
