@@ -65,7 +65,7 @@ setup(
         "deepdiff==6.5.0",
         "GitPython==3.1.35",
         "jinja2==3.1.2",
-        "pre-commit==3.3.3",
+        "pre-commit==3.4.0",
         "pycryptodome==3.18.0",
         "pydantic==2.3.0",
         "pyfiglet==0.8.post1",
