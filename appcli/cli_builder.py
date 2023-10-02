@@ -79,12 +79,9 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     # Details of the user who ran the CLI app.
     # NOTE: We use `getpass` to get the username because it works on both Linux and Windows.
     CLI_USER = os.environ.get(f"{APP_NAME_SLUG_UPPER}_CLI_USER", getpass.getuser())
-    system_uid = "unknown"
-    system_gid = "unknown"
-    if not IS_PLATFORM_WINDOWS:
-        # NOTE: `os.getuid` and `os.getgid` are not available on Windows.
-        system_uid = str(os.getuid())
-        system_gid = str(os.getgid())
+    # Windows does not support uid/gid so default to 1000 if on Windows.
+    system_uid = "1000" if IS_PLATFORM_WINDOWS else str(os.getuid())
+    system_gid = "1000" if IS_PLATFORM_WINDOWS else str(os.getgid())
     CLI_UID = os.environ.get(f"{APP_NAME_SLUG_UPPER}_CLI_UID", system_uid)
     CLI_GID = os.environ.get(f"{APP_NAME_SLUG_UPPER}_CLI_GID", system_gid)
 
@@ -250,8 +247,10 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
 
         __set_environment(cli_context, desired_environment)
 
+        # The docker socket needs to be present in order for many orchestrators
+        # to work. Explicitly check for it, unless using an orchestrator which
+        # does not need it.
         if not isinstance(configuration.orchestrator, NullOrchestrator):
-            # Ensure the docker socket exists when using orchestrators that require it.
             __check_docker_socket()
 
         __check_environment()
