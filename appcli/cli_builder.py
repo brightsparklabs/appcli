@@ -10,8 +10,8 @@ www.brightsparklabs.com
 """
 
 # standard libraries
+import getpass
 import os
-import pwd
 import sys
 from pathlib import Path
 from typing import Dict, Iterable
@@ -38,13 +38,17 @@ from appcli.functions import error_and_exit, extract_valid_environment_variable_
 from appcli.logger import enable_debug_logging, logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
+from appcli.orchestrators import NullOrchestrator
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
 # ------------------------------------------------------------------------------
 
-# directory containing this script
 BASE_DIR = Path(__file__).parent
+""" The directory containing this script. """
+
+IS_PLATFORM_WINDOWS = sys.platform == "win32"
+""" True if the system running this Python code is Windows. """
 
 # ------------------------------------------------------------------------------
 # PUBLIC METHODS
@@ -57,6 +61,15 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     Args:
         configuration (Configuration): the application's configuration settings
     """
+
+    # We currently only support the `NullOrchestrator` on Windows.
+    # TODO APED-69: Add support for Docker orchestrators on Windows.
+    if IS_PLATFORM_WINDOWS and not isinstance(
+        configuration.orchestrator, NullOrchestrator
+    ):
+        error_msg = f"Unsupported Windows orchestrator `{type(configuration.orchestrator).__name__}`. Only `NullOrchestrator` is supported on Windows systems."
+        error_and_exit(error_msg)
+
     APP_NAME = configuration.app_name
     APP_NAME_SLUG = configuration.app_name_slug
     APP_NAME_SLUG_UPPER = APP_NAME_SLUG.upper()
@@ -64,11 +77,13 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     IS_DEV_MODE: bool = f"{APP_NAME_SLUG_UPPER}_DEV_MODE" in os.environ
 
     # Details of the user who ran the CLI app.
-    CLI_USER = os.environ.get(
-        f"{APP_NAME_SLUG_UPPER}_CLI_USER", pwd.getpwuid(os.getuid()).pw_name
-    )
-    CLI_UID = os.environ.get(f"{APP_NAME_SLUG_UPPER}_CLI_UID", str(os.getuid()))
-    CLI_GID = os.environ.get(f"{APP_NAME_SLUG_UPPER}_CLI_GID", str(os.getgid()))
+    # NOTE: We use `getpass` to get the username because it works on both Linux and Windows.
+    CLI_USER = os.environ.get(f"{APP_NAME_SLUG_UPPER}_CLI_USER", getpass.getuser())
+    # Windows does not support uid/gid so default to 1000 if on Windows.
+    system_uid = "1000" if IS_PLATFORM_WINDOWS else str(os.getuid())
+    system_gid = "1000" if IS_PLATFORM_WINDOWS else str(os.getgid())
+    CLI_UID = os.environ.get(f"{APP_NAME_SLUG_UPPER}_CLI_UID", system_uid)
+    CLI_GID = os.environ.get(f"{APP_NAME_SLUG_UPPER}_CLI_GID", system_gid)
 
     # Mandatory environment variables this script will set.
     ENV_VAR_CONFIG_DIR = f"{APP_NAME_SLUG_UPPER}_CONFIG_DIR"
@@ -232,7 +247,12 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
 
         __set_environment(cli_context, desired_environment)
 
-        __check_docker_socket()
+        # The docker socket needs to be present in order for many orchestrators
+        # to work. Explicitly check for it, unless using an orchestrator which
+        # does not need it.
+        if not isinstance(configuration.orchestrator, NullOrchestrator):
+            __check_docker_socket()
+
         __check_environment()
 
         # Table of configuration variables to print
