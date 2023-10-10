@@ -224,7 +224,8 @@ def test_validation_invalid(tmpdir):
     conf_manager.initialise_configuration()
     with pytest.raises(SystemExit) as ex:
         conf_manager.validate_configuration()
-    assert ex.value == SystemExit
+    # NOTE: Assert that the `SystemExit` exception has been thrown as we expect.
+    assert ex
 
 
 # TODO: Test where conf/data directories don't exist
