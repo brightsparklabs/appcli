@@ -209,6 +209,23 @@ def test_migration_maintains_stack_settings(tmpdir):
     assert migrated_stack_settings_content == new_stack_settings_content
 
 
+def test_validation_valid(tmpdir):
+    cli_context = create_cli_context(tmpdir, app_version="1.0.0")
+    conf_manager = create_conf_manager(tmpdir, cli_context)
+
+    conf_manager.initialise_configuration()
+    conf_manager.validate_configuration()
+
+
+def test_validation_invalid(tmpdir):
+    cli_context = create_cli_context(tmpdir, app_version="1.0.0")
+    conf_manager = create_conf_manager_invalid_resources(tmpdir, cli_context)
+
+    conf_manager.initialise_configuration()
+    with pytest.raises(SystemExit) as ex:
+        conf_manager.validate_configuration()
+
+
 # TODO: Test where conf/data directories don't exist
 # TODO: Test deliberately failing migrations with migration function hooks
 
@@ -255,6 +272,25 @@ def create_conf_manager(tmpdir, cli_context: CliContext = None) -> Configuration
         application_context_files_dir=APP_CONTEXT_FILES_DIR,
         baseline_templates_dir=Path(BASE_DIR, "resources/templates/baseline"),
         configurable_templates_dir=Path(BASE_DIR, "resources/templates/configurable"),
+        orchestrator=DockerComposeOrchestrator("cli/docker-compose.yml", []),
+        stack_configuration_file=STACK_CONFIGURATION_FILE,
+    )
+
+    return ConfigurationManager(cli_context, configuration)
+
+
+def create_conf_manager_invalid_resources(tmpdir, cli_context: CliContext = None) -> ConfigurationManager:
+    # If not supplied, create default CliContext.
+    if cli_context is None:
+        cli_context = create_cli_context(tmpdir)
+
+    configuration = Configuration(
+        app_name=APP_NAME,
+        docker_image="invalid-image-name",
+        seed_app_configuration_file=Path(BASE_DIR, "invalid_resources/settings.yml"),
+        application_context_files_dir=APP_CONTEXT_FILES_DIR,
+        baseline_templates_dir=Path(BASE_DIR, "invalid_resources/templates/baseline"),
+        configurable_templates_dir=Path(BASE_DIR, "invalid_resources/templates/configurable"),
         orchestrator=DockerComposeOrchestrator("cli/docker-compose.yml", []),
         stack_configuration_file=STACK_CONFIGURATION_FILE,
     )
