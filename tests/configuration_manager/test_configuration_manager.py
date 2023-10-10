@@ -224,6 +224,7 @@ def test_validation_invalid(tmpdir):
     conf_manager.initialise_configuration()
     with pytest.raises(SystemExit) as ex:
         conf_manager.validate_configuration()
+    assert ex.value == SystemExit
 
 
 # TODO: Test where conf/data directories don't exist
@@ -279,7 +280,9 @@ def create_conf_manager(tmpdir, cli_context: CliContext = None) -> Configuration
     return ConfigurationManager(cli_context, configuration)
 
 
-def create_conf_manager_invalid_resources(tmpdir, cli_context: CliContext = None) -> ConfigurationManager:
+def create_conf_manager_invalid_resources(
+    tmpdir, cli_context: CliContext = None
+) -> ConfigurationManager:
     # If not supplied, create default CliContext.
     if cli_context is None:
         cli_context = create_cli_context(tmpdir)
@@ -290,7 +293,9 @@ def create_conf_manager_invalid_resources(tmpdir, cli_context: CliContext = None
         seed_app_configuration_file=Path(BASE_DIR, "invalid_resources/settings.yml"),
         application_context_files_dir=APP_CONTEXT_FILES_DIR,
         baseline_templates_dir=Path(BASE_DIR, "invalid_resources/templates/baseline"),
-        configurable_templates_dir=Path(BASE_DIR, "invalid_resources/templates/configurable"),
+        configurable_templates_dir=Path(
+            BASE_DIR, "invalid_resources/templates/configurable"
+        ),
         orchestrator=DockerComposeOrchestrator("cli/docker-compose.yml", []),
         stack_configuration_file=STACK_CONFIGURATION_FILE,
     )

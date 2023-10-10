@@ -18,11 +18,12 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
+
+import jsonschema
 import yaml
 
 # vendor libraries
 from jinja2 import StrictUndefined, Template
-import jsonschema
 
 # local libraries
 from appcli.crypto import crypto
@@ -33,7 +34,7 @@ from appcli.git_repositories.git_repositories import (
     GeneratedConfigurationGitRepository,
 )
 from appcli.logger import logger
-from appcli.models.cli_context import CliContext, SCHEMA_SUFFIX
+from appcli.models.cli_context import SCHEMA_SUFFIX, CliContext
 from appcli.models.configuration import Configuration
 from appcli.variables_manager import VariablesManager
 
@@ -44,22 +45,26 @@ from appcli.variables_manager import VariablesManager
 METADATA_FILE_NAME = "metadata-configure-apply.json"
 """ Name of the file holding metadata from running a configure (relative to the generated configuration directory) """
 
+
 class FileLoader:
-    """ Creates a mapping between a filetype and the function to load it into a dict. """
+    """Creates a mapping between a filetype and the function to load it into a dict."""
 
     def __init__(self, extensions: list, loader: callable):
         self.extensions = extensions
         self.loader = loader
 
     def is_filetype(self, filename: Path) -> bool:
-        """ Check if the file suffix matches one of the expected types. """
+        """Check if the file suffix matches one of the expected types."""
         return filename.suffix in self.extensions
 
     def load(self, file: Path) -> dict:
-        """ Use the loader function to read the file."""
+        """Use the loader function to read the file."""
         if not self.is_filetype(file):
-            raise TypeError(f"The file `{file.name}` is the wrong type for this loader. Supported types are {self.extensions}.")
-        return self.loader(open(file, 'r'))
+            raise TypeError(
+                f"The file `{file.name}` is the wrong type for this loader. Supported types are {self.extensions}."
+            )
+        return self.loader(open(file, "r"))
+
 
 SUPPORTED_FILETYPES = [
     FileLoader([".json", ".jsn"], json.load),
@@ -88,14 +93,20 @@ class ConfigurationManager:
 
         # Define all the config directories and files.
         settings_schema: Path = self.cli_context.get_app_configuration_file_schema()
-        stack_settings_schema: Path = self.cli_context.get_stack_configuration_file_schema()
+        stack_settings_schema: Path = (
+            self.cli_context.get_stack_configuration_file_schema()
+        )
         overrides_dir: Path = self.cli_context.get_baseline_template_overrides_dir()
         templates_dir: Path = self.cli_context.get_configurable_templates_dir()
 
         # Parse the directories to get the schema files.
         schema_files = []
         [schema_files.append(settings_schema) if settings_schema.is_file() else None]
-        [schema_files.append(stack_settings_schema) if stack_settings_schema.is_file() else None]
+        [
+            schema_files.append(stack_settings_schema)
+            if stack_settings_schema.is_file()
+            else None
+        ]
         schema_files.extend(overrides_dir.glob(f"**/*{SCHEMA_SUFFIX}"))
         schema_files.extend(templates_dir.glob(f"**/*{SCHEMA_SUFFIX}"))
 
@@ -114,7 +125,9 @@ class ConfigurationManager:
             schema = self.__load_file_contents_into_dict(schema_file)
             try:
                 jsonschema.validate(instance=data, schema=schema)
-                logger.debug(f"The config file {config_file} matched the provided schema.")
+                logger.debug(
+                    f"The config file {config_file} matched the provided schema."
+                )
             except jsonschema.exceptions.ValidationError as e:
                 error_and_exit(f"Validation of {config_file} failed at:\n{e}")
 
@@ -264,7 +277,7 @@ class ConfigurationManager:
 
     def get_stack_variable(self, variable: str):
         return self.variables_manager.get_stack_variable(variable)
-    
+
     def __load_file_contents_into_dict(self, filepath: Path) -> dict:
         """Attempts to load the contents of a file into a python dict.
         The function will try and determine the file content based off the extenstion.
@@ -280,7 +293,9 @@ class ConfigurationManager:
             if filetype.is_filetype(filepath):
                 return filetype.load(filepath)
 
-        raise TypeError(f"The {filepath.suffix} suffix does not map to a known filetype.")
+        raise TypeError(
+            f"The {filepath.suffix} suffix does not map to a known filetype."
+        )
 
     def __create_new_configuration_branch_and_files(self):
         app_version: str = self.cli_context.app_version
