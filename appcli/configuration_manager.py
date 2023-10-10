@@ -2,7 +2,7 @@
 # # -*- coding: utf-8 -*-
 
 """
-Manages configuration.
+Manages the configuration of the application.
 ________________________________________________________________________________
 
 Created by brightSPARK Labs
@@ -33,7 +33,7 @@ from appcli.git_repositories.git_repositories import (
     GeneratedConfigurationGitRepository,
 )
 from appcli.logger import logger
-from appcli.models.cli_context import CliContext
+from appcli.models.cli_context import CliContext, SCHEMA_SUFFIX
 from appcli.models.configuration import Configuration
 from appcli.variables_manager import VariablesManager
 
@@ -43,9 +43,6 @@ from appcli.variables_manager import VariablesManager
 
 METADATA_FILE_NAME = "metadata-configure-apply.json"
 """ Name of the file holding metadata from running a configure (relative to the generated configuration directory) """
-
-SCHEMA_SUFFIX = ".schema.json"
-""" The suffix for the validation schema files. """
 
 class FileLoader:
     """ Creates a mapping between a filetype and the function to load it into a dict. """
@@ -90,10 +87,8 @@ class ConfigurationManager:
         """Validates all settings files that have associated schema files."""
 
         # Define all the config directories and files.
-        settings: Path = self.cli_context.get_app_configuration_file()
-        settings_schema: Path = settings.with_suffix(settings.suffix + SCHEMA_SUFFIX)
-        stack_settings: Path = self.cli_context.get_stack_configuration_file()
-        stack_settings_schema: Path = stack_settings.with_suffix(stack_settings.suffix + SCHEMA_SUFFIX)
+        settings_schema: Path = self.cli_context.get_app_configuration_file_schema()
+        stack_settings_schema: Path = self.cli_context.get_stack_configuration_file_schema()
         overrides_dir: Path = self.cli_context.get_baseline_template_overrides_dir()
         templates_dir: Path = self.cli_context.get_configurable_templates_dir()
 
@@ -337,11 +332,11 @@ class ConfigurationManager:
         os.makedirs(target_app_configuration_file.parent, exist_ok=True)
         shutil.copy2(seed_app_configuration_file, target_app_configuration_file)
 
+        # Copy in the stack configuration file.
         stack_configuration_file = self.cli_configuration.stack_configuration_file
         target_stack_configuration_file = (
             self.cli_context.get_stack_configuration_file()
         )
-        # Copy in the stack configuration file
         if stack_configuration_file.is_file():
             shutil.copy2(stack_configuration_file, target_stack_configuration_file)
 

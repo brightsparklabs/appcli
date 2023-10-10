@@ -228,6 +228,29 @@ def main():
   - `resources/templates/baseline` - for templates which the end user **is not** expected to modify.
   - `resources/templates/configurable` - for templates which the end user is expected to modify.
 
+#### Schema validation
+
+Configuration files will be automatically validated against provided schema files whenever `configure apply` is run.
+Validation is done with [jsonschema](https://json-schema.org/) and is only available for `yaml/yml` and `json/jsn` files.
+As an example, the following config file will be valid under the following configuration:
+
+```yaml
+# resources/templates/configurable/my-config.yml
+foobar: 5
+```
+
+```json
+# resources/templates/configurable/my-config.yml.schema.json
+{
+    "type": "object",
+    "properties" : {
+        "foobar" : {"type": "number"}
+    }
+}
+```
+
+The schema must have the `.schema.json` suffix to be recognised.
+
 #### Application context files
 
 Template files are templated with Jinja2. The 'data' passed into the templating engine
