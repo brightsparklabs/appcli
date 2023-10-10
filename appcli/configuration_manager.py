@@ -18,13 +18,14 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
+import yaml
 
 # vendor libraries
 from jinja2 import StrictUndefined, Template
-
-from appcli.crypto import crypto
+import jsonschema
 
 # local libraries
+from appcli.crypto import crypto
 from appcli.crypto.crypto import decrypt_values_in_file
 from appcli.functions import error_and_exit, print_header
 from appcli.git_repositories.git_repositories import (
@@ -43,6 +44,32 @@ from appcli.variables_manager import VariablesManager
 METADATA_FILE_NAME = "metadata-configure-apply.json"
 """ Name of the file holding metadata from running a configure (relative to the generated configuration directory) """
 
+SCHEMA_SUFFIX = ".schema.json"
+""" The suffix for the validation schema files. """
+
+class FileLoader:
+    """ Creates a mapping between a filetype and the function to load it into a dict. """
+
+    def __init__(self, extensions: list, loader: callable):
+        self.extensions = extensions
+        self.loader = loader
+
+    def is_filetype(self, filename: Path) -> bool:
+        """ Check if the file suffix matches one of the expected types. """
+        return filename.suffix in self.extensions
+
+    def load(self, file: Path) -> dict:
+        """ Use the loader function to read the file."""
+        if not self.is_filetype(file):
+            raise TypeError(f"The file `{file.name}` is the wrong type for this loader. Supported types are {self.extensions}.")
+        return self.loader(open(file, 'r'))
+
+SUPPORTED_FILETYPES = [
+    FileLoader([".json", ".jsn"], json.load),
+    FileLoader([".yaml", ".yml"], yaml.safe_load),
+]
+""" The supported filetypes for the validator. """
+
 # ------------------------------------------------------------------------------
 # PUBLIC CLASSES
 # ------------------------------------------------------------------------------
@@ -58,6 +85,43 @@ class ConfigurationManager:
         )
         self.cli_configuration: Configuration = configuration
         self.variables_manager: VariablesManager = cli_context.get_variables_manager()
+
+    def validate_configuration(self):
+        """Validates all settings files that have associated schema files."""
+
+        # Define all the config directories and files.
+        settings: Path = self.cli_context.get_app_configuration_file()
+        settings_schema: Path = settings.with_suffix(settings.suffix + SCHEMA_SUFFIX)
+        stack_settings: Path = self.cli_context.get_stack_configuration_file()
+        stack_settings_schema: Path = stack_settings.with_suffix(stack_settings.suffix + SCHEMA_SUFFIX)
+        overrides_dir: Path = self.cli_context.get_baseline_template_overrides_dir()
+        templates_dir: Path = self.cli_context.get_configurable_templates_dir()
+
+        # Parse the directories to get the schema files.
+        schema_files = []
+        [schema_files.append(settings_schema) if settings_schema.is_file() else None]
+        [schema_files.append(stack_settings_schema) if stack_settings_schema.is_file() else None]
+        schema_files.extend(overrides_dir.glob(f"**/*{SCHEMA_SUFFIX}"))
+        schema_files.extend(templates_dir.glob(f"**/*{SCHEMA_SUFFIX}"))
+
+        for schema_file in schema_files:
+            # Take out the `schema` suffix to get the original config file.
+            # NOTE: As we only need to remove part of the suffix, it is easier to convert to string
+            # and just remove part of the substring.
+            config_file: Path = Path(str(schema_file).removesuffix(SCHEMA_SUFFIX))
+            if not config_file.exists():
+                logger.warning(f"Found {schema_file} but no matching config file.")
+                continue
+
+            # Load and validate the config/schema.
+            logger.debug(f"Found schema for {config_file}. Validating...")
+            data = self.__load_file_contents_into_dict(config_file)
+            schema = self.__load_file_contents_into_dict(schema_file)
+            try:
+                jsonschema.validate(instance=data, schema=schema)
+                logger.debug(f"The config file {config_file} matched the provided schema.")
+            except jsonschema.exceptions.ValidationError as e:
+                error_and_exit(f"Validation of {config_file} failed at:\n{e}")
 
     def initialise_configuration(self):
         """Initialises the configuration repository"""
@@ -205,6 +269,23 @@ class ConfigurationManager:
 
     def get_stack_variable(self, variable: str):
         return self.variables_manager.get_stack_variable(variable)
+    
+    def __load_file_contents_into_dict(self, filepath: Path) -> dict:
+        """Attempts to load the contents of a file into a python dict.
+        The function will try and determine the file content based off the extenstion.
+        It will throw if the extension is unknown or the contents do not match the expected format.
+
+        Args:
+            filepath (Path): Path to a file to load.
+
+        Returns:
+            dict: The contents of the file as a dictionary.
+        """
+        for filetype in SUPPORTED_FILETYPES:
+            if filetype.is_filetype(filepath):
+                return filetype.load(filepath)
+
+        raise TypeError(f"The {filepath.suffix} suffix does not map to a known filetype.")
 
     def __create_new_configuration_branch_and_files(self):
         app_version: str = self.cli_context.app_version
