@@ -228,6 +228,17 @@ def test_validation_invalid(tmpdir):
     assert ex
 
 
+def test_validation_unknown_suffix(tmpdir):
+    cli_context = create_cli_context(tmpdir, app_version="1.0.0")
+    conf_manager = create_conf_manager_unknown_suffix(tmpdir, cli_context)
+
+    conf_manager.initialise_configuration()
+    with pytest.raises(SystemExit) as ex:
+        conf_manager.validate_configuration()
+    # NOTE: Assert that the `SystemExit` exception has been thrown as we expect.
+    assert ex
+
+
 # TODO: Test where conf/data directories don't exist
 # TODO: Test deliberately failing migrations with migration function hooks
 
@@ -296,6 +307,29 @@ def create_conf_manager_invalid_resources(
         baseline_templates_dir=Path(BASE_DIR, "invalid_resources/templates/baseline"),
         configurable_templates_dir=Path(
             BASE_DIR, "invalid_resources/templates/configurable"
+        ),
+        orchestrator=DockerComposeOrchestrator("cli/docker-compose.yml", []),
+        stack_configuration_file=STACK_CONFIGURATION_FILE,
+    )
+
+    return ConfigurationManager(cli_context, configuration)
+
+
+def create_conf_manager_unknown_suffix(
+    tmpdir, cli_context: CliContext = None
+) -> ConfigurationManager:
+    # If not supplied, create default CliContext.
+    if cli_context is None:
+        cli_context = create_cli_context(tmpdir)
+
+    configuration = Configuration(
+        app_name=APP_NAME,
+        docker_image="invalid-image-name",
+        seed_app_configuration_file=Path(BASE_DIR, "unknown_suffix/settings.yml"),
+        application_context_files_dir=APP_CONTEXT_FILES_DIR,
+        baseline_templates_dir=Path(BASE_DIR, "unknown_suffix/templates/baseline"),
+        configurable_templates_dir=Path(
+            BASE_DIR, "unknown_suffix/templates/configurable"
         ),
         orchestrator=DockerComposeOrchestrator("cli/docker-compose.yml", []),
         stack_configuration_file=STACK_CONFIGURATION_FILE,

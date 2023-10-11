@@ -1,0 +1,2 @@
+# This will fail as we do not have a TOML loader.
+foobar = 5
