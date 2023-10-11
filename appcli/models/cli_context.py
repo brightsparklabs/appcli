@@ -152,10 +152,10 @@ class CliContext(NamedTuple):
         return self.configuration_dir.joinpath("settings.yml")
 
     def get_app_configuration_file_schema(self) -> Path:
-        """Get the location of the configuration file
+        """Get the location of the configuration schema file
 
         Returns:
-            Path: location of the configuration file
+            Path: location of the configuration schema file
         """
         return self.configuration_dir.joinpath("settings.yml", SCHEMA_SUFFIX)
 
@@ -168,10 +168,10 @@ class CliContext(NamedTuple):
         return self.configuration_dir.joinpath("stack-settings.yml")
 
     def get_stack_configuration_file_schema(self) -> Path:
-        """Get the location of the configuration file
+        """Get the location of the configuration schema file
 
         Returns:
-            Path: location of the configuration file
+            Path: location of the configuration schema file
         """
         return self.configuration_dir.joinpath("stack-settings.yml", SCHEMA_SUFFIX)
 

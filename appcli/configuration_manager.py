@@ -45,31 +45,12 @@ from appcli.variables_manager import VariablesManager
 METADATA_FILE_NAME = "metadata-configure-apply.json"
 """ Name of the file holding metadata from running a configure (relative to the generated configuration directory) """
 
-
-class FileLoader:
-    """Creates a mapping between a filetype and the function to load it into a dict."""
-
-    def __init__(self, extensions: list, loader: callable):
-        self.extensions = extensions
-        self.loader = loader
-
-    def is_filetype(self, filename: Path) -> bool:
-        """Check if the file suffix matches one of the expected types."""
-        return filename.suffix in self.extensions
-
-    def load(self, file: Path) -> dict:
-        """Use the loader function to read the file."""
-        if not self.is_filetype(file):
-            raise TypeError(
-                f"The file `{file.name}` is the wrong type for this loader. Supported types are {self.extensions}."
-            )
-        return self.loader(open(file, "r"))
-
-
-SUPPORTED_FILETYPES = [
-    FileLoader([".json", ".jsn"], json.load),
-    FileLoader([".yaml", ".yml"], yaml.safe_load),
-]
+FILETYPE_LOADERS = {
+    ".json": json.load,
+    ".jsn": json.load,
+    ".yaml": yaml.safe_load,
+    ".yml": yaml.safe_load,
+}
 """ The supported filetypes for the validator. """
 
 # ------------------------------------------------------------------------------
@@ -121,15 +102,7 @@ class ConfigurationManager:
 
             # Load and validate the config/schema.
             logger.debug(f"Found schema for {config_file}. Validating...")
-            data = self.__load_file_contents_into_dict(config_file)
-            schema = self.__load_file_contents_into_dict(schema_file)
-            try:
-                jsonschema.validate(instance=data, schema=schema)
-                logger.debug(
-                    f"The config file {config_file} matched the provided schema."
-                )
-            except jsonschema.exceptions.ValidationError as e:
-                error_and_exit(f"Validation of {config_file} failed at:\n{e}")
+            self.__validate_schema(config_file, schema_file)
 
     def initialise_configuration(self):
         """Initialises the configuration repository"""
@@ -278,24 +251,33 @@ class ConfigurationManager:
     def get_stack_variable(self, variable: str):
         return self.variables_manager.get_stack_variable(variable)
 
-    def __load_file_contents_into_dict(self, filepath: Path) -> dict:
-        """Attempts to load the contents of a file into a python dict.
+    def __validate_schema(self, config_file: Path, schema_file: Path) -> None:
+        """Attempt to validate a config file against a provided schema file.
         The function will try and determine the file content based off the extenstion.
         It will throw if the extension is unknown or the contents do not match the expected format.
 
         Args:
-            filepath (Path): Path to a file to load.
-
-        Returns:
-            dict: The contents of the file as a dictionary.
+            config_file (Path): Path to the config file to validate.
+            schema_file (Path): Path to the schema file.
         """
-        for filetype in SUPPORTED_FILETYPES:
-            if filetype.is_filetype(filepath):
-                return filetype.load(filepath)
+        # Check we actually have a loader for the filetype.
+        try:
+            loader = FILETYPE_LOADERS[config_file.suffix]
+        except KeyError:
+            error_and_exit(
+                f"The {config_file} file does not have an associated loader function. Check that the suffix is a supported type."
+            )
 
-        raise TypeError(
-            f"The {filepath.suffix} suffix does not map to a known filetype."
-        )
+        # Load the files.
+        data = loader(open(config_file, "r"))
+        schema = json.load(open(schema_file, "r"))
+
+        # Validate the config.
+        try:
+            jsonschema.validate(instance=data, schema=schema)
+            logger.debug(f"The config file {config_file} matched the provided schema.")
+        except jsonschema.exceptions.ValidationError as e:
+            error_and_exit(f"Validation of {config_file} failed at:\n{e}")
 
     def __create_new_configuration_branch_and_files(self):
         app_version: str = self.cli_context.app_version
