@@ -1,10 +1,6 @@
 name: Dependabot test and auto-merge
 on: pull_request
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   # Merge pre-conditions.
   test-build-docker:
@@ -16,6 +12,9 @@ jobs:
 
   # Merge job.
   dependabot-auto-merge-workflow:
+    permissions:
+      contents: write
+      pull-requests: write
     needs: [test-build-docker, test-build-python, test-codeql-analysis]
     uses: brightsparklabs/github-actions/.github/workflows/dependabot-auto-merge.yml@master
     secrets: inherit
