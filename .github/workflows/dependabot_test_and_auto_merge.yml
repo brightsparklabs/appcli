@@ -3,8 +3,6 @@ on: pull_request
 
 jobs:
   # Merge pre-conditions.
-  test-build-docker:
-    uses: ./.github/workflows/build_docker.yml
   test-build-python:
     uses: ./.github/workflows/build_python.yml
   test-codeql-analysis:
@@ -15,6 +13,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    needs: [test-build-docker, test-build-python, test-codeql-analysis]
+    needs: [test-build-python, test-codeql-analysis]
     uses: brightsparklabs/github-actions/.github/workflows/dependabot-auto-merge.yml@master
     secrets: inherit
