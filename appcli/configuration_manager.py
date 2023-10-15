@@ -275,10 +275,10 @@ class ConfigurationManager:
         try:
             jsonschema.validate(instance=data, schema=schema)
             logger.debug(
-                f"The configuration file {config_file} matched the provided schema."
+                f"The configuration file `{config_file}` matched the provided schema."
             )
         except jsonschema.exceptions.ValidationError as e:
-            error_and_exit(f"Validation of {config_file} failed at:\n{e}")
+            error_and_exit(f"Validation of `{config_file}` failed at:\n{e}")
 
     def __create_new_configuration_branch_and_files(self):
         app_version: str = self.cli_context.app_version
