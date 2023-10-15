@@ -15,6 +15,7 @@ The changelog is applicable from version `1.0.0` onwards.
 - APPCLI-133: Add fix for Git repository ownership issue to the AppCli Dockerfile.
 - APED-67: Add support for running `NullOrchestrator` apps on Windows OS.
 - APPCLI-112: Autovalidate config file when a `.schema.json` file is provided.
+- APPCLI-115: Enable automerge for dependabot PRs.
 
 ### Fixed
 
