@@ -82,12 +82,10 @@ class ConfigurationManager:
 
         # Parse the directories to get the schema files.
         schema_files = []
-        [schema_files.append(settings_schema) if settings_schema.is_file() else None]
-        [
+        if settings_schema.is_file():
+            schema_files.append(settings_schema)
+        if stack_settings_schema.is_file():
             schema_files.append(stack_settings_schema)
-            if stack_settings_schema.is_file()
-            else None
-        ]
         schema_files.extend(overrides_dir.glob(f"**/*{SCHEMA_SUFFIX}"))
         schema_files.extend(templates_dir.glob(f"**/*{SCHEMA_SUFFIX}"))
 
@@ -253,7 +251,7 @@ class ConfigurationManager:
 
     def __validate_schema(self, config_file: Path, schema_file: Path) -> None:
         """Attempt to validate a config file against a provided schema file.
-        The function will try and determine the file content based off the extenstion.
+        The function will try and determine the file content based off the extension.
         It will throw if the extension is unknown or the contents do not match the expected format.
 
         Args:
@@ -265,7 +263,8 @@ class ConfigurationManager:
             loader = FILETYPE_LOADERS[config_file.suffix]
         except KeyError:
             error_and_exit(
-                f"The {config_file} file does not have an associated loader function. Check that the suffix is a supported type."
+                f"The `{config_file}` file does not have an associated loader function."
+                f"Check that the suffix is one of the supported types: {[k for k in FILETYPE_LOADERS.keys()]}"
             )
 
         # Load the files.
@@ -275,7 +274,9 @@ class ConfigurationManager:
         # Validate the config.
         try:
             jsonschema.validate(instance=data, schema=schema)
-            logger.debug(f"The config file {config_file} matched the provided schema.")
+            logger.debug(
+                f"The configuration file {config_file} matched the provided schema."
+            )
         except jsonschema.exceptions.ValidationError as e:
             error_and_exit(f"Validation of {config_file} failed at:\n{e}")
 
