@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 # # -*- coding: utf-8 -*-
 
+"""
+Configuration for building the CLI.
+________________________________________________________________________________
+
+Created by brightSPARK Labs
+www.brightsparklabs.com
+"""
+
 # standard libraries
 import inspect
 import os
