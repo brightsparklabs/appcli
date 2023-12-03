@@ -67,7 +67,7 @@ setup(
         "jsonschema==4.19.1",
         "jinja2==3.1.2",
         "pre-commit==3.3.3",
-        "pycryptodome==3.18.0",
+        "pycryptodome==3.19.0",
         "pydantic==2.3.0",
         "pyfiglet==0.8.post1",
         "python-keycloak==0.22.0",
