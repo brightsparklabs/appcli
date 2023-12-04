@@ -5,3 +5,20 @@ repos:
       - id: hadolint-docker
         always_run: true
         args: ["Dockerfile"]
+  # Specify `local` to use local pip versions of the pre-commit libs.
+  - repo: local
+    hooks:
+      - id: ruff-linter
+        name: Ruff-Linter
+        description: https://github.com/charliermarsh/ruff
+        entry: .venv/bin/ruff
+        language: python
+        files: \.py$
+        args: [check, --fix]
+      - id: ruff-formatter
+        name: Ruff-Formatter
+        description: https://github.com/charliermarsh/ruff
+        entry: .venv/bin/ruff
+        language: python
+        files: \.py$
+        args: [format]
