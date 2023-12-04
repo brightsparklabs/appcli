@@ -74,7 +74,7 @@ setup(
         "python-slugify==8.0.1",
         "ruamel-yaml==0.17.33",
         "tabulate==0.9.0",
-        "wheel==0.41.2",
+        "wheel==0.42.0",
     ],
     extras_require={"dev": ["black", "flake8", "isort", "pytest"]},
 )
