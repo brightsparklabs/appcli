@@ -66,7 +66,7 @@ setup(
         "GitPython==3.1.35",
         "jsonschema==4.19.1",
         "jinja2==3.1.2",
-        "pre-commit==3.3.3",
+        "pre-commit==3.5.0",
         "pycryptodome==3.19.0",
         "pydantic==2.3.0",
         "pyfiglet==1.0.2",
