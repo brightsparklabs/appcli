@@ -22,3 +22,9 @@ repos:
         language: python
         files: \.py$
         args: [format]
+      - id: pytest
+        name: PyTest
+        description: https://docs.pytest.org/en/latest/
+        entry: .venv/bin/pytest
+        language: python
+        files: \.py$
