@@ -22,7 +22,7 @@ repos:
         entry: .venv/bin/ruff
         language: python
         files: \.py$
-        args: [format,  --ignore, E731]
+        args: [format]
       # NOTE: Disabling this for now as there is currently no way to exit gracefully when no test are run.
       # See https://github.com/pytest-dev/pytest/issues/2393
       # - id: pytest

@@ -64,10 +64,10 @@ lint-check: venv
 	${PYTHON} -m ruff check --ignore ${RULES} .
 
 format: venv
-	${PYTHON} -m ruff format --ignore ${RULES} .
+	${PYTHON} -m ruff format .
 
 format-check: venv
-	${PYTHON} -m ruff format --check --ignore ${RULES} .
+	${PYTHON} -m ruff format --check .
 
 clean:
 	rm -rf build/ dist/ bsl_appcli.egg-info/
