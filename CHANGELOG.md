@@ -16,6 +16,7 @@ The changelog is applicable from version `1.0.0` onwards.
 - APED-67: Add support for running `NullOrchestrator` apps on Windows OS.
 - APPCLI-112: Autovalidate config file when a `.schema.json` file is provided.
 - APPCLI-115: Enable automerge for dependabot PRs.
+- APPCLI-116: Set Ruff as the linter and formatter.
 
 ### Fixed
 
