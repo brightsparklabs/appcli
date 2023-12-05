@@ -19,12 +19,8 @@ help:
 	@echo "       run tests"
 	@echo "make lint"
 	@echo "       run ruff check"
-	@echo "make lint-check"
-	@echo "       dry-run ruff check"
 	@echo "make format"
 	@echo "       run ruff format"
-	@echo "make format-check"
-	@echo "       dry-run ruff format"
 	@echo "make build-wheel"
 	@echo "       build wheel"
 	@echo "make publish-wheel"
@@ -35,8 +31,6 @@ help:
 	@echo "       build docker image"
 	@echo "make docker-publish"
 	@echo "       publish docker image"
-	@echo "make check"
-	@echo "       run format-check + lint-check + test"
 	@echo "make precommit"
 	@echo "       manually trigger precommit hooks"
 
@@ -54,16 +48,11 @@ test: venv
 	${PYTHON} -m pytest
 
 lint: venv
-	${PYTHON} -m ruff check --fix .
-
-lint-check: venv
-	${PYTHON} -m ruff check .
+# Ignore lambda functions in `appcli/models/configuration.py::Hooks`.
+	${PYTHON} -m ruff check --fix --ignore E731 .
 
 format: venv
 	${PYTHON} -m ruff format .
-
-format-check: venv
-	${PYTHON} -m ruff format --check .
 
 clean:
 	rm -rf build/ dist/ bsl_appcli.egg-info/
@@ -88,8 +77,6 @@ docker-publish: docker
 	docker push brightsparklabs/appcli:latest
 
 all: format lint test
-
-check: format-check lint-check test
 
 precommit: venv
 	$(VENV_NAME)/bin/pre-commit run -c .github/.pre-commit-config.yaml

@@ -8,23 +8,27 @@ repos:
   # Specify `local` to use local pip versions of the pre-commit libs.
   - repo: local
     hooks:
-      - id: ruff-linter
-        name: Ruff-Linter
+      - id: linter
+        name: Linter
         description: https://github.com/charliermarsh/ruff
         entry: .venv/bin/ruff
         language: python
         files: \.py$
-        args: [check, --fix]
-      - id: ruff-formatter
-        name: Ruff-Formatter
+        # Ignore lambda functions in `appcli/models/configuration.py::Hooks`.
+        args: [check, --fix, --ignore, E731]
+      - id: formatter
+        name: Formatter
         description: https://github.com/charliermarsh/ruff
         entry: .venv/bin/ruff
         language: python
         files: \.py$
         args: [format]
-      - id: pytest
-        name: PyTest
-        description: https://docs.pytest.org/en/latest/
-        entry: .venv/bin/pytest
-        language: python
-        files: \.py$
+      # NOTE: Disabling this for now as there is currently no way to exit gracefully when no test are run.
+      # See https://github.com/pytest-dev/pytest/issues/2393
+      # - id: pytest
+      #   name: PyTest
+      #   description: https://docs.pytest.org/en/latest/
+      #   entry: .venv/bin/pytest
+      #   language: python
+      #   files: \.py$
+      #   args: []
