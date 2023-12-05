@@ -12,6 +12,9 @@ VENV_NAME?=.venv
 VENV_ACTIVATE=. $(VENV_NAME)/bin/activate
 PYTHON=${VENV_NAME}/bin/python
 APP_VERSION=$(shell git describe --always --dirty)
+# Format and linter rules to ignore.
+# See https://docs.astral.sh/ruff/rules/
+RULES=E731
 
 .DEFAULT: help
 help:
@@ -55,16 +58,16 @@ test: venv
 
 lint: venv
 # Ignore lambda functions in `appcli/models/configuration.py::Hooks`.
-	${PYTHON} -m ruff check --fix --ignore E731 .
+	${PYTHON} -m ruff check --fix --ignore ${RULES} .
 
 lint-check: venv
-	${PYTHON} -m ruff check .
+	${PYTHON} -m ruff check --ignore ${RULES} .
 
 format: venv
-	${PYTHON} -m ruff format .
+	${PYTHON} -m ruff format --ignore ${RULES} .
 
 format-check: venv
-	${PYTHON} -m ruff format --check .
+	${PYTHON} -m ruff format --check --ignore ${RULES} .
 
 clean:
 	rm -rf build/ dist/ bsl_appcli.egg-info/
