@@ -76,5 +76,5 @@ setup(
         "tabulate==0.9.0",
         "wheel==0.42.0",
     ],
-    extras_require={"dev": ["black", "flake8", "isort", "pytest"]},
+    extras_require={"dev": ["ruff", "pytest"]},
 )
