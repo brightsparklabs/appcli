@@ -788,7 +788,8 @@ def execute_compose(
         CompletedProcess: The completed process and its exit code.
     """
     docker_compose_command = [
-        "docker-compose",
+        "docker",
+        "compose",
         "--project-name",
         cli_context.get_project_name(),
     ]
@@ -821,6 +822,7 @@ def execute_compose(
         docker_compose_command,
         capture_output=True,
         input=encoded_input,
+        shell=True,
     )
     # For failures, error log both stdout/stderr if present.
     if result.returncode != 0:
