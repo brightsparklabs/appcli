@@ -788,7 +788,8 @@ def execute_compose(
         CompletedProcess: The completed process and its exit code.
     """
     docker_compose_command = [
-        "docker-compose",
+        "docker",
+        "compose",
         "--project-name",
         cli_context.get_project_name(),
     ]
