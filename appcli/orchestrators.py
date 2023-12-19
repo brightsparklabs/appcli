@@ -822,7 +822,6 @@ def execute_compose(
         docker_compose_command,
         capture_output=True,
         input=encoded_input,
-        shell=True,
     )
     # For failures, error log both stdout/stderr if present.
     if result.returncode != 0:

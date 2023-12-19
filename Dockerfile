@@ -10,17 +10,24 @@ FROM alpine:3.15.0 AS docker-binary-download
 
 WORKDIR /tmp
 
-# Download and extract the static docker binary.
+# List required versions for docker and compose.
 ENV DOCKER_VERSION=24.0.7
-RUN \
-    wget -q https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz \
-    && tar xf docker-${DOCKER_VERSION}.tgz
+ENV DOCKER_COMPOSE_VERSION=2.23.3
+
+# Download docker and compose.
+RUN wget -q https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz \
+    && tar xf docker-${DOCKER_VERSION}.tgzv \
+    && wget -q https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64 \
+    && wget -q https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64.sha256 \
+    && sha256sum -c docker-compose-linux-x86_64.sha256 \
+    && chmod +x docker-compose-linux-x86_64
 
 FROM python:3.10.2-slim-bullseye
 
 ENV LANG=C.UTF-8
 
 COPY --from=docker-binary-download /tmp/docker/docker /usr/bin
+COPY --from=docker-binary-download /tmp/docker-compose-linux-x86_64 /usr/local/lib/docker/cli-plugins/docker-compose
 
 RUN \
     # set timezone to UTC by default
