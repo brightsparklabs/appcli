@@ -817,9 +817,6 @@ def execute_compose(
 
     logger.debug(docker_compose_command)
     logger.debug("Running [%s]", " ".join(docker_compose_command))
-
-    logger.debug(docker_compose_command)
-    logger.debug("Running [%s]", " ".join(docker_compose_command))
     encoded_input = stdin_input.encode("utf-8") if stdin_input is not None else None
     logger.debug("Encoded input: [%s]", encoded_input)
     result = subprocess.run(
