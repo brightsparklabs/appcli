@@ -586,8 +586,7 @@ class DockerSwarmOrchestrator(Orchestrator):
 
     def __exec_command(self, command: Iterable[str]) -> CompletedProcess:
         logger.debug("Running [%s]", " ".join(command))
-        proc = subprocess.run(command, capture_output=False)
-        return proc
+        return subprocess.run(command, capture_output=False)
 
 
 class NullOrchestrator(Orchestrator):
