@@ -828,10 +828,6 @@ def execute_compose(
         input=encoded_input,
     )
 
-    # Close the `stdin` file interface object.
-    if stdin_input is not None:
-        stdin_input.close()
-
     # For failures, error log both stdout/stderr if present.
     if result.returncode != 0:
         if result.stdout:
