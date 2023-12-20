@@ -18,6 +18,7 @@ The changelog is applicable from version `1.0.0` onwards.
 - APPCLI-115: Enable automerge for dependabot PRs.
 - APPCLI-116: Set Ruff as the linter and formatter.
 - AF-209: Build the docker-compose plugin into the appcli image.
+- AF-210: Stream stdout and stderr.
 
 ### Fixed
 
