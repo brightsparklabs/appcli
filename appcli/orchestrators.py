@@ -13,7 +13,6 @@ www.brightsparklabs.com
 from __future__ import annotations
 
 import os
-import tempfile
 import subprocess
 import sys
 import textwrap
@@ -587,8 +586,7 @@ class DockerSwarmOrchestrator(Orchestrator):
 
     def __exec_command(self, command: Iterable[str]) -> CompletedProcess:
         logger.debug("Running [%s]", " ".join(command))
-        proc = subprocess.Popen(command)
-        proc.wait()
+        proc = subprocess.run(command, capture_output=False)
         return proc
 
 
@@ -820,22 +818,15 @@ def execute_compose(
     logger.debug(docker_compose_command)
     logger.debug("Running [%s]", " ".join(docker_compose_command))
 
-    # NOTE: The `subprocess.Popen` function only accepts `stdin` objects that implement:
-    # https://docs.python.org/3/glossary.html#term-file-object
-    # If the user has provided `stdin` we need to write it to a tempfile.
-    if stdin_input is not None:
-        stdin_input = stdin_input.encode("utf-8")
-        logger.debug("STDIN input: [%s]", stdin_input)
-
-        stdin_file = tempfile.NamedTemporaryFile()
-        stdin_file.write(stdin_input)
-        stdin_input = stdin_file
-
-    result = subprocess.Popen(
-        args=docker_compose_command,
-        stdin=stdin_input,
+    logger.debug(docker_compose_command)
+    logger.debug("Running [%s]", " ".join(docker_compose_command))
+    encoded_input = stdin_input.encode("utf-8") if stdin_input is not None else None
+    logger.debug("Encoded input: [%s]", encoded_input)
+    result = subprocess.run(
+        docker_compose_command,
+        capture_output=False,
+        input=encoded_input,
     )
-    result.wait()
 
     # Close the `stdin` file interface object.
     if stdin_input is not None:
