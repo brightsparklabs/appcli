@@ -609,7 +609,10 @@ class ConfigurationManager:
         logger.debug("Configuration record written to [%s]", configuration_record_file)
 
     def __backup_and_create_new_directory(
-        self, source_dir: Path, additional_filename_descriptor: str = "backup"
+        self,
+        source_dir: Path,
+        additional_filename_descriptor: str = "backup",
+        maximum_backups: int = 10,
     ) -> Path:
         """Backs up a directory to a tar gzipped file with the current datetimestamp,
         deletes the existing directory, and creates a new empty directory in its place
@@ -618,9 +621,11 @@ class ConfigurationManager:
             source_dir (Path): Path to the directory to backup and delete
             additional_filename_descriptor (str, optional): an additional identifier to put into
                 the new tgz filename. If not supplied, defaults to 'backup'.
+            maximum_backups (int): Number of archives to store (default 10).
+                This is implemented as a FIFO queue based off the timestamp.
         """
 
-        if os.path.exists(source_dir) and os.listdir(source_dir):
+        if source_dir.exists() and os.listdir(source_dir):
             # The datetime is accurate to seconds (microseconds was overkill), and we remove
             # colon (:) because `tar tvf` doesn't like filenames with colons
             current_datetime = (
@@ -631,25 +636,29 @@ class ConfigurationManager:
             clean_additional_filename_descriptor = (
                 additional_filename_descriptor.replace("/", "-")
             )
-            basename = os.path.basename(source_dir)
-            output_filename = os.path.join(
-                os.path.dirname(source_dir),
-                Path(".generated-archive/"),
-                f"{basename}_{clean_additional_filename_descriptor}_{current_datetime}.tgz",
-            )
+
+            backup_dir = source_dir.parent / ".generated-archive"
+            backup_filename = f"{source_dir.name}_{clean_additional_filename_descriptor}_{current_datetime}.tgz"
+            backup_file = backup_dir / backup_filename
+
+            # Remove old backups.
+            logger.debug(f"Removing old backups from [{backup_dir}]")
+            old_backups = backup_dir.glob("*.tgz")
+            old_backups = sorted(old_backups, reverse=True)
+            if len(old_backups) > maximum_backups:
+                [archive.unlink() for archive in old_backups[maximum_backups:]]
 
             # Create the backup
-            logger.debug(f"Backing up directory [{source_dir}] to [{output_filename}]")
-            output_dir = os.path.dirname(output_filename)
-            if not os.path.exists(output_dir):
-                os.makedirs(output_dir)
-            with tarfile.open(output_filename, "w:gz") as tar:
-                tar.add(source_dir, arcname=os.path.basename(source_dir))
+            logger.debug(f"Backing up directory [{source_dir}] to [{backup_file}]")
+            if not backup_dir.exists():
+                backup_dir.mkdir()
+            with tarfile.open(backup_file, "w:gz") as tar:
+                tar.add(source_dir, arcname=source_dir.name)
 
             # Ensure the backup has been successfully created before deleting the existing generated configuration directory
-            if not os.path.exists(output_filename):
+            if not backup_file.exists():
                 error_and_exit(
-                    f"Current generated configuration directory backup failed. Could not write out file [{output_filename}]."
+                    f"Current generated configuration directory backup failed. Could not write out file [{backup_file}]."
                 )
 
             # Remove the existing directory
