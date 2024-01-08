@@ -68,7 +68,7 @@ setup(
         "jinja2==3.1.2",
         "pre-commit==3.6.0",
         "pycryptodome==3.19.1",
-        "pydantic==2.5.2",
+        "pydantic==2.5.3",
         "pyfiglet==1.0.2",
         "python-keycloak==0.22.0",
         "python-slugify==8.0.1",
