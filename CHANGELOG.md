@@ -12,14 +12,36 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Added
 
-- APPCLI-133: Add fix for Git repository ownership issue to the AppCli Dockerfile.
-- APED-67: Add support for running `NullOrchestrator` apps on Windows OS.
-- APPCLI-112: Autovalidate config file when a `.schema.json` file is provided.
+### Fixed
+
+---
+
+## [2.5.0] - 2024-01-11
+
+### Added
+
 - APPCLI-115: Enable automerge for dependabot PRs.
+- APPCLI-112: Autovalidate config file when a `.schema.json` file is provided.
 - APPCLI-116: Set Ruff as the linter and formatter.
 - AF-209: Build the docker-compose plugin into the appcli image.
 - DIS-395: Limit the backups to 10 as default.
 - AF-210: Stream stdout and stderr.
+
+---
+
+## [2.4.0] - 2023-10-03
+
+### Added
+
+- APED-67: Add support for running `NullOrchestrator` apps on Windows OS.
+
+---
+
+## [2.3.0] - 2023-08-14
+
+### Added
+
+- APPCLI-133: Add fix for Git repository ownership issue to the appcli Dockerfile.
 
 ---
 
@@ -294,3 +316,15 @@ and methods, any python referring to the library will need to use full module pa
 ## [1.0.0] - 2020-10-07
 
 _No changelog for this release._
+
+---
+
+# Template
+
+## [Unreleased]
+
+### Added
+
+### Fixed
+
+---
