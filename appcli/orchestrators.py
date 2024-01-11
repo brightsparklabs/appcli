@@ -125,7 +125,7 @@ class Orchestrator:
             service_name (str): Name of the container to be acted upon.
             command (str): The command to be executed, along with any arguments.
             stdin_input (str): Optional - defaults to None. String passed through to the stdin of the exec command.
-            capture_output (bool): Optional - defaults to False. Capture stdout for the run command.
+            capture_output (bool): Optional - defaults to False. True to capture stdout/stderr for the run command.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -794,7 +794,7 @@ def execute_compose(
         docker_compose_override_directory_relative_path (Path): The relative path to a directory containing
             docker-compose override files. Path is relative to the generated configuration directory.
         stdin_input (str): Optional - defaults to None. String passed through to the subprocess via stdin.
-        capture_output (bool): Optional - defaults to False. Capture stdout for the run command.
+        capture_output (bool): Optional - defaults to False. True to capture stdout/stderr for the run command.
 
     Returns:
         CompletedProcess: The completed process and its exit code.
