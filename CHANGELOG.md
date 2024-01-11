@@ -20,6 +20,10 @@ The changelog is applicable from version `1.0.0` onwards.
 - AF-209: Build the docker-compose plugin into the appcli image.
 - AF-210: Stream stdout and stderr.
 
+---
+
+## [2.2.1] - 2023-07-24
+
 ### Fixed
 
 - APED-37: Prevent quoted arguments with spaces splitting into multiple arguments in the launcher script.
