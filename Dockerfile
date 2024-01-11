@@ -16,7 +16,7 @@ ENV DOCKER_COMPOSE_VERSION=2.23.3
 
 # Download docker and compose.
 RUN wget -q https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz \
-    && tar xf docker-${DOCKER_VERSION}.tgzv \
+    && tar xf docker-${DOCKER_VERSION}.tgz \
     && wget -q https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64 \
     && wget -q https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64.sha256 \
     && sha256sum -c docker-compose-linux-x86_64.sha256 \

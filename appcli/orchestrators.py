@@ -15,7 +15,6 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
-import textwrap
 from pathlib import Path
 from subprocess import CompletedProcess
 from tempfile import NamedTemporaryFile
@@ -116,6 +115,7 @@ class Orchestrator:
         service_name: str,
         command: Iterable[str],
         stdin_input: str = None,
+        capture_output: bool = False,
     ) -> CompletedProcess:
         """
         Executes a command in a running container.
@@ -125,6 +125,7 @@ class Orchestrator:
             service_name (str): Name of the container to be acted upon.
             command (str): The command to be executed, along with any arguments.
             stdin_input (str): Optional - defaults to None. String passed through to the stdin of the exec command.
+            capture_output (bool): Optional - defaults to False. True to capture stdout/stderr for the run command.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -273,6 +274,7 @@ class DockerComposeOrchestrator(Orchestrator):
         service_name: str,
         command: Iterable[str],
         stdin_input: str = None,
+        capture_output: bool = False,
     ) -> CompletedProcess:
         cmd = ["exec"]  # Command is: exec SERVICE COMMAND
         # If there's stdin_input being piped to the command, we need to provide
@@ -281,7 +283,7 @@ class DockerComposeOrchestrator(Orchestrator):
             cmd.append("-T")
         cmd.append(service_name)
         cmd.extend(list(command))
-        return self.__compose_service(cli_context, cmd, stdin_input)
+        return self.__compose_service(cli_context, cmd, stdin_input, capture_output)
 
     def verify_service_names(
         self, cli_context: CliContext, service_names: tuple[str, ...]
@@ -289,7 +291,7 @@ class DockerComposeOrchestrator(Orchestrator):
         if service_names is None or len(service_names) == 0:
             return True
         command = ["config", "--services"]
-        result = self.__compose_service(cli_context, command)
+        result = self.__compose_service(cli_context, command, capture_output=True)
         if result.returncode != 0:
             error_msg = result.stderr.decode()
             logger.error(
@@ -359,6 +361,7 @@ class DockerComposeOrchestrator(Orchestrator):
         cli_context: CliContext,
         command: Iterable[str],
         stdin_input: str = None,
+        capture_output: bool = False,
     ):
         return execute_compose(
             cli_context,
@@ -366,6 +369,7 @@ class DockerComposeOrchestrator(Orchestrator):
             self.docker_compose_file,
             self.docker_compose_override_directory,
             stdin_input=stdin_input,
+            capture_output=capture_output,
         )
 
     def __compose_task(
@@ -373,6 +377,7 @@ class DockerComposeOrchestrator(Orchestrator):
         cli_context: CliContext,
         command: Iterable[str],
         stdin_input: str = None,
+        capture_output: bool = False,
     ):
         return execute_compose(
             cli_context,
@@ -380,6 +385,7 @@ class DockerComposeOrchestrator(Orchestrator):
             self.docker_compose_task_file,
             self.docker_compose_task_override_directory,
             stdin_input=stdin_input,
+            capture_output=capture_output,
         )
 
 
@@ -492,6 +498,7 @@ class DockerSwarmOrchestrator(Orchestrator):
         service_name: str,
         command: Iterable[str],
         stdin_input: str = None,
+        capture_output: bool = False,
     ) -> CompletedProcess:
         # Running 'docker exec' on containers in a docker swarm is non-trivial
         # due to the distributed nature of docker swarm, and the fact there could
@@ -504,7 +511,7 @@ class DockerSwarmOrchestrator(Orchestrator):
         if service_names is None or len(service_names) == 0:
             return True
         subcommand = ["config", "--services"]
-        result = self.__docker_stack(cli_context, subcommand)
+        result = self.__docker_stack(cli_context, subcommand, capture_output=True)
         if result.returncode != 0:
             error_msg = result.stderr.decode()
             logger.error(
@@ -575,6 +582,7 @@ class DockerSwarmOrchestrator(Orchestrator):
         cli_context: CliContext,
         command: Iterable[str],
         stdin_input: str = None,
+        capture_output: bool = False,
     ):
         return execute_compose(
             cli_context,
@@ -582,11 +590,12 @@ class DockerSwarmOrchestrator(Orchestrator):
             self.docker_compose_task_file,
             self.docker_compose_task_override_directory,
             stdin_input=stdin_input,
+            capture_output=capture_output,
         )
 
     def __exec_command(self, command: Iterable[str]) -> CompletedProcess:
         logger.debug("Running [%s]", " ".join(command))
-        return subprocess.run(command, capture_output=True)
+        return subprocess.run(command, capture_output=False)
 
 
 class NullOrchestrator(Orchestrator):
@@ -629,6 +638,7 @@ class NullOrchestrator(Orchestrator):
         service_name: str,
         command: Iterable[str],
         stdin_input: str = None,
+        capture_output: bool = False,
     ) -> CompletedProcess:
         logger.info(
             "NullOrchestrator has no running containers to execute commands in."
@@ -772,6 +782,7 @@ def execute_compose(
     docker_compose_file_relative_path: Path,
     docker_compose_override_directory_relative_path: Path,
     stdin_input: str = None,
+    capture_output: bool = False,
 ) -> CompletedProcess:
     """Builds and executes a docker-compose command.
 
@@ -783,6 +794,7 @@ def execute_compose(
         docker_compose_override_directory_relative_path (Path): The relative path to a directory containing
             docker-compose override files. Path is relative to the generated configuration directory.
         stdin_input (str): Optional - defaults to None. String passed through to the subprocess via stdin.
+        capture_output (bool): Optional - defaults to False. True to capture stdout/stderr for the run command.
 
     Returns:
         CompletedProcess: The completed process and its exit code.
@@ -820,26 +832,8 @@ def execute_compose(
     logger.debug("Encoded input: [%s]", encoded_input)
     result = subprocess.run(
         docker_compose_command,
-        capture_output=True,
+        capture_output=capture_output,
         input=encoded_input,
     )
-    # For failures, error log both stdout/stderr if present.
-    if result.returncode != 0:
-        if result.stdout:
-            logger.error(
-                "Command failed - stdout:\n%s",
-                textwrap.indent(result.stdout.decode("utf-8"), "    "),
-            )
-        if result.stderr:
-            logger.error(
-                "Command failed - stderr:\n%s",
-                textwrap.indent(result.stderr.decode("utf-8"), "    "),
-            )
-    # For normal exits, just debug log the stdout if present.
-    elif result.stdout:
-        logger.debug(
-            "Command output:\n%s",
-            textwrap.indent(result.stdout.decode("utf-8"), "    "),
-        )
 
     return result

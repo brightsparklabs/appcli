@@ -19,6 +19,11 @@ The changelog is applicable from version `1.0.0` onwards.
 - APPCLI-116: Set Ruff as the linter and formatter.
 - AF-209: Build the docker-compose plugin into the appcli image.
 - DIS-395: Limit the backups to 10 as default.
+- AF-210: Stream stdout and stderr.
+
+---
+
+## [2.2.1] - 2023-07-24
 
 ### Fixed
 
