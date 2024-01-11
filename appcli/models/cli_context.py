@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 # # -*- coding: utf-8 -*-
 
+"""
+Outlines the CLI context.
+________________________________________________________________________________
+
+Created by brightSPARK Labs
+www.brightsparklabs.com
+"""
+
 # standard libraries
 from pathlib import Path
 from typing import Dict, Iterable, NamedTuple, Tuple
@@ -12,6 +20,18 @@ from appcli.configuration.configuration_dir_state import (
 )
 from appcli.logger import logger
 from appcli.variables_manager import VariablesManager
+
+# ------------------------------------------------------------------------------
+# CONSTANTS
+# ------------------------------------------------------------------------------
+
+SCHEMA_SUFFIX = ".schema.json"
+""" The suffix for the validation schema files. """
+
+
+# ------------------------------------------------------------------------------
+# PUBLIC CLASSES
+# ------------------------------------------------------------------------------
 
 
 class CliContext(NamedTuple):
@@ -131,6 +151,14 @@ class CliContext(NamedTuple):
         """
         return self.configuration_dir.joinpath("settings.yml")
 
+    def get_app_configuration_file_schema(self) -> Path:
+        """Get the location of the configuration schema file
+
+        Returns:
+            Path: location of the configuration schema file
+        """
+        return self.configuration_dir.joinpath("settings.yml", SCHEMA_SUFFIX)
+
     def get_stack_configuration_file(self) -> Path:
         """Get the location of the configuration file
 
@@ -138,6 +166,14 @@ class CliContext(NamedTuple):
             Path: location of the configuration file
         """
         return self.configuration_dir.joinpath("stack-settings.yml")
+
+    def get_stack_configuration_file_schema(self) -> Path:
+        """Get the location of the configuration schema file
+
+        Returns:
+            Path: location of the configuration schema file
+        """
+        return self.configuration_dir.joinpath("stack-settings.yml", SCHEMA_SUFFIX)
 
     def get_baseline_template_overrides_dir(self) -> Path:
         """Get the directory of the configuration template overrides

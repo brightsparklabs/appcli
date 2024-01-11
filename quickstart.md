@@ -81,13 +81,10 @@ EOF
 
 ```bash
 cat <<EOF >Dockerfile
-FROM brightsparklabs/appcli
+FROM brightsparklabs/appcli:<version>
 
 ENTRYPOINT ["./myapp.py"]
 WORKDIR /app
-
-# Install docker-compose if using it as the orchestrator.
-RUN pip install docker-compose
 
 COPY requirements.txt .
 RUN pip install --requirement requirements.txt

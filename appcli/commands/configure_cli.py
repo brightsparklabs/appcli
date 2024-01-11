@@ -74,6 +74,12 @@ class ConfigureCli:
             logger.debug("Running pre-configure init hook")
             hooks.pre_configure_init(ctx)
 
+            # Validate the configuration schema.
+            logger.debug("Validating configuration files")
+            ConfigurationManager(
+                cli_context, self.cli_configuration
+            ).validate_configuration()
+
             # Initialise configuration directory
             logger.debug("Initialising configuration directory")
             ConfigurationManager(
