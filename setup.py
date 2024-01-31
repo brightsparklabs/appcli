@@ -66,7 +66,6 @@ setup(
         "GitPython==3.1.41",
         "jsonschema==4.20.0",
         "jinja2==3.1.3",
-        "pre-commit==3.6.0",
         "pycryptodome==3.19.1",
         "pydantic==2.5.3",
         "pyfiglet==1.0.2",
@@ -76,5 +75,5 @@ setup(
         "tabulate==0.9.0",
         "wheel==0.42.0",
     ],
-    extras_require={"dev": ["ruff", "pytest"]},
+    extras_require={"dev": ["ruff", "pre-commit", "pytest"]},
 )
