@@ -70,7 +70,7 @@ setup(
         "pydantic==2.5.3",
         "pyfiglet==1.0.2",
         "python-keycloak==0.22.0",
-        "python-slugify==8.0.1",
+        "python-slugify==8.0.3",
         "ruamel-yaml==0.18.5",
         "tabulate==0.9.0",
         "wheel==0.42.0",
