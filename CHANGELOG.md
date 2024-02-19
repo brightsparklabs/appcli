@@ -12,6 +12,8 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Added
 
+- APPCLI-114: Stop schema files being copied on migration
+
 ### Fixed
 
 ---
