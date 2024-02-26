@@ -247,11 +247,22 @@ foobar: 5
 ```json
 # resources/templates/configurable/my-config.yml.schema.json
 {
+    "$schema": "http://json-schema.org/schema",
     "type": "object",
     "properties" : {
         "foobar" : {"type": "number"}
     }
 }
+```
+
+To stop a schema file from being copied across to the `generated` config directory, add `.appcli` as an infix.
+
+```bash
+$ ls -1
+bar.json                     # -> Config-file ; Copy-on-apply
+bar.json.schema.json         # -> Schema-file ; Copy-on-apply
+foo.yaml                     # -> Config-file ; Copy-on-apply
+foo.yaml.appcli.schema.json  # -> Schema-file ; Ignore-on-apply
 ```
 
 #### Application context files

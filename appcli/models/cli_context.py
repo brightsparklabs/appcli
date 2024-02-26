@@ -28,6 +28,9 @@ from appcli.variables_manager import VariablesManager
 SCHEMA_SUFFIX = ".schema.json"
 """ The suffix for the validation schema files. """
 
+IGNORE_INFIX = ".appcli"
+""" An infix extension to ignore when copying schema files. """
+
 
 # ------------------------------------------------------------------------------
 # PUBLIC CLASSES

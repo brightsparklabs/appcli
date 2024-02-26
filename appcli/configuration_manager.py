@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Iterable
 
 import jsonschema
-import yaml
+import ruamel.yaml
 
 # vendor libraries
 from jinja2 import StrictUndefined, Template
@@ -34,7 +34,7 @@ from appcli.git_repositories.git_repositories import (
     GeneratedConfigurationGitRepository,
 )
 from appcli.logger import logger
-from appcli.models.cli_context import SCHEMA_SUFFIX, CliContext
+from appcli.models.cli_context import SCHEMA_SUFFIX, IGNORE_INFIX, CliContext
 from appcli.models.configuration import Configuration
 from appcli.variables_manager import VariablesManager
 
@@ -45,11 +45,12 @@ from appcli.variables_manager import VariablesManager
 METADATA_FILE_NAME = "metadata-configure-apply.json"
 """ Name of the file holding metadata from running a configure (relative to the generated configuration directory) """
 
+YAML_LOADER = ruamel.yaml.YAML()
 FILETYPE_LOADERS = {
     ".json": json.load,
     ".jsn": json.load,
-    ".yaml": yaml.safe_load,
-    ".yml": yaml.safe_load,
+    ".yaml": YAML_LOADER.load,
+    ".yml": YAML_LOADER.load,
 }
 """ The supported filetypes for the validator. """
 
@@ -81,7 +82,7 @@ class ConfigurationManager:
         templates_dir: Path = self.cli_context.get_configurable_templates_dir()
 
         # Parse the directories to get the schema files.
-        schema_files = []
+        schema_files: list[Path] = []
         if settings_schema.is_file():
             schema_files.append(settings_schema)
         if stack_settings_schema.is_file():
@@ -90,10 +91,19 @@ class ConfigurationManager:
         schema_files.extend(templates_dir.glob(f"**/*{SCHEMA_SUFFIX}"))
 
         for schema_file in schema_files:
-            # Take out the `schema` suffix to get the original config file.
+            # Take out the `schema` suffix and `appcli` infix (if applicable) to get the original config file.
             # NOTE: As we only need to remove part of the suffix, it is easier to convert to string
-            # and just remove part of the substring.
-            config_file: Path = Path(str(schema_file).removesuffix(SCHEMA_SUFFIX))
+            # and just remove parts of the substring.
+            # We also want to fetch just the filename (and not the path) incase any parent directories
+            # have `.appcli` in them.
+            filename_string = schema_file.name
+            filename_string = filename_string.removesuffix(
+                SCHEMA_SUFFIX
+            )  # Remove schema suffix.
+            filename_string = filename_string.replace(
+                IGNORE_INFIX, ""
+            )  # Remove ignore infix.
+            config_file = schema_file.parent / filename_string
             if not config_file.exists():
                 logger.warning(f"Found {schema_file} but no matching config file.")
                 continue
@@ -436,7 +446,11 @@ class ConfigurationManager:
                 target_file.mkdir(parents=True, exist_ok=True)
                 continue
 
-            if template_file.suffix == ".j2":
+            # If its an appcli schema file we ignore it.
+            if f"{IGNORE_INFIX}." in template_file.name:
+                logger.debug("Ignoring appcli schema file [%s] ...", template_file)
+            # If its a j2 file we template and copy.
+            elif template_file.suffix == ".j2":
                 # parse jinja2 templates against configuration
                 target_file = target_file.with_suffix("")
                 logger.debug("Generating configuration file [%s] ...", target_file)
@@ -445,6 +459,7 @@ class ConfigurationManager:
                     target_file,
                     template_data,
                 )
+            # If its a regular file we just copy it.
             else:
                 logger.debug("Copying configuration file to [%s] ...", target_file)
                 shutil.copy2(template_file, target_file)
