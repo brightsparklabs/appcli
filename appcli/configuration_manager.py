@@ -447,8 +447,8 @@ class ConfigurationManager:
                 continue
 
             # If its an appcli schema file we ignore it.
-            if ".appcli." in template_file.name:
-                logger.debug("Ignoring configuration file [%s] ...", template_file)
+            if f"{IGNORE_INFIX}." in template_file.name:
+                logger.debug("Ignoring appcli schema file [%s] ...", template_file)
             # If its a j2 file we template and copy.
             elif template_file.suffix == ".j2":
                 # parse jinja2 templates against configuration
