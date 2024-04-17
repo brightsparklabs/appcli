@@ -598,6 +598,196 @@ class DockerSwarmOrchestrator(Orchestrator):
         return subprocess.run(command, capture_output=False)
 
 
+class HelmOrchestrator(Orchestrator):
+    """
+    Uses helm to provision a kubernetes backed helm chart.
+    """
+
+    def __init__(
+        self,
+        release_name: (str),
+        kubeconfig: Path = Path("kube/config"),
+        chart_location: Path = Path("chart"),
+        values_files: dict[str, Path] = {},
+        values_strings: dict[str, str] = {},
+    ):
+        """
+        Creates a new instance of an orchestrator for helm-based applications.
+
+        NOTE: All `Path` objects are relative to the configuration directory.
+
+        Args:
+            release_name (str): A name to give to this helm release.
+            kubeconfig (Path): Kubeconfig file for the cluster.
+            chart_location (Path): Path to the helm chart file/directory to deploy.
+            values_files (Dict[str,Path]): An arry of `key:filename` pairs to pass to helm.
+                `{"path.to.value" : Path("/path/to/values.yaml")}`  ->  `--set-file path.to.value=/path/to/values.yaml`
+            values_strings (Dict[str,str]): An array of `key:value` pairs to pass to helm.
+                `{"path.to.value" : "foobar"}`  ->  `--set path.to.value=foobar`
+        """
+        self.release_name = release_name
+        self.kubeconfig = kubeconfig
+        self.chart_location = chart_location
+        self.values_files = values_files
+        self.values_strings = values_strings
+
+    def start(
+        self, cli_context: CliContext, service_name: tuple[str, ...] = None
+    ) -> CompletedProcess:
+        """
+        Installs (or upgrades) a helm chart inside the current kubernetes cluster.
+
+        Args:
+            cli_context (CliContext): The current CLI context.
+
+        Returns:
+            CompletedProcess: Result of the orchestrator command.
+        """
+        # Generate the command string.
+        command = [
+            "helm",
+            "upgrade",
+            "--install",
+            "--namespace",
+            self.release_name,
+            "--create-namespace",
+            "--kubeconfig",
+            cli_context.get_generated_configuration_dir().joinpath(self.kubeconfig),
+        ]
+        for value in self.values_files.keys():
+            absolute_filepath = cli_context.get_generated_configuration_dir().joinpath(
+                self.values_files["value"]
+            )
+            command.append("--set-file")
+            command.append(f"{value}={absolute_filepath}")
+        for value in self.values_strings.keys():
+            command.append("--set")
+            command.append(f"{value}={self.values__strings['value']}")
+        command.append(self.release_name)
+        command.append(
+            cli_context.get_generated_configuration_dir().joinpath(self.chart_location)
+        )
+
+        # Run the command.
+        return self.__run_command(command)
+
+    def shutdown(
+        self, cli_context: CliContext, service_name: tuple[str, ...] = None
+    ) -> CompletedProcess:
+        """
+        Uninstalls a helm chart from current kubernetes cluster.
+
+        Args:
+            cli_context (CliContext): The current CLI context.
+
+        Returns:
+            CompletedProcess: Result of the orchestrator command.
+        """
+        # Generate the command string.
+        command = [
+            "helm",
+            "uninstall",
+            self.release_name,
+            "-n",
+            self.release_name,
+            "--kubeconfig",
+            cli_context.get_generated_configuration_dir().joinpath(self.kubeconfig),
+        ]
+
+        # Run the command.
+        return self.__run_command(command)
+
+    def status(
+        self, cli_context: CliContext, service_name: tuple[str, ...] = None
+    ) -> CompletedProcess:
+        """
+        Get the status of the chart (through `helm status`).
+
+        Args:
+            cli_context (CliContext): The current CLI context.
+
+        Returns:
+            CompletedProcess: Result of the orchestrator command.
+        """
+        # Generate the command string.
+        command = [
+            "helm",
+            "status",
+            self.release_name,
+            "-n",
+            self.release_name,
+            "--kubeconfig",
+            cli_context.get_generated_configuration_dir().joinpath(self.kubeconfig),
+        ]
+
+        # Run the command.
+        return self.__run_command(command)
+
+    def task(
+        self,
+        cli_context: CliContext,
+        service_name: str,
+        extra_args: Iterable[str],
+        detached: bool = False,
+    ) -> CompletedProcess:
+        logger.info("HelmOrchestrator has no services to run tasks for.")
+        return None
+
+    def exec(
+        self,
+        cli_context: CliContext,
+        service_name: str,
+        command: Iterable[str],
+        stdin_input: str = None,
+        capture_output: bool = False,
+    ) -> CompletedProcess:
+        logger.info("HelmOrchestrator does not support executing arbitrary commands.")
+        return None
+
+    def get_logs_command(self) -> click.Command:
+        @click.command()
+        def log():
+            logger.info("HelmOrchestrator does not support getting logs.")
+            return None
+
+        return log
+
+    def get_additional_commands(self):
+        # TODO: AF-248: Add `kubectl`, `helm` and possibly `k9s` as commands that can be called.
+        return []
+
+    def get_name(self) -> str:
+        return "helm"
+
+    def verify_service_names(
+        self, cli_context: CliContext, service_names: tuple[str, ...]
+    ) -> bool:
+        if service_names is None or len(service_names) == 0:
+            return True
+        logger.info("HelmOrchestrator has no services.")
+        return False
+
+    def get_disabled_commands(self) -> list[str]:
+        # The `task` command is disabled because helm is only used for install/upgrade/uninstall/downgrade operations.
+        # The `init` command is disabled because it's used to initialise additional services, and this orchestrator
+        # has no services. NOTE: The `init` command will be removed in the future.
+        return ["init", "task"]
+
+    def __run_command(self, command: list[str]) -> CompletedProcess:
+        """Run the given command and return the CompletedProcess.
+
+        Args:
+            command (list[str]): The command to execute.
+
+        Returns:
+            CompletedProcess: The execution result.
+        """
+        result = subprocess.run(command, capture_output=True)
+        if result.returncode != 0:
+            logger.error(result.stderr.decode("utf-8"))
+        return result
+
+
 class NullOrchestrator(Orchestrator):
     """
     Orchestrator which has no services to orchestrate. This is useful for appcli applications which
