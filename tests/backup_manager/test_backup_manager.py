@@ -9,7 +9,6 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-
 # standard libraries
 import datetime
 import os

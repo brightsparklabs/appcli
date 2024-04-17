@@ -9,7 +9,6 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-
 # standard library
 import difflib
 import subprocess
