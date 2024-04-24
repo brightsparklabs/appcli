@@ -12,10 +12,18 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Added
 
+### Fixed
+
+---
+
+## [3.0.0] - 2024-04-25
+
+Major bump due to shifting from Python 3.10 to Python 3.12.
+
+### Added
+
 - APPCLI-114: Stop schema files being copied on migration
 - TERA-1537: Upgrade to Python 3.12.3, upgrade keycloak library and create token mappers.
-
-### Fixed
 
 ---
 
