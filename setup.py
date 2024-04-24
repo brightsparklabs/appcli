@@ -71,7 +71,7 @@ setup(
         "pyfiglet==1.0.2",
         "python-keycloak==3.12.0",
         "python-slugify==8.0.3",
-        "ruamel-yaml==0.18.5",
+        "ruamel-yaml==0.18.6",
         "tabulate==0.9.0",
         "wheel==0.42.0",
     ],
