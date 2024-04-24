@@ -9,7 +9,6 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-
 # standard libraries
 from __future__ import annotations
 

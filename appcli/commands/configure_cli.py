@@ -9,7 +9,6 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
-
 # standard library
 import difflib
 import subprocess
@@ -74,12 +73,6 @@ class ConfigureCli:
             logger.debug("Running pre-configure init hook")
             hooks.pre_configure_init(ctx)
 
-            # Validate the configuration schema.
-            logger.debug("Validating configuration files")
-            ConfigurationManager(
-                cli_context, self.cli_configuration
-            ).validate_configuration()
-
             # Initialise configuration directory
             logger.debug("Initialising configuration directory")
             ConfigurationManager(
@@ -119,6 +112,12 @@ class ConfigureCli:
             hooks = self.cli_configuration.hooks
             logger.debug("Running pre-configure apply hook")
             hooks.pre_configure_apply(ctx)
+
+            # Validate the configuration schema.
+            logger.debug("Validating configuration files")
+            ConfigurationManager(
+                cli_context, self.cli_configuration
+            ).validate_configuration()
 
             # Apply changes
             logger.debug("Applying configuration")
