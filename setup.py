@@ -61,7 +61,7 @@ setup(
         "click==8.1.7",
         "coloredlogs==15.0.1",
         "cronex==0.1.3.1",
-        "dataclasses-json==0.5.7",
+        "dataclasses-json==0.6.4",
         "deepdiff==6.7.1",
         "GitPython==3.1.41",
         "jsonschema==4.21.1",
