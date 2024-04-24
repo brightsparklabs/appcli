@@ -13,6 +13,7 @@ The changelog is applicable from version `1.0.0` onwards.
 ### Added
 
 - APPCLI-114: Stop schema files being copied on migration
+- TERA-1537: Upgrade to Python 3.12.3, upgrade keycloak library and create token mappers.
 
 ### Fixed
 
