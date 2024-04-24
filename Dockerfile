@@ -22,7 +22,7 @@ RUN wget -q https://download.docker.com/linux/static/stable/x86_64/docker-${DOCK
     && sha256sum -c docker-compose-linux-x86_64.sha256 \
     && chmod +x docker-compose-linux-x86_64
 
-FROM python:3.10.2-slim-bullseye
+FROM python:3.12.3-slim-bullseye
 
 ENV LANG=C.UTF-8
 

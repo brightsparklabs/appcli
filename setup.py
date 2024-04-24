@@ -69,7 +69,7 @@ setup(
         "pycryptodome==3.20.0",
         "pydantic==2.6.0",
         "pyfiglet==1.0.2",
-        "python-keycloak==0.22.0",
+        "python-keycloak==3.12.0",
         "python-slugify==8.0.3",
         "ruamel-yaml==0.18.5",
         "tabulate==0.9.0",
