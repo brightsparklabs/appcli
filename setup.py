@@ -73,7 +73,7 @@ setup(
         "python-slugify==8.0.3",
         "ruamel-yaml==0.18.5",
         "tabulate==0.9.0",
-        "wheel==0.42.0",
+        "wheel==0.43.0",
     ],
     extras_require={"dev": ["ruff", "pre-commit", "pytest"]},
 )
