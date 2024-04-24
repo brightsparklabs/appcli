@@ -196,7 +196,7 @@ class KeycloakManager:
         user_id = kc.get_user_id(username)
         all_realm_roles = kc.get_realm_roles()
         roles = [role for role in all_realm_roles if role["name"] == role_name]
-        kc.assign_realm_roles(user_id, None, roles)
+        kc.assign_realm_roles(user_id, roles)
 
     def configure_default(self, app_name_slug):
         """Applies the default opinionated configuration to Keycloak
@@ -226,7 +226,35 @@ class KeycloakManager:
                         "id.token.claim": "false",
                         "access.token.claim": "true",
                     },
-                }
+                },
+                {
+                    "name": "realm roles",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-usermodel-realm-role-mapper",
+                    "consentRequired": "false",
+                    "config": {
+                        "multivalued": "true",
+                        "id.token.claim": "true",
+                        "access.token.claim": "true",
+                        "userinfo.token.claim": "true",
+                        "claim.name": "realm_access.roles",
+                        "jsonType.label": "String",
+                    },
+                },
+                {
+                    "name": "client roles",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-usermodel-client-role-mapper",
+                    "consentRequired": "false",
+                    "config": {
+                        "multivalued": "true",
+                        "id.token.claim": "true",
+                        "access.token.claim": "true",
+                        "userinfo.token.claim": "true",
+                        "claim.name": "resource_access.${client_id}.roles",
+                        "jsonType.label": "String",
+                    },
+                },
             ],
         }
         self.create_client(app_name_slug, app_name_slug, client_payload)
