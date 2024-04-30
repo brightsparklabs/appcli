@@ -31,7 +31,10 @@ LOGGER_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
 logger = logging.getLogger(__name__)
 logger.propagate = False
-coloredlogs.install(logger=logger, fmt=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
+
+
+def configure_default_logging():
+    coloredlogs.install(logger=logger, fmt=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 
 
 def enable_debug_logging():
@@ -42,3 +45,14 @@ def enable_debug_logging():
         datefmt=LOGGER_DATE_FORMAT,
     )
     logger.debug("Enabled debug mode")
+
+
+def enable_dev_mode_logging():
+    logger_format = "DEV_MODE | %(asctime)s %(levelname)s: %(message)s"
+    coloredlogs.install(
+        logger=logger,
+        fmt=logger_format,
+    )
+
+
+configure_default_logging()
