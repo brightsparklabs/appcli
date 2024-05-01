@@ -75,10 +75,10 @@ ARG DOCKER_COMPOSE_VERSION=2.23.3
 
 # Download binaries.
 RUN \
-    wget -q https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz \
+    curl -sLO https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz \
     && tar xf docker-${DOCKER_VERSION}.tgz \
-    && wget -q https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64 \
-    && wget -q https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64.sha256 \
+    && curl -sLO https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64 \
+    && curl -sLO https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64.sha256 \
     && sha256sum -c docker-compose-linux-x86_64.sha256 \
     && chmod +x docker-compose-linux-x86_64
 
@@ -87,18 +87,28 @@ RUN \
 FROM alpine:3.15.0 AS helm-builder
 WORKDIR /tmp
 
+# Kubectl
+# https://dl.k8s.io/release/stable.txt
+ARG KUBECTL_VERSION=1.28.4
+
 # Helm
 # https://github.com/helm/helm/releases
 ARG HELM_VERSION=3.13.2
 
-WORKDIR /tmp
+# K9S
+# https://github.com/derailed/k9s/releases
+ARG K9S_VERSION=0.28.2
 
 # Download binaries.
 RUN \
-    wget -q https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz \
-    && wget -q https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz.sha256sum \
+    curl -sLO https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl \
+    && chmod 0755 kubectl \
+    && curl -sLO https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz \
+    && curl -sLO https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz.sha256sum \
     && sha256sum -c helm-v${HELM_VERSION}-linux-amd64.tar.gz.sha256sum  \
-    && tar -xf helm-v${HELM_VERSION}-linux-amd64.tar.gz
+    && tar -xf helm-v${HELM_VERSION}-linux-amd64.tar.gz \
+    && curl -sLO https://github.com/derailed/k9s/releases/download/v${K9S_VERSION}/k9s_Linux_amd64.tar.gz \
+    && tar -xf k9s_Linux_amd64.tar.gz
 
 
 # -----------------------------------------------------------------------------
@@ -112,4 +122,6 @@ COPY --from=docker-compose-builder /tmp/docker-compose-linux-x86_64 /usr/local/l
 
 FROM appcli as appcli-helm
 
+COPY --from=helm-builder /tmp/kubectl /usr/bin/
 COPY --from=helm-builder /tmp/linux-amd64/helm /usr/bin
+COPY --from=helm-builder /tmp/k9s /usr/bin/
