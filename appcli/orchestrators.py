@@ -653,17 +653,23 @@ class HelmOrchestrator(Orchestrator):
             "--create-namespace",
             "--kubeconfig",
             cli_context.get_generated_configuration_dir().joinpath(self.kubeconfig),
+            "--values",
+            cli_context.get_app_configuration_file(),
         ]
+        # Set values files.
         for value in self.values_files.keys():
             absolute_filepath = cli_context.get_generated_configuration_dir().joinpath(
                 self.values_files["value"]
             )
             command.append("--set-file")
             command.append(f"{value}={absolute_filepath}")
+        # Set values strings.
         for value in self.values_strings.keys():
             command.append("--set")
             command.append(f"{value}={self.values__strings['value']}")
+        # Set release name.
         command.append(self.release_name)
+        # Set chart location.
         command.append(
             cli_context.get_generated_configuration_dir().joinpath(self.chart_location)
         )
@@ -782,6 +788,7 @@ class HelmOrchestrator(Orchestrator):
         Returns:
             CompletedProcess: The execution result.
         """
+        logger.debug(f"Executing {str(command)}")
         result = subprocess.run(command, capture_output=True)
         if result.returncode != 0:
             logger.error(result.stderr.decode("utf-8"))
