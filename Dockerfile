@@ -67,11 +67,11 @@ WORKDIR /tmp
 
 # Docker
 # https://docs.docker.com/engine/release-notes/26.0/
-ARG DOCKER_VERSION=24.0.7
+ARG DOCKER_VERSION=26.0.2
 
 # Docker Compose
 # https://docs.docker.com/compose/release-notes/
-ARG DOCKER_COMPOSE_VERSION=2.23.3
+ARG DOCKER_COMPOSE_VERSION=2.27.0
 
 # Download binaries.
 RUN \
@@ -89,15 +89,15 @@ WORKDIR /tmp
 
 # Kubectl
 # https://dl.k8s.io/release/stable.txt
-ARG KUBECTL_VERSION=1.28.4
+ARG KUBECTL_VERSION=1.30.0
 
 # Helm
 # https://github.com/helm/helm/releases
-ARG HELM_VERSION=3.13.2
+ARG HELM_VERSION=3.14.4
 
 # K9S
 # https://github.com/derailed/k9s/releases
-ARG K9S_VERSION=0.28.2
+ARG K9S_VERSION=0.32.4
 
 # Download binaries.
 RUN \
