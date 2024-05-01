@@ -62,23 +62,30 @@ RUN \
 # BUILD LAYERS
 # -----------------------------------------------------------------------------
 
-FROM alpine:3.15.0 AS docker-binary-download
-
+FROM alpine:3.15.0 AS docker-compose-builder
 WORKDIR /tmp
 
-# List required versions for docker and compose.
-ENV DOCKER_VERSION=24.0.7
-ENV DOCKER_COMPOSE_VERSION=2.23.3
+# Docker
+# https://docs.docker.com/engine/release-notes/26.0/
+ARG DOCKER_VERSION=24.0.7
 
-# Download docker and compose.
-RUN wget -q https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz \
+# Docker Compose
+# https://docs.docker.com/compose/release-notes/
+ARG DOCKER_COMPOSE_VERSION=2.23.3
+
+# Download binaries.
+RUN \
+    wget -q https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz \
     && tar xf docker-${DOCKER_VERSION}.tgz \
     && wget -q https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64 \
     && wget -q https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64.sha256 \
     && sha256sum -c docker-compose-linux-x86_64.sha256 \
     && chmod +x docker-compose-linux-x86_64
 
+# -----------------------------------------------------------------------------
+
 FROM alpine:3.15.0 AS helm-builder
+WORKDIR /tmp
 
 # Helm
 # https://github.com/helm/helm/releases
@@ -100,8 +107,8 @@ RUN \
 
 FROM appcli as appcli-docker-compose
 
-COPY --from=docker-binary-download /tmp/docker/docker /usr/bin
-COPY --from=docker-binary-download /tmp/docker-compose-linux-x86_64 /usr/local/lib/docker/cli-plugins/docker-compose
+COPY --from=docker-compose-builder /tmp/docker/docker /usr/bin
+COPY --from=docker-compose-builder /tmp/docker-compose-linux-x86_64 /usr/local/lib/docker/cli-plugins/docker-compose
 
 FROM appcli as appcli-helm
 
