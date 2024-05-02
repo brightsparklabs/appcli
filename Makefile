@@ -84,6 +84,8 @@ publish-wheel-test: build-wheel
 	${PYTHON} -m twine check dist/*
 	${PYTHON} -m twine upload --repository-url https://test.pypi.org/legacy/ --non-interactive --username __token__ --password ${PYPI_TOKEN} dist/*
 
+# NOTE: We want to build and push the `brightsparklabs/appcli-docker-compose` image as 
+# `brightsparklabs/appcli` as well, to support legacy projects that use it. 
 docker:
 	docker build --target appcli-docker-compose \
 		-t brightsparklabs/appcli-docker-compose:${APP_VERSION} \
@@ -91,12 +93,17 @@ docker:
 	docker build --target appcli-helm \
 		-t brightsparklabs/appcli-helm:${APP_VERSION} \
 		-t brightsparklabs/appcli-helm:latest .
+	docker build --target appcli-docker-compose \
+		-t brightsparklabs/appcli:${APP_VERSION} \
+		-t brightsparklabs/appcli:latest .
 
 docker-publish: docker
 	docker push brightsparklabs/appcli-docker-compose:${APP_VERSION}
 	docker push brightsparklabs/appcli-docker-compose:latest
 	docker push brightsparklabs/appcli-helm:${APP_VERSION}
 	docker push brightsparklabs/appcli-helm:latest
+	docker push brightsparklabs/appcli:${APP_VERSION}
+	docker push brightsparklabs/appcli:latest
 
 all: format lint test
 
