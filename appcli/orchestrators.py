@@ -659,14 +659,14 @@ class HelmOrchestrator(Orchestrator):
         # Set values files.
         for value in self.values_files.keys():
             absolute_filepath = cli_context.get_generated_configuration_dir().joinpath(
-                self.values_files["value"]
+                self.values_files[value]
             )
             command.append("--set-file")
             command.append(f"{value}={absolute_filepath}")
         # Set values strings.
         for value in self.values_strings.keys():
             command.append("--set")
-            command.append(f"{value}={self.values__strings['value']}")
+            command.append(f"{value}={self.values_strings[value]}")
         # Set release name.
         command.append(self.release_name)
         # Set chart location.

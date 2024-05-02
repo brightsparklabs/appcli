@@ -13,7 +13,6 @@
  #      docker build --target appcli-docker-compose \
  #          -t brightsparklabs/appcli-docker-compose:${APP_VERSION} \
  #          -t brightsparklabs/appcli-docker-compose:latest .
- #      docker brightsparklabs/appcli-docker-compose:${APP_VERSION}
  # _____________________________________________________________________________
  #
  # Created by brightSPARK Labs
@@ -75,10 +74,10 @@ ARG DOCKER_COMPOSE_VERSION=2.27.0
 
 # Download binaries.
 RUN \
-    curl -sLO https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz \
+    wget -q https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz \
     && tar xf docker-${DOCKER_VERSION}.tgz \
-    && curl -sLO https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64 \
-    && curl -sLO https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64.sha256 \
+    && wget -q https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64 \
+    && wget -q https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64.sha256 \
     && sha256sum -c docker-compose-linux-x86_64.sha256 \
     && chmod +x docker-compose-linux-x86_64
 
@@ -101,13 +100,13 @@ ARG K9S_VERSION=0.32.4
 
 # Download binaries.
 RUN \
-    curl -sLO https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl \
+    wget -q https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl \
     && chmod 0755 kubectl \
-    && curl -sLO https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz \
-    && curl -sLO https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz.sha256sum \
+    && wget -q https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz \
+    && wget -q https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz.sha256sum \
     && sha256sum -c helm-v${HELM_VERSION}-linux-amd64.tar.gz.sha256sum  \
     && tar -xf helm-v${HELM_VERSION}-linux-amd64.tar.gz \
-    && curl -sLO https://github.com/derailed/k9s/releases/download/v${K9S_VERSION}/k9s_Linux_amd64.tar.gz \
+    && wget -q https://github.com/derailed/k9s/releases/download/v${K9S_VERSION}/k9s_Linux_amd64.tar.gz \
     && tar -xf k9s_Linux_amd64.tar.gz
 
 
