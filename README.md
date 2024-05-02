@@ -139,6 +139,44 @@ command groups. The `NullOrchestrator` disables commands related to managing ser
 orchestrator=NullOrchestrator()
 ```
 
+#### HelmOrchestrator
+
+The project aldo includes a [helm](https://helm.sh/docs/intro/quickstart/) orchestrator for deploying charts to [kubernetes](https://kubernetes.io/) clusters.
+
+Create a new `resources` directory as follows:
+
+```bash
+drwxrwxr-x  resources
+.rw-rw-r-- ├──  settings.yml  # Use this for the main `values.yaml` file.
+drwxrwxr-x └──  templates/
+drwxrwxr-x    ├──  baseline/
+.rw-rw-r--    │  ├──  chart/  # Chart is this directory.
+drwxrwxr-x    └──  configurable/
+drwxrwxr-x       └──  kube/
+.rw-------          └──  config  # Overwrite this with a cluster specific config file. ie `~/.kube/config`.
+```
+
+You can then define the orchestrator:
+
+```python
+from appcli.orchestrators import HelmOrchestrator
+orchestrator = HelmOrchestrator(
+    release_name="helmorchestrator",
+    kubeconfig="kube/config",
+    chart_location="mychart",
+    values_files={"path.in.chart.values": "path/to/values/file.txt"},
+    values_strings={"path.in.chart.values": "myValue"},
+)
+```
+
+Where:
+
+- `release_name` is the name of your project.
+- `kubeconfig` [Optional] is the path to the `kubeconfig` file for the cluster.
+- `chart_location` [Optional] is the path to the `chart` file/directory.
+- `values_files` [Optional] are additional files to pass to helm through `--set-file`.
+- `values_string` [Optional] are additional strings to pass to helm through `--set`.
+
 #### Custom Commands
 
 You can specify some custom top-level commands by adding click commands or command groups to the
