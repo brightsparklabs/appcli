@@ -146,14 +146,16 @@ The project aldo includes a [helm](https://helm.sh/docs/intro/quickstart/) orche
 Create a new `resources` directory as follows:
 
 ```bash
-drwxrwxr-x  resources
+drwxrwxr-x  resources/
 .rw-rw-r-- ├──  settings.yml  # Use this for the main `values.yaml` file.
 drwxrwxr-x └──  templates/
 drwxrwxr-x    ├──  baseline/
 .rw-rw-r--    │  ├──  chart/  # Chart is this directory.
 drwxrwxr-x    └──  configurable/
-drwxrwxr-x       └──  kube/
-.rw-------          └──  config  # Overwrite this with a cluster specific config file. ie `~/.kube/config`.
+drwxrwxr-x       └──  cli/
+drwxrwxr-x          └──  home/
+drwxrwxr-x             └──  .kube/
+.rw-------                └──  config  # Overwrite this with a cluster specific config file. ie `~/.kube/config`.
 ```
 
 You can then define the orchestrator:
@@ -162,7 +164,6 @@ You can then define the orchestrator:
 from appcli.orchestrators import HelmOrchestrator
 orchestrator = HelmOrchestrator(
     release_name="helmorchestrator",
-    kubeconfig="kube/config",
     chart_location="mychart",
     values_files={"path.in.chart.values": "path/to/values/file.txt"},
     values_strings={"path.in.chart.values": "myValue"},
@@ -172,10 +173,17 @@ orchestrator = HelmOrchestrator(
 Where:
 
 - `release_name` is the name of your project.
-- `kubeconfig` [Optional] is the path to the `kubeconfig` file for the cluster.
 - `chart_location` [Optional] is the path to the `chart` file/directory.
 - `values_files` [Optional] are additional files to pass to helm through `--set-file`.
 - `values_string` [Optional] are additional strings to pass to helm through `--set`.
+
+A custom `kubeconfig` file can be used by specifying the `KUBECONFIG` environment variable.
+
+```bash
+KUBECONFIG=/opt/brightsparklabs/myapp/conf/.generated/config ./myapp ...
+```
+
+_NOTE:_ The file must be one that is visible to the container.
 
 #### Custom Commands
 
