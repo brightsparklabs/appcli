@@ -606,7 +606,6 @@ class HelmOrchestrator(Orchestrator):
     def __init__(
         self,
         release_name: (str),
-        kubeconfig: Path = Path("kube/config"),
         chart_location: Path = Path("chart"),
         values_files: dict[str, Path] = {},
         values_strings: dict[str, str] = {},
@@ -618,7 +617,6 @@ class HelmOrchestrator(Orchestrator):
 
         Args:
             release_name (str): A name to give to this helm release.
-            kubeconfig (Path): Kubeconfig file for the cluster.
             chart_location (Path): Path to the helm chart file/directory to deploy.
             values_files (Dict[str,Path]): An arry of `key:filename` pairs to pass to helm.
                 `{"path.to.value" : Path("/path/to/values.yaml")}`  ->  `--set-file path.to.value=/path/to/values.yaml`
@@ -626,7 +624,6 @@ class HelmOrchestrator(Orchestrator):
                 `{"path.to.value" : "foobar"}`  ->  `--set path.to.value=foobar`
         """
         self.release_name = release_name
-        self.kubeconfig = kubeconfig
         self.chart_location = chart_location
         self.values_files = values_files
         self.values_strings = values_strings
@@ -651,8 +648,6 @@ class HelmOrchestrator(Orchestrator):
             "--namespace",
             self.release_name,
             "--create-namespace",
-            "--kubeconfig",
-            cli_context.get_generated_configuration_dir().joinpath(self.kubeconfig),
             "--values",
             cli_context.get_app_configuration_file(),
         ]
@@ -696,8 +691,6 @@ class HelmOrchestrator(Orchestrator):
             self.release_name,
             "-n",
             self.release_name,
-            "--kubeconfig",
-            cli_context.get_generated_configuration_dir().joinpath(self.kubeconfig),
         ]
 
         # Run the command.
@@ -722,8 +715,6 @@ class HelmOrchestrator(Orchestrator):
             self.release_name,
             "-n",
             self.release_name,
-            "--kubeconfig",
-            cli_context.get_generated_configuration_dir().joinpath(self.kubeconfig),
         ]
 
         # Run the command.
@@ -792,6 +783,12 @@ class HelmOrchestrator(Orchestrator):
         result = subprocess.run(command, capture_output=True)
         if result.returncode != 0:
             logger.error(result.stderr.decode("utf-8"))
+            raise subprocess.CalledProcessError(
+                result.returncode,
+                command,
+                result.stdout,
+                result.stderr,
+            )
         return result
 
 
