@@ -607,8 +607,6 @@ class HelmOrchestrator(Orchestrator):
         self,
         release_name: (str),
         chart_location: Path = Path("chart"),
-        values_files: dict[str, Path] = {},
-        values_strings: dict[str, str] = {},
     ):
         """
         Creates a new instance of an orchestrator for helm-based applications.
@@ -618,15 +616,9 @@ class HelmOrchestrator(Orchestrator):
         Args:
             release_name (str): A name to give to this helm release.
             chart_location (Path): Path to the helm chart file/directory to deploy.
-            values_files (Dict[str,Path]): An arry of `key:filename` pairs to pass to helm.
-                `{"path.to.value" : Path("/path/to/values.yaml")}`  ->  `--set-file path.to.value=/path/to/values.yaml`
-            values_strings (Dict[str,str]): An array of `key:value` pairs to pass to helm.
-                `{"path.to.value" : "foobar"}`  ->  `--set path.to.value=foobar`
         """
         self.release_name = release_name
         self.chart_location = chart_location
-        self.values_files = values_files
-        self.values_strings = values_strings
 
     def start(
         self, cli_context: CliContext, service_name: tuple[str, ...] = None
@@ -648,26 +640,17 @@ class HelmOrchestrator(Orchestrator):
             "--namespace",
             self.release_name,
             "--create-namespace",
-            "--values",
-            cli_context.get_app_configuration_file(),
         ]
-        # Set values files.
-        for value in self.values_files.keys():
-            absolute_filepath = cli_context.get_generated_configuration_dir().joinpath(
-                self.values_files[value]
-            )
-            command.append("--set-file")
-            command.append(f"{value}={absolute_filepath}")
-        # Set values strings.
-        for value in self.values_strings.keys():
-            command.append("--set")
-            command.append(f"{value}={self.values_strings[value]}")
+        # Set values args.
+        for arg in self.__generate_values_args(
+            helm_values_dir=cli_context.get_helm_values_dir(),
+            helm_values_files_dir=cli_context.get_helm_values_files_dir(),
+        ):
+            command.append(arg)
         # Set release name.
         command.append(self.release_name)
         # Set chart location.
-        command.append(
-            cli_context.get_generated_configuration_dir().joinpath(self.chart_location)
-        )
+        command.append(cli_context.get_helm_dir().joinpath(self.chart_location))
 
         # Run the command.
         return self.__run_command(command)
@@ -790,6 +773,50 @@ class HelmOrchestrator(Orchestrator):
                 result.stderr,
             )
         return result
+
+    def __generate_values_args(
+        self, helm_values_dir: Path, helm_values_files_dir: Path
+    ) -> list[str | Path]:
+        """Recursively takes all the values files in the directories and generates an args array to
+        pass to helm through either `--values` or `--set-file` (depending on the location).
+        e.g:
+
+            ["--values", "values.yaml", "--set-file", "path.to.foo=path/to/foo.yaml"...
+
+        Args:
+            helm_values_dir (Path): Directory containing files to set with `--values`.
+            helm_values_files_dir (Path): Directory containing files to set with `--set-file`.
+
+        Returns:
+            list[str | Path]: The arg list.
+        """
+        arg_list = []
+
+        # Create all `--values` args.
+        values = [
+            file
+            for file in helm_values_dir.rglob("*")
+            if file.suffix in {".yml", ".yaml"}
+        ]
+        for file in values:
+            arg_list.append("--values")
+            arg_list.append(file)
+
+        # Create all `--set-file` args.
+        values_files = [
+            file for file in helm_values_files_dir.rglob("*") if file.is_file()
+        ]
+        for file in values_files:
+            # NOTE: Make path relative to `helm_values_files_dir` so we know which helm key to set it as.
+            relative_file = file.relative_to(helm_values_files_dir)
+            # Get the helm key in `dot.notation.to.value`
+            key = ".".join(
+                [*relative_file.parent.parts, relative_file.stem.split(".")[0]]
+            )
+            arg_list.append("--set-file")
+            arg_list.append(f"{key}={file}")
+
+        return arg_list
 
 
 class NullOrchestrator(Orchestrator):

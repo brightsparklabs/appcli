@@ -141,16 +141,21 @@ orchestrator=NullOrchestrator()
 
 #### HelmOrchestrator
 
-The project aldo includes a [helm](https://helm.sh/docs/intro/quickstart/) orchestrator for deploying charts to [kubernetes](https://kubernetes.io/) clusters.
+The project also includes a [helm](https://helm.sh/docs/intro/quickstart/) orchestrator for deploying charts to [kubernetes](https://kubernetes.io/) clusters.
 
 Create a new `resources` directory as follows:
 
 ```bash
 drwxrwxr-x  resources/
-.rw-rw-r-- ├──  settings.yml  # Use this for the main `values.yaml` file.
+.rw-rw-r-- ├──  settings.yml
 drwxrwxr-x └──  templates/
 drwxrwxr-x    ├──  baseline/
-.rw-rw-r--    │  ├──  chart/  # Chart is this directory.
+drwxrwxr-x    │  └──  cli/
+drwxrwxr-x    │     └──  helm/
+drwxrwxr-x    │        ├──  values/
+.rw-rw-r--    │        │  └──   values.yml
+drwxrwxr-x    │        ├──  values-files/
+.rw-rw-r--    │        └──   mychart.tgz
 drwxrwxr-x    └──  configurable/
 drwxrwxr-x       └──  cli/
 drwxrwxr-x          └──  home/
@@ -163,19 +168,40 @@ You can then define the orchestrator:
 ```python
 from appcli.orchestrators import HelmOrchestrator
 orchestrator = HelmOrchestrator(
-    release_name="helmorchestrator",
-    chart_location="mychart",
-    values_files={"path.in.chart.values": "path/to/values/file.txt"},
-    values_strings={"path.in.chart.values": "myValue"},
+    release_name="helmorchestrator",  # Name of the project.
+    chart_location="mychart.tgz",  # Chart path relative to `cli/helm/` (default is `chart/`).
 )
 ```
+##### Values
 
-Where:
+Values can be supplied either:
 
-- `release_name` is the name of your project.
-- `chart_location` [Optional] is the path to the `chart` file/directory.
-- `values_files` [Optional] are additional files to pass to helm through `--set-file`.
-- `values_string` [Optional] are additional strings to pass to helm through `--set`.
+1. Globally for any files dumped in the `values` directory.
+2. For a set key by dumping files in `values-files` at that nested key layer.
+
+Take the following `cli/helm/` directory structure:
+
+```bash
+drwxrwxr-x  cli/helm/
+drwxrwxr-x ├──  values/
+.rw-rw-r-- │  └──  foobar.yml
+drwxrwxr-x └──  values-files/
+drwxrwxr-x    ├──  bar/
+.rw-rw-r--    │  └──  baz.json.schema
+.rw-rw-r--    └──  foo.txt
+
+```
+
+This would result in the following args being passed to helm:
+
+```bash
+--values cli/helm/values/foobar.yml
+--set-file foo=cli/helm/values-files/foo.txt
+--set-file bar.baz=cli/helm/values-files/bar/baz.json.schema
+```
+
+
+##### Kubeconfig
 
 A custom `kubeconfig` file can be used by specifying the `KUBECONFIG` environment variable.
 
@@ -183,7 +209,7 @@ A custom `kubeconfig` file can be used by specifying the `KUBECONFIG` environmen
 KUBECONFIG=/opt/brightsparklabs/myapp/conf/.generated/config ./myapp ...
 ```
 
-_NOTE:_ The file must be one that is visible to the container.
+_NOTE:_ The `KUBECONFIG` file must be one that is visible to the container.
 
 #### Custom Commands
 
