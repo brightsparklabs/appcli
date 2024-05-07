@@ -168,37 +168,27 @@ You can then define the orchestrator:
 ```python
 from appcli.orchestrators import HelmOrchestrator
 orchestrator = HelmOrchestrator(
-    release_name="myapp",  # Name of the project.
-    chart_location="mychart.tgz",  # Chart path relative to `cli/helm/` (default is `chart/`).
+    # Name of the project.
+    release_name="myapp",
+
+    # Chart archive path (relative to `conf/templates/cli/helm/`).
+    # [Optional] Default is `chart/`
+    chart_location="mychart.tgz",
+
+    # Chart source path (absolute).
+    # [Optional] Default is `None`.
+    dev_chart_location="path/to/mychart"
 )
 ```
 
-**IMPORTANT:** When deploying in `dev_mode` the chart will be treated as an _absolute_ path (to make work on the chart more streamlined).
-If you plan to deploy your application in `dev_mode`, i.e. from the cli with:
+_NOTE:_ Using `dev_chart_location` allows you to specify the location to your charts source code, so that live changes can be reflected every time `./myapp service start` is run.
+The following conditions must be met in order to use it:
 
-```bash
-export MYAPP_DEV_MODE=true python3 -m myapp service start
-```
-
-Then you'll need to change your entrypoint to be able to handle both use cases:
+1. `dev_chart_location` is set, and is an **ABSOLUTE** path to the chart directory.
+2. Your application must be running in `dev_mode` as validated by:
 
 ```python
-from pathlib import Path
-from appcli.dev_mode import wrap_dev_mode
-from myapp.dev_mode import is_dev_mode
-from appcli.orchestrators import HelmOrchestrator
-
-DEV_CHART_LOCATION = "" # Path to chart source. 
-
-chart_location = "mychart.tgz",
-    if is_dev_mode():
-        with wrap_dev_mode():
-            chart_location = DEV_CHART_LOCATION
-
-orchestrator = HelmOrchestrator(
-    release_name="myapp",
-    chart_location=chart_location,
-)
+appcli.cli_context.CliContext.is_dev_mode
 ```
 
 ##### Values

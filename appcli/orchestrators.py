@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 from subprocess import CompletedProcess
 from tempfile import NamedTemporaryFile
-from typing import Iterable, List
+from typing import Iterable, List, Optional
 
 # vendor libraries
 import click
@@ -608,6 +608,7 @@ class HelmOrchestrator(Orchestrator):
         self,
         release_name: (str),
         chart_location: Path = Path("chart"),
+        dev_chart_location: Optional[Path] = None,
     ):
         """
         Creates a new instance of an orchestrator for helm-based applications.
@@ -617,9 +618,12 @@ class HelmOrchestrator(Orchestrator):
         Args:
             release_name (str): A name to give to this helm release.
             chart_location (Path): Path to the helm chart file/directory to deploy.
+            dev_chart_location (Path | None):
+                [Optional] An absolute path to the chart source for when deploying in `dev_mode`.
         """
         self.release_name = release_name
         self.chart_location = chart_location
+        self.dev_chart_location = dev_chart_location
 
     def start(
         self, cli_context: CliContext, service_name: tuple[str, ...] = None
@@ -651,11 +655,12 @@ class HelmOrchestrator(Orchestrator):
         # Set release name.
         command.append(self.release_name)
         # Set chart location.
-        # NOTE: If we're in `dev_mode`, the `chart_location` is treated as an absolute path.
-        if cli_context.is_dev_mode:
+        # If we're in `dev_mode` and `dev_chart_location` is set, use that.
+        if cli_context.is_dev_mode and self.dev_chart_location is not None:
             with wrap_dev_mode():
-                logger.debug(f"Deploying chart from `{self.chart_location}`")
-                chart_location = self.chart_location
+                logger.debug(f"Deploying chart from `{self.dev_chart_location}`")
+                chart_location = self.dev_chart_location
+        # If not, then generate the absolute path to the `chart_location`.
         else:
             chart_location = cli_context.get_helm_dir().joinpath(self.chart_location)
         command.append(chart_location)
