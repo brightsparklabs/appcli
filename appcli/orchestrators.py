@@ -28,6 +28,7 @@ from appcli.commands.appcli_command import AppcliCommand
 from appcli.crypto import crypto
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
+from appcli.dev_mode import wrap_dev_mode
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -650,7 +651,14 @@ class HelmOrchestrator(Orchestrator):
         # Set release name.
         command.append(self.release_name)
         # Set chart location.
-        command.append(cli_context.get_helm_dir().joinpath(self.chart_location))
+        # NOTE: If we're in `dev_mode`, the `chart_location` is treated as an absolute path.
+        if cli_context.is_dev_mode:
+            with wrap_dev_mode():
+                logger.debug(f"Deploying chart from `{self.chart_location}`")
+                chart_location = self.chart_location
+        else:
+            chart_location = cli_context.get_helm_dir().joinpath(self.chart_location)
+        command.append(chart_location)
 
         # Run the command.
         return self.__run_command(command)

@@ -168,10 +168,39 @@ You can then define the orchestrator:
 ```python
 from appcli.orchestrators import HelmOrchestrator
 orchestrator = HelmOrchestrator(
-    release_name="helmorchestrator",  # Name of the project.
+    release_name="myapp",  # Name of the project.
     chart_location="mychart.tgz",  # Chart path relative to `cli/helm/` (default is `chart/`).
 )
 ```
+
+**IMPORTANT:** When deploying in `dev_mode` the chart will be treated as an _absolute_ path (to make work on the chart more streamlined).
+If you plan to deploy your application in `dev_mode`, i.e. from the cli with:
+
+```bash
+export MYAPP_DEV_MODE=true python3 -m myapp service start
+```
+
+Then you'll need to change your entrypoint to be able to handle both use cases:
+
+```python
+from pathlib import Path
+from appcli.dev_mode import wrap_dev_mode
+from myapp.dev_mode import is_dev_mode
+from appcli.orchestrators import HelmOrchestrator
+
+DEV_CHART_LOCATION = "" # Path to chart source. 
+
+chart_location = "mychart.tgz",
+    if is_dev_mode():
+        with wrap_dev_mode():
+            chart_location = DEV_CHART_LOCATION
+
+orchestrator = HelmOrchestrator(
+    release_name="myapp",
+    chart_location=chart_location,
+)
+```
+
 ##### Values
 
 Values can be supplied either:
@@ -189,7 +218,6 @@ drwxrwxr-x └──  values-files/
 drwxrwxr-x    ├──  bar/
 .rw-rw-r--    │  └──  baz.json.schema
 .rw-rw-r--    └──  foo.txt
-
 ```
 
 This would result in the following args being passed to helm:
