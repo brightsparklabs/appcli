@@ -34,7 +34,7 @@ from appcli.git_repositories.git_repositories import (
     GeneratedConfigurationGitRepository,
 )
 from appcli.logger import logger
-from appcli.models.cli_context import SCHEMA_SUFFIX, IGNORE_INFIX, CliContext
+from appcli.models.cli_context import IGNORE_INFIX, SCHEMA_SUFFIX, CliContext
 from appcli.models.configuration import Configuration
 from appcli.variables_manager import VariablesManager
 

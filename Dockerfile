@@ -24,7 +24,7 @@
 # BASE LAYER
 # -----------------------------------------------------------------------------
 
-FROM python:3.10.2-slim-bullseye as appcli-base
+FROM python:3.12.3-slim-bullseye as appcli-base
 
 ENV LANG=C.UTF-8
 

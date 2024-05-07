@@ -7,6 +7,8 @@ from contextlib import contextmanager
 
 import pyfiglet
 
+from appcli.logger import configure_default_logging, enable_dev_mode_logging
+
 # ------------------------------------------------------------------------------
 # CONSTANTS
 # ------------------------------------------------------------------------------
@@ -45,7 +47,9 @@ def wrap_dev_mode():
         file=sys.stderr,
     )
 
+    enable_dev_mode_logging()
     yield
+    configure_default_logging()
 
     print(
         f"""

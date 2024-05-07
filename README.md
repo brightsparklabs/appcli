@@ -515,7 +515,7 @@ more details including examples, see [here](/README_BACKUP_FILE_FILTER.md).
         frequency: "* * *"
         remote_backups:
 
-#### Freqency
+#### Frequency
 
 Appcli supports limiting individual backups to run on only specific days using a cron-like frequency
 filter.
@@ -951,23 +951,24 @@ The following must be installed and in the `PATH`:
 While developing, it may be preferable to run your python script directly rather than having to
 rebuild a container each time you update it.
 
+NOTE: The following assumes your app name uppercase slug is `MYAPP`.
+
 - Ensure docker is installed (more specifically a docker socket at `/var/run/docker.sock`).
 - Set the environment variables which the CLI usually sets for you:
 
+        export MYAPP_DEV_MODE=true
+
+        # The above is equivalent to:
         export \
-            MYAPP_DATA_DIR=/tmp/myapp/data \
-            MYAPP_CONFIG_DIR=/tmp/myapp/config \
-            MYAPP_GENERATED_CONFIG_DIR=/tmp/myapp/config/.generated \
-            MYAPP_BACKUP_DIR=/tmp/myapp/backup \
-            MYAPP_ENVIRONMENT=dev
+            MYAPP_CLI_DEBUG=true \
+            MYAPP_DATA_DIR=/tmp/myapp/local-dev/data \
+            MYAPP_CONFIG_DIR=/tmp/myapp/local-dev/config \
+            MYAPP_BACKUP_DIR=/tmp/myapp/local-dev/backup \
+            MYAPP_ENVIRONMENT=local-dev
+
 - Run your CLI application:
 
-        ./src/myapp.py \
-              --debug \
-              --configuration-dir "${MYAPP_CONFIG_DIR}" \
-              --data-dir "${MYAPP_DATA_DIR}" \
-              --backup-dir "${MYAPP_BACKUP_DIR}" \
-              --environment "${MYAPP_ENVIRONMENT}
+        ./src/myapp.py
 
 ## Contributing
 
