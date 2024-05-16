@@ -59,7 +59,7 @@ class InstallCli:
         @click.option(
             "--install-dir",
             "-i",
-            help="Directory to install into. Defaults to '{default_install_dir}/<ENVIRONMENT>'.",
+            help=f"Directory to install into. Defaults to '{default_install_dir}/<ENVIRONMENT>'.",
             type=Path,
             default=default_install_dir,
         )
