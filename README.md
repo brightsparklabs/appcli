@@ -44,6 +44,18 @@ variables within the `settings.yml` file as described in the Installation sectio
 Stack variables can be set within the `stack-settings.yml` file as described in the
 `Build configuration template directories` section.
 
+### Volume Mounts
+
+The following directories are mounted from the host system into the container:
+
+```bash
+--volume "/opt/brightsparklabs/<my_app>/<environment>/data/cli/home:/root"
+--volume "/opt/brightsparklabs/<my_app>/<environment>/conf:/opt/brightsparklabs/<my_app>/<environment>/conf"
+--volume "/opt/brightsparklabs/<my_app>/<environment>/conf/.generated:/opt/brightsparklabs/<my_app>/<environment>/conf/.generated"
+--volume "/opt/brightsparklabs/<my_app>/<environment>/data:/opt/brightsparklabs/<my_app>/<environment>/data"
+--volume "/opt/brightsparklabs/<my_app>/<environment>/backup:/opt/brightsparklabs/<my_app>/<environment>/backup"
+```
+
 ## Quick Start
 
 Refer to the [quick start guide](quickstart.md) to get a basic application running.
@@ -168,27 +180,18 @@ You can then define the orchestrator:
 ```python
 from appcli.orchestrators import HelmOrchestrator
 orchestrator = HelmOrchestrator(
-    # Name of the project.
-    release_name="myapp",
+    # Chart archive path (relative to `conf/templates/`).
+    # [Optional] Default is `cli/helm/chart`
+    chart_location="cli/helm/mychart.tgz",
 
-    # Chart archive path (relative to `conf/templates/cli/helm/`).
-    # [Optional] Default is `chart/`
-    chart_location="mychart.tgz",
+    # The directory containing all main `values.yaml` files (relative to `conf/templates/`).
+    # [Optional] Default is `cli/helm/values`
+    helm_values_dir="cli/helm/values"
 
-    # Chart source path (absolute).
-    # [Optional] Default is `None`.
-    dev_chart_location="path/to/mychart"
+    # The directory containing all key-specific files (relative to `conf/templates/`).
+    # [Optional] Default is `cli/helm/values-files`
+    helm_values_files_dir="cli/helm/values-files"
 )
-```
-
-_NOTE:_ Using `dev_chart_location` allows you to specify the location to your charts source code, so that live changes can be reflected every time `./myapp service start` is run.
-The following conditions must be met in order to use it:
-
-1. `dev_chart_location` is set, and is an **ABSOLUTE** path to the chart directory.
-2. Your application must be running in `dev_mode` as validated by:
-
-```python
-appcli.cli_context.CliContext.is_dev_mode
 ```
 
 ##### Values
@@ -203,7 +206,8 @@ Take the following `cli/helm/` directory structure:
 ```bash
 drwxrwxr-x  cli/helm/
 drwxrwxr-x ├──  values/
-.rw-rw-r-- │  └──  foobar.yml
+.rw-rw-r-- │  ├──  foobar.yml
+.rw-rw-r-- │  └──  foobaz.yml
 drwxrwxr-x └──  values-files/
 drwxrwxr-x    ├──  bar/
 .rw-rw-r--    │  └──  baz.json.schema
@@ -218,6 +222,15 @@ This would result in the following args being passed to helm:
 --set-file bar.baz=cli/helm/values-files/bar/baz.json.schema
 ```
 
+##### Dev Mode Chart
+
+During development it would be slow to require packaging up the chart for any changes.
+Appcli provides a way to speed up development by allow for the chart to deployed directly from source.
+This is done by specifying the dev chart as an environment variable.
+
+```bash
+MYAPP_DEV_MODE=true MYAPP_DEV_MODE_HELM_CHART=/path/to/mychart python3 -m myapp service start
+```
 
 ##### Kubeconfig
 
@@ -227,7 +240,8 @@ A custom `kubeconfig` file can be used by specifying the `KUBECONFIG` environmen
 KUBECONFIG=/opt/brightsparklabs/myapp/conf/.generated/config ./myapp ...
 ```
 
-_NOTE:_ The `KUBECONFIG` file must be one that is visible to the container.
+_NOTE:_ The `KUBECONFIG` file must be at a location which is mounted into the launch container.
+Refer to [Volume Mounts](#volume-mounts) for details on what volumes are mounted into the launch container.
 
 #### Custom Commands
 

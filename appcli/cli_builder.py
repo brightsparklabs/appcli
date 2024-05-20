@@ -15,6 +15,7 @@ import os
 import sys
 from pathlib import Path
 from typing import Dict, Iterable
+import shutil
 
 # vendor libraries
 import click
@@ -49,6 +50,12 @@ BASE_DIR = Path(__file__).parent
 
 IS_PLATFORM_WINDOWS = sys.platform == "win32"
 """ True if the system running this Python code is Windows. """
+
+CONTAINER_HOME_DIR = Path("/root")
+""" Home directory of the container user. """
+
+HOME_CONFIG_DIR = Path("cli/home")
+""" Config directory containing home files to copoy to the container. """
 
 # ------------------------------------------------------------------------------
 # PUBLIC METHODS
@@ -92,6 +99,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     ENV_VAR_BACKUP_DIR = f"{APP_NAME_SLUG_UPPER}_BACKUP_DIR"
     ENV_VAR_ENVIRONMENT = f"{APP_NAME_SLUG_UPPER}_ENVIRONMENT"
 
+    DEV_MODE_VARIABLES = {}
     if IS_DEV_MODE:
         with wrap_dev_mode():
             environment = "local-dev"
@@ -110,6 +118,16 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             for key, value in overrides.items():
                 logger.info(f"  {key}={value}")
                 os.environ[key] = str(value)
+
+            # Any environment variable beginning with `{APP_NAME}_DEV_MODE_*`
+            # is loaded up as a `DEV_MODE` variable.
+            logger.debug("Detecting and setting `DEV_MODE` variables.")
+            for key, value in os.environ.items():
+                if key.startswith(f"{APP_NAME}_DEV_MODE_"):
+                    logger.debug(
+                        f"Found the `[{key}]` env variable. Setting to `{value}` for DEV_MODE."
+                    )
+                    DEV_MODE_VARIABLES["key"] = value
 
     # --------------------------------------------------------------------------
     # CREATE_CLI: LOGIC
@@ -233,6 +251,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             app_version=APP_VERSION,
             commands=default_commands,
             backup_dir=backup_dir,
+            dev_mode_variables=DEV_MODE_VARIABLES,
         )
         ctx.obj = cli_context
 
@@ -254,6 +273,10 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             __check_docker_socket()
 
         __check_environment()
+
+        __copy_config_to_home_dir(
+            cli_context.get_generated_configuration_dir() / HOME_CONFIG_DIR
+        )
 
         # Table of configuration variables to print
         table = [
@@ -389,6 +412,22 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
                 "Some mandatory environment variables weren't set. See error messages above."
             )
         logger.info("All required environment variables are set.")
+
+    def __copy_config_to_home_dir(config_src_dir: Path) -> None:
+        """Copies the .generated `cli/home` directory into `/root` in the container.
+
+        The program might generate data in the `/root` directory which we do not want to lose on restart.
+        We therefore have to merge user provided files from `cli/home` into the container.
+
+        Args:
+            config_src_dir (Path): The location of the user provided home dir.
+        """
+        # Do not copy the users data if we are in dev mode as we are probably not in a container.
+        if IS_DEV_MODE:
+            return
+
+        if config_src_dir.exists() and config_src_dir.is_dir():
+            shutil.copytree(config_src_dir, CONTAINER_HOME_DIR, dirs_exist_ok=True)
 
     def check_environment_variable_defined(
         env_variables: Iterable[str], error_message_template: str, exit_message: str

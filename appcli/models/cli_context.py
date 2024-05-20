@@ -31,24 +31,6 @@ SCHEMA_SUFFIX = ".schema.json"
 IGNORE_INFIX = ".appcli"
 """ An infix extension to ignore when copying schema files. """
 
-HELM_DIRECTORY = Path("cli/helm")
-""" Directory for helm config data. """
-
-HELM_VALUES = HELM_DIRECTORY / "values"
-""" The directory containing all main `values.yaml` files.
-All files in this directory are applied with:
-    --values <file>
-"""
-
-HELM_VALUES_FILES = HELM_DIRECTORY / "values-files"
-""" The directory containing all key-specific files.
-All parent directories for a file are used as nested keys.
-The [0] filename component (split on `.`) is used for the key.
-
-All files in this directory are applied with:
-    --set-file path.to.foo=/path/to/foo.bar.yml
-"""
-
 
 # ------------------------------------------------------------------------------
 # PUBLIC CLASSES
@@ -107,6 +89,18 @@ class CliContext(NamedTuple):
 
     commands: Dict
     """ Internal commands. """
+
+    # ---------------------------------
+    # DEV_MODE specific fields.
+    # ---------------------------------
+
+    dev_mode_variables: Dict[str, str] = {}
+    """ A Dict of `DEV_MODE` env variables the user has supplied to the appliction.
+    These are set with:
+        MYAPP_DEV_MODE_FOO=BAR python -m myapp ...
+    Which would result in:
+        dev_mode_variables = {"MYAPP_DEV_MODE_FOO": "BAR"}
+    """
 
     # ---------------------------------
     # derived data
@@ -235,34 +229,3 @@ class CliContext(NamedTuple):
             key_file=self.get_key_file(),
             application_context_files_dir=self.application_context_files_dir,
         )
-
-    def get_helm_dir(self) -> Path:
-        """Parent directory for all helm related configs.
-
-        Returns:
-            Path: Directory of the helm data.
-        """
-        return self.get_generated_configuration_dir().joinpath(HELM_DIRECTORY)
-
-    def get_helm_values_dir(self) -> Path:
-        """The directory containing all main `values.yaml` files.
-        All files in this directory are applied with:
-            --values <file>
-
-        Returns:
-            Path: Path to the directory.
-        """
-        return self.get_generated_configuration_dir().joinpath(HELM_VALUES)
-
-    def get_helm_values_files_dir(self) -> Path:
-        """The directory containing all key-specific files.
-        All parent directories for a file are used as nested keys.
-        The [0] filename component (split on `.`) is used for the key.
-
-        All files in this directory are applied with:
-            --set-file path.to.foo=/path/to/foo.bar.yml
-
-        Returns:
-            Path: Path to the directory.
-        """
-        return self.get_generated_configuration_dir().joinpath(HELM_VALUES_FILES)

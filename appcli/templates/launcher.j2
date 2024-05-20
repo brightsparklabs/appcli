@@ -64,7 +64,7 @@ function main()
         --volume "{{ path }}:{{ path }}" \
 {% endfor %}
         --volume "${DOCKER_SOCKET}:/var/run/docker.sock" \
-        --volume "${MOUNTED_GENERATED_CONFIG_DIR}/cli/home:/root" \
+        --volume "${MOUNTED_DATA_DIR}/cli/home:/root" \
         --env APP_NAME="{{ app_name }}" \
         --env {{ app_name_slug_upper }}_CONFIG_DIR="${MOUNTED_CONFIG_DIR}" \
         --volume "${MOUNTED_CONFIG_DIR}:${MOUNTED_CONFIG_DIR}" \

@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 from subprocess import CompletedProcess
 from tempfile import NamedTemporaryFile
-from typing import Iterable, List, Optional
+from typing import Iterable, List
 
 # vendor libraries
 import click
@@ -604,11 +604,14 @@ class HelmOrchestrator(Orchestrator):
     Uses helm to provision a kubernetes backed helm chart.
     """
 
+    DEV_CHART_VARIABLE_NAME = "DEV_MODE_HELM_CHART"
+    " Name suffix for the DEV_MODE chart location variable. "
+
     def __init__(
         self,
-        release_name: (str),
-        chart_location: Path = Path("chart"),
-        dev_chart_location: Optional[Path] = None,
+        chart_location: Path = Path("cli/helm/chart"),
+        helm_values_dir: Path = Path("cli/helm/values"),
+        helm_values_files_dir: Path = Path("cli/helm/values-files"),
     ):
         """
         Creates a new instance of an orchestrator for helm-based applications.
@@ -616,14 +619,23 @@ class HelmOrchestrator(Orchestrator):
         NOTE: All `Path` objects are relative to the configuration directory.
 
         Args:
-            release_name (str): A name to give to this helm release.
             chart_location (Path): Path to the helm chart file/directory to deploy.
-            dev_chart_location (Path | None):
-                [Optional] An absolute path to the chart source for when deploying in `dev_mode`.
+            helm_values_dir (Path): The directory containing all main `values.yaml` files.
+                All files in this directory are applied with:
+                    --values <file>
+            helm_values_files_dir (Path): The directory containing all key-specific files.
+                Take the following directory:
+                    drwxrwxr-x └──  values-files/
+                    drwxrwxr-x    ├──  bar/
+                    .rw-rw-r--    │  └──  baz.json.schema
+                    .rw-rw-r--    └──  foo.txt
+                This would be supplied to helm as follows:
+                    --set-file foo=cli/helm/values-files/foo.txt
+                    --set-file bar.baz=cli/helm/values-files/bar/baz.json.schema
         """
-        self.release_name = release_name
         self.chart_location = chart_location
-        self.dev_chart_location = dev_chart_location
+        self.helm_values_dir = helm_values_dir
+        self.helm_values_files_dir = helm_values_files_dir
 
     def start(
         self, cli_context: CliContext, service_name: tuple[str, ...] = None
@@ -643,26 +655,36 @@ class HelmOrchestrator(Orchestrator):
             "upgrade",
             "--install",
             "--namespace",
-            self.release_name,
+            cli_context.get_project_name(),
             "--create-namespace",
         ]
         # Set values args.
         for arg in self.__generate_values_args(
-            helm_values_dir=cli_context.get_helm_values_dir(),
-            helm_values_files_dir=cli_context.get_helm_values_files_dir(),
+            cli_context.get_generated_configuration_dir()
         ):
             command.append(arg)
         # Set release name.
-        command.append(self.release_name)
+        command.append(cli_context.get_project_name())
         # Set chart location.
-        # If we're in `dev_mode` and `dev_chart_location` is set, use that.
-        if cli_context.is_dev_mode and self.dev_chart_location is not None:
+        # If we're in `DEV_MODE` and `<APP-NAME>_DEV_MODE_HELM_CHART` is set, use that.
+        if (
+            cli_context.is_dev_mode
+            and f"{cli_context.app_name_slug}_{HelmOrchestrator.DEV_CHART_VARIABLE_NAME}"
+            in cli_context.dev_mode_variables.keys()
+        ):
             with wrap_dev_mode():
-                logger.debug(f"Deploying chart from `{self.dev_chart_location}`")
-                chart_location = self.dev_chart_location
+                chart_location = cli_context.dev_mode_variables[
+                    f"{cli_context.app_name_slug}_{HelmOrchestrator.DEV_CHART_VARIABLE_NAME}"
+                ]
+                logger.debug(
+                    f"Found DEV_MODE chart. Ignoring bundled chart from `{self.chart_location}`"
+                )
+                logger.debug(f"Deploying chart from `{chart_location}`")
         # If not, then generate the absolute path to the `chart_location`.
         else:
-            chart_location = cli_context.get_helm_dir().joinpath(self.chart_location)
+            chart_location = (
+                cli_context.get_generated_configuration_dir() / self.chart_location
+            )
         command.append(chart_location)
 
         # Run the command.
@@ -684,9 +706,9 @@ class HelmOrchestrator(Orchestrator):
         command = [
             "helm",
             "uninstall",
-            self.release_name,
+            cli_context.get_project_name(),
             "-n",
-            self.release_name,
+            cli_context.get_project_name(),
         ]
 
         # Run the command.
@@ -708,9 +730,9 @@ class HelmOrchestrator(Orchestrator):
         command = [
             "helm",
             "status",
-            self.release_name,
+            cli_context.get_project_name(),
             "-n",
-            self.release_name,
+            cli_context.get_project_name(),
         ]
 
         # Run the command.
@@ -761,8 +783,8 @@ class HelmOrchestrator(Orchestrator):
         return False
 
     def get_disabled_commands(self) -> list[str]:
-        # The `task` command is disabled because helm is only used for install/upgrade/uninstall/downgrade operations.
         # The `init` command is disabled because it's used to initialise additional services, and this orchestrator
+        # The `task` command is disabled because helm is only used for install/upgrade/uninstall/downgrade operations.
         # has no services. NOTE: The `init` command will be removed in the future.
         return ["init", "task"]
 
@@ -776,7 +798,7 @@ class HelmOrchestrator(Orchestrator):
             CompletedProcess: The execution result.
         """
         logger.debug(f"Executing {str(command)}")
-        result = subprocess.run(command, capture_output=True)
+        result = subprocess.run(command, capture_output=False)
         if result.returncode != 0:
             logger.error(result.stderr.decode("utf-8"))
             raise subprocess.CalledProcessError(
@@ -788,7 +810,7 @@ class HelmOrchestrator(Orchestrator):
         return result
 
     def __generate_values_args(
-        self, helm_values_dir: Path, helm_values_files_dir: Path
+        self, generated_configuration_dir: Path
     ) -> list[str | Path]:
         """Recursively takes all the values files in the directories and generates an args array to
         pass to helm through either `--values` or `--set-file` (depending on the location).
@@ -797,31 +819,36 @@ class HelmOrchestrator(Orchestrator):
             ["--values", "values.yaml", "--set-file", "path.to.foo=path/to/foo.yaml"...
 
         Args:
-            helm_values_dir (Path): Directory containing files to set with `--values`.
-            helm_values_files_dir (Path): Directory containing files to set with `--set-file`.
+            generated_configuration_dir (Path): Generated configuration directory form the cli object, e.g:
+                `cli_context.get_generated_configuration_dir()`
 
         Returns:
-            list[str | Path]: The arg list.
+            list[str]: The arg list.
         """
         arg_list = []
 
         # Create all `--values` args.
         values = [
             file
-            for file in helm_values_dir.rglob("*")
+            for file in generated_configuration_dir / self.helm_values_dir.rglob("*")
             if file.suffix in {".yml", ".yaml"}
         ]
         for file in values:
             arg_list.append("--values")
-            arg_list.append(file)
+            arg_list.append(str(file))
 
         # Create all `--set-file` args.
         values_files = [
-            file for file in helm_values_files_dir.rglob("*") if file.is_file()
+            file
+            for file in generated_configuration_dir
+            / self.helm_values_files_dir.rglob("*")
+            if file.is_file()
         ]
         for file in values_files:
             # NOTE: Make path relative to `helm_values_files_dir` so we know which helm key to set it as.
-            relative_file = file.relative_to(helm_values_files_dir)
+            relative_file = file.relative_to(
+                generated_configuration_dir / self.helm_values_files_dir
+            )
             # Get the helm key in `dot.notation.to.value`
             key = ".".join(
                 [*relative_file.parent.parts, relative_file.stem.split(".")[0]]

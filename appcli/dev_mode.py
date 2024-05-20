@@ -32,7 +32,7 @@ def wrap_dev_mode():
         if dev_mode_enabled:
           with wrap_dev_mode():
             ...
-            logger.info("DEV MODE operation successfuly")
+            logger.info("DEV MODE operation completed successfully")
 
       Would result in everything printed by code in the `with` block being bookended by DEV MODE
       markings.
