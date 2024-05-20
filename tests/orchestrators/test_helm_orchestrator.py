@@ -104,7 +104,7 @@ class Test_HelmOrchestrator:
 
         assert "helm" == result.args[0]
         assert "uninstall" == result.args[1]
-        assert "test_app_test" in result.args
+        assert "test-app-test" in result.args
 
     def test_service_status(
         self, default_orchestrator: HelmOrchestrator, cli_context: CliContext
@@ -113,7 +113,7 @@ class Test_HelmOrchestrator:
 
         assert "helm" == result.args[0]
         assert "status" == result.args[1]
-        assert "test_app_test" in result.args
+        assert "test-app-test" in result.args
 
     def test_service_start(
         self, default_orchestrator: HelmOrchestrator, cli_context: CliContext
@@ -122,7 +122,7 @@ class Test_HelmOrchestrator:
 
         assert "helm" == result.args[0]
         assert "upgrade" == result.args[1]
-        assert "test_app_test" in result.args
+        assert "test-app-test" in result.args
         # NOTE: Last arg is chart path.
         assert str(result.args[-1]).endswith("cli/helm/chart")
 
