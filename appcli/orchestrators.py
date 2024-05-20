@@ -655,7 +655,7 @@ class HelmOrchestrator(Orchestrator):
             "upgrade",
             "--install",
             "--namespace",
-            cli_context.get_project_name(),
+            cli_context.get_project_name(make_helm_safe=True),
             "--create-namespace",
         ]
         # Set values args.
@@ -664,17 +664,17 @@ class HelmOrchestrator(Orchestrator):
         ):
             command.append(arg)
         # Set release name.
-        command.append(cli_context.get_project_name())
+        command.append(cli_context.get_project_name(make_helm_safe=True))
         # Set chart location.
         # If we're in `DEV_MODE` and `<APP-NAME>_DEV_MODE_HELM_CHART` is set, use that.
         if (
             cli_context.is_dev_mode
-            and f"{cli_context.app_name_slug}_{HelmOrchestrator.DEV_CHART_VARIABLE_NAME}"
+            and f"{cli_context.app_name_slug.upper()}_{HelmOrchestrator.DEV_CHART_VARIABLE_NAME}"
             in cli_context.dev_mode_variables.keys()
         ):
             with wrap_dev_mode():
                 chart_location = cli_context.dev_mode_variables[
-                    f"{cli_context.app_name_slug}_{HelmOrchestrator.DEV_CHART_VARIABLE_NAME}"
+                    f"{cli_context.app_name_slug.upper()}_{HelmOrchestrator.DEV_CHART_VARIABLE_NAME}"
                 ]
                 logger.debug(
                     f"Found DEV_MODE chart. Ignoring bundled chart from `{self.chart_location}`"
@@ -706,9 +706,9 @@ class HelmOrchestrator(Orchestrator):
         command = [
             "helm",
             "uninstall",
-            cli_context.get_project_name(),
+            cli_context.get_project_name(make_helm_safe=True),
             "-n",
-            cli_context.get_project_name(),
+            cli_context.get_project_name(make_helm_safe=True),
         ]
 
         # Run the command.
@@ -730,9 +730,9 @@ class HelmOrchestrator(Orchestrator):
         command = [
             "helm",
             "status",
-            cli_context.get_project_name(),
+            cli_context.get_project_name(make_helm_safe=True),
             "-n",
-            cli_context.get_project_name(),
+            cli_context.get_project_name(make_helm_safe=True),
         ]
 
         # Run the command.
@@ -800,7 +800,13 @@ class HelmOrchestrator(Orchestrator):
         logger.debug(f"Executing {str(command)}")
         result = subprocess.run(command, capture_output=False)
         if result.returncode != 0:
-            logger.error(result.stderr.decode("utf-8"))
+            if result.stderr is not None:
+                message = result.stderr.decode("utf-8")
+            elif result.stdout is not None:
+                message = result.stdout.decode("utf-8")
+            else:
+                message = f"Unknown error from running: {str(command)}."
+            logger.error(message)
             raise subprocess.CalledProcessError(
                 result.returncode,
                 command,
@@ -828,21 +834,20 @@ class HelmOrchestrator(Orchestrator):
         arg_list = []
 
         # Create all `--values` args.
+        values_dir = generated_configuration_dir / self.helm_values_dir
         values = [
             file
-            for file in generated_configuration_dir / self.helm_values_dir.rglob("*")
-            if file.suffix in {".yml", ".yaml"}
+            for file in list(values_dir.rglob("*"))
+            if file.suffix in [".yml", ".yaml"]
         ]
         for file in values:
             arg_list.append("--values")
             arg_list.append(str(file))
 
         # Create all `--set-file` args.
+        values_files_dir = generated_configuration_dir / self.helm_values_files_dir
         values_files = [
-            file
-            for file in generated_configuration_dir
-            / self.helm_values_files_dir.rglob("*")
-            if file.is_file()
+            file for file in list(values_files_dir.rglob("*")) if file.is_file()
         ]
         for file in values_files:
             # NOTE: Make path relative to `helm_values_files_dir` so we know which helm key to set it as.

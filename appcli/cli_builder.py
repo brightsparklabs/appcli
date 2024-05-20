@@ -121,13 +121,13 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
 
             # Any environment variable beginning with `{APP_NAME}_DEV_MODE_*`
             # is loaded up as a `DEV_MODE` variable.
-            logger.debug("Detecting and setting `DEV_MODE` variables.")
+            logger.info("Detecting and setting `DEV_MODE` variables.")
             for key, value in os.environ.items():
-                if key.startswith(f"{APP_NAME}_DEV_MODE_"):
-                    logger.debug(
-                        f"Found the `[{key}]` env variable. Setting to `{value}` for DEV_MODE."
+                if key.startswith(f"{APP_NAME_SLUG_UPPER}_DEV_MODE_"):
+                    logger.info(
+                        f"Found the `[{key}]` dev variable. Setting to `{value}`."
                     )
-                    DEV_MODE_VARIABLES["key"] = value
+                    DEV_MODE_VARIABLES[key] = value
 
     # --------------------------------------------------------------------------
     # CREATE_CLI: LOGIC
@@ -427,6 +427,9 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             return
 
         if config_src_dir.exists() and config_src_dir.is_dir():
+            logger.info(
+                f"Copying `{config_src_dir}` to `{CONTAINER_HOME_DIR}` container directory."
+            )
             shutil.copytree(config_src_dir, CONTAINER_HOME_DIR, dirs_exist_ok=True)
 
     def check_environment_variable_defined(

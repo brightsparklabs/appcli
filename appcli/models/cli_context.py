@@ -208,14 +208,22 @@ class CliContext(NamedTuple):
         """
         return self.configuration_dir.joinpath("templates")
 
-    def get_project_name(self) -> str:
+    def get_project_name(self, make_helm_safe: bool = False) -> str:
         """Get a unique name for the application and environment
+
+        Arg:
+            make_helm_safe (bool): Convert the project name to one that is safe for helm.
+                Helm uses `[a-z0-9]([-a-z0-9]*[a-z0-9])?` for validation.
+                See https://github.com/helm/helm/issues/6192
 
         Returns:
             str: the project name
         """
         # NOTE: Must be lowercase, see https://github.com/brightsparklabs/appcli/issues/301
-        return f"{self.app_name_slug}_{self.environment}".lower()
+        project_name = f"{self.app_name_slug}_{self.environment}".lower()
+        if make_helm_safe:
+            project_name = project_name.replace("_", "-")
+        return project_name
 
     def get_variables_manager(self) -> VariablesManager:
         """Get the Variables Manager for the current cli context.
