@@ -164,9 +164,9 @@ drwxrwxr-x └──  templates/
 drwxrwxr-x    ├──  baseline/
 drwxrwxr-x    │  └──  cli/
 drwxrwxr-x    │     └──  helm/
-drwxrwxr-x    │        ├──  values/
+drwxrwxr-x    │        ├──  set-files/
+drwxrwxr-x    │        ├──  set-values/
 .rw-rw-r--    │        │  └──   values.yml
-drwxrwxr-x    │        ├──  values-files/
 .rw-rw-r--    │        └──   mychart.tgz
 drwxrwxr-x    └──  configurable/
 drwxrwxr-x       └──  cli/
@@ -186,11 +186,11 @@ orchestrator = HelmOrchestrator(
 
     # The directory containing all main `values.yaml` files (relative to `conf/templates/`).
     # [Optional] Default is `cli/helm/values`
-    helm_values_dir="cli/helm/values"
+    helm_set_values_dir="cli/helm/set-values"
 
     # The directory containing all key-specific files (relative to `conf/templates/`).
-    # [Optional] Default is `cli/helm/values-files`
-    helm_values_files_dir="cli/helm/values-files"
+    # [Optional] Default is `cli/helm/set-files`
+    helm_set_files_dir="cli/helm/set-files"
 )
 ```
 
@@ -205,21 +205,22 @@ Take the following `cli/helm/` directory structure:
 
 ```bash
 drwxrwxr-x  cli/helm/
-drwxrwxr-x ├──  values/
-.rw-rw-r-- │  ├──  foobar.yml
-.rw-rw-r-- │  └──  foobaz.yml
-drwxrwxr-x └──  values-files/
-drwxrwxr-x    ├──  bar/
-.rw-rw-r--    │  └──  baz.json.schema
-.rw-rw-r--    └──  foo.txt
+drwxrwxr-x ├──  set-files/
+drwxrwxr-x │  ├──  bar/
+.rw-rw-r-- │  │  └──  baz.json.schema
+.rw-rw-r-- │  └──  foo.txt
+drwxrwxr-x └──  set-values/
+.rw-rw-r--    ├──  foobar.yml
+.rw-rw-r--    └──  foobaz.yml
 ```
 
 This would result in the following args being passed to helm:
 
 ```bash
---values cli/helm/values/foobar.yml
---set-file foo=cli/helm/values-files/foo.txt
---set-file bar.baz=cli/helm/values-files/bar/baz.json.schema
+--values cli/helm/set-values/foobar.yml
+--values cli/helm/set-values/foobaz.yml
+--set-file foo=cli/helm/set-files/foo.txt
+--set-file bar.baz=cli/helm/set-files/bar/baz.json.schema
 ```
 
 ##### Dev Mode Chart

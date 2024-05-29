@@ -76,8 +76,8 @@ def default_orchestrator() -> HelmOrchestrator:
 def modified_orchestrator() -> HelmOrchestrator:
     return HelmOrchestrator(
         chart_location="cli/helm/mychart.tgz",
-        helm_values_dir="cli/helm/custom-values",
-        helm_values_files_dir="cli/helm/custom-values-files",
+        helm_set_values_dir="cli/helm/custom-set-values",
+        helm_set_files_dir="cli/helm/custom-set-files",
     )
 
 
@@ -133,12 +133,12 @@ class Test_HelmOrchestrator:
         conf_dir = cli_context.get_generated_configuration_dir()
 
         # `--values` args.
-        assert f"{conf_dir}/cli/helm/custom-values/values.yml" in result.args
+        assert f"{conf_dir}/cli/helm/custom-set-values/values.yml" in result.args
 
         # `--set-file` args.
-        assert f"top={conf_dir}/cli/helm/custom-values-files/top.yaml" in result.args
+        assert f"top={conf_dir}/cli/helm/custom-set-files/top.yaml" in result.args
         assert (
-            f"nested.nested={conf_dir}/cli/helm/custom-values-files/nested/nested.yaml"
+            f"nested.nested={conf_dir}/cli/helm/custom-set-files/nested/nested.yaml"
             in result.args
         )
 

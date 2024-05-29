@@ -610,8 +610,8 @@ class HelmOrchestrator(Orchestrator):
     def __init__(
         self,
         chart_location: Path = Path("cli/helm/chart"),
-        helm_values_dir: Path = Path("cli/helm/values"),
-        helm_values_files_dir: Path = Path("cli/helm/values-files"),
+        helm_set_values_dir: Path = Path("cli/helm/set-values"),
+        helm_set_files_dir: Path = Path("cli/helm/set-files"),
     ):
         """
         Creates a new instance of an orchestrator for helm-based applications.
@@ -620,22 +620,22 @@ class HelmOrchestrator(Orchestrator):
 
         Args:
             chart_location (Path): Path to the helm chart file/directory to deploy.
-            helm_values_dir (Path): The directory containing all main `values.yaml` files.
+            helm_set_values_dir (Path): The directory containing all main `values.yaml` files.
                 All files in this directory are applied with:
                     --values <file>
-            helm_values_files_dir (Path): The directory containing all key-specific files.
+            helm_set_files_dir (Path): The directory containing all key-specific files.
                 Take the following directory:
-                    drwxrwxr-x └──  values-files/
+                    drwxrwxr-x └──  set-files/
                     drwxrwxr-x    ├──  bar/
                     .rw-rw-r--    │  └──  baz.json.schema
                     .rw-rw-r--    └──  foo.txt
                 This would be supplied to helm as follows:
-                    --set-file foo=cli/helm/values-files/foo.txt
-                    --set-file bar.baz=cli/helm/values-files/bar/baz.json.schema
+                    --set-file foo=cli/helm/set-files/foo.txt
+                    --set-file bar.baz=cli/helm/set-files/bar/baz.json.schema
         """
         self.chart_location = chart_location
-        self.helm_values_dir = helm_values_dir
-        self.helm_values_files_dir = helm_values_files_dir
+        self.helm_set_values_dir = helm_set_values_dir
+        self.helm_set_files_dir = helm_set_files_dir
 
     def start(
         self, cli_context: CliContext, service_name: tuple[str, ...] = None
@@ -834,7 +834,7 @@ class HelmOrchestrator(Orchestrator):
         arg_list = []
 
         # Create all `--values` args.
-        values_dir = generated_configuration_dir / self.helm_values_dir
+        values_dir = generated_configuration_dir / self.helm_set_values_dir
         values = [
             file
             for file in list(values_dir.rglob("*"))
@@ -845,14 +845,14 @@ class HelmOrchestrator(Orchestrator):
             arg_list.append(str(file))
 
         # Create all `--set-file` args.
-        values_files_dir = generated_configuration_dir / self.helm_values_files_dir
+        values_files_dir = generated_configuration_dir / self.helm_set_files_dir
         values_files = [
             file for file in list(values_files_dir.rglob("*")) if file.is_file()
         ]
         for file in values_files:
             # NOTE: Make path relative to `helm_values_files_dir` so we know which helm key to set it as.
             relative_file = file.relative_to(
-                generated_configuration_dir / self.helm_values_files_dir
+                generated_configuration_dir / self.helm_set_files_dir
             )
             # Get the helm key in `dot.notation.to.value`
             key = ".".join(
