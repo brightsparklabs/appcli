@@ -158,21 +158,26 @@ The project also includes a [helm](https://helm.sh/docs/intro/quickstart/) orche
 Create a new `resources` directory as follows:
 
 ```bash
-drwxrwxr-x  resources/
-.rw-rw-r-- ├──  settings.yml
-drwxrwxr-x └──  templates/
-drwxrwxr-x    ├──  baseline/
-drwxrwxr-x    │  └──  cli/
-drwxrwxr-x    │     └──  helm/
-drwxrwxr-x    │        ├──  set-files/
-drwxrwxr-x    │        ├──  set-values/
-.rw-rw-r--    │        │  └──   values.yml
-.rw-rw-r--    │        └──   mychart.tgz
-drwxrwxr-x    └──  configurable/
-drwxrwxr-x       └──  cli/
-drwxrwxr-x          └──  home/
-drwxrwxr-x             └──  .kube/
-.rw-------                └──  config  # Overwrite this with a cluster specific config file. ie `~/.kube/config`.
+resources/
+├── settings.yml
+└── templates/
+   ├── baseline/
+   │  └── cli/
+   │     └── helm/
+   │        ├── set-files/
+   │        │  ├── baz/
+   │        │  │  ├── foo.json
+   │        │  │  └── qux.waldo.txt
+   │        │  └── thud.bang.yml
+   │        ├── set-values/
+   │        │  ├── foo.yml
+   │        │  └── bar.txt
+   │        └── mychart.tgz
+   └── configurable/
+      └── cli/
+         └── home/
+            └── .kube/
+               └── config  # Overwrite this with a cluster specific config file. ie `~/.kube/config`.
 ```
 
 You can then define the orchestrator:
@@ -185,7 +190,7 @@ orchestrator = HelmOrchestrator(
     chart_location="cli/helm/mychart.tgz",
 
     # The directory containing all main `values.yaml` files (relative to `conf/templates/`).
-    # [Optional] Default is `cli/helm/values`
+    # [Optional] Default is `cli/helm/set-values`
     helm_set_values_dir="cli/helm/set-values"
 
     # The directory containing all key-specific files (relative to `conf/templates/`).
@@ -198,29 +203,33 @@ orchestrator = HelmOrchestrator(
 
 Values can be supplied either:
 
-1. Globally for any files dumped in the `values` directory.
-2. For a set key by dumping files in `values-files` at that nested key layer.
+1. For a set key by placing files in `set-files` directory.
+    * The name of the key to set is derived from the directory structure and the name of the file
+      (up to the first dot encountered in the filename).
+2. Globally for any files dumped in the `set-values` directory.
 
-Take the following `cli/helm/` directory structure:
+For example, given the following `cli/helm/` directory structure:
 
 ```bash
-drwxrwxr-x  cli/helm/
-drwxrwxr-x ├──  set-files/
-drwxrwxr-x │  ├──  bar/
-.rw-rw-r-- │  │  └──  baz.json.schema
-.rw-rw-r-- │  └──  foo.txt
-drwxrwxr-x └──  set-values/
-.rw-rw-r--    ├──  foobar.yml
-.rw-rw-r--    └──  foobaz.yml
+cli/helm/
+├── set-files/
+│  ├── baz/
+│  │  ├── foo.json
+│  │  └── qux.waldo.txt
+│  └── thud.bang.yml
+└── set-values/
+   ├── foo.yml
+   └── bar.txt
 ```
 
-This would result in the following args being passed to helm:
+This would result in the following arguments being passed to helm:
 
 ```bash
---values cli/helm/set-values/foobar.yml
---values cli/helm/set-values/foobaz.yml
---set-file foo=cli/helm/set-files/foo.txt
---set-file bar.baz=cli/helm/set-files/bar/baz.json.schema
+--set-file baz.foo=cli/helm/set-files/baz/foo.json
+--set-file baz.qux=cli/helm/set-files/baz/qux.waldo.yml    # NOTE: Key is `qux` not `qux.waldo`.
+--set-file thud=cli/helm/set-files/thud.bang.yml           # NOTE: Key is `thud` not `thud.bang`.
+--values cli/helm/set-values/foo.yml
+--values cli/helm/set-values/bar.yml
 ```
 
 ##### Dev Mode Chart

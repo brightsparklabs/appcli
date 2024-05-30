@@ -621,17 +621,39 @@ class HelmOrchestrator(Orchestrator):
         Args:
             chart_location (Path): Path to the helm chart file/directory to deploy.
             helm_set_values_dir (Path): The directory containing all main `values.yaml` files.
+                Defaults to: `${GENERATED_CONFIGURATION_DIR}/cli/helm/set-values`
+
                 All files in this directory are applied with:
                     --values <file>
+
+                See below for more details.
+
             helm_set_files_dir (Path): The directory containing all key-specific files.
+                Defaults to: `${GENERATED_CONFIGURATION_DIR}/cli/helm/set-files`
+
                 Take the following directory:
-                    drwxrwxr-x └──  set-files/
-                    drwxrwxr-x    ├──  bar/
-                    .rw-rw-r--    │  └──  baz.json.schema
-                    .rw-rw-r--    └──  foo.txt
-                This would be supplied to helm as follows:
-                    --set-file foo=cli/helm/set-files/foo.txt
-                    --set-file bar.baz=cli/helm/set-files/bar/baz.json.schema
+
+                ```
+                ./
+                ├── set-files/
+                │  ├── baz/
+                │  │  ├── foo.json
+                │  │  └── qux.waldo.txt
+                │  └── thud.bang.yml
+                └── set-values/
+                   ├── foo.yml
+                   └── bar.txt
+                ```
+
+                This would result in the following arguments being passed to helm:
+
+                ```
+                --set-file baz.foo=cli/helm/set-files/baz/foo.json
+                --set-file baz.qux=cli/helm/set-files/baz/qux.waldo.yml    # NOTE: Key is `qux` not `qux.waldo`.
+                --set-file thud=cli/helm/set-files/thud.bang.yml           # NOTE: Key is `thud` not `thud.bang`.
+                --values cli/helm/set-values/foo.yml
+                --values cli/helm/set-values/bar.yml
+                ```
         """
         self.chart_location = chart_location
         self.helm_set_values_dir = helm_set_values_dir
@@ -800,12 +822,7 @@ class HelmOrchestrator(Orchestrator):
         logger.debug(f"Executing {str(command)}")
         result = subprocess.run(command, capture_output=False)
         if result.returncode != 0:
-            if result.stderr is not None:
-                message = result.stderr.decode("utf-8")
-            elif result.stdout is not None:
-                message = result.stdout.decode("utf-8")
-            else:
-                message = f"Unknown error from running: {str(command)}."
+            message = f"Unknown error from running: {str(command)}."
             logger.error(message)
             raise subprocess.CalledProcessError(
                 result.returncode,
@@ -815,9 +832,7 @@ class HelmOrchestrator(Orchestrator):
             )
         return result
 
-    def __generate_values_args(
-        self, generated_configuration_dir: Path
-    ) -> list[str | Path]:
+    def __generate_values_args(self, generated_configuration_dir: Path) -> list[str]:
         """Recursively takes all the values files in the directories and generates an args array to
         pass to helm through either `--values` or `--set-file` (depending on the location).
         e.g:
