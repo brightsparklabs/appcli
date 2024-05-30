@@ -7,6 +7,8 @@ from contextlib import contextmanager
 
 import pyfiglet
 
+from appcli.logger import configure_default_logging, enable_dev_mode_logging
+
 # ------------------------------------------------------------------------------
 # CONSTANTS
 # ------------------------------------------------------------------------------
@@ -28,9 +30,9 @@ def wrap_dev_mode():
       The below code:
 
         if dev_mode_enabled:
-          with wrap_dev_mode:
+          with wrap_dev_mode():
             ...
-            logger.info("DEV MODE operation successfuly")
+            logger.info("DEV MODE operation completed successfully")
 
       Would result in everything printed by code in the `with` block being bookended by DEV MODE
       markings.
@@ -45,7 +47,9 @@ def wrap_dev_mode():
         file=sys.stderr,
     )
 
+    enable_dev_mode_logging()
     yield
+    configure_default_logging()
 
     print(
         f"""

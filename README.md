@@ -44,6 +44,18 @@ variables within the `settings.yml` file as described in the Installation sectio
 Stack variables can be set within the `stack-settings.yml` file as described in the
 `Build configuration template directories` section.
 
+### Volume Mounts
+
+The following directories are mounted from the host system into the container:
+
+```bash
+--volume "/opt/brightsparklabs/<my_app>/<environment>/data/cli/home:/root"
+--volume "/opt/brightsparklabs/<my_app>/<environment>/conf:/opt/brightsparklabs/<my_app>/<environment>/conf"
+--volume "/opt/brightsparklabs/<my_app>/<environment>/conf/.generated:/opt/brightsparklabs/<my_app>/<environment>/conf/.generated"
+--volume "/opt/brightsparklabs/<my_app>/<environment>/data:/opt/brightsparklabs/<my_app>/<environment>/data"
+--volume "/opt/brightsparklabs/<my_app>/<environment>/backup:/opt/brightsparklabs/<my_app>/<environment>/backup"
+```
+
 ## Quick Start
 
 Refer to the [quick start guide](quickstart.md) to get a basic application running.
@@ -138,6 +150,108 @@ command groups. The `NullOrchestrator` disables commands related to managing ser
 ```python
 orchestrator=NullOrchestrator()
 ```
+
+#### HelmOrchestrator
+
+The project also includes a [helm](https://helm.sh/docs/intro/quickstart/) orchestrator for deploying charts to [kubernetes](https://kubernetes.io/) clusters.
+
+Create a new `resources` directory as follows:
+
+```bash
+resources/
+├── settings.yml
+└── templates/
+   ├── baseline/
+   │  └── cli/
+   │     └── helm/
+   │        ├── set-files/
+   │        │  ├── baz/
+   │        │  │  ├── foo.json
+   │        │  │  └── qux.waldo.txt
+   │        │  └── thud.bang.yml
+   │        ├── set-values/
+   │        │  ├── foo.yml
+   │        │  └── bar.txt
+   │        └── mychart.tgz
+   └── configurable/
+      └── cli/
+         └── home/
+            └── .kube/
+               └── config  # Overwrite this with a cluster specific config file. ie `~/.kube/config`.
+```
+
+You can then define the orchestrator:
+
+```python
+from appcli.orchestrators import HelmOrchestrator
+orchestrator = HelmOrchestrator(
+    # Chart archive path (relative to `conf/templates/`).
+    # [Optional] Default is `cli/helm/chart`
+    chart_location="cli/helm/mychart.tgz",
+
+    # The directory containing all main `values.yaml` files (relative to `conf/templates/`).
+    # [Optional] Default is `cli/helm/set-values`
+    helm_set_values_dir="cli/helm/set-values"
+
+    # The directory containing all key-specific files (relative to `conf/templates/`).
+    # [Optional] Default is `cli/helm/set-files`
+    helm_set_files_dir="cli/helm/set-files"
+)
+```
+
+##### Values
+
+Values can be supplied either:
+
+1. For a set key by placing files in `set-files` directory.
+    * The name of the key to set is derived from the directory structure and the name of the file
+      (up to the first dot encountered in the filename).
+2. Globally for any files dumped in the `set-values` directory.
+
+For example, given the following `cli/helm/` directory structure:
+
+```bash
+cli/helm/
+├── set-files/
+│  ├── baz/
+│  │  ├── foo.json
+│  │  └── qux.waldo.txt
+│  └── thud.bang.yml
+└── set-values/
+   ├── foo.yml
+   └── bar.txt
+```
+
+This would result in the following arguments being passed to helm:
+
+```bash
+--set-file baz.foo=cli/helm/set-files/baz/foo.json
+--set-file baz.qux=cli/helm/set-files/baz/qux.waldo.yml    # NOTE: Key is `qux` not `qux.waldo`.
+--set-file thud=cli/helm/set-files/thud.bang.yml           # NOTE: Key is `thud` not `thud.bang`.
+--values cli/helm/set-values/foo.yml
+--values cli/helm/set-values/bar.yml
+```
+
+##### Dev Mode Chart
+
+During development it would be slow to require packaging up the chart for any changes.
+Appcli provides a way to speed up development by allow for the chart to deployed directly from source.
+This is done by specifying the dev chart as an environment variable.
+
+```bash
+MYAPP_DEV_MODE=true MYAPP_DEV_MODE_HELM_CHART=/path/to/mychart python3 -m myapp service start
+```
+
+##### Kubeconfig
+
+A custom `kubeconfig` file can be used by specifying the `KUBECONFIG` environment variable.
+
+```bash
+KUBECONFIG=/opt/brightsparklabs/myapp/conf/.generated/config ./myapp ...
+```
+
+_NOTE:_ The `KUBECONFIG` file must be at a location which is mounted into the launch container.
+Refer to [Volume Mounts](#volume-mounts) for details on what volumes are mounted into the launch container.
 
 #### Custom Commands
 

@@ -52,6 +52,7 @@ function main()
         --rm \
         $( [[ "${NO_INTERACTIVE}" != "true" ]] && echo "--interactive") \
         $( [[ "${NO_TTY}" != "true" ]] && echo "--tty") \
+        $( [[ -n "${KUBECONFIG}" ]] && echo "--env KUBECONFIG=${KUBECONFIG}") \
 {% if cli_context.docker_credentials_file %}
         --volume "{{ cli_context.docker_credentials_file }}:/root/.docker/config.json" \
 {% endif %}

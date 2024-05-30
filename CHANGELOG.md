@@ -16,6 +16,24 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ---
 
+## [3.1.0] - 2024-05-30
+
+**Deprecation warning**
+
+- The Dockerfile now has several build targets depending on the orchestrator.
+  The Docker image `brightsparklabs/appcli` will stop being published in a future version.
+  Projects using `FROM brightsparklabs/appcli` in their Dockerfile should should migrate to
+  `FROM brightsparklabs/appcli-docker-compose` instead.
+
+### Added
+
+- APPCLI-114: Stop schema files being copied on migration
+- AF-195: Add helm orchestrator
+- TEL-49: Prefix log lines with `DEV_MODE` when using `wrap_dev_mode` for clarity.
+- TEL-50: Fix help text not resolving variable `default_install_dir`
+
+---
+
 ## [3.0.0] - 2024-04-25
 
 Major bump due to shifting from Python 3.10 to Python 3.12.

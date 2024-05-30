@@ -1,33 +1,32 @@
 ##
- # Example image for running appcli.
+ # The build file for creating appcli images.
+ #
+ # This file is broken up into 3 sections:
+ # - Base Layer
+ #      An extensible image which adds all dependencies needed to run appcli.
+ # - Build Layers
+ #      Intermediate images that download the executables for each orchestrator.
+ # - Orchestrator Layers.
+ #      Final layers that extend the `base` layer but pull in the executables for the given orchestrator.
+ #
+ # To build the `docker-compose` orchestrated appcli image for example:
+ #      docker build --target appcli-docker-compose \
+ #          -t brightsparklabs/appcli-docker-compose:${APP_VERSION} \
+ #          -t brightsparklabs/appcli-docker-compose:latest .
  # _____________________________________________________________________________
  #
  # Created by brightSPARK Labs
  # www.brightsparklabs.com
  ##
 
-FROM alpine:3.15.0 AS docker-binary-download
 
-WORKDIR /tmp
+# -----------------------------------------------------------------------------
+# BASE LAYER
+# -----------------------------------------------------------------------------
 
-# List required versions for docker and compose.
-ENV DOCKER_VERSION=24.0.7
-ENV DOCKER_COMPOSE_VERSION=2.23.3
-
-# Download docker and compose.
-RUN wget -q https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz \
-    && tar xf docker-${DOCKER_VERSION}.tgz \
-    && wget -q https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64 \
-    && wget -q https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64.sha256 \
-    && sha256sum -c docker-compose-linux-x86_64.sha256 \
-    && chmod +x docker-compose-linux-x86_64
-
-FROM python:3.12.3-slim-bullseye
+FROM python:3.12.3-slim-bullseye as appcli-base
 
 ENV LANG=C.UTF-8
-
-COPY --from=docker-binary-download /tmp/docker/docker /usr/bin
-COPY --from=docker-binary-download /tmp/docker-compose-linux-x86_64 /usr/local/lib/docker/cli-plugins/docker-compose
 
 RUN \
     # set timezone to UTC by default
@@ -56,3 +55,72 @@ RUN \
     # defining safe directories is added, we should update this command to
     # be more explicit around what directories should be considered safe.
     && git config --global --add safe.directory '*'
+
+
+# -----------------------------------------------------------------------------
+# BUILD LAYERS
+# -----------------------------------------------------------------------------
+
+FROM alpine:3.15.0 AS docker-compose-builder
+WORKDIR /tmp
+
+# Docker
+# https://docs.docker.com/engine/release-notes/26.0/
+ARG DOCKER_VERSION=26.0.2
+
+# Docker Compose
+# https://docs.docker.com/compose/release-notes/
+ARG DOCKER_COMPOSE_VERSION=2.27.0
+
+# Download binaries.
+RUN \
+    wget -q https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz \
+    && tar xf docker-${DOCKER_VERSION}.tgz \
+    && wget -q https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64 \
+    && wget -q https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64.sha256 \
+    && sha256sum -c docker-compose-linux-x86_64.sha256 \
+    && chmod +x docker-compose-linux-x86_64
+
+# -----------------------------------------------------------------------------
+
+FROM alpine:3.15.0 AS helm-builder
+WORKDIR /tmp
+
+# Kubectl
+# https://dl.k8s.io/release/stable.txt
+ARG KUBECTL_VERSION=1.30.0
+
+# Helm
+# https://github.com/helm/helm/releases
+ARG HELM_VERSION=3.14.4
+
+# K9S
+# https://github.com/derailed/k9s/releases
+ARG K9S_VERSION=0.32.4
+
+# Download binaries.
+RUN \
+    wget -q https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl \
+    && chmod 0755 kubectl \
+    && wget -q https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz \
+    && wget -q https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz.sha256sum \
+    && sha256sum -c helm-v${HELM_VERSION}-linux-amd64.tar.gz.sha256sum  \
+    && tar -xf helm-v${HELM_VERSION}-linux-amd64.tar.gz \
+    && wget -q https://github.com/derailed/k9s/releases/download/v${K9S_VERSION}/k9s_Linux_amd64.tar.gz \
+    && tar -xf k9s_Linux_amd64.tar.gz
+
+
+# -----------------------------------------------------------------------------
+# ORCHESTRATOR LAYERS
+# -----------------------------------------------------------------------------
+
+FROM appcli-base as appcli-docker-compose
+
+COPY --from=docker-compose-builder /tmp/docker/docker /usr/bin
+COPY --from=docker-compose-builder /tmp/docker-compose-linux-x86_64 /usr/local/lib/docker/cli-plugins/docker-compose
+
+FROM appcli-base as appcli-helm
+
+COPY --from=helm-builder /tmp/kubectl /usr/bin/
+COPY --from=helm-builder /tmp/linux-amd64/helm /usr/bin
+COPY --from=helm-builder /tmp/k9s /usr/bin/
