@@ -20,6 +20,7 @@ The changelog is applicable from version `1.0.0` onwards.
 - APPCLI-114: Stop schema files being copied on migration
 - AF-195: Add helm orchestrator
 - TEL-49: Prefix log lines with `DEV_MODE` when using `wrap_dev_mode` for clarity.
+- TEL-50: Fix help text not resolving variable `default_install_dir`
 
 ### Fixed
 
