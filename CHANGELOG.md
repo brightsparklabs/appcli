@@ -10,10 +10,20 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ## [Unreleased]
 
-### Breaking Changes from 2.5.0
+### Added
+
+### Fixed
+
+---
+
+## [3.1.0] - 2024-05-30
+
+**Deprecation warning**
 
 - The Dockerfile now has several build targets depending on the orchestrator.
-  Old projects still refering to `brightsparklabs/appcli` (as this is an alias for `brightsparklabs/appcli-docker-compose`) but new projects should use the correct orchestrator.
+  The Docker image `brightsparklabs/appcli` will stop being published in a future version.
+  Projects using `FROM brightsparklabs/appcli` in their Dockerfile should should migrate to
+  `FROM brightsparklabs/appcli-docker-compose` instead.
 
 ### Added
 
@@ -21,8 +31,6 @@ The changelog is applicable from version `1.0.0` onwards.
 - AF-195: Add helm orchestrator
 - TEL-49: Prefix log lines with `DEV_MODE` when using `wrap_dev_mode` for clarity.
 - TEL-50: Fix help text not resolving variable `default_install_dir`
-
-### Fixed
 
 ---
 
