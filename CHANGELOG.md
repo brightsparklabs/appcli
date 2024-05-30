@@ -10,8 +10,15 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ## [Unreleased]
 
+### Breaking Changes from 2.5.0
+
+- The Dockerfile now has several build targets depending on the orchestrator.
+  Old projects still refering to `brightsparklabs/appcli` (as this is an alias for `brightsparklabs/appcli-docker-compose`) but new projects should use the correct orchestrator.
+
 ### Added
 
+- APPCLI-114: Stop schema files being copied on migration
+- AF-195: Add helm orchestrator
 - TEL-49: Prefix log lines with `DEV_MODE` when using `wrap_dev_mode` for clarity.
 
 ### Fixed
