@@ -985,6 +985,7 @@ NOTE: The following assumes your app name uppercase slug is `MYAPP`.
         # The above is equivalent to:
         export \
             MYAPP_CLI_DEBUG=true \
+            MYAPP_INSTALL_INSTALL_DIR=/tmp/myapp \
             MYAPP_DATA_DIR=/tmp/myapp/local-dev/data \
             MYAPP_CONFIG_DIR=/tmp/myapp/local-dev/config \
             MYAPP_BACKUP_DIR=/tmp/myapp/local-dev/backup \

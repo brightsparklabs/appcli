@@ -52,6 +52,7 @@ def enable_dev_mode_logging():
     coloredlogs.install(
         logger=logger,
         fmt=logger_format,
+        level=logging.DEBUG,
     )
 
 
