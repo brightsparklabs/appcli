@@ -584,7 +584,6 @@ which you wish to exec against, we can create three custom commands in the follo
   container.
 
 ```python
-
 def get_ls_root_command(orchestrator: DockerComposeOrchestrator):
     @click.command(
         help="List files in the root directory",
@@ -644,8 +643,88 @@ def main():
     )
     cli = create_cli(configuration)
     cli()
-
 ```
+
+## (Optional) Define hooks
+
+Custom logic can be inserted into the lifecycle by defining the `hooks` parameter in the
+`Configuration` object:
+
+```python
+from secrets import token_urlsafe
+from appcli.models.configuration import Hooks
+
+
+def get_hooks() -> Hooks:
+    def post_configure_init(ctx: click.Context):
+    """Automatically generate random passwords after `configure init` runs."""
+
+    cli_context = ctx.obj
+    configure_cli = cli_context.commands["configure"]
+
+    for setting in [
+        "myapp.services.api.password",
+        "myapp.services.database.password",
+        "myapp.services.cache.password",
+    ]:
+        logger.info(f"Generating random password for: {setting}")
+        ctx.invoke(
+            configure_cli.commands["set"],
+            type="str",
+            encrypted=True,
+            setting=setting,
+            value=token_urlsafe(20),
+        )
+
+    def migrate_variables(
+        cli_context: CliContext,
+        current_variables: Dict[str, Any],
+        previous_version: str,
+        clean_new_version_variables: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        logger.info(
+            f"Migrating myapp `{previous_version}` to `{cli_context.app_version}` ..."
+        )
+
+        # Handle migration from schema v1 to v2.
+        if current_variables['metadata']['schema_version'] == 1:
+            current_variables['metadata']['schema_version'] = 2
+            # `proxy` key was added in v2.
+            current_variables['myapp']['proxy'] = clean_new_version_variables['myapp']['proxy']
+
+        return current_variables
+
+    ...
+
+    return Hooks(
+        post_configure_init=post_configure_init,
+        migrate_variables=migrate_variables,
+        ...
+    )
+
+...
+
+def main():
+    configuration = Configuration(
+        app_name="myapp",
+        docker_image="brightsparklabs/myapp',
+        hooks=get_hooks()
+    )
+    cli = create_cli(configuration)
+    cli()
+```
+
+The various hooks are documented in the `Hooks` class within
+[the configuration.py](appcli/models/configuration.py) file.
+
+They generally allow for code to be run pre/post various lifecycle steps. E.g. `pre_configure_init`
+would run the hook prior to the `configure init` stage.
+
+Two hooks of note are:
+
+* `migrate_variables` - Used to handle schema migrations of the `settings.yml` file.
+* `is_valid_variables` - Used to validate whether a current `settings.yml` file can be used by the
+  current version of the system.
 
 ## Define a container for your CLI application
 

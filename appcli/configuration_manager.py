@@ -141,6 +141,7 @@ class ConfigurationManager:
 
     def migrate_configuration(self):
         """Migrates the configuration version to the current application version"""
+        print_header("Migrating configuration directory")
 
         if self.config_repo.is_repo_on_master_branch():
             error_and_exit("Cannot migrate, repo is on master branch.")
@@ -148,15 +149,18 @@ class ConfigurationManager:
         config_version: str = self.config_repo.get_repository_version()
         app_version: str = self.cli_context.app_version
 
+        logger.info(f"Current configuration directory version [{config_version}]")
+        logger.info(f"Required configuration directory version [{app_version}]")
+
         # If the configuration version matches the application version, no migration is required.
         if config_version == app_version:
             logger.info(
-                f"Migration not required. Config version [{config_version}] matches application version [{app_version}]"
+                f"Migration not required as configuration directory matches application version [{app_version}]."
             )
             return
 
         logger.info(
-            f"Migrating configuration version [{config_version}] to match application version [{app_version}]"
+            f"Migrating configuration directory version [{config_version}] to match application version [{app_version}]"
         )
 
         app_version_branch: str = self.config_repo.generate_branch_name(app_version)
