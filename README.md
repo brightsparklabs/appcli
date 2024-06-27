@@ -5,7 +5,7 @@
 
 A library for adding CLI interfaces to applications in the brightSPARK Labs style.
 
-## Overview
+# Overview
 
 This library can be leveraged to add a standardised CLI capability to applications to:
 
@@ -44,31 +44,44 @@ variables within the `settings.yml` file as described in the Installation sectio
 Stack variables can be set within the `stack-settings.yml` file as described in the
 `Build configuration template directories` section.
 
-### Volume Mounts
+## Volume Mounts
 
 The following directories are mounted from the host system into the container:
 
 ```bash
---volume "/opt/brightsparklabs/<my_app>/<environment>/data/cli/home:/root"
---volume "/opt/brightsparklabs/<my_app>/<environment>/conf:/opt/brightsparklabs/<my_app>/<environment>/conf"
---volume "/opt/brightsparklabs/<my_app>/<environment>/conf/.generated:/opt/brightsparklabs/<my_app>/<environment>/conf/.generated"
---volume "/opt/brightsparklabs/<my_app>/<environment>/data:/opt/brightsparklabs/<my_app>/<environment>/data"
---volume "/opt/brightsparklabs/<my_app>/<environment>/backup:/opt/brightsparklabs/<my_app>/<environment>/backup"
+--volume "${INSTALL_DIR}/<environment>/data/cli/home:/root"
+--volume "${INSTALL_DIR}/<environment>/conf:/opt/brightsparklabs/<my_app>/<environment>/conf"
+--volume "${INSTALL_DIR}/<environment>/conf/.generated:/opt/brightsparklabs/<my_app>/<environment>/conf/.generated"
+--volume "${INSTALL_DIR}/<environment>/data:/opt/brightsparklabs/<my_app>/<environment>/data"
+--volume "${INSTALL_DIR}/<environment>/backup:/opt/brightsparklabs/<my_app>/<environment>/backup"
 ```
 
-## Quick Start
+## Migration from appcli version <=1.3.6 to version >1.3.6
+
+As a result of supporting application context files, all references to
+settings in template files have moved.
+
+All settings in `settings.yml` used in templating are now namespaced under
+`settings`. All templates will need to change their references to use this new
+namespacing scheme. For example, in templates that refer to settings, change the
+references like so:
+
+- `my_app.server.hostname` -> `settings.my_app.server.hostname`
+- `my_app.server.http.port` -> `settings.my_app.server.http.port`
+
+# Quick Start
 
 Refer to the [quick start guide](quickstart.md) to get a basic application running.
 
 Otherwise refer to the Installation section below to see all options.
 
-## Installation
+# Installation
 
-### Add the library to your python CLI application
+## Add the library to your python CLI application
 
     pip install git+https://github.com/brightsparklabs/appcli.git@<VERSION>
 
-### Define the CLI for your application `myapp`
+## Define the CLI for your application `myapp`
 
 _Note for appcli version 1.1.3 and below_: Import paths to access to appcli
 internal classes and methods is now by a full path, rather than being exposed
@@ -130,7 +143,7 @@ python3 implicit namespaced packages.
         main()
 ```
 
-A lot of the fields in the appcli constructor can be defaulted, resulting in less code.
+Most fields in the appcli constructor can be defaulted, resulting in less code.
 
 ```python
 configuration = Configuration(
@@ -141,19 +154,29 @@ cli = create_cli(configuration)
 cli()
 ```
 
-#### NullOrchestrator
+## Choose orchestrator
+
+### DockerComposeOrchestrator
+
+This is the default orchestrator. It is designed for launching services via a `docker-compose.yml`
+file.
+
+### NullOrchestrator
 
 For applications with no services to orchestrate, the `NullOrchestrator` can be used. This is useful
-for appcli applications which consist only of the launcher container containing various additional CLI 
-command groups. The `NullOrchestrator` disables commands related to managing services.
+for appcli applications which consist only of the launcher container containing various additional
+CLI command groups. The `NullOrchestrator` disables commands related to managing services.
 
 ```python
-orchestrator=NullOrchestrator()
+from appcli.orchestrators import NullOrchestrator
+
+orchestrator = NullOrchestrator()
 ```
 
-#### HelmOrchestrator
+### HelmOrchestrator
 
-The project also includes a [helm](https://helm.sh/docs/intro/quickstart/) orchestrator for deploying charts to [kubernetes](https://kubernetes.io/) clusters.
+The project also includes a [helm](https://helm.sh/docs/intro/quickstart/) orchestrator for
+deploying charts to [kubernetes](https://kubernetes.io/) clusters.
 
 Create a new `resources` directory as follows:
 
@@ -180,10 +203,11 @@ resources/
                └── config  # Overwrite this with a cluster specific config file. ie `~/.kube/config`.
 ```
 
-You can then define the orchestrator:
+You can then configure the orchestrator as folows:
 
 ```python
 from appcli.orchestrators import HelmOrchestrator
+
 orchestrator = HelmOrchestrator(
     # Chart archive path (relative to `conf/templates/`).
     # [Optional] Default is `cli/helm/chart`
@@ -199,7 +223,7 @@ orchestrator = HelmOrchestrator(
 )
 ```
 
-##### Values
+#### Values
 
 Values can be supplied either:
 
@@ -232,7 +256,7 @@ This would result in the following arguments being passed to helm:
 --values cli/helm/set-values/bar.yml
 ```
 
-##### Dev Mode Chart
+#### Dev Mode Chart
 
 During development it would be slow to require packaging up the chart for any changes.
 Appcli provides a way to speed up development by allow for the chart to deployed directly from source.
@@ -242,7 +266,7 @@ This is done by specifying the dev chart as an environment variable.
 MYAPP_DEV_MODE=true MYAPP_DEV_MODE_HELM_CHART=/path/to/mychart python3 -m myapp service start
 ```
 
-##### Kubeconfig
+#### Kubeconfig
 
 A custom `kubeconfig` file can be used by specifying the `KUBECONFIG` environment variable.
 
@@ -253,88 +277,13 @@ KUBECONFIG=/opt/brightsparklabs/myapp/conf/.generated/config ./myapp ...
 _NOTE:_ The `KUBECONFIG` file must be at a location which is mounted into the launch container.
 Refer to [Volume Mounts](#volume-mounts) for details on what volumes are mounted into the launch container.
 
-#### Custom Commands
+## Add configuration files
 
-You can specify some custom top-level commands by adding click commands or command groups to the
-configuration object.  Assuming 'web' is the name of the service in the docker-compose.yml file
-which you wish to exec against, we can create three custom commands in the following example:
+Any configuration files used by your services can be templated using the Jinja2 templating engine.
 
-- `myapp ls-root` which lists the contents of the root directory within the `web` service container
-  and prints it out.
-- `myapp ls-root-to-file` which lists the contents of the root directory within the `web` service
-  container and dumps to file within the container.
-- `myapp tee-file` which takes some text and `tee`s it into another file the `web` service
-  container.
-
-```python
-
-def get_ls_root_command(orchestrator: DockerComposeOrchestrator):
-    @click.command(
-        help="List files in the root directory",
-    )
-    @click.pass_context
-    def ls_root(ctx: click.Context):
-
-        # Equivalent command within the container:
-        # `ls -alh`
-        cli_context: CliContext = ctx.obj
-        output: CompletedProcess = orchestrator.exec(cli_context, "web", ["ls", "-alh", "/"])
-        print(output.stdout.decode())
-
-    return ls_root
-
-def get_tee_file_command(orchestrator: DockerComposeOrchestrator):
-    @click.command(
-        help="Tee some text into a file",
-    )
-    @click.pass_context
-    def tee_file(ctx: click.Context):
-
-        # Equivalent command within the container:
-        # `echo "Some data to tee into the custom file" | tee /ls-root.txt`
-        cli_context: CliContext = ctx.obj
-        output: CompletedProcess = orchestrator.exec(cli_context, "web", ["tee", "/my_custom_file.txt"], stdin_input="Some data to tee into the custom file")
-
-    return tee_file
-
-def get_ls_root_to_file_command(orchestrator: DockerComposeOrchestrator):
-    @click.command(
-        help="List files in the root directory and tee to file",
-    )
-    @click.pass_context
-    def ls_root_to_file(ctx: click.Context):
-
-        # Equivalent command within the container:
-        # `ls -alh | tee /ls-root.txt`
-        cli_context: CliContext = ctx.obj
-        output: CompletedProcess = orchestrator.exec(cli_context, "web", ["ls", "-alh", "/"])
-        data = output.stdout.decode()
-        orchestrator.exec(cli_context, "web", ["tee", "/ls-root.txt"], stdin_input=data)
-
-    return ls_root_to_file
-
-def main():
-    orchestrator = DockerComposeOrchestrator(Path("docker-compose.yml"))
-    configuration = Configuration(
-        app_name="appcli_nginx",
-        docker_image="thomas-anderson-bsl/appcli-nginx",
-        seed_app_configuration_file=Path(BASE_DIR, "resources/settings.yml"),
-        stack_configuration_file=Path(BASE_DIR, "resources/stack-settings.yml"),
-        baseline_templates_dir=Path(BASE_DIR, "resources/templates/baseline"),
-        configurable_templates_dir=Path(BASE_DIR, "resources/templates/configurable"),
-        orchestrator=orchestrator,
-        custom_commands={get_tee_file_command(orchestrator),get_ls_root_command(orchestrator),get_ls_root_to_file_command(orchestrator)}
-    )
-    cli = create_cli(configuration)
-    cli()
-
-```
-
-### Build configuration template directories
-
-- Store any Jinja2 variable definitions you wish to use in your configuration
-  template files in `resources/settings.yml`.
-- Store any application context files in `resources/templates/appcli/context/`
+- Store any Jinja2 variable definitions you wish to use in your configuration template files in
+  `resources/settings.yml`.
+- Store any application context files in `resources/templates/appcli/context/`.
 - Store any appcli stack specific keys in `resources/stack-settings.yml`.
 - Store your `docker-compose.yml`/`docker-compose.yml.j2` file in `resources/templates/baseline/`.
 - Configuration files (Jinja2 compatible templates or otherwise) can be stored in one
@@ -342,44 +291,7 @@ def main():
   - `resources/templates/baseline` - for templates which the end user **is not** expected to modify.
   - `resources/templates/configurable` - for templates which the end user is expected to modify.
 
-#### Schema validation
-
-Configuration files will be automatically validated against provided schema files whenever
-`configure apply` is run.
-Validation is done with [jsonschema](https://json-schema.org/) and is only available for `yaml/yml`
-and `json/jsn` files.
-The JSON schema file must match the name of the file to validate with a suffix of `.schema.json.`.
-It must be placed in the same directory as the file to validate,
-The `settings.yml`, `stack_settings.yml` file, and any files in the `resource/templates` or
-`resources/overrides` directory can be validated.
-
-```yaml
-# resources/templates/configurable/my-config.yml
-foobar: 5
-```
-
-```json
-# resources/templates/configurable/my-config.yml.schema.json
-{
-    "$schema": "http://json-schema.org/schema",
-    "type": "object",
-    "properties" : {
-        "foobar" : {"type": "number"}
-    }
-}
-```
-
-To stop a schema file from being copied across to the `generated` config directory, add `.appcli` as an infix.
-
-```bash
-$ ls -1
-bar.json                     # -> Config-file ; Copy-on-apply
-bar.json.schema.json         # -> Schema-file ; Copy-on-apply
-foo.yaml                     # -> Config-file ; Copy-on-apply
-foo.yaml.appcli.schema.json  # -> Schema-file ; Ignore-on-apply
-```
-
-#### Application context files
+### Application context files
 
 Template files are templated with Jinja2. The 'data' passed into the templating engine
 is a combination of the `settings.yml` and all application context files
@@ -443,7 +355,44 @@ The data for Jinja2 templating engine will be:
 }
 ```
 
-### Configure application backup
+### Schema validation
+
+Configuration files will be automatically validated against provided schema files whenever
+`configure apply` is run.
+Validation is done with [jsonschema](https://json-schema.org/) and is only available for `yaml/yml`
+and `json/jsn` files.
+The JSON schema file must match the name of the file to validate with a suffix of `.schema.json.`.
+It must be placed in the same directory as the file to validate,
+The `settings.yml`, `stack_settings.yml` file, and any files in the `resource/templates` or
+`resources/overrides` directory can be validated.
+
+```yaml
+# resources/templates/configurable/my-config.yml
+foobar: 5
+```
+
+```json
+# resources/templates/configurable/my-config.yml.schema.json
+{
+    "$schema": "http://json-schema.org/schema",
+    "type": "object",
+    "properties" : {
+        "foobar" : {"type": "number"}
+    }
+}
+```
+
+To stop a schema file from being copied across to the `generated` config directory, add `.appcli` as an infix.
+
+```bash
+$ ls -1
+bar.json                     # -> Config-file ; Copy-on-apply
+bar.json.schema.json         # -> Schema-file ; Copy-on-apply
+foo.yaml                     # -> Config-file ; Copy-on-apply
+foo.yaml.appcli.schema.json  # -> Schema-file ; Ignore-on-apply
+```
+
+## Configure application backup
 
 Appcli's `backup` command creates backups of configuration and data of an application, stored
 locally in the backup directory. The settings for backups are configured through entries in a
@@ -474,7 +423,7 @@ The available keys for entries in the `backups` block are:
         frequency: "* * *"
         remote_backups:
 
-#### Backup name
+### Backup name
 
 The backup `name` is a short descriptive name for the backup definition.
 To avoid problems, we _highly_ recommend `name` be:
@@ -506,7 +455,7 @@ collisions in the folder names of backups to be taken which will lead to backups
 being overwritten. e.g. `s3#1` and `s3&1` will both translate internally to
 `s3-1`.
 
-#### Backup limit
+### Backup limit
 
 A rolling deletion strategy is used to remove local backups, in order to keep `backup_limit` number
 of backups.
@@ -516,7 +465,7 @@ be deleted.
 
 Set this value to `0` to keep all backups.
 
-#### File filter
+### File filter
 
 The `file_filter` block enables filtering of files to backup from `conf` and `data` directories. For
 more details including examples, see [here](/README_BACKUP_FILE_FILTER.md).
@@ -539,7 +488,7 @@ more details including examples, see [here](/README_BACKUP_FILE_FILTER.md).
         frequency: "* * *"
         remote_backups:
 
-#### Frequency
+### Frequency
 
 Appcli supports limiting individual backups to run on only specific days using a cron-like frequency
 filter.
@@ -557,7 +506,7 @@ Examples:
 - `"1 */3 *"` (cron equivalent `"* * 1 */3 *"`) will only run on the first day-of-month of every 3rd
   month.
 
-#### Remote backup
+### Remote backup
 
 Appcli supports pushing local backups to remote storage. The list of strategies for pushing to
 remote storage are defined within the `remote_backups` block.
@@ -576,9 +525,9 @@ local backup will apply first, followed by the `frequency` of the remote backup.
 it's possible to write a remote backup frequency that will never execute. e.g. Local `* * 0` and
 remote `* * 1`.
 
-##### Strategies
+#### Strategies
 
-###### AWS S3 remote strategy
+##### AWS S3 remote strategy
 
 To use S3 remote backup, set `strategy_type` to `S3`.
 The available configuration keys for an S3 backup are:
@@ -621,7 +570,163 @@ To restore from a remote backup:
 4. Run the restore command `./myapp restore BACKUP_FILE.tgz` e.g.
    `./myapp restore APP_2021-02-02T10:55:48+00:00.tgz`. The restore process will trigger a backup.
 
-### Define a container for your CLI application
+## (Optional) Define Custom Commands
+
+You can specify some custom top-level commands by adding click commands or command groups to the
+configuration object.  Assuming 'web' is the name of the service in the docker-compose.yml file
+which you wish to exec against, we can create three custom commands in the following example:
+
+- `myapp ls-root` which lists the contents of the root directory within the `web` service container
+  and prints it out.
+- `myapp ls-root-to-file` which lists the contents of the root directory within the `web` service
+  container and dumps to file within the container.
+- `myapp tee-file` which takes some text and `tee`s it into another file the `web` service
+  container.
+
+```python
+def get_ls_root_command(orchestrator: DockerComposeOrchestrator):
+    @click.command(
+        help="List files in the root directory",
+    )
+    @click.pass_context
+    def ls_root(ctx: click.Context):
+
+        # Equivalent command within the container:
+        # `ls -alh`
+        cli_context: CliContext = ctx.obj
+        output: CompletedProcess = orchestrator.exec(cli_context, "web", ["ls", "-alh", "/"])
+        print(output.stdout.decode())
+
+    return ls_root
+
+def get_tee_file_command(orchestrator: DockerComposeOrchestrator):
+    @click.command(
+        help="Tee some text into a file",
+    )
+    @click.pass_context
+    def tee_file(ctx: click.Context):
+
+        # Equivalent command within the container:
+        # `echo "Some data to tee into the custom file" | tee /ls-root.txt`
+        cli_context: CliContext = ctx.obj
+        output: CompletedProcess = orchestrator.exec(cli_context, "web", ["tee", "/my_custom_file.txt"], stdin_input="Some data to tee into the custom file")
+
+    return tee_file
+
+def get_ls_root_to_file_command(orchestrator: DockerComposeOrchestrator):
+    @click.command(
+        help="List files in the root directory and tee to file",
+    )
+    @click.pass_context
+    def ls_root_to_file(ctx: click.Context):
+
+        # Equivalent command within the container:
+        # `ls -alh | tee /ls-root.txt`
+        cli_context: CliContext = ctx.obj
+        output: CompletedProcess = orchestrator.exec(cli_context, "web", ["ls", "-alh", "/"])
+        data = output.stdout.decode()
+        orchestrator.exec(cli_context, "web", ["tee", "/ls-root.txt"], stdin_input=data)
+
+    return ls_root_to_file
+
+def main():
+    orchestrator = DockerComposeOrchestrator(Path("docker-compose.yml"))
+    configuration = Configuration(
+        app_name="appcli_nginx",
+        docker_image="thomas-anderson-bsl/appcli-nginx",
+        seed_app_configuration_file=Path(BASE_DIR, "resources/settings.yml"),
+        stack_configuration_file=Path(BASE_DIR, "resources/stack-settings.yml"),
+        baseline_templates_dir=Path(BASE_DIR, "resources/templates/baseline"),
+        configurable_templates_dir=Path(BASE_DIR, "resources/templates/configurable"),
+        orchestrator=orchestrator,
+        custom_commands={get_tee_file_command(orchestrator),get_ls_root_command(orchestrator),get_ls_root_to_file_command(orchestrator)}
+    )
+    cli = create_cli(configuration)
+    cli()
+```
+
+## (Optional) Define hooks
+
+Custom logic can be inserted into the lifecycle by defining the `hooks` parameter in the
+`Configuration` object:
+
+```python
+from secrets import token_urlsafe
+from appcli.models.configuration import Hooks
+
+
+def get_hooks() -> Hooks:
+    def post_configure_init(ctx: click.Context):
+    """Automatically generate random passwords after `configure init` runs."""
+
+    cli_context = ctx.obj
+    configure_cli = cli_context.commands["configure"]
+
+    for setting in [
+        "myapp.services.api.password",
+        "myapp.services.database.password",
+        "myapp.services.cache.password",
+    ]:
+        logger.info(f"Generating random password for: {setting}")
+        ctx.invoke(
+            configure_cli.commands["set"],
+            type="str",
+            encrypted=True,
+            setting=setting,
+            value=token_urlsafe(20),
+        )
+
+    def migrate_variables(
+        cli_context: CliContext,
+        current_variables: Dict[str, Any],
+        previous_version: str,
+        clean_new_version_variables: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        logger.info(
+            f"Migrating myapp `{previous_version}` to `{cli_context.app_version}` ..."
+        )
+
+        # Handle migration from schema v1 to v2.
+        if current_variables['metadata']['schema_version'] == 1:
+            current_variables['metadata']['schema_version'] = 2
+            # `proxy` key was added in v2.
+            current_variables['myapp']['proxy'] = clean_new_version_variables['myapp']['proxy']
+
+        return current_variables
+
+    ...
+
+    return Hooks(
+        post_configure_init=post_configure_init,
+        migrate_variables=migrate_variables,
+        ...
+    )
+
+...
+
+def main():
+    configuration = Configuration(
+        app_name="myapp",
+        docker_image="brightsparklabs/myapp',
+        hooks=get_hooks()
+    )
+    cli = create_cli(configuration)
+    cli()
+```
+
+The various hooks are documented in the `Hooks` class within
+[the configuration.py](appcli/models/configuration.py) file.
+
+They generally allow for code to be run pre/post various lifecycle steps. E.g. `pre_configure_init`
+would run the hook prior to the `configure init` stage.
+
+Two hooks of note are:
+
+* `migrate_variables` - Used to handle schema migrations of the `settings.yml` file.
+* `is_valid_variables` - Used to validate whether a current `settings.yml` file can be used by the
+  current version of the system.
+
+## Define a container for your CLI application
 
     # filename: Dockerfile
 
@@ -698,37 +803,27 @@ Where:
 - `--environment` defines the environment name for the deployment. This allows multiple instances of
   the application to be present on the same host.
   Defaults to `production`.
-- `--install-dir` defines the base path for launcher and the default locations for the configuration
-  and data directories if they are not overrideen (see below).
-  Defaults to `/opt/brightsparklabs/${APP_NAME}/${ENVIRONMENT}/` (where `${ENVIRONMENT}` is defined
-  by `--environment` above).
+- `--install-dir` defines the base path under which each environment is deployed. It will contain a
+  directory for each `environment` installed on the system (see above). Each environment directory
+  will contain the launcher, configuration directory and data directory (unless overridden, see
+  below).
+  Defaults to `/opt/brightsparklabs/${APP_NAME}/`.
 - `--configuration-dir` defines the path to the configuration directory.
-  Defaults to `${INSTALL_DIR}/conf/` (`${INSTALL_DIR}` is defined by `--install-dir` above).
+  Defaults to `${INSTALL_DIR}/<environment>/conf/` (`${INSTALL_DIR}` is defined by `--install-dir`
+  above).
 - `--data-dir` defines the path to the data directory.
-  Defaults to `${INSTALL_DIR}/data/` (`${INSTALL_DIR}` is defined by `--install-dir` above).
+  Defaults to `${INSTALL_DIR}/<environment>/data/` (`${INSTALL_DIR}` is defined by `--install-dir`
+  above).
 
 The installation script will generate a launcher script for controlling the application. The script
 location will be printed out when running the install script. This script should now be used as the
 main entrypoint to all appcli functions for managing your application.
 
-## Migration from appcli version <=1.3.6 to version >1.3.6
-
-As a result of supporting application context files, all references to
-settings in template files have moved.
-
-All settings in `settings.yml` used in templating are now namespaced under
-`settings`. All templates will need to change their references to use this new
-namespacing scheme. For example, in templates that refer to settings, change the
-references like so:
-
-- `my_app.server.hostname` -> `settings.my_app.server.hostname`
-- `my_app.server.http.port` -> `settings.my_app.server.http.port`
-
-## Usage
+# Usage
 
 This section details what commands and options are available.
 
-### Top-level Commands
+## Top-level Commands
 
 To be used in conjunction with your application `./myapp <command>` e.g. `./myapp configure init`
 
@@ -747,7 +842,7 @@ To be used in conjunction with your application `./myapp <command>` e.g. `./myap
 | version      | Fetches the version of the app being managed with appcli.         |
 | view-backups | View a list of locally-available backups.                         |
 
-### Options
+## Options
 
 | Option                             | Description                                                                                                         |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
@@ -760,7 +855,7 @@ To be used in conjunction with your application `./myapp <command>` e.g. `./myap
 | -e, --additional-env-var TEXT      | Additional environment variables to expose to launcher container. Can be specified multiple times.                  |
 | --help                             | Show the help message and exit.                                                                                     |
 
-#### Command: `backup`
+### Command: `backup`
 
 Creates a backup `.tgz` file in the backup directory that contains files from the configuration and
 data directory, as configured in `stack-settings.yml`. After the backup is taken, remote backup
@@ -777,7 +872,7 @@ usage: `./myapp backup [OPTIONS] [ARGS]`
 The `backup` command optionally takes an argument corresponding to the `name` of the backup to run.
 If no `name` is provided, all backups will attempt to run.
 
-#### Command Group: `configure`
+### Command Group: `configure`
 
 Configures the application.
 
@@ -798,7 +893,7 @@ usage: `./myapp configure [OPTIONS] COMMAND [ARGS]`
 | ------ | ------------------------------- |
 | --help | Show the help message and exit. |
 
-#### Command: `encrypt`
+### Command: `encrypt`
 
 Encrypts the specified string.
 
@@ -808,7 +903,7 @@ usage: `./myapp encrypt [OPTIONS] TEXT`
 | ------ | ------------------------------- |
 | --help | Show the help message and exit. |
 
-#### Command Group: `init`
+### Command Group: `init`
 
 Initialises the application.
 
@@ -822,7 +917,7 @@ usage: `./myapp init [OPTIONS] COMMAND [ARGS]`
 | ------ | ------------------------------- |
 | --help | Show the help message and exit. |
 
-#### Command: `launcher`
+### Command: `launcher`
 
 Outputs an appropriate launcher bash script to stdout.
 
@@ -832,7 +927,7 @@ usage: `./myapp launcher [OPTIONS]`
 | ------ | ------------------------------- |
 | --help | Show the help message and exit. |
 
-#### Command: `migrate`
+### Command: `migrate`
 
 Migrates the application configuration to work with the current application version.
 
@@ -842,7 +937,7 @@ usage: `./myapp migrate [OPTIONS]`
 | ------ | ------------------------------- |
 | --help | Show the help message and exit. |
 
-#### Command Group: `orchestrator`
+### Command Group: `orchestrator`
 
 Perform tasks defined by the orchestrator.
 
@@ -862,7 +957,7 @@ For example, the following commands are available to docker-compose:
 | ------ | ------------------------------ |
 | --help | Show the help message and exit |
 
-#### Command: `restore`
+### Command: `restore`
 
 Restores a specified backup `.tgz` file from the configured backup folder.
 
@@ -872,7 +967,7 @@ usage: `./myapp restore BACKUP_FILE`
 | ------ | ------------------------------- |
 | --help | Show the help message and exit. |
 
-#### Command Group: `service`
+### Command Group: `service`
 
 Runs application services. These are the long-running services which should only exit on command.
 
@@ -891,7 +986,7 @@ usage: `./myapp service [OPTIONS] COMMAND [ARGS]`
 | ------ | ------------------------------- |
 | --help | Show the help message and exit. |
 
-#### Command Group: `task`
+### Command Group: `task`
 
 Runs application tasks. These are short-lived services which should exit when the task is complete.
 
@@ -905,13 +1000,13 @@ usage: `./myapp task [OPTIONS] COMMAND [ARGS]`
 | ------ | ------------------------------- |
 | --help | Show the help message and exit. |
 
-#### Command: `version`
+### Command: `version`
 
 Fetches the version of the app being managed with appcli.
 
 usage: `./myapp version`
 
-#### Command: `view-backups`
+### Command: `view-backups`
 
 View a list of all backups in the configured backup folder.
 
@@ -921,7 +1016,7 @@ usage: `./myapp view-backups`
 | ------ | ------------------------------- |
 | --help | Show the help message and exit. |
 
-### Usage within scripts and cron
+## Usage within scripts and cron
 
 By default, the generated `appcli` launcher script will run the CLI container with a virtual
 terminal session (tty).  This may interfere with crontab entries or scripts that use the appcli
@@ -945,11 +1040,11 @@ or
     export NO_INTERACTIVE=true
     ./myapp [...]
 
-## Development
+# Development
 
 This section details how to build/test/run/debug the system in a development environment.
 
-### Prerequisites
+## Prerequisites
 
 The following must be installed and in the `PATH`:
 
@@ -958,15 +1053,15 @@ The following must be installed and in the `PATH`:
 - virtualenv
 - git
 
-### Build
+## Build
 
     make all
 
-### Install
+## Install
 
     pip install -e .
 
-### Running unit tests
+## Running unit tests
 
     make test
 
@@ -985,6 +1080,7 @@ NOTE: The following assumes your app name uppercase slug is `MYAPP`.
         # The above is equivalent to:
         export \
             MYAPP_CLI_DEBUG=true \
+            MYAPP_INSTALL_INSTALL_DIR=/tmp/myapp \
             MYAPP_DATA_DIR=/tmp/myapp/local-dev/data \
             MYAPP_CONFIG_DIR=/tmp/myapp/local-dev/config \
             MYAPP_BACKUP_DIR=/tmp/myapp/local-dev/backup \
@@ -994,7 +1090,7 @@ NOTE: The following assumes your app name uppercase slug is `MYAPP`.
 
         ./src/myapp.py
 
-## Contributing
+# Contributing
 
 When committing code, call `make all` to automatically run code formatting/ linting/testing.
 
@@ -1005,7 +1101,7 @@ stylistic coding decisions.
 Install with `pip install black`. This can be run through VSCode or via the CLI. See the `black`
 documentation for details.
 
-## Licenses
+# Licenses
 
 Refer to the `LICENSE` file for details.
 

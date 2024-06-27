@@ -21,7 +21,7 @@ from click.core import Context
 from appcli.commands.appcli_command import AppcliCommand
 from appcli.commands.configure_template_cli import ConfigureTemplateCli
 from appcli.configuration_manager import ConfigurationManager
-from appcli.functions import encrypt_text, error_and_exit, print_header
+from appcli.functions import encrypt_text, error_and_exit, print_header, print_subheader
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
@@ -61,26 +61,28 @@ class ConfigureCli:
         @configure.command(help="Initialises the configuration directory.")
         @click.pass_context
         def init(ctx):
+            print_header("CONFIGURE INIT")
+
             cli_context: CliContext = ctx.obj
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.CONFIGURE_INIT
             )
 
-            print_header(f"Seeding configuration directory for {self.app_name}")
+            logger.info(f"Seeding configuration directory for {self.app_name}")
 
             # Run pre-hooks
             hooks = self.cli_configuration.hooks
-            logger.debug("Running pre-configure init hook")
+            print_subheader("Running pre-configure init hook")
             hooks.pre_configure_init(ctx)
 
             # Initialise configuration directory
-            logger.debug("Initialising configuration directory")
+            print_subheader("Initialising configuration directory")
             ConfigurationManager(
                 cli_context, self.cli_configuration
             ).initialise_configuration()
 
             # Run post-hooks
-            logger.debug("Running post-configure init hook")
+            print_subheader("Running post-configure init hook")
             hooks.post_configure_init(ctx)
 
             logger.info("Finished initialising configuration")
@@ -100,6 +102,8 @@ class ConfigureCli:
         )
         @click.pass_context
         def apply(ctx, message, force):
+            print_header("CONFIGURE APPLY")
+
             cli_context: CliContext = ctx.obj
 
             # We require the '--force' option to allow forcibly applying and
