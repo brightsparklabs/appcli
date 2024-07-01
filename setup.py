@@ -75,5 +75,5 @@ setup(
         "tabulate==0.9.0",
         "wheel==0.43.0",
     ],
-    extras_require={"dev": ["ruff==0.4.7", "pre-commit==3.7.1", "pytest==8.2.2"]},
+    extras_require={"dev": ["ruff==0.5.0", "pre-commit==3.7.1", "pytest==8.2.2"]},
 )
