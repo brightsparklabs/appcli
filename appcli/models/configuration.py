@@ -15,7 +15,7 @@ import os
 import re
 from pathlib import Path
 from subprocess import CompletedProcess
-from typing import Any, Callable, Dict, FrozenSet, Iterable, NamedTuple
+from typing import Any, Callable, Dict, FrozenSet, Iterable, NamedTuple, Optional
 
 # vendor libraries
 import click
@@ -81,28 +81,102 @@ class Hooks(NamedTuple):
     """
 
     pre_start: Callable[[click.Context], None] = lambda x: None
-    """ Optional. Hook function to run before running 'start'. """
+    """
+    [Optional] Hook function to run before running 'start'.
+
+    Args:
+        Arg[0] (click.Context): The click context object.
+    """
 
     post_start: Callable[[click.Context, CompletedProcess], None] = lambda x, y: None
-    """ Optional. Hook function to run after running 'start'. """
+    """
+    [Optional] Hook function to run after running 'start'.
+
+    Args:
+        Arg[0] (click.Context): The click context object.
+        Arg[1] (CompletedProcess): The process result object from running `start`.
+    """
 
     pre_shutdown: Callable[[click.Context], None] = lambda x: None
-    """ Optional. Hook function to run before running 'shutdown'. """
+    """
+    [Optional] Hook function to run before running 'shutdown'.
+
+    Args:
+        Arg[0] (click.Context): The click context object.
+    """
 
     post_shutdown: Callable[[click.Context, CompletedProcess], None] = lambda x, y: None
-    """ Optional. Hook function to run after running 'shutdown'. """
+    """
+    [Optional] Hook function to run after running 'shutdown'.
 
-    pre_configure_init: Callable[[click.Context], None] = lambda x: None
-    """ Optional. Hook function to run before running 'configure init'. """
+    Args:
+        Arg[0] (click.Context): The click context object.
+        Arg[1] (CompletedProcess): The process result object from running `shutdown`.
+    """
 
-    post_configure_init: Callable[[click.Context], None] = lambda x: None
-    """ Optional. Hook function to run after running 'configure init'. """
+    pre_configure_init: Callable[[click.Context, Optional[str]], None] = (
+        lambda x, y: None
+    )
+    """
+    [Optional] Hook function to run before running 'configure init'.
+
+    Args:
+        Arg[0] (click.Context): The click context object.
+        Arg[1] (Optional[str]): The supplied `--preset` arg.
+    """
+
+    post_configure_init: Callable[[click.Context, Optional[str]], None] = (
+        lambda x, y: None
+    )
+    """
+    [Optional] Hook function to run after running 'configure init'.
+
+    Args:
+        Arg[0] (click.Context): The click context object.
+        Arg[1] (Optional[str]): The supplied `--preset` arg.
+    """
 
     pre_configure_apply: Callable[[click.Context], None] = lambda x: None
-    """ Optional. Hook function to run before running 'configure apply'. """
+    """
+    [Optional] Hook function to run before running 'configure apply'.
+
+    Args:
+        Arg[0] (click.Context): The click context object.
+    """
 
     post_configure_apply: Callable[[click.Context], None] = lambda x: None
-    """ Optional. Hook function to run after running 'configure apply'. """
+    """
+    [Optional] Hook function to run after running 'configure apply'.
+
+    Args:
+        Arg[0] (click.Context): The click context object.
+    """
+
+
+class PresetsConfiguration(BaseModel):
+    """Settings for loading preconfigured defaults."""
+
+    is_mandatory: bool = False
+    """Whether the system supports/enforces using presets."""
+
+    templates_directory: Path = Path(
+        os.path.dirname(
+            inspect.stack()[-1].filename
+        ),  # Filename at the top of the call-stack.
+        "resources/templates/presets",
+    )
+    """Directory containing the preset profiles."""
+
+    default_preset: Optional[str] = None
+    """The default preset to use if one is not supplied."""
+
+    def get_options(self):
+        """Return the list of presets."""
+        return [
+            preset.name
+            for preset in self.templates_directory.iterdir()
+            if preset.is_dir()
+        ]
 
 
 class Configuration(BaseModel):
@@ -235,6 +309,9 @@ class Configuration(BaseModel):
     NOTE: This was updated in `pydantic==2.0`.
     See class attribute
     """
+
+    presets: PresetsConfiguration = PresetsConfiguration()
+    """Settings for loading preconfigured defaults."""
 
 
 def is_matching_dict_structure(dict_to_validate: Dict, clean_dict: Dict):
