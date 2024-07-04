@@ -726,6 +726,75 @@ Two hooks of note are:
 * `is_valid_variables` - Used to validate whether a current `settings.yml` file can be used by the
   current version of the system.
 
+## (Optional) Preset Configurations
+
+The `configure init` command deploys default configuration files (from `configurable/`) to the installed
+instance.
+`appcli` supports having multiple configuration groups for deployment to specified environments.
+For example, a project may need separate separate configuration files for dpeloying to:
+
+- AWS
+- Azure
+- OnPrem
+- etc...
+
+This is done by having configuring the `PresetConfiguration` block of the project.
+
+```python
+configuration = Configuration(
+    ...
+    auto_configure_on_install=False,
+    presets=PresetsConfiguration(
+        is_mandatory=True,  # [Optional] Whether to support/enforce presets.
+        templates_directory="resources/templates/presets",  # [Optional] Path to the preset dirs.  
+        default_preset="onprem", # [Optional] The preset to apply when not is specified.
+    ),
+)
+```
+
+The configuration directory can then be laid out as follows.
+
+```bash
+resources/templates/
+├── baseline/
+├── configurable/
+│  ├── basefile.yml
+│  └── environment.txt
+└── presets/
+   ├── aws/
+   │  └── environment.txt
+   ├── azure/
+   │  └── environment.txt
+   └── onprem/
+      └── environment.txt
+```
+
+The `preset` can the be specified as an arg when instantiating the configuration directory
+
+```bash
+./myapp configure init --preset aws
+```
+
+All the files in `configurable/` will be deployed with all installations.
+All files in for the supplied profile will also be deployed with any file conflicts being resolved in
+favour of the preset.
+
+```bash
+/opt/brightsparklabs/myapp/environment/conf/templates/
+├── basefile.yml # Comes from `configurable/`.
+└── environment.txt  # Comes from `presets/aws/`.
+```
+
+### Configure Init Hooks
+
+Any `{pre,post}_configure_init` hooks will inherit the profile arg supplied at runtime.
+
+```python
+def post_configure_init_hook(ctx: click.Context, preset):
+  # `preset` will be `--preset <value>` or `None` if no arg was supplied.
+  pass
+```
+
 ## Define a container for your CLI application
 
     # filename: Dockerfile

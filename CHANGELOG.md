@@ -14,6 +14,8 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Added
 
+- AF-258: Add `--preset` options for `configure init`.
+
 ### Changed
 
 - TEL-55: Updated documentation and typing for `hooks`. Ensured DEV_MODE install goes to `/tmp/`.
@@ -26,9 +28,6 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Security
 
-### Added
-
-### Fixed
 
 ---
 
