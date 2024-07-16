@@ -60,7 +60,7 @@ class ConfigureCli:
 
         @configure.command(help="Initialises the configuration directory.")
         @click.pass_context
-        def init(ctx):
+        def init(ctx, preset=None):
             print_header("CONFIGURE INIT")
 
             cli_context: CliContext = ctx.obj
@@ -73,19 +73,29 @@ class ConfigureCli:
             # Run pre-hooks
             hooks = self.cli_configuration.hooks
             print_subheader("Running pre-configure init hook")
-            hooks.pre_configure_init(ctx)
+            hooks.pre_configure_init(ctx, preset)
 
             # Initialise configuration directory
             print_subheader("Initialising configuration directory")
             ConfigurationManager(
                 cli_context, self.cli_configuration
-            ).initialise_configuration()
+            ).initialise_configuration(preset)
 
             # Run post-hooks
             print_subheader("Running post-configure init hook")
-            hooks.post_configure_init(ctx)
+            hooks.post_configure_init(ctx, preset)
 
             logger.info("Finished initialising configuration")
+
+        if self.cli_configuration.presets.is_mandatory:
+            init = click.option(
+                "--preset",
+                "-p",
+                help="The configuration preset to deploy.",
+                required=True,
+                type=click.Choice(self.cli_configuration.presets.get_options()),
+                default=self.cli_configuration.presets.default_preset,
+            )(init)
 
         @configure.command(help="Applies the settings from the configuration.")
         @click.option(

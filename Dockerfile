@@ -24,7 +24,7 @@
 # BASE LAYER
 # -----------------------------------------------------------------------------
 
-FROM python:3.12.3-slim-bullseye as appcli-base
+FROM python:3.12.3-slim-bullseye AS appcli-base
 
 ENV LANG=C.UTF-8
 
@@ -114,12 +114,12 @@ RUN \
 # ORCHESTRATOR LAYERS
 # -----------------------------------------------------------------------------
 
-FROM appcli-base as appcli-docker-compose
+FROM appcli-base AS appcli-docker-compose
 
 COPY --from=docker-compose-builder /tmp/docker/docker /usr/bin
 COPY --from=docker-compose-builder /tmp/docker-compose-linux-x86_64 /usr/local/lib/docker/cli-plugins/docker-compose
 
-FROM appcli-base as appcli-helm
+FROM appcli-base AS appcli-helm
 
 COPY --from=helm-builder /tmp/kubectl /usr/bin/
 COPY --from=helm-builder /tmp/linux-amd64/helm /usr/bin

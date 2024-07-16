@@ -726,6 +726,84 @@ Two hooks of note are:
 * `is_valid_variables` - Used to validate whether a current `settings.yml` file can be used by the
   current version of the system.
 
+## (Optional) Preset Configurations
+
+The `configure init` command initialises the install location with the configuration templates from
+the  `configurable_templates_dir`.
+
+In some instances, it is useful to be able to tweak these files for various preset scenarios. E.g.
+If a system is deployed on-premise it might enable a set of local services which are not needed if
+the system if deployed to a cloud environment.
+
+`appcli` support defining `presets` to support this use case. This is done by having configuring the
+`PresetConfiguration` block of the project.
+
+```python
+configuration = Configuration(
+    ...
+    auto_configure_on_install=False,
+    presets=PresetsConfiguration(
+        is_mandatory=True,  # [Optional] Whether to support/enforce presets.
+        templates_directory="resources/templates/presets",  # [Optional] Path to the preset dirs.  
+        default_preset="onprem", # [Optional] The preset to apply when not is specified.
+    ),
+)
+```
+
+The `templates_directory` must contain a directory for each preset, and contain any files which
+should be overriden from the default `configurable` directory. E.g. the below would ensure the
+various presets all override the default `environment.txt` file.
+
+```bash
+resources/templates/
+├── baseline/
+├── configurable/
+│  ├── basefile.yml
+│  └── environment.txt
+└── presets/
+   ├── aws/
+   │  ├── additional_dir/
+   │  │  └── nested_file.yml
+   │  ├── additional_file.yml
+   │  └── environment.txt
+   ├── azure/
+   │  └── environment.txt
+   └── onprem/
+      └── environment.txt
+```
+
+The `preset` can the be specified when initialising the configuration directory:
+
+```bash
+./myapp configure init --preset aws
+```
+
+This will do the following:
+
+1. All the files in the `configurable_templates_dir` (e.g. `resources/templates/configurable/`) will
+   be copied to the installation directory as per usual.
+2. All files from the `aws` preset will be copied over to the installation directory, overwriting
+   any existing files with the same name.
+
+```bash
+/opt/brightsparklabs/myapp/production/conf/templates/
+├── basefile.yml           # Comes from `configurable/`.
+├── additional_dir/        # Comes from `presets/aws/`.
+│  └── nested_file.yml     # Comes from `presets/aws/`.
+├── additional_file.yml    # Comes from `presets/aws/`.
+└── environment.txt        # Comes from `presets/aws/`.
+```
+
+### Configure Init Hooks
+
+Any `{pre,post}_configure_init` hooks will inherit the profile parameter supplied at runtime.
+
+```python
+def post_configure_init_hook(ctx: click.Context, preset: Optional[str]):
+  # `preset` will be `--preset <value>` or `None` if no parameter was supplied.
+  pass
+```
+
 ## Define a container for your CLI application
 
     # filename: Dockerfile
