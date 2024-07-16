@@ -15,7 +15,7 @@ import os
 import shutil
 import tarfile
 import tempfile
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 from pathlib import Path
 from typing import Iterable, Optional
 
@@ -644,7 +644,7 @@ class ConfigurationManager:
 
     def __generate_configuration_metadata_file(self):
         record = {
-            "generated_at": datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(),
+            "generated_at": datetime.now(UTC).replace(tzinfo=timezone.utc).isoformat(),
             "generated_from_commit": self.config_repo.get_current_commit_hash(),
         }
         configuration_record_file = self.__get_generated_configuration_metadata_file(
