@@ -728,17 +728,15 @@ Two hooks of note are:
 
 ## (Optional) Preset Configurations
 
-The `configure init` command deploys default configuration files (from `configurable/`) to the installed
-instance.
-`appcli` supports having multiple configuration groups for deployment to specified environments.
-For example, a project may need separate separate configuration files for dpeloying to:
+The `configure init` command initialises the install location with the configuration templates from
+the  `configurable_templates_dir`.
 
-- AWS
-- Azure
-- OnPrem
-- etc...
+In some instances, it is useful to be able to tweak these files for various preset scenarios. E.g.
+If a system is deployed on-premise it might enable a set of local services which are not needed if
+the system if deployed to a cloud environment.
 
-This is done by having configuring the `PresetConfiguration` block of the project.
+`appcli` support defining `presets` to support this use case. This is done by having configuring the
+`PresetConfiguration` block of the project.
 
 ```python
 configuration = Configuration(
@@ -752,7 +750,9 @@ configuration = Configuration(
 )
 ```
 
-The configuration directory can then be laid out as follows.
+The `templates_directory` must contain a directory for each preset, and contain any files which
+should be overriden from the default `configurable` directory. E.g. the below would ensure the
+various presets all override the default `environment.txt` file.
 
 ```bash
 resources/templates/
@@ -762,6 +762,9 @@ resources/templates/
 │  └── environment.txt
 └── presets/
    ├── aws/
+   │  ├── additional_dir/
+   │  │  └── nested_file.yml
+   │  ├── additional_file.yml
    │  └── environment.txt
    ├── azure/
    │  └── environment.txt
@@ -769,29 +772,35 @@ resources/templates/
       └── environment.txt
 ```
 
-The `preset` can the be specified as an arg when instantiating the configuration directory
+The `preset` can the be specified when initialising the configuration directory:
 
 ```bash
 ./myapp configure init --preset aws
 ```
 
-All the files in `configurable/` will be deployed with all installations.
-All files in for the supplied profile will also be deployed with any file conflicts being resolved in
-favour of the preset.
+This will do the following:
+
+1. All the files in the `configurable_templates_dir` (e.g. `resources/templates/configurable/`) will
+   be copied to the installation directory as per usual.
+2. All files from the `aws` preset will be copied over to the installation directory, overwriting
+   any existing files with the same name.
 
 ```bash
-/opt/brightsparklabs/myapp/environment/conf/templates/
-├── basefile.yml # Comes from `configurable/`.
-└── environment.txt  # Comes from `presets/aws/`.
+/opt/brightsparklabs/myapp/production/conf/templates/
+├── basefile.yml           # Comes from `configurable/`.
+├── additional_dir/        # Comes from `presets/aws/`.
+│  └── nested_file.yml     # Comes from `presets/aws/`.
+├── additional_file.yml    # Comes from `presets/aws/`.
+└── environment.txt        # Comes from `presets/aws/`.
 ```
 
 ### Configure Init Hooks
 
-Any `{pre,post}_configure_init` hooks will inherit the profile arg supplied at runtime.
+Any `{pre,post}_configure_init` hooks will inherit the profile parameter supplied at runtime.
 
 ```python
-def post_configure_init_hook(ctx: click.Context, preset):
-  # `preset` will be `--preset <value>` or `None` if no arg was supplied.
+def post_configure_init_hook(ctx: click.Context, preset: Optional[str]):
+  # `preset` will be `--preset <value>` or `None` if no parameter was supplied.
   pass
 ```
 

@@ -15,7 +15,7 @@ import os
 import re
 from pathlib import Path
 from subprocess import CompletedProcess
-from typing import Any, Callable, Dict, FrozenSet, Iterable, NamedTuple, Optional
+from typing import Any, Callable, Dict, FrozenSet, Iterable, List, NamedTuple, Optional
 
 # vendor libraries
 import click
@@ -170,8 +170,13 @@ class PresetsConfiguration(BaseModel):
     default_preset: Optional[str] = None
     """The default preset to use if one is not supplied."""
 
-    def get_options(self):
-        """Return the list of presets."""
+    def get_options(self) -> List[str]:
+        """
+        Return the list of presets.
+
+        Returns:
+            List[str]: The list of preset names available.
+        """
         return [
             preset.name
             for preset in self.templates_directory.iterdir()
