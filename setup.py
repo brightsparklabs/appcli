@@ -67,7 +67,7 @@ setup(
         "jsonschema==4.22.0",
         "jinja2==3.1.4",
         "pycryptodome==3.20.0",
-        "pydantic==2.8.0",
+        "pydantic==2.8.2",
         "pyfiglet==1.0.2",
         "python-keycloak==3.12.0",
         "python-slugify==8.0.4",
