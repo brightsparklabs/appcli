@@ -49,9 +49,9 @@ def error_and_exit(message: str):
 def print_header(title):
     logger.info(
         f"""
-{"=" *60}
+{"=" * 60}
 %s
-{"=" *60}""",
+{"=" * 60}""",
         title.upper(),
     )
 
@@ -59,9 +59,9 @@ def print_header(title):
 def print_subheader(title):
     logger.info(
         f"""
-{"=" *40}
+{"=" * 40}
 %s
-{"=" *40}""",
+{"=" * 40}""",
         title.upper(),
     )
 

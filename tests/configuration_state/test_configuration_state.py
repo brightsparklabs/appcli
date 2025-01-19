@@ -44,7 +44,7 @@ def test_no_state():
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             # Expect that we cannot initialise on an already-initialised repo
             state.verify_command_allowed(command)
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 1
 
 
@@ -63,7 +63,7 @@ def test_no_configure_init_on_existing_repos():
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             # Expect that we cannot initialise on an already-initialised repo
             state.verify_command_allowed(AppcliCommand.CONFIGURE_INIT)
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 1
 
 
