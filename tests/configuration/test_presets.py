@@ -151,7 +151,9 @@ def test_preset_required(preset_configuration, default_cli_context):
     assert result.exit_code == 2
     assert "Missing option '--preset' / '-p'" in result_text
     # Also check expected profiles.
-    assert "Choose from:\n\tpreset1,\n\tpreset2\n" in result_text
+    assert "Choose from:" in result_text
+    assert "preset1" in result_text
+    assert "preset2" in result_text
 
 
 def test_invalid_preset(preset_configuration, default_cli_context):

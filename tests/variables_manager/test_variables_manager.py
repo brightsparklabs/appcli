@@ -43,7 +43,7 @@ def test_get_missing_variable(tmpdir):
     variable_path = "nonexistant.variable"
     with pytest.raises(KeyError) as pytest_wrapped_e:
         var_manager.get_variable(variable_path)
-    assert pytest_wrapped_e.type == KeyError
+    assert pytest_wrapped_e.type is KeyError
 
 
 def test_get_variable_empty(tmpdir):
