@@ -26,6 +26,8 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Fixed
 
+- APPCLI-122: Fix failing dependabot automerges.
+
 ### Security
 
 
