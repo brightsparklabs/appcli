@@ -392,6 +392,32 @@ foo.yaml                     # -> Config-file ; Copy-on-apply
 foo.yaml.appcli.schema.json  # -> Schema-file ; Ignore-on-apply
 ```
 
+### Secrets management
+
+Sensitive values can be encrypted inside the `settings.yml` file and then decrypted during deployment.
+
+```bash
+# Automatically encrypt and set.
+./myapp configure set -e "path.to.field" "my-secret-value"
+
+# Manually encrypt and set.
+./myapp encrypt "my-secret-value" # Returns `enc:id=X:....`
+./myapp configure edit # Set the above value to the field.
+```
+
+On template generation, the values from the `settings.yaml` file are used verbatim in the generated files.
+So any encrypted value comes through verbatim in the file present on disk (i.e. remains encrypted on disk).
+
+In the appcli container, when using the `docker-compose` orchestrator, there is special handling.
+
+- The docker compose YAML files (and any override files) are decrypted and written to a temporary file WITHIN the container.
+- These decrypted files and then used in the context of any docker-compose commands to manage the stack.
+- So relevant env vars / secrets will go through into any containers as defined in the docker-compose.yaml file.
+- The decrypted docker compose file disappears when the container shuts down.
+
+NOTE: Secret management is currently not available for the `HelmOrchestrator`.
+Any secret objects should be pre-loaded in the kubernetes cluster.
+
 ## Configure application backup
 
 Appcli's `backup` command creates backups of configuration and data of an application, stored
@@ -963,7 +989,7 @@ usage: `./myapp configure [OPTIONS] COMMAND [ARGS]`
 | get        | Reads a setting from the configuration.                                                                                   |
 | get-secure | Reads a setting from the configuration, decrypting if it is encrypted. This will prompt for the setting key.              |
 | init       | Initialises the configuration directory.                                                                                  |
-| set        | Saves a setting to the configuration. Allows setting the type of value with option `--type`, and defaults to string type. |
+| set        | Saves a setting to the configuration. Allows setting the type of value with option `--type`, and defaults to string type. Use `-e` to encrypt the value when setting. |
 | template   | Configures the baseline templates.                                                                                        |
 | edit       | Open the settings file for editing with vim-tiny.                                                                         |
 

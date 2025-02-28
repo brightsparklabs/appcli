@@ -15,6 +15,7 @@ The changelog is applicable from version `1.0.0` onwards.
 ### Added
 
 - AF-258: Add `--preset` options for `configure init`.
+- SYS-120: Add doco for handling secrets.
 
 ### Changed
 
