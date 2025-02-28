@@ -405,8 +405,15 @@ Sensitive values can be encrypted inside the `settings.yml` file and then decryp
 ./myapp configure edit # Set the above value to the field.
 ```
 
-Any secret values set will be automatically decrypted by APPCLI (using the `conf/key` key)
-to temporary files just before deployment.
+On template generation, the values from the `settings.yaml` file are used verbatim in the generated files.
+So any encrypted value comes through verbatim in the file present on disk (i.e. remains encrypted on disk).
+
+In the appcli container, when using the `docker-compose` orchestrator, there is special handling.
+
+- The docker compose YAML files (and any override files) are decrypted and written to a temporary file WITHIN the container.
+- These decrypted files and then used in the context of any docker-compose commands to manage the stack.
+- So relevant env vars / secrets will go through into any containers as defined in the docker-compose.yaml file.
+- The decrypted docker compose file disappears when the container shuts down.
 
 NOTE: Secret management is currently not available for the `HelmOrchestrator`.
 Any secret objects should be pre-loaded in the kubernetes cluster.
