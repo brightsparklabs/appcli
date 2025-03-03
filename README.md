@@ -394,29 +394,61 @@ foo.yaml.appcli.schema.json  # -> Schema-file ; Ignore-on-apply
 
 ### Secrets management
 
-Sensitive values can be encrypted inside the `settings.yml` file and then decrypted during deployment.
+IMPORTANT: Currently only supported for the `DockerComposeOrchestrator`. Secret management is
+currently not available for the `HelmOrchestrator`. Any secret objects should be pre-loaded in the
+Kubernetes cluster.
+
+Sensitive values can be encrypted inside the `settings.yml` file and then decrypted during
+deployment within the `docker-compose.yml`.
 
 ```bash
-# Automatically encrypt and set.
-./myapp configure set -e "path.to.field" "my-secret-value"
+# Automatically encrypt and set (spaces to prevent shell history retention).
+$   ./myapp configure set -e 'path.to.field' 'my-secret-value'
 
-# Manually encrypt and set.
-./myapp encrypt "my-secret-value" # Returns `enc:id=X:....`
-./myapp configure edit # Set the above value to the field.
+# Manually encrypt and set (spaces to prevent shell history retention).
+$  ./myapp encrypt 'my-secret-value'
+enc:id=X:....
+
+# Set the above value to the field.
+./myapp configure set 'path.to.field' 'enc:id=X:....'
 ```
 
-On template generation, the values from the `settings.yaml` file are used verbatim in the generated files.
-So any encrypted value comes through verbatim in the file present on disk (i.e. remains encrypted on disk).
+On template generation, the encrypted values from the `settings.yaml` file are used verbatim in the
+generated files (i.e. the generated files will contain `enc:id=X:....`). Thus, any encrypted value
+comes through verbatim in the file present on disk (i.e. remains encrypted on disk).
 
-In the appcli container, when using the `docker-compose` orchestrator, there is special handling.
+In the appcli container, the `DockerComposeOrchestrator` has special handling when it processes the
+`docker-compose.yml` file.
 
-- The docker compose YAML files (and any override files) are decrypted and written to a temporary file WITHIN the container.
-- These decrypted files and then used in the context of any docker-compose commands to manage the stack.
-- So relevant env vars / secrets will go through into any containers as defined in the docker-compose.yaml file.
-- The decrypted docker compose file disappears when the container shuts down.
+* The `docker-compose.yml` file (and any override files) are decrypted and written to a temporary
+  file WITHIN the container.
+* These decrypted files and then used in the context of any `docker-compose` commands to manage the
+  stack.
+* So relevant env vars / secrets will go through into any containers as defined in the
+  `docker-compose.yml` file.
+* The decrypted docker compose file disappears when the container shuts down.
 
-NOTE: Secret management is currently not available for the `HelmOrchestrator`.
-Any secret objects should be pre-loaded in the kubernetes cluster.
+IMPORTANT: The secrets are only decrypted in the `docker-compose.yml` (and overrides) files. If they
+are used in any other configuration file, they will not be decrypted. The pattern is to pass secret
+values into required containers using the `docker-compose.yml` file via environment variables:
+
+```bash
+$ cat docker-compose.yml
+
+...
+
+services:
+    postgres:
+        image: postgres:lastest
+        environment:
+            - POSTGRES_DB=mydatbase
+            - POSTGRES_USER=myuser
+            - POSTGRES_PASSWORD={{ myapp.postgres.password }}
+        ...
+
+
+$  ./myapp configure set -e 'myapp.postgres.password' 'my-secret-value'
+```
 
 ## Configure application backup
 
