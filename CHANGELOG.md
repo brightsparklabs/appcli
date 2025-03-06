@@ -14,6 +14,24 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+---
+
+## [3.2.0] - 2025-03-37
+
+[3.2.0]: https://github.com/brightsparklabs/appcli/compare/3.1.0...3.2.0
+
+### Added
+
 - AF-258: Add `--preset` options for `configure init`.
 - SYS-120: Add doco for handling secrets.
 
