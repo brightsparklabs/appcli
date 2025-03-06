@@ -65,7 +65,7 @@ setup(
         "deepdiff==8.2.0",
         "GitPython==3.1.44",
         "jsonschema==4.23.0",
-        "jinja2==3.1.5",
+        "jinja2==3.1.6",
         "pycryptodome==3.21.0",
         "pydantic==2.10.6",
         "pyfiglet==1.0.2",
