@@ -69,7 +69,7 @@ def test_initialise_on_initialised_repo(tmpdir):
     with pytest.raises(SystemExit) as pytest_wrapped_e:
         # Expect that we cannot initialise on an already-initialised repo
         conf_manager.initialise_configuration()
-    assert pytest_wrapped_e.type == SystemExit
+    assert pytest_wrapped_e.type is SystemExit
     assert pytest_wrapped_e.value.code == 1
 
 
@@ -77,7 +77,7 @@ def test_apply_before_init(tmpdir):
     conf_manager = create_conf_manager(tmpdir)
     with pytest.raises(SystemExit) as pytest_wrapped_e:
         conf_manager.apply_configuration_changes(message="some message")
-    assert pytest_wrapped_e.type == SystemExit
+    assert pytest_wrapped_e.type is SystemExit
     assert pytest_wrapped_e.value.code == 1
 
 
@@ -88,7 +88,7 @@ def test_migrate_before_init(tmpdir):
         SystemExit
     ) as pytest_wrapped_e:  # Expect that we cannot migrate on an uninitialised repo
         conf_manager.migrate_configuration()
-    assert pytest_wrapped_e.type == SystemExit
+    assert pytest_wrapped_e.type is SystemExit
     assert pytest_wrapped_e.value.code == 1
 
 

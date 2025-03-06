@@ -41,7 +41,7 @@ def get_version():
 
 here = path.dirname(path.realpath(__file__))
 # get the long description from the README file
-with open(path.join(here, "README.md"), encoding="utf-8") as f:
+with open(path.join(here, "README.adoc"), encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
@@ -57,23 +57,23 @@ setup(
     packages=find_namespace_packages(exclude=["contrib", "docs", "tests"]),
     include_package_data=True,
     install_requires=[
-        "boto3==1.34.95",
-        "click==8.1.7",
+        "boto3==1.37.4",
+        "click==8.1.8",
         "coloredlogs==15.0.1",
         "cronex==0.1.3.1",
         "dataclasses-json==0.5.7",
-        "deepdiff==6.7.1",
-        "GitPython==3.1.43",
-        "jsonschema==4.22.0",
-        "jinja2==3.1.4",
-        "pycryptodome==3.20.0",
-        "pydantic==2.7.1",
+        "deepdiff==8.2.0",
+        "GitPython==3.1.44",
+        "jsonschema==4.23.0",
+        "jinja2==3.1.6",
+        "pycryptodome==3.21.0",
+        "pydantic==2.10.6",
         "pyfiglet==1.0.2",
         "python-keycloak==3.12.0",
         "python-slugify==8.0.4",
-        "ruamel-yaml==0.18.6",
+        "ruamel-yaml==0.18.10",
         "tabulate==0.9.0",
-        "wheel==0.43.0",
+        "wheel==0.45.1",
     ],
-    extras_require={"dev": ["ruff==0.3.7", "pre-commit==3.7.0", "pytest==8.1.1"]},
+    extras_require={"dev": ["ruff==0.9.9", "pre-commit==4.1.0", "pytest==8.3.4"]},
 )

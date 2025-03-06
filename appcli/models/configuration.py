@@ -15,7 +15,7 @@ import os
 import re
 from pathlib import Path
 from subprocess import CompletedProcess
-from typing import Callable, Dict, FrozenSet, Iterable, NamedTuple
+from typing import Any, Callable, Dict, FrozenSet, Iterable, List, NamedTuple, Optional
 
 # vendor libraries
 import click
@@ -23,41 +23,165 @@ from pydantic import BaseModel
 
 # local libraries
 from appcli.orchestrators import DockerComposeOrchestrator, Orchestrator
+from appcli.models.cli_context import CliContext
 
 
 class Hooks(NamedTuple):
     """Hooks to run before/after stages"""
 
-    migrate_variables: Callable[[click.Context, Dict, str, Dict], Dict] = (
-        lambda w, x, y, z: x
-    )
-    """ Optional. Delegate function to run during a migration, which converts variables between application versions.
-     Args are: CLI context, [Dict of variables to transform], [version of the current variables], and [Dict of clean variables
-     at the new application version]. Returns [transformed Dict of variables]. If no function provided, identity
-     function is used."""
-    is_valid_variables: Callable[[click.Context, Dict, Dict], bool] = (
+    migrate_variables: Callable[
+        [CliContext, Dict[str, Any], str, Dict[str, Any]], Dict[str, Any]
+    ] = lambda w, x, y, z: x
+    """ Optional. Delegate function to run during a migration, which converts
+    variables between application versions. Essentially this provides you the
+    extant variables from the `settings.yml` file along with some context, and
+    allows you to transform them as needed to work on the new version of the
+    system. The resulting dictionary is serialised to create the new
+    `settings.yml` file.
+
+    You can get the new version of the system via: `cli_context.app_version`.
+
+    If no function provided, the variables are returned unchanged.
+
+     Args:
+         CliContext: The appcli context.
+         Dict[str, Any]: The variables to be transformed. I.e. the variables
+           from the extant `settings.yml` file.
+         str: The version of the system that the extant `settings.yml` file
+           pertained to. I.e. the `settings.yml` file 'works' for that version
+           of the system.
+         Dict[str, Any]: The default variables from the new `settings.yml`
+           file. I.e. the `settings.yml` file present by default on the new
+           version we are migrating to.
+
+    Returns:
+        Dict[str, Any]: The variables to use to create the new `setting.yml`
+          file.
+     """
+
+    is_valid_variables: Callable[[CliContext, Dict[str, Any], Dict[str, Any]], bool] = (
         lambda w, x, y: True
     )
-    """ Validate a Dict of variables are valid for use in the current application version.
-      Args are: CLI context, [Dict of the variables to validate], and [Dict of the current version's clean variables]. Returns
-      True if the Dict to validate is valid for the application at the current version.
-      Default is to always pass validation."""
+    """ Validate a Dict of variables are valid for use in the current
+    application version.
+
+    Default is to always pass validation.
+
+    Args:
+         CliContext: The appcli context.
+         Dic[str, Any]t: The variables to validate. I.e. the variables from the
+           current `settings.yml` file.
+         Dic[str, Any]t: The default variables from the `settings.yml` of the
+           current version of the system. I.e. the `settings.yml` file present
+           by default on the current version of the system we are running.
+
+    Returns:
+        True if the variables are valid for the version of the system we are
+        running.
+    """
+
     pre_start: Callable[[click.Context], None] = lambda x: None
-    """ Optional. Hook function to run before running 'start'. """
+    """
+    [Optional] Hook function to run before running 'start'.
+
+    Args:
+        Arg[0] (click.Context): The click context object.
+    """
+
     post_start: Callable[[click.Context, CompletedProcess], None] = lambda x, y: None
-    """ Optional. Hook function to run after running 'start'. """
+    """
+    [Optional] Hook function to run after running 'start'.
+
+    Args:
+        Arg[0] (click.Context): The click context object.
+        Arg[1] (CompletedProcess): The process result object from running `start`.
+    """
+
     pre_shutdown: Callable[[click.Context], None] = lambda x: None
-    """ Optional. Hook function to run before running 'shutdown'. """
+    """
+    [Optional] Hook function to run before running 'shutdown'.
+
+    Args:
+        Arg[0] (click.Context): The click context object.
+    """
+
     post_shutdown: Callable[[click.Context, CompletedProcess], None] = lambda x, y: None
-    """ Optional. Hook function to run after running 'shutdown'. """
-    pre_configure_init: Callable[[click.Context], None] = lambda x: None
-    """ Optional. Hook function to run before running 'configure init'. """
-    post_configure_init: Callable[[click.Context], None] = lambda x: None
-    """ Optional. Hook function to run after running 'configure init'. """
+    """
+    [Optional] Hook function to run after running 'shutdown'.
+
+    Args:
+        Arg[0] (click.Context): The click context object.
+        Arg[1] (CompletedProcess): The process result object from running `shutdown`.
+    """
+
+    pre_configure_init: Callable[[click.Context, Optional[str]], None] = (
+        lambda x, y: None
+    )
+    """
+    [Optional] Hook function to run before running 'configure init'.
+
+    Args:
+        Arg[0] (click.Context): The click context object.
+        Arg[1] (Optional[str]): The supplied `--preset` arg.
+    """
+
+    post_configure_init: Callable[[click.Context, Optional[str]], None] = (
+        lambda x, y: None
+    )
+    """
+    [Optional] Hook function to run after running 'configure init'.
+
+    Args:
+        Arg[0] (click.Context): The click context object.
+        Arg[1] (Optional[str]): The supplied `--preset` arg.
+    """
+
     pre_configure_apply: Callable[[click.Context], None] = lambda x: None
-    """ Optional. Hook function to run before running 'configure apply'. """
+    """
+    [Optional] Hook function to run before running 'configure apply'.
+
+    Args:
+        Arg[0] (click.Context): The click context object.
+    """
+
     post_configure_apply: Callable[[click.Context], None] = lambda x: None
-    """ Optional. Hook function to run after running 'configure apply'. """
+    """
+    [Optional] Hook function to run after running 'configure apply'.
+
+    Args:
+        Arg[0] (click.Context): The click context object.
+    """
+
+
+class PresetsConfiguration(BaseModel):
+    """Settings for loading preconfigured defaults."""
+
+    is_mandatory: bool = False
+    """Whether the system supports/enforces using presets."""
+
+    templates_directory: Path = Path(
+        os.path.dirname(
+            inspect.stack()[-1].filename
+        ),  # Filename at the top of the call-stack.
+        "resources/templates/presets",
+    )
+    """Directory containing the preset profiles."""
+
+    default_preset: Optional[str] = None
+    """The default preset to use if one is not supplied."""
+
+    def get_options(self) -> List[str]:
+        """
+        Return the list of presets.
+
+        Returns:
+            List[str]: The list of preset names available.
+        """
+        return [
+            preset.name
+            for preset in self.templates_directory.iterdir()
+            if preset.is_dir()
+        ]
 
 
 class Configuration(BaseModel):
@@ -190,6 +314,9 @@ class Configuration(BaseModel):
     NOTE: This was updated in `pydantic==2.0`.
     See class attribute
     """
+
+    presets: PresetsConfiguration = PresetsConfiguration()
+    """Settings for loading preconfigured defaults."""
 
 
 def is_matching_dict_structure(dict_to_validate: Dict, clean_dict: Dict):

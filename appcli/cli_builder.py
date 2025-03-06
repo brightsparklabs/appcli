@@ -102,16 +102,20 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     DEV_MODE_VARIABLES = {}
     if IS_DEV_MODE:
         with wrap_dev_mode():
+            install_dir_base = Path("/tmp/") / APP_NAME_SLUG.lower()
             environment = "local-dev"
-            install_dir = Path("/tmp/") / APP_NAME_SLUG.lower() / environment
+            install_dir = install_dir_base / environment
             install_dir.mkdir(parents=True, exist_ok=True)
 
             overrides = {
                 f"{APP_NAME_SLUG_UPPER}_CLI_DEBUG": True,
+                f"{APP_NAME_SLUG_UPPER}_CLI_ENVIRONMENT": environment,
+                # If running `install` command, override install directory.
+                f"{APP_NAME_SLUG_UPPER}_CLI_INSTALL_INSTALL_DIR": install_dir_base,
+                # If running any other command, override relevant directories.
                 f"{APP_NAME_SLUG_UPPER}_CLI_CONFIGURATION_DIR": install_dir / "conf",
                 f"{APP_NAME_SLUG_UPPER}_CLI_DATA_DIR": install_dir / "data",
                 f"{APP_NAME_SLUG_UPPER}_CLI_BACKUP_DIR": install_dir / "backup",
-                f"{APP_NAME_SLUG_UPPER}_CLI_ENVIRONMENT": environment,
             }
 
             logger.info("Overriding CLI options via environment variables")
@@ -321,6 +325,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
                 if ctx.invoked_subcommand not in ("configure",):
                     configure_cli = cli_context.commands["configure"]
                     try:
+                        logger.info("Auto running `configure init`")
                         ctx.invoke(configure_cli.commands["init"])
                     except SystemExit:
                         # At completion, the invoked command tries to exit the script, so we have to catch
@@ -328,6 +333,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
                         pass
 
                     try:
+                        logger.info("Auto running `configure apply`")
                         ctx.invoke(configure_cli.commands["apply"], force=True)
                     except SystemExit:
                         # At completion, the invoked command tries to exit the script, so we have to catch

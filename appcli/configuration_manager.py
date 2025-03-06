@@ -15,9 +15,9 @@ import os
 import shutil
 import tarfile
 import tempfile
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Optional
 
 import jsonschema
 import ruamel.yaml
@@ -112,8 +112,12 @@ class ConfigurationManager:
             logger.debug(f"Found schema for {config_file}. Validating...")
             self.__validate_schema(config_file, schema_file)
 
-    def initialise_configuration(self):
-        """Initialises the configuration repository"""
+    def initialise_configuration(self, preset: Optional[str] = None):
+        """Initialises the configuration repository.
+
+        Args:
+            preset (Optional[str]): The preset configuration to apply.
+        """
 
         if not self.config_repo.is_repo_on_master_branch():
             error_and_exit(
@@ -121,7 +125,7 @@ class ConfigurationManager:
             )
 
         # Populate with new configuration
-        self.__create_new_configuration_branch_and_files()
+        self.__create_new_configuration_branch_and_files(preset)
 
     def apply_configuration_changes(self, message: str):
         """Applies the current configuration settings to templates to generate application files.
@@ -141,6 +145,7 @@ class ConfigurationManager:
 
     def migrate_configuration(self):
         """Migrates the configuration version to the current application version"""
+        print_header("Migrating configuration directory")
 
         if self.config_repo.is_repo_on_master_branch():
             error_and_exit("Cannot migrate, repo is on master branch.")
@@ -148,15 +153,18 @@ class ConfigurationManager:
         config_version: str = self.config_repo.get_repository_version()
         app_version: str = self.cli_context.app_version
 
+        logger.info(f"Current configuration directory version [{config_version}]")
+        logger.info(f"Required configuration directory version [{app_version}]")
+
         # If the configuration version matches the application version, no migration is required.
         if config_version == app_version:
             logger.info(
-                f"Migration not required. Config version [{config_version}] matches application version [{app_version}]"
+                f"Migration not required as configuration directory matches application version [{app_version}]."
             )
             return
 
         logger.info(
-            f"Migrating configuration version [{config_version}] to match application version [{app_version}]"
+            f"Migrating configuration directory version [{config_version}] to match application version [{app_version}]"
         )
 
         app_version_branch: str = self.config_repo.generate_branch_name(app_version)
@@ -290,7 +298,7 @@ class ConfigurationManager:
         except jsonschema.exceptions.ValidationError as e:
             error_and_exit(f"Validation of `{config_file}` failed at:\n{e}")
 
-    def __create_new_configuration_branch_and_files(self):
+    def __create_new_configuration_branch_and_files(self, preset: Optional[str] = None):
         app_version: str = self.cli_context.app_version
         app_version_branch: str = self.config_repo.generate_branch_name(app_version)
 
@@ -313,6 +321,7 @@ class ConfigurationManager:
 
         # Seed the configuration directory
         self.__seed_configuration_dir()
+        self.__overwrite_preset_template_files(preset)
 
         # Commit the changes, and tag as $VERSION
         self.config_repo.commit_changes(
@@ -377,6 +386,30 @@ class ConfigurationManager:
             else:
                 logger.debug("Copying seed file to [%s] ...", target_file)
                 shutil.copy2(source_file, target_file)
+
+    def __overwrite_preset_template_files(self, preset: Optional[str] = None):
+        """Apply a preset configuration to the newly instantiated config directory.
+
+        Args:
+            preset (Optional[str]): The preset configuration to apply.
+        """
+        # If no preset is given we can return without setting anything.
+        if preset is None:
+            return
+
+        # Check the given preset exists.
+        preset_dir = self.cli_configuration.presets.templates_directory / preset
+        if not preset_dir.is_dir():
+            raise NotADirectoryError(
+                f"The [{preset}] profile was not found in [{self.cli_context.presets.templates_directory}]."
+            )
+
+        # Overwrite with the preset files.
+        shutil.copytree(
+            preset_dir,
+            self.cli_context.get_configurable_templates_dir(),
+            dirs_exist_ok=True,
+        )
 
     def __regenerate_generated_configuration(self):
         """Generate the generated configuration files"""
@@ -611,7 +644,7 @@ class ConfigurationManager:
 
     def __generate_configuration_metadata_file(self):
         record = {
-            "generated_at": datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(),
+            "generated_at": datetime.now(UTC).replace(tzinfo=timezone.utc).isoformat(),
             "generated_from_commit": self.config_repo.get_current_commit_hash(),
         }
         configuration_record_file = self.__get_generated_configuration_metadata_file(

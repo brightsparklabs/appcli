@@ -8,15 +8,55 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ---
 
-## [Unreleased]
+## [Unreleased] - YYYY-MM-DD
+
+[Unreleased]: https://github.com/brightsparklabs/appcli/compare/x.y.z...HEAD
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
 ### Fixed
+
+### Security
+
+---
+
+## [3.2.0] - 2025-03-37
+
+[3.2.0]: https://github.com/brightsparklabs/appcli/compare/3.1.0...3.2.0
+
+### Added
+
+- AF-258: Add `--preset` options for `configure init`.
+- SYS-120: Add doco for handling secrets.
+
+### Changed
+
+- TEL-55: Updated documentation and typing for `hooks`. Ensured DEV_MODE install goes to `/tmp/`.
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+- APPCLI-122: Fix failing dependabot automerges.
+
+### Security
+
+- APPCLI-128: Patch [jinja2 attr vulnerability](https://github.com/pallets/jinja/security/advisories/GHSA-cpwx-vrp4-4pq7)
+
 
 ---
 
 ## [3.1.0] - 2024-05-30
+
+[3.1.0]: https://github.com/brightsparklabs/appcli/compare/3.0.0...3.1.0
 
 **Deprecation warning**
 
@@ -36,6 +76,8 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ## [3.0.0] - 2024-04-25
 
+[3.0.0]: https://github.com/brightsparklabs/appcli/compare/2.5.0...3.0.0
+
 Major bump due to shifting from Python 3.10 to Python 3.12.
 
 ### Added
@@ -46,6 +88,8 @@ Major bump due to shifting from Python 3.10 to Python 3.12.
 ---
 
 ## [2.5.0] - 2024-01-11
+
+[2.5.0]: https://github.com/brightsparklabs/appcli/compare/2.4.0...2.5.0
 
 ### Added
 
@@ -60,6 +104,8 @@ Major bump due to shifting from Python 3.10 to Python 3.12.
 
 ## [2.4.0] - 2023-10-03
 
+[2.4.0]: https://github.com/brightsparklabs/appcli/compare/2.3.0...2.4.0
+
 ### Added
 
 - APED-67: Add support for running `NullOrchestrator` apps on Windows OS.
@@ -67,6 +113,8 @@ Major bump due to shifting from Python 3.10 to Python 3.12.
 ---
 
 ## [2.3.0] - 2023-08-14
+
+[2.3.0]: https://github.com/brightsparklabs/appcli/compare/2.2.1...2.3.0
 
 ### Added
 
@@ -76,6 +124,8 @@ Major bump due to shifting from Python 3.10 to Python 3.12.
 
 ## [2.2.1] - 2023-07-24
 
+[2.2.1]: https://github.com/brightsparklabs/appcli/compare/2.2.0...2.2.1
+
 ### Fixed
 
 - APED-37: Prevent quoted arguments with spaces splitting into multiple arguments in the launcher script.
@@ -84,6 +134,8 @@ Major bump due to shifting from Python 3.10 to Python 3.12.
 
 ## [2.2.0] - 2023-07-14
 
+[2.2.0]: https://github.com/brightsparklabs/appcli/compare/2.1.0...2.2.0
+
 ### Added
 
 - APED-25: Add `NullOrchestrator` to support standalone applications.
@@ -91,6 +143,8 @@ Major bump due to shifting from Python 3.10 to Python 3.12.
 ---
 
 ## [2.1.0] - 2023-06-14
+
+[2.1.0]: https://github.com/brightsparklabs/appcli/compare/2.0.0...2.1.0
 
 ### Added
 
@@ -104,6 +158,8 @@ Major bump due to shifting from Python 3.10 to Python 3.12.
 
 ## [2.0.0] - 2023-05-18
 
+[2.0.0]: https://github.com/brightsparklabs/appcli/compare/1.5.0...2.0.0
+
 Marked as a major release as `1.4.0` should have been due to breaking changes.
 
 ### Fixed
@@ -113,6 +169,8 @@ Marked as a major release as `1.4.0` should have been due to breaking changes.
 ---
 
 ## [1.5.0] - 2023-04-19
+
+[1.5.0]: https://github.com/brightsparklabs/appcli/compare/1.4.0...1.5.0
 
 ### Added
 
@@ -128,6 +186,8 @@ Marked as a major release as `1.4.0` should have been due to breaking changes.
 ---
 
 ## [1.4.0] - 2022-10-10
+
+[1.4.0]: https://github.com/brightsparklabs/appcli/compare/1.3.6...1.4.0
 
 ### Breaking Changes from 1.3.6
 
@@ -164,6 +224,8 @@ Marked as a major release as `1.4.0` should have been due to breaking changes.
 
 ## [1.3.6] - 2022-01-24
 
+[1.3.6]: https://github.com/brightsparklabs/appcli/compare/1.3.5...1.3.6
+
 ### Fixed
 
 - Remove automatic UPPERCASING of app_name, which breaks workflows that rely on a stable app_name.
@@ -171,6 +233,8 @@ Marked as a major release as `1.4.0` should have been due to breaking changes.
 ---
 
 ## [1.3.5] - 2022-01-21
+
+[1.3.5]: https://github.com/brightsparklabs/appcli/compare/1.3.4...1.3.5
 
 ### Added
 
@@ -198,6 +262,8 @@ Marked as a major release as `1.4.0` should have been due to breaking changes.
 
 ## [1.3.4] - 2021-05-14
 
+[1.3.4]: https://github.com/brightsparklabs/appcli/compare/1.3.3...1.3.4
+
 ### Fixed
 
 - Stack settings file is no longer overwritten to the default when running `migrate` command.
@@ -210,6 +276,8 @@ Marked as a major release as `1.4.0` should have been due to breaking changes.
 
 ## [1.3.3] - 2021-05-07
 
+[1.3.3]: https://github.com/brightsparklabs/appcli/compare/1.3.2...1.3.3
+
 ### Added
 
 - [#100](https://github.com/brightsparklabs/appcli/issues/100) Now publishing python wheel to PyPI!
@@ -217,6 +285,8 @@ Marked as a major release as `1.4.0` should have been due to breaking changes.
 ---
 
 ## [1.3.2] - 2021-05-06
+
+[1.3.2]: https://github.com/brightsparklabs/appcli/compare/1.3.1...1.3.2
 
 ### Added
 
@@ -232,6 +302,8 @@ Marked as a major release as `1.4.0` should have been due to breaking changes.
 
 ## [1.3.1] - 2021-03-18
 
+[1.3.1]: https://github.com/brightsparklabs/appcli/compare/1.3.0...1.3.1
+
 ### Added
 
 - `install` command script automatically does upgrade if installing over an existing application.
@@ -239,6 +311,8 @@ Marked as a major release as `1.4.0` should have been due to breaking changes.
 ---
 
 ## [1.3.0] - 2021-03-17
+
+[1.3.0]: https://github.com/brightsparklabs/appcli/compare/1.2.0...1.3.0
 
 ### Added
 
@@ -254,6 +328,8 @@ Marked as a major release as `1.4.0` should have been due to breaking changes.
 
 ## [1.2.0] - 2021-02-18
 
+[1.2.0]: https://github.com/brightsparklabs/appcli/compare/1.1.3...1.2.0
+
 ### Breaking Changes from 1.1
 
 Appcli no longer exposes internal classes and methods via the root module. To access these classes
@@ -268,6 +344,8 @@ and methods, any python referring to the library will need to use full module pa
 
 ## [1.1.3] - 2021-02-17 [BROKEN - DO NOT USE THIS VERSION]
 
+[1.1.3]: https://github.com/brightsparklabs/appcli/compare/1.1.2...1.1.3
+
 ### Added
 
 - `backup` and `restore` commands and its associated configuration.
@@ -275,6 +353,8 @@ and methods, any python referring to the library will need to use full module pa
 ---
 
 ## [1.1.2] - 2021-02-10 [BROKEN - DO NOT USE THIS VERSION]
+
+[1.1.2]: https://github.com/brightsparklabs/appcli/compare/1.1.1...1.1.2
 
 ### Added
 
@@ -289,6 +369,8 @@ and methods, any python referring to the library will need to use full module pa
 
 ## [1.1.1] - 2020-11-26
 
+[1.1.1]: https://github.com/brightsparklabs/appcli/compare/1.1.0...1.1.1
+
 ### Added
 
 - Added TravisCI build status badge to the README.
@@ -300,6 +382,8 @@ and methods, any python referring to the library will need to use full module pa
 ---
 
 ## [1.1.0] - 2020-11-26
+
+[1.1.0]: https://github.com/brightsparklabs/appcli/compare/1.0.1...1.1.0
 
 ### Added
 
@@ -333,6 +417,8 @@ and methods, any python referring to the library will need to use full module pa
 
 ## [1.0.1] - 2020-10-08
 
+[1.0.1]: https://github.com/brightsparklabs/appcli/compare/1.0.0...1.0.1
+
 ### Added
 
 - Add option to allow insecure SSL connections during Keycloak initialisation with `init keycloak`
@@ -350,10 +436,20 @@ _No changelog for this release._
 
 # Template
 
-## [Unreleased]
+## [Unreleased] - YYYY-MM-DD
+
+[Unreleased]: https://github.com/brightsparklabs/appcli/compare/x.y.z...HEAD
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
 ### Fixed
+
+### Security
 
 ---
