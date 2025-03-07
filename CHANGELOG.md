@@ -20,6 +20,7 @@ The changelog is applicable from version `1.0.0` onwards.
 ### Changed
 
 - TEL-55: Updated documentation and typing for `hooks`. Ensured DEV_MODE install goes to `/tmp/`.
+- APPCLI-3: Converted README to asciidoc.
 
 ### Deprecated
 
