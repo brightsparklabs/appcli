@@ -6,7 +6,17 @@
  # www.brightsparklabs.com
  ##
 
-.PHONY: help init test lint format
+# -----------------------------------------------------------------------------
+# CONSTANTS
+# -----------------------------------------------------------------------------
+
+# Warn whenever make sees a reference to an undefined variable.
+MAKEFLAGS += --warn-undefined-variables
+# Disable implicit rules as they were not designed for python.
+MAKEFLAGS += --no-builtin-rules
+# Set the shell to `bash` to give better error messaging/handling.
+# See https://stackoverflow.com/questions/20615217/bash-bad-substitution
+SHELL := /bin/bash
 
 VENV_NAME?=.venv
 VENV_ACTIVATE=. $(VENV_NAME)/bin/activate
@@ -14,37 +24,27 @@ PYTHON=${VENV_NAME}/bin/python
 APP_VERSION=$(shell git describe --always --dirty)
 # Format and linter rules to ignore.
 # See https://docs.astral.sh/ruff/rules/
+# Ignore lambda functions in `appcli/models/configuration.py::Hooks`.
 RULES=E731
 
-.DEFAULT: help
-help:
-	@echo "make test"
-	@echo "       run tests"
-	@echo "make lint"
-	@echo "       run ruff check"
-	@echo "make lint-check"
-	@echo "       dry-run ruff check"
-	@echo "make format"
-	@echo "       run ruff format"
-	@echo "make format-check"
-	@echo "       dry-run ruff format"
-	@echo "make build-wheel"
-	@echo "       build wheel"
-	@echo "make publish-wheel"
-	@echo "       publish wheel"
-	@echo "make all"
-	@echo "       run format + lint + test"
-	@echo "make docker"
-	@echo "       build docker image"
-	@echo "make docker-publish"
-	@echo "       publish docker image"
-	@echo "make check"
-	@echo "       run format-check + lint-check + test"
-	@echo "make precommit"
-	@echo "       manually trigger precommit hooks"
+
+# -----------------------------------------------------------------------------
+# FUNCTIONS
+# -----------------------------------------------------------------------------
+
+# The below `awk` is a simple variation for self-documenting Makefiles. See:
+# https://michaelgoerz.net/notes/self-documenting-makefiles.html
+#
+# Basically this allows task documentation to be appended to the task name
+# with two hashes and it will be picked up in help output.
+.DEFAULT_GOAL := help
+.PHONY: help
+help: ## Display this help section.
+	@grep -E '^([a-zA-Z0-9_-]+):.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "%-20s %s\n", $$1, $$2}'
 
 # Requirements are in setup.py, so whenever setup.py is changed, re-run installation of dependencies.
-venv: $(VENV_NAME)/bin/activate
+.PHONY: venv
+venv: $(VENV_NAME)/bin/activate ## Build the virtual environment.
 $(VENV_NAME)/bin/activate: setup.py .github/.pre-commit-config.yaml
 	test -d $(VENV_NAME) || python -m venv $(VENV_NAME)
 	${PYTHON} -m pip install -U pip
@@ -53,40 +53,49 @@ $(VENV_NAME)/bin/activate: setup.py .github/.pre-commit-config.yaml
 	${PYTHON} ${VENV_NAME}/bin/pre-commit install --config .github/.pre-commit-config.yaml
 	touch $(VENV_NAME)/bin/activate
 
-test: venv
+.PHONY: test
+test: venv ## Run unit tests.
 	${PYTHON} -m pytest
 
-lint: venv
-# Ignore lambda functions in `appcli/models/configuration.py::Hooks`.
+.PHONY: lint
+lint: venv ## Lint the codebase.
 	${PYTHON} -m ruff check --fix --ignore ${RULES} .
 
-lint-check: venv
+.PHONY: lint-check
+lint-check: venv ## Lint the codebase (dryrun).
 	${PYTHON} -m ruff check --ignore ${RULES} .
 
-format: venv
+.PHONY: format
+format: venv ## Format the codebase.
 	${PYTHON} -m ruff format .
 
-format-check: venv
+.PHONY: format-check
+format-check: venv ## Format the codebase (dryrun).
 	${PYTHON} -m ruff format --check .
 
-clean:
-	rm -rf build/ dist/ bsl_appcli.egg-info/
+.PHONY: clean
+clean: ## Remove the build artifacts.
+	rm -rf build/ dist/ bsl_appcli.egg-info/ .venv/
 
-build-wheel: venv clean
+.PHONY: build-wheel
+build-wheel: venv clean ## Build the python package.
 	${PYTHON} -m pip install setuptools wheel twine
 	${PYTHON} setup.py sdist bdist_wheel
 
-publish-wheel: build-wheel
+.PHONY: publish-wheel
+publish-wheel: build-wheel ## Publish the python package.
 	${PYTHON} -m twine check dist/*
 	${PYTHON} -m twine upload --non-interactive --username __token__ --password ${PYPI_TOKEN} dist/*
 
-publish-wheel-test: build-wheel
+.PHONY: publish-wheel-test
+publish-wheel-test: build-wheel ## Test publish the python package.
 	${PYTHON} -m twine check dist/*
 	${PYTHON} -m twine upload --repository-url https://test.pypi.org/legacy/ --non-interactive --username __token__ --password ${PYPI_TOKEN} dist/*
 
 # NOTE: We want to build and push the `brightsparklabs/appcli-docker-compose` image as 
 # `brightsparklabs/appcli` as well, to support legacy projects that use it. 
-docker:
+.PHONY: docker
+docker: ## Build the docker images.
 	docker build --target appcli-docker-compose \
 		-t brightsparklabs/appcli-docker-compose:${APP_VERSION} \
 		-t brightsparklabs/appcli-docker-compose:latest .
@@ -97,7 +106,8 @@ docker:
 		-t brightsparklabs/appcli:${APP_VERSION} \
 		-t brightsparklabs/appcli:latest .
 
-docker-publish: docker
+.PHONY: docker-publish
+docker-publish: docker ## Publish all the docker images.
 	docker push brightsparklabs/appcli-docker-compose:${APP_VERSION}
 	docker push brightsparklabs/appcli-docker-compose:latest
 	docker push brightsparklabs/appcli-helm:${APP_VERSION}
@@ -105,9 +115,12 @@ docker-publish: docker
 	docker push brightsparklabs/appcli:${APP_VERSION}
 	docker push brightsparklabs/appcli:latest
 
-all: format lint test
+.PHONY: all
+all: format lint test ## Format, lint and test the codebase.
 
-check: format-check lint-check test
+.PHONY: check
+check: format-check lint-check test ## Format (dryrun), lint (dryrun) and test the codebase.
 
-precommit: venv
+.PHONY: precommit
+precommit: venv ## Run pre commit hooks.
 	$(VENV_NAME)/bin/pre-commit run -c .github/.pre-commit-config.yaml
