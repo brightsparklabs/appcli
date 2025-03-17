@@ -6,10 +6,6 @@
 # www.brightsparklabs.com
 ##
 
-# [build-system]
-# requires = ["setuptools", "wheel"]
-# build-backend = "setuptools.build_meta"
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -30,7 +26,7 @@ Changelog = "https://github.com/brightsparklabs/appcli/blob/master/CHANGELOG.md"
 name = "bsl-appcli"
 dynamic = ["version"]
 requires-python = ">= 3.12.3"
-description = "A library for adding CLI interfaces to applications in the brightSPARK Labs style"
+description = "A library for adding CLI interfaces to applications in the brightSPARK Labs style."
 readme = { file = "README.adoc", content-type = "text/plain" }
 license = {text = "MIT License"}
 authors = [{name = "brightSPARK Labs", email = "enquire@brightsparklabs.com"}]
