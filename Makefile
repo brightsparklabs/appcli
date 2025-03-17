@@ -20,7 +20,8 @@ SHELL := /bin/bash
 
 VENV_NAME?=.venv
 VENV_ACTIVATE=. $(VENV_NAME)/bin/activate
-PYTHON=${VENV_NAME}/bin/python
+PYTHON_EXEC=${VENV_NAME}/bin/python
+PYTHON_VERSION=3.12.3
 APP_VERSION=$(shell git describe --always --dirty)
 # Format and linter rules to ignore.
 # See https://docs.astral.sh/ruff/rules/
@@ -46,32 +47,31 @@ help: ## Display this help section.
 .PHONY: venv
 venv: $(VENV_NAME)/bin/activate ## Build the virtual environment.
 $(VENV_NAME)/bin/activate: setup.py .github/.pre-commit-config.yaml
-	test -d $(VENV_NAME) || python -m venv $(VENV_NAME)
-	${PYTHON} -m pip install -U pip
-	${PYTHON} -m pip install -e .
-	${PYTHON} -m pip install -e '.[dev]'
-	${PYTHON} ${VENV_NAME}/bin/pre-commit install --config .github/.pre-commit-config.yaml
+	test -d $(VENV_NAME) || uv venv --python ${PYTHON_VERSION} ${VENV_NAME}
+	uv pip install -e .
+	uv pip install -e '.[dev]'
+	${PYTHON_EXEC} ${VENV_NAME}/bin/pre-commit install --config .github/.pre-commit-config.yaml
 	touch $(VENV_NAME)/bin/activate
 
 .PHONY: test
 test: venv ## Run unit tests.
-	${PYTHON} -m pytest
+	${PYTHON_EXEC} -m pytest
 
 .PHONY: lint
 lint: venv ## Lint the codebase.
-	${PYTHON} -m ruff check --fix --ignore ${RULES} .
+	${PYTHON_EXEC} -m ruff check --fix --ignore ${RULES} .
 
 .PHONY: lint-check
 lint-check: venv ## Lint the codebase (dryrun).
-	${PYTHON} -m ruff check --ignore ${RULES} .
+	${PYTHON_EXEC} -m ruff check --ignore ${RULES} .
 
 .PHONY: format
 format: venv ## Format the codebase.
-	${PYTHON} -m ruff format .
+	${PYTHON_EXEC} -m ruff format .
 
 .PHONY: format-check
 format-check: venv ## Format the codebase (dryrun).
-	${PYTHON} -m ruff format --check .
+	${PYTHON_EXEC} -m ruff format --check .
 
 .PHONY: clean
 clean: ## Remove the build artifacts.
@@ -79,18 +79,18 @@ clean: ## Remove the build artifacts.
 
 .PHONY: build-wheel
 build-wheel: venv clean ## Build the python package.
-	${PYTHON} -m pip install setuptools wheel twine
-	${PYTHON} setup.py sdist bdist_wheel
+	uv pip install setuptools wheel twine
+	${PYTHON_EXEC} setup.py sdist bdist_wheel
 
 .PHONY: publish-wheel
 publish-wheel: build-wheel ## Publish the python package.
-	${PYTHON} -m twine check dist/*
-	${PYTHON} -m twine upload --non-interactive --username __token__ --password ${PYPI_TOKEN} dist/*
+	${PYTHON_EXEC} -m twine check dist/*
+	${PYTHON_EXEC} -m twine upload --non-interactive --username __token__ --password ${PYPI_TOKEN} dist/*
 
 .PHONY: publish-wheel-test
 publish-wheel-test: build-wheel ## Test publish the python package.
-	${PYTHON} -m twine check dist/*
-	${PYTHON} -m twine upload --repository-url https://test.pypi.org/legacy/ --non-interactive --username __token__ --password ${PYPI_TOKEN} dist/*
+	${PYTHON_EXEC} -m twine check dist/*
+	${PYTHON_EXEC} -m twine upload --repository-url https://test.pypi.org/legacy/ --non-interactive --username __token__ --password ${PYPI_TOKEN} dist/*
 
 # NOTE: We want to build and push the `brightsparklabs/appcli-docker-compose` image as 
 # `brightsparklabs/appcli` as well, to support legacy projects that use it. 
