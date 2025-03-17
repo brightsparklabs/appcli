@@ -16,6 +16,8 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Changed
 
+- APPCLI-129: Migrate pip to uv.
+
 ### Deprecated
 
 ### Removed
