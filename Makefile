@@ -6,98 +6,103 @@
  # www.brightsparklabs.com
  ##
 
-.PHONY: help init test lint format
+# -----------------------------------------------------------------------------
+# CONSTANTS
+# -----------------------------------------------------------------------------
 
-VENV_NAME?=.venv
-VENV_ACTIVATE=. $(VENV_NAME)/bin/activate
-PYTHON=${VENV_NAME}/bin/python
-APP_VERSION=$(shell git describe --always --dirty)
+# Warn whenever make sees a reference to an undefined variable.
+MAKEFLAGS += --warn-undefined-variables
+# Disable implicit rules as they were not designed for python.
+MAKEFLAGS += --no-builtin-rules
+# Set the shell to `bash` to give better error messaging/handling.
+# See https://stackoverflow.com/questions/20615217/bash-bad-substitution
+SHELL := /bin/bash
+
+PYTHON_VERSION=3.12.3
+# As this is a python project, we want this to be PEP440 compliant.
+APP_VERSION=$(shell git describe --always --dirty | sed -E 's/^v//; s/-([0-9]+)-g([0-9a-f]+)/.\1+\2/; s/-dirty/.dirty/')
 # Format and linter rules to ignore.
 # See https://docs.astral.sh/ruff/rules/
+# Ignore lambda functions in `appcli/models/configuration.py::Hooks`.
 RULES=E731
 
-.DEFAULT: help
-help:
-	@echo "make test"
-	@echo "       run tests"
-	@echo "make lint"
-	@echo "       run ruff check"
-	@echo "make lint-check"
-	@echo "       dry-run ruff check"
-	@echo "make format"
-	@echo "       run ruff format"
-	@echo "make format-check"
-	@echo "       dry-run ruff format"
-	@echo "make build-wheel"
-	@echo "       build wheel"
-	@echo "make publish-wheel"
-	@echo "       publish wheel"
-	@echo "make all"
-	@echo "       run format + lint + test"
-	@echo "make docker"
-	@echo "       build docker image"
-	@echo "make docker-publish"
-	@echo "       publish docker image"
-	@echo "make check"
-	@echo "       run format-check + lint-check + test"
-	@echo "make precommit"
-	@echo "       manually trigger precommit hooks"
 
-# Requirements are in setup.py, so whenever setup.py is changed, re-run installation of dependencies.
-venv: $(VENV_NAME)/bin/activate
-$(VENV_NAME)/bin/activate: setup.py .github/.pre-commit-config.yaml
-	test -d $(VENV_NAME) || python -m venv $(VENV_NAME)
-	${PYTHON} -m pip install -U pip
-	${PYTHON} -m pip install -e .
-	${PYTHON} -m pip install -e '.[dev]'
-	${PYTHON} ${VENV_NAME}/bin/pre-commit install --config .github/.pre-commit-config.yaml
-	touch $(VENV_NAME)/bin/activate
+# -----------------------------------------------------------------------------
+# FUNCTIONS
+# -----------------------------------------------------------------------------
 
-test: venv
-	${PYTHON} -m pytest
+# The below `awk` is a simple variation for self-documenting Makefiles. See:
+# https://michaelgoerz.net/notes/self-documenting-makefiles.html
+#
+# Basically this allows task documentation to be appended to the task name
+# with two hashes and it will be picked up in help output.
+.DEFAULT_GOAL := help
+.PHONY: help
+help: ## Display this help section.
+	@grep -E '^([a-zA-Z0-9_-]+):.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "%-20s %s\n", $$1, $$2}'
 
-lint: venv
-# Ignore lambda functions in `appcli/models/configuration.py::Hooks`.
-	${PYTHON} -m ruff check --fix --ignore ${RULES} .
+# Requirements are in `pyproject.toml`, so whenever `pyproject.toml` is changed, re-run installation of dependencies.
+.PHONY: venv
+venv: .venv/bin/activate ## Build the virtual environment.
+.venv/bin/activate: pyproject.toml .github/.pre-commit-config.yaml
+	APP_VERSION=${APP_VERSION} uv sync --group dev --group build
+	uv run pre-commit install --config .github/.pre-commit-config.yaml
+	touch .venv/bin/activate
 
-lint-check: venv
-	${PYTHON} -m ruff check --ignore ${RULES} .
+.PHONY: test
+test: venv ## Run unit tests.
+	uv run pytest
 
-format: venv
-	${PYTHON} -m ruff format .
+.PHONY: lint
+lint: venv ## Lint the codebase.
+	uv run ruff check --fix --ignore ${RULES} .
 
-format-check: venv
-	${PYTHON} -m ruff format --check .
+.PHONY: lint-check
+lint-check: venv ## Lint the codebase (dryrun).
+	uv run ruff check --ignore ${RULES} .
 
-clean:
+.PHONY: format
+format: venv ## Format the codebase.
+	uv run ruff format .
+
+.PHONY: format-check
+format-check: venv ## Format the codebase (dryrun).
+	uv run ruff format --check .
+
+.PHONY: clean
+clean: ## Remove the build artifacts.
 	rm -rf build/ dist/ bsl_appcli.egg-info/
 
-build-wheel: venv clean
-	${PYTHON} -m pip install setuptools wheel twine
-	${PYTHON} setup.py sdist bdist_wheel
+.PHONY: build-wheel
+build-wheel: venv clean ## Build the python package.
+	APP_VERSION=${APP_VERSION} uv build --sdist --wheel
 
-publish-wheel: build-wheel
-	${PYTHON} -m twine check dist/*
-	${PYTHON} -m twine upload --non-interactive --username __token__ --password ${PYPI_TOKEN} dist/*
+.PHONY: publish-wheel
+publish-wheel: build-wheel ## Publish the python package.
+	APP_VERSION=${APP_VERSION} uv run hatch publish \
+		--yes --user __token__ --auth ${PYPI_TOKEN} dist/*
 
-publish-wheel-test: build-wheel
-	${PYTHON} -m twine check dist/*
-	${PYTHON} -m twine upload --repository-url https://test.pypi.org/legacy/ --non-interactive --username __token__ --password ${PYPI_TOKEN} dist/*
+.PHONY: publish-wheel-test
+publish-wheel-test: build-wheel ## Test publish the python package.
+	APP_VERSION=${APP_VERSION} uv run hatch publish \
+		--yes --user __token__ --auth ${PYPI_TOKEN} --repo https://test.pypi.org/legacy/ dist/*
 
-# NOTE: We want to build and push the `brightsparklabs/appcli-docker-compose` image as 
-# `brightsparklabs/appcli` as well, to support legacy projects that use it. 
-docker:
+.PHONY: docker
+docker: ## Build the docker images.
 	docker build --target appcli-docker-compose \
 		-t brightsparklabs/appcli-docker-compose:${APP_VERSION} \
 		-t brightsparklabs/appcli-docker-compose:latest .
 	docker build --target appcli-helm \
 		-t brightsparklabs/appcli-helm:${APP_VERSION} \
 		-t brightsparklabs/appcli-helm:latest .
+    # NOTE: We want to build and push the `brightsparklabs/appcli-docker-compose` image as 
+    # `brightsparklabs/appcli` as well, to support legacy projects that use it. 
 	docker build --target appcli-docker-compose \
 		-t brightsparklabs/appcli:${APP_VERSION} \
 		-t brightsparklabs/appcli:latest .
 
-docker-publish: docker
+.PHONY: docker-publish
+docker-publish: docker ## Publish all the docker images.
 	docker push brightsparklabs/appcli-docker-compose:${APP_VERSION}
 	docker push brightsparklabs/appcli-docker-compose:latest
 	docker push brightsparklabs/appcli-helm:${APP_VERSION}
@@ -105,9 +110,12 @@ docker-publish: docker
 	docker push brightsparklabs/appcli:${APP_VERSION}
 	docker push brightsparklabs/appcli:latest
 
-all: format lint test
+.PHONY: all
+all: format lint test ## Format, lint and test the codebase.
 
-check: format-check lint-check test
+.PHONY: check
+check: format-check lint-check test ## Format (dryrun), lint (dryrun) and test the codebase.
 
-precommit: venv
-	$(VENV_NAME)/bin/pre-commit run -c .github/.pre-commit-config.yaml
+.PHONY: precommit
+precommit: venv ## Run pre commit hooks.
+	uv run pre-commit run -c .github/.pre-commit-config.yaml
