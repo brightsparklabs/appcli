@@ -17,6 +17,7 @@ The changelog is applicable from version `1.0.0` onwards.
 ### Changed
 
 - APPCLI-129: Migrate pip to uv.
+- APPCLI-123: Show failed file when templating.
 
 ### Deprecated
 
