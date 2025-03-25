@@ -39,7 +39,7 @@ RULES=E731
 .DEFAULT_GOAL := help
 .PHONY: help
 help: ## Display this help section.
-	@grep -E '^([a-zA-Z0-9_-]+):.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "%-20s %s\n", $$1, $$2}'
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z\$$/]+.*:.*?##\s/ {printf "\033[36m%-38s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 # Requirements are in `pyproject.toml`, so whenever `pyproject.toml` is changed, re-run installation of dependencies.
 .PHONY: venv
