@@ -14,6 +14,8 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Added
 
+- APPCLI-131: Sensitive logging function.
+
 ### Changed
 
 - APPCLI-129: Migrate pip to uv.

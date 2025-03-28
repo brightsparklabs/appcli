@@ -480,6 +480,34 @@ services:
 $  ./myapp configure set -e 'myapp.postgres.password' 'my-secret-value'
 ----
 
+There might be some use cases where secrets need to be printed to the terminal (development for example).
+`appcli` provides a logging function to accomodate this, which provides the following benefits.
+
+- The secret value is encoded in base 64.
+- It will not be written to a log file, even if a handler is attached.
+
+[source,python]
+----
+from appcli.logger import logger
+
+logger.sensitive("Password": "p@ssword123")
+----
+
+This will print the following message to `stderr`:
+
+[source,bash]
+----
+$ ./myapp log-secret
+[SENSITIVE] Password: "cEBzc3dvcmQxMjM="  # "p@ssword123" encoded as Base64
+----
+
+IMPORTANT: This function will not protect against Linux shell redirects.
+
+[source,bash]
+----
+./myapp log-secret 2> file.log  # Secret value will be written to file!!!
+----
+
 === Configure application backup
 
 Appcli’s `backup` command creates backups of configuration and data of an application, stored
