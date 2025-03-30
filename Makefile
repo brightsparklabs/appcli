@@ -51,7 +51,7 @@ venv: .venv/bin/activate ## Build the virtual environment.
 
 .PHONY: test
 test: venv ## Run unit tests.
-	uv run pytest
+	APP_VERSION=${APP_VERSION} uv run pytest
 
 .PHONY: lint
 lint: venv ## Lint the codebase.
