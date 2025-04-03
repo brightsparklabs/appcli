@@ -1259,7 +1259,7 @@ This section details how to build/test/run/debug the system in a development env
 All tooling required is defined by the requirements in the `devbox.json` file which relies on
 https://www.jetify.com/docs/devbox/[Devbox].
 Make sure you have it installed by following the instructions
-https://www.jetify.com/docs/devbox/installing_devbox/#install-devbox[here]
+https://www.jetify.com/docs/devbox/installing_devbox/#install-devbox[here].
 
 You can then build the environment and run a shell inside it.
 

@@ -3,7 +3,6 @@
     "packages": [
         "python@3.12.3",
         "uv@0.6.10",
-        "virtualenv@20.29.2",
         "git@2.48.1",
         "gnumake@4.4.1"
     ],

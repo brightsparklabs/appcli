@@ -153,6 +153,5 @@ tags
 # VSCode
 .vscode/
 
-# Python `uv` and `devbox` artifacts.
+# Python `uv`.
 uv.lock
-devbox.lock

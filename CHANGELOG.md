@@ -14,7 +14,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Added
 
-- APPCLI-130: Include the Devbox shell.
+- APPCLI-130: Use Devbox to manage developer environment.
 
 ### Changed
 
@@ -56,7 +56,6 @@ The changelog is applicable from version `1.0.0` onwards.
 ### Security
 
 - APPCLI-128: Patch [jinja2 attr vulnerability](https://github.com/pallets/jinja/security/advisories/GHSA-cpwx-vrp4-4pq7)
-
 
 ---
 
