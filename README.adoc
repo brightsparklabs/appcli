@@ -490,7 +490,8 @@ There might be some use cases where secrets need to be printed to the terminal (
 ----
 from appcli.logger import logger
 
-logger.sensitive("Password": "p@ssword123")
+some_password = os.getenv("SOME_PASSWORD")
+logger.sensitive("Password", some_password)
 ----
 
 This will print the following message to `stderr`:
