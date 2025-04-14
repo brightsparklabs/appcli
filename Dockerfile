@@ -54,7 +54,7 @@ RUN \
     # of a docker image, is acceptable. In future, when the above means of
     # defining safe directories is added, we should update this command to
     # be more explicit around what directories should be considered safe.
-    && git config --global --add safe.directory '*'
+    && git config --system --add safe.directory '*'
 
 
 # -----------------------------------------------------------------------------
