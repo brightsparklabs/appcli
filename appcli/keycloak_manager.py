@@ -259,7 +259,8 @@ class KeycloakManager:
         }
         self.create_client(app_name_slug, app_name_slug, client_payload)
         secret = self.get_client_secret(app_name_slug, app_name_slug)
-        logger.debug(f"Created client [{app_name_slug}] with secret [{secret}]")
+        logger.debug(f"Created client [{app_name_slug}] with secret:")
+        logger.sensitive("client_secret", secret)
 
         realm_role = f"{app_name_slug}-admin"
         self.create_realm_role(app_name_slug, realm_role)

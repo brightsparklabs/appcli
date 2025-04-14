@@ -151,5 +151,7 @@ tags
 # End of https://www.gitignore.io/api/vim,python
 
 # VSCode
-
 .vscode/
+
+# Python `uv` artifacts.
+uv.lock

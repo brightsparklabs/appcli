@@ -26,6 +26,30 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ---
 
+## [3.3.0] - 2025-04-14
+
+[3.3.0]: https://github.com/brightsparklabs/appcli/compare/3.2.0...3.3.0
+
+### Added
+
+- APPCLI-131: Sensitive logging function.
+
+### Changed
+
+- APPCLI-129: Migrate pip to uv.
+- APPCLI-123: Show failed file when templating.
+- APPCLI-135: Update git repository ownership fix for AppCLI Dockerfile. 
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+---
+
 ## [3.2.0] - 2025-03-37
 
 [3.2.0]: https://github.com/brightsparklabs/appcli/compare/3.1.0...3.2.0
@@ -38,6 +62,7 @@ The changelog is applicable from version `1.0.0` onwards.
 ### Changed
 
 - TEL-55: Updated documentation and typing for `hooks`. Ensured DEV_MODE install goes to `/tmp/`.
+- APPCLI-3: Converted README to asciidoc.
 
 ### Deprecated
 
