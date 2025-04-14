@@ -586,12 +586,17 @@ class ConfigurationManager:
             trim_blocks=True,
             lstrip_blocks=True,
         )
+
+        # To avoid directory structure confusion, truncate the filepath to just the filename
+        # and its parent directory
+        template_file = Path(*template_file.parts[-2:])
+
         try:
             output_text = template.render(variables)
             target_file.write_text(output_text)
         except Exception as e:
             error_and_exit(
-                f"Could not generate file from template. The configuration file is likely missing a setting: {e}"
+                f"Could not generate file from template `{template_file}`. The configuration file is likely missing a setting: {e}"
             )
 
     def __decrypt_generated_files(

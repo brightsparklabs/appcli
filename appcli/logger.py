@@ -11,6 +11,9 @@ www.brightsparklabs.com
 
 # standard libraries
 import logging
+import base64
+import sys
+from types import MethodType
 
 # vendor libraries
 import coloredlogs
@@ -54,6 +57,50 @@ def enable_dev_mode_logging():
         fmt=logger_format,
         level=logging.DEBUG,
     )
+
+
+def _sensitive(self, key: str, value: str | bytes) -> None:
+    """Print a sensitive value to stderr in Base-64 encoding.
+
+    Args:
+        key: Name of the secret to be printed.
+        value: Value of the secret to be printed.
+    """
+    # Run some checks on the args.
+    if not isinstance(key, str):
+        raise TypeError(f"Key must be a string, got {type(key)}")
+    if isinstance(value, str):
+        value_bytes = value.encode("utf-8")
+    elif isinstance(value, bytes):
+        value_bytes = value
+    else:
+        raise TypeError(f"Value must be str or bytes, got {type(value)}")
+
+    # Generate the message.
+    encoded_value = base64.b64encode(value_bytes).decode("utf-8")
+    message = f"{key}: {encoded_value}"
+
+    # Configure the new handler.
+    stream = sys.stderr
+    formatter = logging.Formatter("[SENSITIVE] %(message)s")
+    handler = logging.StreamHandler(stream)
+    handler.setFormatter(formatter)
+
+    # Emit the log directly through the handler (not via logger).
+    record = self.makeRecord(
+        name=self.name,
+        level=logging.DEBUG,
+        fn="",
+        lno=0,
+        msg=message,
+        args=(),
+        exc_info=None,
+    )
+    handler.handle(record)
+
+
+# Attach new logging function.
+logger.sensitive = MethodType(_sensitive, logger)
 
 
 configure_default_logging()
