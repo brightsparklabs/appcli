@@ -14,6 +14,24 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+---
+
+## [3.3.0] - 2025-04-14
+
+[3.3.0]: https://github.com/brightsparklabs/appcli/compare/3.2.0...3.3.0
+
+### Added
+
 - APPCLI-131: Sensitive logging function.
 
 ### Changed
