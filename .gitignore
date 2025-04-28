@@ -153,5 +153,3 @@ tags
 # VSCode
 .vscode/
 
-# Python `uv`.
-uv.lock
