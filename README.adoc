@@ -1285,12 +1285,20 @@ This section details how to build/test/run/debug the system in a development env
 
 === Prerequisites
 
-The following must be installed and in the `PATH`:
+All tooling required is defined by the requirements in the `devbox.json` file which relies on
+https://www.jetify.com/docs/devbox/[Devbox].
+Make sure you have it installed by following the instructions
+https://www.jetify.com/docs/devbox/installing_devbox/#install-devbox[here].
 
-* make
-* python 3.7+
-* virtualenv
-* git
+You can then build the environment and run a shell inside it.
+
+[source,bash]
+----
+cd <appcli-dir>
+devbox update
+devbox shell
+# NOTE: It may take a few minutes to build this for the first time.
+----
 
 === Build
 
@@ -1345,14 +1353,13 @@ export \
 
 == Contributing
 
-When committing code, call `make all` to automatically run code formatting/ linting/testing.
+Current issues can be found at https://github.com/brightsparklabs/appcli/issues
 
-Appcli uses the python code formatter https://pypi.org/project/black/[black] with default settings.
-This ensures that PR diffs are minimal and focussed on the code change rather than stylistic coding
-decisions.
+Code formatting standards are defined by https://docs.astral.sh/ruff/[ruff].
+Unit tests are created in https://docs.pytest.org/en/latest/[pytest].
+Both of these are enforced by https://pre-commit.com/[pre-commit].
 
-Install with `pip install black`. This can be run through VSCode or via the CLI. See the `black`
-documentation for details.
+This will be validated on each commit, however it can also be manually run with `make precommit`.
 
 == Licenses
 

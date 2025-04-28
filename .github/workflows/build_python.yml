@@ -6,35 +6,22 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        # For a list of versions, see https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json
-        python-version: [3.12.3]
-
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v3
         # fetch all history for all branches and tags, so that our `make` targets can get tags
         with:
           fetch-depth: 0
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install uv
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-      - name: Cache uv
+      - name: Cache Devbox and UV.
         uses: actions/cache@v3
         with:
-          # This path is specific to Ubuntu
-          path: ~/.cache/uv
-          # Look to see if there is a cache hit for the corresponding pyproject file
-          key: ${{ runner.os }}-uv-${{ hashFiles('pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-uv-
-            ${{ runner.os }}-
+          path: |
+            ~/.cache/devbox
+            ~/.cache/uv
+          key: ${{ runner.os }}-${{ hashFiles('devbox.json', 'pyproject.toml') }}
+      - name: Install Devbox
+        uses: jetify-com/devbox-install-action@v0.11.0
       - name: Install depenencies
-        run: make venv 
+        run: devbox run -- make venv
       - name: Check python
-        run: make check
+        run: devbox run -- make check

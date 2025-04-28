@@ -9,7 +9,7 @@ on:
 jobs:
   # Enforces the update of a changelog file on every pull request
   changelog:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: ${{ !(github.actor == 'dependabot[bot]') }}
     steps:
       - uses: actions/checkout@v3

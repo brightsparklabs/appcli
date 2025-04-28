@@ -16,7 +16,7 @@ MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 # Set the shell to `bash` to give better error messaging/handling.
 # See https://stackoverflow.com/questions/20615217/bash-bad-substitution
-SHELL := /bin/bash
+SHELL := bash
 
 PYTHON_VERSION=3.12.3
 # As this is a python project, we want this to be PEP440 compliant.
@@ -46,28 +46,28 @@ help: ## Display this help section.
 venv: .venv/bin/activate ## Build the virtual environment.
 .venv/bin/activate: pyproject.toml .github/.pre-commit-config.yaml
 	APP_VERSION=${APP_VERSION} uv sync --group dev --group build
-	uv run pre-commit install --config .github/.pre-commit-config.yaml
+	APP_VERSION=${APP_VERSION} uv run pre-commit install --config .github/.pre-commit-config.yaml
 	touch .venv/bin/activate
 
 .PHONY: test
 test: venv ## Run unit tests.
-	uv run pytest
+	APP_VERSION=${APP_VERSION} uv run pytest
 
 .PHONY: lint
 lint: venv ## Lint the codebase.
-	uv run ruff check --fix --ignore ${RULES} .
+	APP_VERSION=${APP_VERSION} uv run ruff check --fix --ignore ${RULES} .
 
 .PHONY: lint-check
 lint-check: venv ## Lint the codebase (dryrun).
-	uv run ruff check --ignore ${RULES} .
+	APP_VERSION=${APP_VERSION} uv run ruff check --ignore ${RULES} .
 
 .PHONY: format
 format: venv ## Format the codebase.
-	uv run ruff format .
+	APP_VERSION=${APP_VERSION} uv run ruff format .
 
 .PHONY: format-check
 format-check: venv ## Format the codebase (dryrun).
-	uv run ruff format --check .
+	APP_VERSION=${APP_VERSION} uv run ruff format --check .
 
 .PHONY: clean
 clean: ## Remove the build artifacts.
@@ -118,4 +118,4 @@ check: format-check lint-check test ## Format (dryrun), lint (dryrun) and test t
 
 .PHONY: precommit
 precommit: venv ## Run pre commit hooks.
-	uv run pre-commit run -c .github/.pre-commit-config.yaml
+	APP_VERSION=${APP_VERSION} uv run pre-commit run -c .github/.pre-commit-config.yaml
