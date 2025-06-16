@@ -42,7 +42,7 @@ BASE_DIR = Path(__file__).parent
 
 
 @pytest.fixture
-def cli_context(tmp_path) -> CliContext:
+def cli_context(tmp_path, default_orchestrator) -> CliContext:
     conf_dir: Path = BASE_DIR / "conf"
     data_dir: Path = tmp_path / "data"
     data_dir.mkdir()
@@ -64,6 +64,7 @@ def cli_context(tmp_path) -> CliContext:
         app_name_slug=APP_NAME_SLUG,
         app_version="0.0.0",
         commands=None,
+        orchestrator=default_orchestrator,
     )
 
 
