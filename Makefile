@@ -20,7 +20,7 @@ SHELL := bash
 
 PYTHON_VERSION=3.12.3
 # As this is a python project, we want this to be PEP440 compliant.
-APP_VERSION=$(shell git describe --always --dirty | sed -E 's/^v//; s/-([0-9]+)-g([0-9a-f]+)/.\1+\2/; s/-dirty/.dirty/')
+APP_VERSION=$(shell git describe --always --dirty | sed -E 's/^v//; s/-([0-9]+)-g([0-9a-f]+)/.dev\1\2/; s/-dirty/.dirty/')
 # Format and linter rules to ignore.
 # See https://docs.astral.sh/ruff/rules/
 # Ignore lambda functions in `appcli/models/configuration.py::Hooks`.
