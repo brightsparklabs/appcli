@@ -5,7 +5,8 @@
         "uv@0.6.10",
         "git@2.48.1",
         "gnumake@4.4.1",
-        "bash@5.2p37"
+        "bash@5.2p37",
+        "ruff@0.12.2"
     ],
     "shell": {
         "init_hook": [
