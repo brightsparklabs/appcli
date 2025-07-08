@@ -24,6 +24,8 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Fixed
 
+- RAD-225: Fix versioning string.
+
 ### Security
 
 ---
