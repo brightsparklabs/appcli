@@ -120,3 +120,7 @@ check: format-check lint-check test ## Format (dryrun), lint (dryrun) and test t
 .PHONY: precommit
 precommit: venv ## Run pre commit hooks.
 	APP_VERSION=${APP_VERSION_PYTHON} uv run pre-commit run -c .github/.pre-commit-config.yaml
+
+.PHONY: scan
+scan: venv ## Scan the code for vulnerabilities.
+	APP_VERSION=${APP_VERSION_PYTHON} uv run bandit -r appcli/

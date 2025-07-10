@@ -1,6 +1,70 @@
 {
   "lockfile_version": "1",
   "packages": {
+    "bandit@1.8.5": {
+      "last_modified": "2025-06-20T02:24:11Z",
+      "resolved": "github:NixOS/nixpkgs/076e8c6678d8c54204abcb4b1b14c366835a58bb#bandit",
+      "source": "devbox-search",
+      "version": "1.8.5",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/mk062hpkzpwnakkrn8njb2z1lhjsij1h-python3.13-bandit-1.8.5",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/gr201vyr6b9whdpybzwbrpyimnnd0pvv-python3.13-bandit-1.8.5-dist"
+            }
+          ],
+          "store_path": "/nix/store/mk062hpkzpwnakkrn8njb2z1lhjsij1h-python3.13-bandit-1.8.5"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/fzsfkfcsmizcjl6cfd4ah63zppj576hk-python3.13-bandit-1.8.5",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/5nwc2yjsi9r19addpa7ybv10aynh80lv-python3.13-bandit-1.8.5-dist"
+            }
+          ],
+          "store_path": "/nix/store/fzsfkfcsmizcjl6cfd4ah63zppj576hk-python3.13-bandit-1.8.5"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/nxl1jvx9lqk1ih6gx4z8a8cmjgbknygk-python3.13-bandit-1.8.5",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/qq068w2rbxs4h4r79slw9qs3v3fbr5i5-python3.13-bandit-1.8.5-dist"
+            }
+          ],
+          "store_path": "/nix/store/nxl1jvx9lqk1ih6gx4z8a8cmjgbknygk-python3.13-bandit-1.8.5"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/qrjbc286c8ys0663fwxlacamh96pvckx-python3.13-bandit-1.8.5",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/n54rvfslggqp6vllwz3a7pi4c1yn50hz-python3.13-bandit-1.8.5-dist"
+            }
+          ],
+          "store_path": "/nix/store/qrjbc286c8ys0663fwxlacamh96pvckx-python3.13-bandit-1.8.5"
+        }
+      }
+    },
     "bash@5.2p37": {
       "last_modified": "2025-04-12T23:59:46Z",
       "resolved": "github:NixOS/nixpkgs/f6db44a8daa59c40ae41ba6e5823ec77fe0d2124#bash",

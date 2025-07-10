@@ -6,7 +6,8 @@
         "git@2.48.1",
         "gnumake@4.4.1",
         "bash@5.2p37",
-        "ruff@0.12.2"
+        "ruff@0.12.2",
+        "bandit@1.8.5"
     ],
     "shell": {
         "init_hook": [
