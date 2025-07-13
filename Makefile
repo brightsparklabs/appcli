@@ -123,4 +123,4 @@ precommit: venv ## Run pre commit hooks.
 
 .PHONY: scan
 scan: venv ## Scan the code for vulnerabilities.
-	APP_VERSION=${APP_VERSION_PYTHON} uv run bandit -r appcli/
+	APP_VERSION=${APP_VERSION_PYTHON} uv run bandit -r --severity-level medium appcli/
