@@ -357,6 +357,134 @@
         }
       }
     },
+    "pre-commit@4.2.0": {
+      "last_modified": "2025-07-13T22:45:35Z",
+      "resolved": "github:NixOS/nixpkgs/a421ac6595024edcfbb1ef950a3712b89161c359#pre-commit",
+      "source": "devbox-search",
+      "version": "4.2.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/b5frag42cw07hc1gkxrv1xbjkcnfh0q9-pre-commit-4.2.0",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/7lxnpjh8dag7ccp8lkhapiymn4w3kxk9-pre-commit-4.2.0-dist"
+            }
+          ],
+          "store_path": "/nix/store/b5frag42cw07hc1gkxrv1xbjkcnfh0q9-pre-commit-4.2.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/xqkr7h5i7p089fl61aqh3nwnkca88xlv-pre-commit-4.2.0",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/ignyllh6jkixbz1rx2vg35jjy6s9xrd7-pre-commit-4.2.0-dist"
+            }
+          ],
+          "store_path": "/nix/store/xqkr7h5i7p089fl61aqh3nwnkca88xlv-pre-commit-4.2.0"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/d6031hds9f1294bcck77kd06fc77ngcg-pre-commit-4.2.0",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/cgjfs7rmgy4y80xgdxaw1i633vh67w5y-pre-commit-4.2.0-dist"
+            }
+          ],
+          "store_path": "/nix/store/d6031hds9f1294bcck77kd06fc77ngcg-pre-commit-4.2.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/byg7w84jydnjvckdpg5phvnzb2kflp5c-pre-commit-4.2.0",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/igjn0vjcmggfda8cxyp6q7fjw0l8idr2-pre-commit-4.2.0-dist"
+            }
+          ],
+          "store_path": "/nix/store/byg7w84jydnjvckdpg5phvnzb2kflp5c-pre-commit-4.2.0"
+        }
+      }
+    },
+    "python312Packages.pdoc@15.0.4": {
+      "last_modified": "2025-07-13T22:45:35Z",
+      "resolved": "github:NixOS/nixpkgs/a421ac6595024edcfbb1ef950a3712b89161c359#python312Packages.pdoc",
+      "source": "devbox-search",
+      "version": "15.0.4",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/p96xfyqi360j1ghvpzp8jz1yf7q3b4sd-python3.12-pdoc-15.0.4",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/rqfzizs6w7mhzy1yms8z1011m7ax0v02-python3.12-pdoc-15.0.4-dist"
+            }
+          ],
+          "store_path": "/nix/store/p96xfyqi360j1ghvpzp8jz1yf7q3b4sd-python3.12-pdoc-15.0.4"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/3jb8g5cmx598rg76n1b0l1lhwf93z9lk-python3.12-pdoc-15.0.4",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/q4drfr8xikpqc3hxnplr7f2xm15847ch-python3.12-pdoc-15.0.4-dist"
+            }
+          ],
+          "store_path": "/nix/store/3jb8g5cmx598rg76n1b0l1lhwf93z9lk-python3.12-pdoc-15.0.4"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/0wr8h2zjnih8i8wxhzqlrcc897m53fb6-python3.12-pdoc-15.0.4",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/m6gqc6mf2vp5a6xs6fvf0ps79vbb7vhp-python3.12-pdoc-15.0.4-dist"
+            }
+          ],
+          "store_path": "/nix/store/0wr8h2zjnih8i8wxhzqlrcc897m53fb6-python3.12-pdoc-15.0.4"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/2vpfackzcv8kym3siv0k3mfydkfli476-python3.12-pdoc-15.0.4",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/pkq6mh4dch8jqwmd42dazbg2sv99n1bk-python3.12-pdoc-15.0.4-dist"
+            }
+          ],
+          "store_path": "/nix/store/2vpfackzcv8kym3siv0k3mfydkfli476-python3.12-pdoc-15.0.4"
+        }
+      }
+    },
     "python@3.12.3": {
       "last_modified": "2024-06-12T20:55:33Z",
       "plugin_version": "0.0.4",

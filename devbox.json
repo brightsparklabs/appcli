@@ -7,7 +7,9 @@
         "gnumake@4.4.1",
         "bash@5.2p37",
         "ruff@0.12.2",
-        "bandit@1.8.5"
+        "bandit@1.8.5",
+        "python312Packages.pdoc@15.0.4",
+        "pre-commit@4.2.0"
     ],
     "shell": {
         "init_hook": [

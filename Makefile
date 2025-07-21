@@ -125,3 +125,7 @@ precommit: venv ## Run pre commit hooks.
 .PHONY: scan
 scan: venv ## Scan the code for vulnerabilities.
 	APP_VERSION=${APP_VERSION_PYTHON} uv run bandit -r --severity-level medium appcli/
+
+.PHONY: docs
+docs: venv ## Generate documentation from the code.
+	APP_VERSION=$(APP_VERSION_PYTHON) uv run pdoc -o ./docs appcli/
