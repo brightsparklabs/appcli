@@ -52,7 +52,8 @@ venv: .venv/bin/activate ## Build the virtual environment.
 
 .PHONY: test
 test: venv ## Run unit tests.
-	APP_VERSION=${APP_VERSION_PYTHON} uv run pytest
+	APP_VERSION=${APP_VERSION_PYTHON} uv run pytest \
+		--cov-report term-missing:skip-covered --cov=appcli tests/
 
 .PHONY: lint
 lint: venv ## Lint the codebase.
