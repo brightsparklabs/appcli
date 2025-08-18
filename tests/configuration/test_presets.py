@@ -13,6 +13,7 @@ www.brightsparklabs.com
 from pathlib import Path
 
 # Vendor imports.
+from appcli.orchestrators import NullOrchestrator
 import pytest
 from click.testing import CliRunner
 
@@ -81,6 +82,7 @@ def default_cli_context(tmp_path):
         app_name_slug="myapp",
         app_version="0.0.0",
         commands={},
+        orchestrator=NullOrchestrator(),
     )
 
 

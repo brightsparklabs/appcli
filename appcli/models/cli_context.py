@@ -9,6 +9,14 @@ Created by brightSPARK Labs
 www.brightsparklabs.com
 """
 
+# Imports only used for type checking. Use this paradigm to prevent circular dependencies.
+from __future__ import annotations
+
+import typing
+
+if typing.TYPE_CHECKING:
+    from appcli.orchestrators import Orchestrator
+
 # standard libraries
 from pathlib import Path
 from typing import Dict, Iterable, NamedTuple, Tuple
@@ -76,6 +84,9 @@ class CliContext(NamedTuple):
 
     is_dev_mode: bool
     """ True if the application is running in DEV MODE. """
+
+    orchestrator: Orchestrator
+    """ The application configured Orchestrator object. """
 
     # ---------------------------------
     # CLI build data

@@ -20,7 +20,7 @@ import pytest
 from appcli.configuration_manager import ConfigurationManager
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
-from appcli.orchestrators import DockerComposeOrchestrator
+from appcli.orchestrators import DockerComposeOrchestrator, NullOrchestrator
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
@@ -270,6 +270,7 @@ def create_cli_context(tmpdir, app_version: str = "0.0.0") -> CliContext:
         app_name_slug=APP_NAME_SLUG,
         app_version=app_version,
         commands={},
+        orchestrator=NullOrchestrator(),
     )
 
 

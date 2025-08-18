@@ -256,6 +256,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
             commands=default_commands,
             backup_dir=backup_dir,
             dev_mode_variables=DEV_MODE_VARIABLES,
+            orchestrator=configuration.orchestrator,
         )
         ctx.obj = cli_context
 

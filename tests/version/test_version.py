@@ -10,6 +10,7 @@ www.brightsparklabs.com
 """
 
 # vendor libraries
+from appcli.orchestrators import NullOrchestrator
 from click.testing import CliRunner
 
 # local libraries
@@ -39,6 +40,7 @@ def test_version_cli():
         app_name_slug="APP_NAME",
         app_version=f"{version}",
         commands=None,
+        orchestrator=NullOrchestrator(),
     )
     runner = CliRunner()
     result = runner.invoke(VersionCli(None).commands["version"], obj=cli_context)
