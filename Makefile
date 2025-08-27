@@ -128,4 +128,4 @@ scan: venv ## Scan the code for vulnerabilities.
 
 .PHONY: docs
 docs: venv ## Generate documentation from the code.
-	APP_VERSION=$(APP_VERSION_PYTHON) uv run pdoc -o ./docs appcli/
+	APP_VERSION=$(APP_VERSION_PYTHON) uv run pdoc -o ./build/docs appcli/
