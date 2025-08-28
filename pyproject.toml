@@ -57,13 +57,14 @@ dependencies = [
 [dependency-groups]
 dev = [
     "bandit==1.8.6",
-    "ruff==0.9.9",
+    "guarddog==2.6.0",
+    "pdoc==15.0.4",
     "pre-commit==4.1.0",
     "pytest==8.3.4",
     "pytest-cov==6.2.1",
-    "pdoc==15.0.4",
+    "ruff==0.9.9",
 ]
 build = [
-    "wheel==0.45.1",
     "hatch==1.14.0",
+    "wheel==0.45.1",
 ]
