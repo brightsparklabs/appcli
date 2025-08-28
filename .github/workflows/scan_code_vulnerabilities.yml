@@ -7,5 +7,16 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Cache Devbox and UV.
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/devbox
+            ~/.cache/uv
+          key: ${{ runner.os }}-${{ hashFiles('devbox.json', 'pyproject.toml') }}
+      - name: Install Devbox
+        uses: jetify-com/devbox-install-action@v0.11.0
+      - name: Install depenencies
+        run: devbox run -- make venv
       - name: Scan Code Vulnerabilities
-        run: 'make scan'
+        run: devbox run -- make scan
