@@ -1,7 +1,6 @@
 name: Scan Code Vulnerabilities
 
-on:
-  workflow_dispatch:
+on: [push]
 
 jobs:
   scan-code-vulnerabilities:
