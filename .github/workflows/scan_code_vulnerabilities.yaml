@@ -1,0 +1,12 @@
+name: Scan Code Vulnerabilities
+
+on:
+  workflow_dispatch
+
+jobs:
+  scan-code-vulnerabilities:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan Code Vulnerabilities
+        run: 'make scan'
