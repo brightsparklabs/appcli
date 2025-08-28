@@ -3,7 +3,7 @@ name: Scan Code Vulnerabilities
 on:
   schedule:
     # Github Actions run on UTC time so this comes out as 9:30am Monday AEST.
-    - cron: '30 23 * * 7'
+    - cron: '30 23 * * 0'
 
 jobs:
   scan-code-vulnerabilities:
