@@ -131,7 +131,7 @@ scan: venv ## Scan the code for vulnerabilities.
 	@REQUIREMENTS_DIR=/tmp/guarddog-pip-$(shell od -An -N4 -tx1 /dev/random | tr -d ' \n') \
 		&& mkdir -p $$REQUIREMENTS_DIR \
 		&& APP_VERSION=${APP_VERSION_PYTHON} uv pip freeze > $$REQUIREMENTS_DIR/requirements.txt \
-		&& APP_VERSION=${APP_VERSION_PYTHON} uv run guarddog pypi verify $$REQUIREMENTS_DIR/requirements.txt
+		&& APP_VERSION=${APP_VERSION_PYTHON} uv run guarddog pypi verify --exit-non-zero-on-finding $$REQUIREMENTS_DIR/requirements.txt
 
 .PHONY: docs
 docs: venv ## Generate documentation from the code.
