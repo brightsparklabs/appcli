@@ -127,9 +127,7 @@ scan: venv ## Scan the code for vulnerabilities.
 	APP_VERSION=${APP_VERSION_PYTHON} uv run bandit -r --severity-level medium appcli/
 	@echo "Pulling dependencies to scan (this may take a while)..."
     # NOTE: The security recommendation is to put randomness into any dirs/files generated in `/tmp/`.
-    # We could be cleaner by using `openssl`/`xxd` to generate random data however these tools are not POSIX compliant.
-	@REQUIREMENTS_DIR=/tmp/guarddog-pip-$(shell od -An -N4 -tx1 /dev/random | tr -d ' \n') \
-		&& mkdir -p $$REQUIREMENTS_DIR \
+	@REQUIREMENTS_DIR=$(shell mktemp -d) \
 		&& APP_VERSION=${APP_VERSION_PYTHON} uv pip freeze > $$REQUIREMENTS_DIR/requirements.txt \
 		&& APP_VERSION=${APP_VERSION_PYTHON} uv run guarddog pypi verify --exit-non-zero-on-finding $$REQUIREMENTS_DIR/requirements.txt
 

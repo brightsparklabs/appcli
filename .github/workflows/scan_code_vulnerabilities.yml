@@ -2,15 +2,15 @@ name: Scan Code Vulnerabilities
 
 on:
   schedule:
-    # Github Actions run on UTC time so this comes out as 9:30am Monday AEST.
-    - cron: '30 23 * * 0'
+    # Github Actions run on UTC time so this comes out as 2:30am Monday AEST (3:30am AEDT).
+    - cron: '30 16 * * 0'
 
 jobs:
   scan-code-vulnerabilities:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-        # fetch all history for all branches and tags, so that our `make` targets can get tags
+        # Fetch all history for all branches and tags, so that our `make` targets can get tags.
         with:
           fetch-depth: 0
       - name: Cache Devbox and UV.
