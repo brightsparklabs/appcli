@@ -6,6 +6,7 @@
 https://badge.fury.io/py/bsl-appcli[image:https://badge.fury.io/py/bsl-appcli.svg[PyPI version]]
 image:https://github.com/brightsparklabs/appcli/actions/workflows/build_python.yml/badge.svg[Test
 Python]
+https://github.com/PyCQA/bandit[image:https://img.shields.io/badge/security-bandit-yellow.svg[security: bandit]]
 
 A library for adding CLI interfaces to applications in the brightSPARK Labs style.
 

@@ -52,7 +52,8 @@ venv: .venv/bin/activate ## Build the virtual environment.
 
 .PHONY: test
 test: venv ## Run unit tests.
-	APP_VERSION=${APP_VERSION_PYTHON} uv run pytest
+	APP_VERSION=${APP_VERSION_PYTHON} uv run pytest \
+		--cov-report term-missing:skip-covered --cov=appcli tests/
 
 .PHONY: lint
 lint: venv ## Lint the codebase.
@@ -120,3 +121,16 @@ check: format-check lint-check test ## Format (dryrun), lint (dryrun) and test t
 .PHONY: precommit
 precommit: venv ## Run pre commit hooks.
 	APP_VERSION=${APP_VERSION_PYTHON} uv run pre-commit run -c .github/.pre-commit-config.yaml
+
+.PHONY: scan
+scan: venv ## Scan the code for vulnerabilities.
+	APP_VERSION=${APP_VERSION_PYTHON} uv run bandit -r --severity-level medium appcli/
+	@echo "Pulling dependencies to scan (this may take a while)..."
+    # NOTE: The security recommendation is to put randomness into any dirs/files generated in `/tmp/`.
+	@REQUIREMENTS_DIR=$(shell mktemp -d) \
+		&& APP_VERSION=${APP_VERSION_PYTHON} uv pip freeze > $$REQUIREMENTS_DIR/requirements.txt \
+		&& APP_VERSION=${APP_VERSION_PYTHON} uv run guarddog pypi verify --exit-non-zero-on-finding $$REQUIREMENTS_DIR/requirements.txt
+
+.PHONY: docs
+docs: venv ## Generate documentation from the code.
+	APP_VERSION=$(APP_VERSION_PYTHON) uv run pdoc -o ./build/docs appcli/

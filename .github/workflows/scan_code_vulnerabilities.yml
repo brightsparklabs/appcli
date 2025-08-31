@@ -1,0 +1,28 @@
+name: Scan Code Vulnerabilities
+
+on:
+  schedule:
+    # Github Actions run on UTC time so this comes out as 2:30am Monday AEST (3:30am AEDT).
+    - cron: '30 16 * * 0'
+
+jobs:
+  scan-code-vulnerabilities:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        # Fetch all history for all branches and tags, so that our `make` targets can get tags.
+        with:
+          fetch-depth: 0
+      - name: Cache Devbox and UV.
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/devbox
+            ~/.cache/uv
+          key: ${{ runner.os }}-${{ hashFiles('devbox.json', 'pyproject.toml') }}
+      - name: Install Devbox
+        uses: jetify-com/devbox-install-action@v0.11.0
+      - name: Install depenencies
+        run: devbox run -- make venv
+      - name: Scan Code Vulnerabilities
+        run: devbox run -- make scan

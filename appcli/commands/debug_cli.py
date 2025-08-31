@@ -78,7 +78,7 @@ class DebugCli:
         )
         @click.pass_context
         def shell(ctx):
-            os.system("bash")
+            os.system("/bin/bash")
 
         # Expose the commands
         self.commands = {"debug": debug}

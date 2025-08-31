@@ -472,6 +472,11 @@ class BackupManager:
                 conf_dir: Path = cli_context.configuration_dir
                 data_dir: Path = cli_context.data_dir
 
+                # Tar archives can reference files that are outside the archive.
+                # For example `../../etc/passwd`.
+                # This means that when the archive is extracted, those files get dumped in the dst.
+                # The next 2 functions validate that all files listed by the archive are actually in the archive.
+                # See https://cwe.mitre.org/data/definitions/22.html
                 def is_within_directory(directory, target):
                     abs_directory = os.path.abspath(directory)
                     abs_target = os.path.abspath(target)
@@ -485,8 +490,8 @@ class BackupManager:
                         member_path = os.path.join(path, member.name)
                         if not is_within_directory(path, member_path):
                             raise Exception("Attempted Path Traversal in Tar File")
-
-                    tar.extractall(path, members, numeric_owner=numeric_owner)
+                    # NOTE: We validate the archive in the above code, so safe to ignore the error.
+                    tar.extractall(path, members, numeric_owner=numeric_owner)  # nosec B202
 
                 safe_extract(
                     tar=tar,
