@@ -29,6 +29,8 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Security
 
+- APPCLI-141: Patch `deepdiff` to `8.6.1` for CVE-2025-58367.
+
 ---
 
 ## [3.3.0] - 2025-04-14
