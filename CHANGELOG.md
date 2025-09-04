@@ -14,6 +14,9 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Added
 
+- APPCLI-130: Use Devbox to manage developer environment.
+- APPCLI-137: Include code quality tooling.
+
 ### Changed
 
 ### Deprecated
@@ -21,6 +24,8 @@ The changelog is applicable from version `1.0.0` onwards.
 ### Removed
 
 ### Fixed
+
+- RAD-225: Fix versioning string.
 
 ### Security
 
@@ -75,7 +80,6 @@ The changelog is applicable from version `1.0.0` onwards.
 ### Security
 
 - APPCLI-128: Patch [jinja2 attr vulnerability](https://github.com/pallets/jinja/security/advisories/GHSA-cpwx-vrp4-4pq7)
-
 
 ---
 
