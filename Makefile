@@ -45,9 +45,9 @@ help: ## Display this help section.
 # Requirements are in `pyproject.toml`, so whenever `pyproject.toml` is changed, re-run installation of dependencies.
 .PHONY: venv
 venv: .venv/bin/activate ## Build the virtual environment.
-.venv/bin/activate: pyproject.toml .github/.pre-commit-config.yaml
+.venv/bin/activate: pyproject.toml .pre-commit-config.yaml
 	APP_VERSION=${APP_VERSION_PYTHON} uv sync --group dev --group build
-	APP_VERSION=${APP_VERSION_PYTHON} uv run pre-commit install --config .github/.pre-commit-config.yaml
+	APP_VERSION=${APP_VERSION_PYTHON} uv run pre-commit install --config .pre-commit-config.yaml
 	touch .venv/bin/activate
 
 .PHONY: test
@@ -120,7 +120,7 @@ check: format-check lint-check test ## Format (dryrun), lint (dryrun) and test t
 
 .PHONY: precommit
 precommit: venv ## Run pre commit hooks.
-	APP_VERSION=${APP_VERSION_PYTHON} uv run pre-commit run -c .github/.pre-commit-config.yaml
+	APP_VERSION=${APP_VERSION_PYTHON} uv run pre-commit run -c .pre-commit-config.yaml
 
 .PHONY: scan
 scan: venv ## Scan the code for vulnerabilities.
