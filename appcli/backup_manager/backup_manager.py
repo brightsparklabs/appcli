@@ -247,13 +247,21 @@ class BackupConfig(DataClassExtensions):
         for glob in globs:
             files = path_to_backup.glob(glob)
             for item in files:
-                # Glob pattern matching returns everything that matches the pattern including directories and all files (and the directory it is being run in).
-                # Including directories is troublesome as if we pass a directory to the python tar function it will add that directories
-                # tree recursively where as glob logic indicates that it should only add the folder with no contents.
-                # If we match glob logic exactly and force an empty folder into the tar then it serves no purpose as it is not data or config and becomes convoluted.
-                # To resolve this we do not add folders to the list of files to backup.
-                # This also solves the problem where a glob pattern can match the directory it is ran in and stops duplicated files from being added to the tar as each file can only exist once in the set.
+                # Glob pattern matching returns everything that matches the pattern including directories and all files
+                # (and the directory it is being run in).
+                # Including directories is troublesome as if we pass a directory to the python tar function it will add
+                # that directories tree recursively where as glob logic indicates that it should only add the folder
+                # with no contents.
+                # There are instances where we want to include empty directories (generated directories that are
+                # expected to exist when the system is restored).
+                # To resolve this we do not add folders to the list of files to backup unless they are empty.
+                # This also solves the problem where a glob pattern can match the directory it is ran in and stops
+                # duplicated files from being added to the tar as each file can only exist once in the set.
                 if not item.is_dir():
+                    # Item is a file.
+                    all_files.add(item)
+                elif not any(item.iterdir()):
+                    # Item is an empty dir.
                     all_files.add(item)
 
         return all_files
