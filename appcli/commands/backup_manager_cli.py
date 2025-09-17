@@ -19,7 +19,7 @@ www.brightsparklabs.com
 import click
 
 # local libraries
-from appcli.backup_manager.backup_manager import BackupManager
+from appcli.stack_manager.backup_manager import BackupManager
 from appcli.commands.appcli_command import AppcliCommand
 from appcli.configuration_manager import ConfigurationManager
 from appcli.functions import error_and_exit

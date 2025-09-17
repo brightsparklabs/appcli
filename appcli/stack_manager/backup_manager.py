@@ -27,7 +27,7 @@ from dataclasses_json import dataclass_json
 from slugify import slugify
 
 # local libraries
-from appcli.backup_manager.remote_strategy import RemoteBackup
+from appcli.stack_manager.remote_strategy import RemoteBackup
 from appcli.common.data_class_extensions import DataClassExtensions
 from appcli.functions import error_and_exit
 from appcli.logger import logger

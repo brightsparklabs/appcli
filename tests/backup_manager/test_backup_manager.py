@@ -20,7 +20,7 @@ import click
 import pytest
 
 # local libraries
-from appcli.backup_manager.backup_manager import BackupConfig, BackupManager
+from appcli.stack_manager.backup_manager import BackupConfig, BackupManager
 from appcli.models.cli_context import CliContext
 
 # ------------------------------------------------------------------------------
