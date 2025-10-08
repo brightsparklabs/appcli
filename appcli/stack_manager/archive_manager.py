@@ -76,29 +76,13 @@ class PurgeRule(BaseModel):
     """Glob pattern of files/dirs to include in the purge."""
 
 
-class CommandRule(BaseModel):
-    """Rule for running commands in a container."""
-
-    type: Literal["command"] = "command"
-    """Explicitly declare rule type."""
-
-    name: str
-    """Name of the rule."""
-
-    container: str
-    """The container to run the command on."""
-
-    command: str
-    """The command string to execute."""
-
-
 # Union object to allow subclassing of rules.
 # NOTE: The order here matters. The first item in the list is the type used if
 #       the discriminator field is not set in the data being deserialized.
 #       If we were to explicitly specify a `discriminator`
 #       (see https://stackoverflow.com/a/76449131/3602961), then we would
 #       ALWAYS need to specify the type, so it would not default.
-ArchiveRuleUnion = Union[CompressRule, PurgeRule, CommandRule]
+ArchiveRuleUnion = Union[CompressRule, PurgeRule]
 
 
 class ArchiveRuleset(BaseModel):
@@ -160,8 +144,6 @@ class ArchiveManager:
                 self._run_compress_rule(rule)
             elif isinstance(rule, PurgeRule):
                 self._run_purge_rule(rule)
-            elif isinstance(rule, CommandRule):
-                self._run_command_rule(rule)
             else:
                 raise NotImplementedError(
                     f"Rule `{rule.name}` is of type `{type(rule)}` which is not a vaild archive rule."
@@ -191,8 +173,18 @@ class ArchiveManager:
 
     def _run_purge_rule(self, rule: PurgeRule):
         """Execute a Purge archive rule."""
-        pass
+        # Determine which files need to be removed.
+        full_file_list = []
+        for pattern in rule.include_list:
+            # Glob search for all files that match the pattern.
+            file_list = [
+                Path(p).resolve()
+                for p in glob.glob(str(self.cli_context.data_dir / pattern))
+            ]
+            for file in file_list:
+                full_file_list.append(file)
 
-    def _run_command_rule(self, rule: CommandRule):
-        """Execute a Command archive rule."""
-        pass
+        # Unlink all the files.
+        logger.debug(f"Removing the following files: `{full_file_list}`")
+        for file in full_file_list:
+            file.unlink()
