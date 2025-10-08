@@ -53,6 +53,7 @@ class FileFilter(DataClassExtensions):
 
     data_dir: Optional[GlobList] = field(default_factory=lambda: GlobList())
     """ The GlobList for the data directory. """
+
     conf_dir: Optional[GlobList] = field(default_factory=lambda: GlobList())
     """ The GlobList for the conf directory. """
 

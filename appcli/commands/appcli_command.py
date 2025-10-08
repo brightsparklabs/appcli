@@ -57,3 +57,5 @@ class AppcliCommand(Enum):
     BACKUP = auto()
     RESTORE = auto()
     VIEW_BACKUPS = auto()
+
+    ARCHIVE = auto()

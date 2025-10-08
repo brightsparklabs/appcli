@@ -96,7 +96,7 @@ def patch_datetime_now(monkeypatch):
             return mock_time.getTime()
 
     monkeypatch.setattr(
-        "appcli.backup_manager.backup_manager.datetime.datetime", mydatetime
+        "appcli.stack_manager.backup_manager.datetime.datetime", mydatetime
     )
 
 

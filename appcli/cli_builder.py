@@ -34,6 +34,7 @@ from appcli.commands.migrate_cli import MigrateCli
 from appcli.commands.service_cli import ServiceCli
 from appcli.commands.task_cli import TaskCli
 from appcli.commands.version_cli import VersionCli
+from appcli.commands.archive_manager_cli import ArchiveManagerCli
 from appcli.dev_mode import wrap_dev_mode
 from appcli.functions import error_and_exit, extract_valid_environment_variable_names
 from appcli.logger import enable_debug_logging, logger
@@ -155,6 +156,7 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
         TaskCli,
         BackupManagerCli,
         VersionCli,
+        ArchiveManagerCli,
     ):
         commands = cli_class(configuration).commands
         default_commands.update(**commands)
