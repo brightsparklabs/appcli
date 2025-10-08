@@ -16,8 +16,10 @@ www.brightsparklabs.com
 
 # Standard imports.
 from typing import Literal, List, Union
-from enum import Enum
 from pathlib import Path
+from datetime import datetime
+import tarfile
+import glob
 
 # Vendor imports.
 from pydantic import BaseModel
@@ -32,21 +34,10 @@ from appcli.logger import logger
 # -----------------------------------------------------------------------------
 
 
-class CompressMode(str, Enum):
-    """What type of action to perform when archiving."""
-
-    APPEND = "append"
-    """Add files to an existing archive (or create a new one)."""
-
-    OVERWRITE = "overwrite"
-    """Same as 'append' but deletes the file if it already exists."""
-
-    CANCEL = "cancel"
-    """Ignore if the archive file already exists."""
-
-
 class CompressRule(BaseModel):
-    """Rule to compress files into an archived file."""
+    """Rule to compress files into an archived file.
+    This will overwrite any archive file that already exists.
+    """
 
     type: Literal["compress"] = "compress"
     """Explicitly declare rule type."""
@@ -55,13 +46,21 @@ class CompressRule(BaseModel):
     """Name of the rule."""
 
     include_list: List[str] = ["[]"]
-    """Glob pattern of files/dirs to include in the archive."""
+    """Glob pattern of files/dirs in `data_dir` to include in the archive."""
 
-    archive_file: Path
-    """Archive to compress the files into."""
+    archive_file: str
+    """Archive file in `data_dir` to compress the files into.
+    Dateime is supported using the `%<value>` notation, i.e:
 
-    mode: CompressMode = CompressMode.APPEND
-    """How to operate when compressing the files."""
+        archive_format: 'myapp_%m-%d-%Y.tar'
+
+    Produces the file:
+
+        data/myapp_06-05-2013.tar
+
+    See: https://devhints.io/datetime
+    NOTE: Because we support dynamic datetime this has to be a `str` and not `Path`.
+    """
 
 
 class PurgeRule(BaseModel):
@@ -170,7 +169,25 @@ class ArchiveManager:
 
     def _run_compress_rule(self, rule: CompressRule):
         """Execute a Compress archive rule."""
-        pass
+        # Get the name of the archive.
+        dated_archive_file = Path(datetime.now().strftime(rule.archive_file))
+        archive_path = self.cli_context.data_dir / dated_archive_file
+
+        # Remove the archive file if it already exists.
+        if archive_path.exists():
+            archive_path.unlink()
+
+        # Write files to the archive.
+        with tarfile.open(archive_path, "w:gz") as tar:
+            for pattern in rule.include_list:
+                # Glob search for all files that match the pattern.
+                file_list = [
+                    Path(p).resolve()
+                    for p in glob.glob(str(self.cli_context.data_dir / pattern))
+                ]
+                for file in file_list:
+                    tar.add(file, file.relative_to(self.cli_context.data_dir))
+        logger.debug(f"Archive created at `{dated_archive_file}`.")
 
     def _run_purge_rule(self, rule: PurgeRule):
         """Execute a Purge archive rule."""
