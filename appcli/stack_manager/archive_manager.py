@@ -17,7 +17,7 @@ www.brightsparklabs.com
 # Standard imports.
 from typing import Literal, List, Union
 from pathlib import Path
-from datetime import datetime
+import datetime
 import tarfile
 import glob
 
@@ -106,7 +106,7 @@ class ArchiveManager:
         self.archives: List[ArchiveRuleset] = []
         # NOTE: Convert to actual objects for validation and easy access.
         for ruleset in archives:
-            self.archives.append(ArchiveRuleset.parse_obj(ruleset))
+            self.archives.append(ArchiveRuleset.model_validate(ruleset))
 
     def run_all_archive_rulesets(self):
         """Execute all archive rules."""
@@ -145,19 +145,23 @@ class ArchiveManager:
             elif isinstance(rule, PurgeRule):
                 self._run_purge_rule(rule)
             else:
+                # NOTE: Because pydantic does validation we should not get here.
+                # If this gets triggered, you (the developer) have defined a new `ArchiveRule` without implementing it.
+                # Please fill out the new `elif` branch and corresponding function to resolve.
                 raise NotImplementedError(
-                    f"Rule `{rule.name}` is of type `{type(rule)}` which is not a vaild archive rule."
+                    f"Rule `{rule.name}` is of type `{type(rule)}` which has not been implemented."
                 )
 
     def _run_compress_rule(self, rule: CompressRule):
         """Execute a Compress archive rule."""
         # Get the name of the archive.
-        dated_archive_file = Path(datetime.now().strftime(rule.archive_file))
+        dated_archive_file = Path(datetime.datetime.now().strftime(rule.archive_file))
         archive_path = self.cli_context.data_dir / dated_archive_file
 
         # Remove the archive file if it already exists.
         if archive_path.exists():
             archive_path.unlink()
+        archive_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Write files to the archive.
         with tarfile.open(archive_path, "w:gz") as tar:
