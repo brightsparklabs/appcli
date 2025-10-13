@@ -699,6 +699,73 @@ downloading the backup from the specified bucket.
 . Run the restore command `./myapp restore BACKUP_FILE.tgz` e.g.
 `./myapp restore APP_2021-02-02T10:55:48+00:00.tgz`. The restore process will trigger a backup.
 
+=== Configure Archiving Rules
+
+Appcli supports the ability to run archiving on the data directory for the purposes of log rotation.
+These are defined as rulesets in the `stack-setting.yml` file which is then called through the `archive` command.
+A ruleset consists of 1 or many rules to be executed.
+Currently the following ruletypes are supported:
+
+* `Compress` => Create a new `.tgz` archive file and push included files into it.
+* `Purge` => Remove included files from the data directory.
+
+==== Configuration Options
+
+There are a number of fields which can be configured for each rule:
+
+* `include_list` => List of glob patterns to use when searching for file matches.
+  NOTE: This does not match any hidden files.
+* `archive_file` => (Compress only) The name of the archive file to created.
+  NOTE: This supports datetime through the use of the `%<value` notation.
+
+Leaving the `name` out of the command results in all rulesets being executed.
+NOTE: Whilst the execution order of the rules in a set is guaranteed, the execution order of the rulesets themselves is not.
+
+==== Example Rulesets
+
+Some example rulesets.
+
+[source,yaml]
+----
+# filename: stack-settings.yml
+
+archives:
+- name: 'cache'
+  rules:
+  - name: 'clear-cache'
+    type: 'purge'
+    include_list:
+    - 'service1/cache/*.lock'
+    - 'service2/tmp/**'
+- name: 'logs'
+  rules:
+  - name: 'archive-logs'
+    type: 'compress'
+    include_list: ['service1/**.log']
+    archive_file: 'service1/logs-%Y%m.tgz'
+  - name: 'prune-logs'
+    type: 'prune'
+    include_list ['service1/**.log']
+----
+
+This exposes 2 rulesets:
+
+* `cache` => Clears all the lock files for `service1` and temp files for `service2`.
+* `logs` => Push all the log files for `service1` into a dated archive, and then remove them from disk.
+
+These can then be integrated into something like a cron job.
+
+[source,bash]
+----
+$ crontab -l
+
+# Clear the cache every day.
+0 0 * * * NO_TTY=true ./myapp archive cache
+
+# Rotate the logs every month.
+0 * 1 * * NO_TTY=true ./myapp archive logs
+----
+
 === (Optional) Define Custom Commands
 
 You can specify some custom top-level commands by adding click commands or command groups to the
@@ -1060,6 +1127,7 @@ E.g. `./myapp configure init`
 Commands::
 --
 [horizontal]
+archive::: Perform archiving of the data directory.
 backup::: Create a backup of application data and configuration.
 configure::: Configures the application.
 encrypt::: Encrypts the specified string.
@@ -1090,6 +1158,22 @@ specified multiple times.
 Can be specified multiple times.
 -–help::: Show the help message and exit.
 --
+
+==== Command: `archive`
+
+Perform archiving to `.tgz` files and file/directory purging of the data directory for the purposes of things like log rotation.
+Archiving rulesets are configured in the `stack-setting.yml` file and callable through the cli.
+An archiving ruleset can consist of 1 or many individual rules.
+
+Usage: `./myapp archive [OPTIONS] [ARGS]`
+
+Options::
+-–pre-stop-services/-–no-pre-stop-services::: Whether to stop services before performing archive.
+-–post-start-services/-–no-post-start-services::: Whether to start services after performing archive.
+-–help::: Show the help message and exit.
+
+The `backup` command optionally takes an argument corresponding to the `name` of the archive ruleset to run.
+If no `name` is provided, all archive rulesets will attempt to run.
 
 ==== Command: `backup`
 

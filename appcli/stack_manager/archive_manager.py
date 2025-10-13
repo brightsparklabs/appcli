@@ -52,11 +52,11 @@ class CompressRule(BaseModel):
     """Archive file in `data_dir` to compress the files into.
     Dateime is supported using the `%<value>` notation, i.e:
 
-        archive_format: 'myapp_%m-%d-%Y.tar'
+        archive_format: 'myapp_%m-%d-%Y.tgz'
 
     Produces the file:
 
-        data/myapp_06-05-2013.tar
+        data/myapp_06-05-2013.tgz
 
     See: https://devhints.io/datetime
     NOTE: Because we support dynamic datetime this has to be a `str` and not `Path`.
