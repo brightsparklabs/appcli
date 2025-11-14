@@ -20,13 +20,30 @@ from pathlib import Path
 import datetime
 import tarfile
 import glob
+import os
 
 # Vendor imports.
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 # Local imports.
 from appcli.models.cli_context import CliContext
 from appcli.logger import logger
+
+
+# -----------------------------------------------------------------------------
+# FUNCTIONS
+# -----------------------------------------------------------------------------
+
+
+# NOTE: This would ideally be a method of the `CompressRule` class.
+# However we cannot do that because it needs to be callable by `default_factory`,
+# which does not have scope over the `CompressRule` class.
+# Instead we have a function in that class which is a proxy to this one.
+def resolve_archive_filename(string: str = "%Y-%m%d_${APP_NAME}.tgz") -> str:
+    """Take the provided archive filename and resolve all the datetime format strings and environment variables."""
+    resolved_string = os.path.expandvars(string)
+    resolved_string = datetime.datetime.now().strftime(resolved_string)
+    return resolved_string
 
 
 # -----------------------------------------------------------------------------
@@ -48,19 +65,41 @@ class CompressRule(BaseModel):
     include_list: List[str] = ["[]"]
     """Glob pattern of files/dirs in `data_dir` to include in the archive."""
 
-    archive_file: str
+    # This is a little bit confusing so I'm going to try and explain what is going on here.
+    # The `archive_file` field can contain Datestrings or Environment vars which need to be templated out during instantiation, e.g.
+    #
+    #  "%Y-%m%d_${APP_NAME}.tgz"  ->  "2013-0605_myapp.tgz"
+    #
+    # We use the pydantic `field_validator` to do this, but that does NOT work when a default value is being used.
+    #
+    #  archive_file: str = "%Y-%m%d_${APP_NAME}.tgz"  # Will not get templated.
+    #
+    # To ensure this default is also templated we use a `default_factory` which points to a global function.
+    # That global function is what stores the default, which is why you do not see it here.
+    # We also proxy the `field_validator` function to the global function to ensure consistency.
+    #
+    # TLDR; this ensures that whether a value is supplied here or not, it will always be templated.
+    archive_file: str = Field(default_factory=resolve_archive_filename)
     """Archive file in `data_dir` to compress the files into.
-    Dateime is supported using the `%<value>` notation, i.e:
+    Datetime is supported using the `%<value>` notation.
+    Environment variables are supported using the `${<value>}` notation.
 
-        archive_format: 'myapp_%m-%d-%Y.tgz'
+        archive_format: '%Y-%m%d_${APP_NAME}.tgz'
 
     Produces the file:
 
-        data/myapp_06-05-2013.tgz
+        data/2013-0605_myapp.tgz
 
     See: https://devhints.io/datetime
-    NOTE: Because we support dynamic datetime this has to be a `str` and not `Path`.
+    NOTE: Because we support dynamic datetime and env vars, this has to be a `str` and not `Path`.
     """
+
+    # NOTE: This is essentially just a proxy to the global `resolve_archive_filename` function, which allows it to be called by pydantic.
+    @field_validator("archive_file", mode="before")
+    @classmethod
+    def resolve_archive_filename(cls, v: str) -> str:
+        """Take the provided archive filename and resolve all the datetime format strings and environment variables."""
+        return resolve_archive_filename(v)
 
 
 class PurgeRule(BaseModel):
@@ -154,13 +193,18 @@ class ArchiveManager:
 
     def _run_compress_rule(self, rule: CompressRule):
         """Execute a Compress archive rule."""
-        # Get the name of the archive.
-        dated_archive_file = Path(datetime.datetime.now().strftime(rule.archive_file))
-        archive_path = self.cli_context.data_dir / dated_archive_file
+        # Get the path of the archive.
+        archive_path = self.cli_context.data_dir / rule.archive_file
 
         # Remove the archive file if it already exists.
         if archive_path.exists():
-            archive_path.unlink()
+            try:
+                archive_path.unlink()
+            except OSError as ex:
+                logger.error(
+                    f"Unable to remove `{archive_path}`. Check file permissions and that not other process has it locked."
+                )
+                raise ex
         archive_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Write files to the archive.
@@ -173,7 +217,7 @@ class ArchiveManager:
                 ]
                 for file in file_list:
                     tar.add(file, file.relative_to(self.cli_context.data_dir))
-        logger.debug(f"Archive created at `{dated_archive_file}`.")
+        logger.debug(f"Archive created at `{rule.archive_file}`.")
 
     def _run_purge_rule(self, rule: PurgeRule):
         """Execute a Purge archive rule."""
@@ -191,4 +235,10 @@ class ArchiveManager:
         # Unlink all the files.
         logger.debug(f"Removing the following files: `{full_file_list}`")
         for file in full_file_list:
-            file.unlink()
+            try:
+                file.unlink()
+            except OSError as ex:
+                logger.error(
+                    f"Unable to remove `{file}`. Check file permissions and that not other process has it locked."
+                )
+                raise ex

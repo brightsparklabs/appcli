@@ -32,7 +32,7 @@ from appcli.models.configuration import Configuration
 # ------------------1------------------------------------------------------------
 
 # The name of the key for the backup block in the stack settings file.
-BACKUP = "backups"
+BACKUP_SETTINGS_KEY = "backups"
 
 # ------------------------------------------------------------------------------
 # CLASSES
@@ -213,7 +213,7 @@ class BackupManagerCli:
         # Get the settings from the `stack-settings` file.
         configuration = ConfigurationManager(cli_context, self.cli_configuration)
         try:
-            stack_variables = configuration.get_stack_variable(BACKUP)
+            stack_variables = configuration.get_stack_variable(BACKUP_SETTINGS_KEY)
         except (KeyError, TypeError) as e:
             error_and_exit(f"No backup key found in stack settings. [{e}]")
 

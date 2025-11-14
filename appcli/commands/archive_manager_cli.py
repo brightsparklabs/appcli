@@ -32,7 +32,7 @@ from appcli.models.configuration import Configuration
 # -----------------------------------------------------------------------------
 
 # The name of the key for the archive block in the stack settings file.
-ARCHIVE = "archive"
+ARCHIVE_SETTINGS_KEY = "archives"
 
 
 # ------------------------------------------------------------------------------
@@ -53,7 +53,7 @@ class ArchiveManagerCli:
         # ------------------------------------------------------------------------------
 
         @click.command(
-            help="Run an archiving ruleset against the data/conf/backups. "
+            help="Run an archiving ruleset against the `data` directory. "
             "Use RULE_NAME to specify the ruleset. "
             "Not specifying a ruleset means they are all executed. "
         )
@@ -118,7 +118,7 @@ class ArchiveManagerCli:
 
             if pre_stop_services and not post_start_services:
                 logger.warn(
-                    "Services have been shutdown by the backup command and were intentionally not restarted."
+                    "Services have been shutdown by the archive command and were intentionally not restarted."
                 )
 
         # Expose the commands.
@@ -136,7 +136,7 @@ class ArchiveManagerCli:
         # Get the settings from the `stack-settings` file.
         configuration = ConfigurationManager(cli_context, self.cli_configuration)
         try:
-            stack_variables = configuration.get_stack_variable(ARCHIVE)
+            stack_variables = configuration.get_stack_variable(ARCHIVE_SETTINGS_KEY)
         except (KeyError, TypeError) as e:
             error_and_exit(f"No archive key found in stack settings. [{e}]")
 

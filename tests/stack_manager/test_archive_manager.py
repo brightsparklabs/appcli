@@ -17,18 +17,22 @@ www.brightsparklabs.com
 from pathlib import Path
 import datetime
 import tarfile
+import os
 
 # Vendor libraries.
 import pytest
 
 # Local libraries.
-from appcli.stack_manager.archive_manager import ArchiveManager
+from appcli.stack_manager.archive_manager import ArchiveManager, CompressRule
 from appcli.models.cli_context import CliContext
 
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
 # ------------------------------------------------------------------------------
+
+APP_NAME_ENV_VAR = "APP_NAME"
+APP_NAME_ENV_VALUE = "myapp"
 
 # DATA
 
@@ -67,9 +71,15 @@ COMPRESS_RULE = {
     "name": "compress_txt",
     "type": "compress",
     "include_list": ["**/*.txt"],
-    "archive_file": "archive/file-%Y%m.tgz",
+    "archive_file": "archive/file-%Y%m-${APP_NAME}.tgz",
 }
 """Compress rule."""
+
+COMPRESS_DEFAULT = {
+    "name": "compress_default",
+    "type": "compress",
+}
+"""A compress rule with only required values set."""
 
 SINGLE_RULESET = [
     {"name": "all", "rules": [PURGE_RULE, COMPRESS_RULE]},
@@ -115,12 +125,12 @@ def dict_to_tmpdir(tmp_path, directory_dict):
 # ------------------------------------------------------------------------------
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def create_data_dir(tmp_path):
     return dict_to_tmpdir(tmp_path, DATA_DIR)
 
 
-@pytest.fixture
+@pytest.fixture()
 def create_cli_context(create_data_dir):
     return CliContext(
         configuration_dir=None,
@@ -138,6 +148,16 @@ def create_cli_context(create_data_dir):
         app_version="1.0",
         commands=None,
     )
+
+
+@pytest.fixture(scope="function")
+def set_app_name():
+    """Set and unset the APP_NAME environment variable."""
+    os.environ[APP_NAME_ENV_VAR] = APP_NAME_ENV_VALUE
+    try:
+        yield
+    finally:
+        del os.environ[APP_NAME_ENV_VAR]
 
 
 # ------------------------------------------------------------------------------
@@ -174,7 +194,7 @@ def test_duplicate_ruleset(create_cli_context):
         archive_manager.run_archive_ruleset("empty")
 
 
-def test_runtime_order(create_cli_context):
+def test_runtime_order(create_cli_context, set_app_name):
     """Test that the rules are run in the order they are defined."""
     archive_manager = ArchiveManager(create_cli_context, SINGLE_RULESET)
     archive_manager.run_archive_ruleset("all")
@@ -183,7 +203,9 @@ def test_runtime_order(create_cli_context):
     runtime = datetime.datetime.now()
 
     data_dir = create_cli_context.data_dir
-    archive_file = Path(data_dir / f"archive/file-{runtime.strftime('%Y%m')}.tgz")
+    archive_file = Path(
+        data_dir / f"archive/file-{runtime.strftime('%Y%m')}-{APP_NAME_ENV_VALUE}.tgz"
+    )
 
     # Get a list of all the archived files.
     files = []
@@ -195,7 +217,7 @@ def test_runtime_order(create_cli_context):
     assert "app/a.txt" not in files
 
 
-def test_only_run_specific_ruleset(create_cli_context, capsys):
+def test_only_run_specific_ruleset(create_cli_context, capsys, set_app_name):
     """Test that only the specified ruleset is called."""
     archive_manager = ArchiveManager(create_cli_context, MULTIPLE_RULESET)
     archive_manager.run_archive_ruleset("purge_rule")
@@ -205,7 +227,9 @@ def test_only_run_specific_ruleset(create_cli_context, capsys):
     runtime = datetime.datetime.now()
 
     data_dir = create_cli_context.data_dir
-    archive_file = Path(data_dir / f"archive/file-{runtime.strftime('%Y%m')}.tgz")
+    archive_file = Path(
+        data_dir / f"archive/file-{runtime.strftime('%Y%m')}-{APP_NAME_ENV_VALUE}.tgz"
+    )
     # Check purge rule was run.
     assert "Executing the `purge_rule.purge_txt` archiving rule." in captured.err
     assert not Path(data_dir / "app/a.txt").exists()
@@ -235,7 +259,7 @@ def test_purge(create_cli_context, capsys):
     assert Path(data_dir / ".hidden/.hidden.txt").exists()
 
 
-def test_compress(create_cli_context, capsys):
+def test_compress(create_cli_context, capsys, set_app_name):
     """Test the compress rule."""
     archive_manager = ArchiveManager(create_cli_context, MULTIPLE_RULESET)
     archive_manager.run_archive_ruleset("compress_rule")
@@ -245,7 +269,9 @@ def test_compress(create_cli_context, capsys):
     runtime = datetime.datetime.now()
 
     data_dir = create_cli_context.data_dir
-    archive_file = Path(data_dir / f"archive/file-{runtime.strftime('%Y%m')}.tgz")
+    archive_file = Path(
+        data_dir / f"archive/file-{runtime.strftime('%Y%m')}-{APP_NAME_ENV_VALUE}.tgz"
+    )
     assert "Executing the `compress_rule.compress_txt` archiving rule." in captured.err
     assert "Archive created at" in captured.err
     assert archive_file.exists()
@@ -262,3 +288,16 @@ def test_compress(create_cli_context, capsys):
     assert "app.txt" not in files
     # Hidden files should be ignored.
     assert ".hidden/.hidden.txt" not in files
+
+
+def test_default_compress(set_app_name):
+    """Test a default compress rule to make sure the naming is correct."""
+    rule_config: CompressRule = CompressRule.model_validate(COMPRESS_DEFAULT)
+    # NOTE: We need the current datetime to calculate the generated archive filename.
+    # It wont be exactly the same, but the filename uses the `year/month` so only those need to be correct.
+    runtime = datetime.datetime.now()
+
+    assert (
+        rule_config.archive_file
+        == f"{runtime.strftime('%Y-%m%d')}_{APP_NAME_ENV_VALUE}.tgz"
+    )
