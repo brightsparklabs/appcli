@@ -548,6 +548,9 @@ backups:
     remote_backups:
 ----
 
+Empty directories are backed up by default as some services require these directories to exist on a system restore.
+However they will not match any include/exclude rules due to the limitations of Glob patterns.
+
 ==== Backup name
 
 The backup `name` is a short descriptive name for the backup definition. To avoid problems, we

@@ -19,6 +19,8 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Changed
 
+- DIS-492: Backup empty directories.
+
 ### Deprecated
 
 ### Removed

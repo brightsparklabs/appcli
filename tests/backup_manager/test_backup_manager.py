@@ -253,9 +253,9 @@ def test_minimum_config_required_for_local_backup(
         Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
     )
     # Build our list of expected files to find in the backup
-    expected_files = get_expected_files(populate_data_dir, DATA_FILES_ALL).union(
-        get_expected_files(populate_conf_dir, CONF_FILES_ALL)
-    )
+    expected_files = get_expected_files(
+        populate_data_dir, DATA_FILES_ALL | DATA_FOLDERS_EMPTY
+    ).union(get_expected_files(populate_conf_dir, CONF_FILES_ALL | CONF_FOLDERS_EMPTY))
     # Create our configuration
     conf = {
         "name": "full",
@@ -264,6 +264,7 @@ def test_minimum_config_required_for_local_backup(
     backup_config = BackupConfig.from_dict(conf)
     backup = backup_config.backup(ctx)
 
+    assert len(get_tar_contents(backup)) == len(expected_files)
     assert Path(backup).exists()
     assert get_tar_contents(backup) == expected_files
 
@@ -382,9 +383,9 @@ def test_data_dir_missing_include_list(
         Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
     )
     # Build our list of expected files to find in the backup
-    expected_files = get_expected_files(populate_data_dir, DATA_FILES_ALL).union(
-        get_expected_files(populate_conf_dir, CONF_FILES_ALL)
-    )
+    expected_files = get_expected_files(
+        populate_data_dir, DATA_FILES_ALL | DATA_FOLDERS_EMPTY
+    ).union(get_expected_files(populate_conf_dir, CONF_FILES_ALL | CONF_FOLDERS_EMPTY))
     # Create our configuration.
     conf = {"name": "full", "file_filter": {"data_dir": {"include_list": ""}}}
     backup_config = BackupConfig.from_dict(conf)
@@ -406,9 +407,9 @@ def test_data_dir_empty_include_list(
         Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
     )
     # Build our list of expected files to find in the backup
-    expected_files = get_expected_files(populate_data_dir, DATA_FILES_ALL).union(
-        get_expected_files(populate_conf_dir, CONF_FILES_ALL)
-    )
+    expected_files = get_expected_files(
+        populate_data_dir, DATA_FILES_ALL | DATA_FOLDERS_EMPTY
+    ).union(get_expected_files(populate_conf_dir, CONF_FILES_ALL | CONF_FOLDERS_EMPTY))
     # Create our configuration.
     conf = {"name": "full", "file_filter": {"data_dir": {"include_list": []}}}
     backup_config = BackupConfig.from_dict(conf)
@@ -430,9 +431,9 @@ def test_conf_dir_mising_include_list(
         Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
     )
     # Build our list of expected files to find in the backup
-    expected_files = get_expected_files(populate_data_dir, DATA_FILES_ALL).union(
-        get_expected_files(populate_conf_dir, CONF_FILES_ALL)
-    )
+    expected_files = get_expected_files(
+        populate_data_dir, DATA_FILES_ALL | DATA_FOLDERS_EMPTY
+    ).union(get_expected_files(populate_conf_dir, CONF_FILES_ALL | CONF_FOLDERS_EMPTY))
     # Create our configuration.
     conf = {"name": "full", "file_filter": {"conf_dir": {"include_list": ""}}}
 
@@ -484,9 +485,9 @@ def test_data_dir_empty_exclude_list(
         Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
     )
     # Build our list of expected files to find in the backup
-    expected_files = get_expected_files(populate_data_dir, DATA_FILES_ALL).union(
-        get_expected_files(populate_conf_dir, CONF_FILES_ALL)
-    )
+    expected_files = get_expected_files(
+        populate_data_dir, DATA_FILES_ALL | DATA_FOLDERS_EMPTY
+    ).union(get_expected_files(populate_conf_dir, CONF_FILES_ALL | CONF_FOLDERS_EMPTY))
     # Create our configuration.
     conf = {"name": "full", "file_filter": {"data_dir": {"exclude_list": []}}}
 
@@ -507,9 +508,9 @@ def test_data_dir_missing_exclude_list(
         Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
     )
     # Build our list of expected files to find in the backup
-    expected_files = get_expected_files(populate_data_dir, DATA_FILES_ALL).union(
-        get_expected_files(populate_conf_dir, CONF_FILES_ALL)
-    )
+    expected_files = get_expected_files(
+        populate_data_dir, DATA_FILES_ALL | DATA_FOLDERS_EMPTY
+    ).union(get_expected_files(populate_conf_dir, CONF_FILES_ALL | CONF_FOLDERS_EMPTY))
     # Create our configuration.
     conf = {"name": "full", "file_filter": {"data_dir": {"exclude_list": ""}}}
 
@@ -528,9 +529,9 @@ def test_exclude_list(reset_mockTime, populate_conf_dir, populate_data_dir, tmp_
         Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
     )
     # Build our list of expected files to find in the backup
-    expected_files = get_expected_files(populate_data_dir, DATA_FILES_ALL).union(
-        get_expected_files(populate_conf_dir, CONF_FILES_ALL)
-    )
+    expected_files = get_expected_files(
+        populate_data_dir, DATA_FILES_ALL | DATA_FOLDERS_EMPTY
+    ).union(get_expected_files(populate_conf_dir, CONF_FILES_ALL | CONF_FOLDERS_EMPTY))
     expected_files = expected_files - get_expected_files(
         populate_data_dir, set(["1.txt", "populated_folder/first.txt"])
     )
@@ -563,9 +564,9 @@ def test_data_dir_include_and_exclude_list(
         Path(populate_conf_dir), Path(populate_data_dir), Path(backup_dir)
     )
     # Build our list of expected files to find in the backup
-    expected_files = get_expected_files(populate_data_dir, DATA_FILES_ALL).union(
-        get_expected_files(populate_conf_dir, CONF_FILES_ALL)
-    )
+    expected_files = get_expected_files(
+        populate_data_dir, DATA_FILES_ALL | DATA_FOLDERS_EMPTY
+    ).union(get_expected_files(populate_conf_dir, CONF_FILES_ALL | CONF_FOLDERS_EMPTY))
     expected_files = get_expected_files(populate_conf_dir, set([".hidden/11.log"]))
     expected_files = expected_files.union(
         get_expected_files(populate_data_dir, (set(["populated_folder/third.log"])))
