@@ -947,7 +947,7 @@ def post_configure_init_hook(ctx: click.Context, preset: Optional[str]):
 ----
 # filename: Dockerfile
 
-FROM brightsparklabs/appcli
+FROM brightsparklabs/appcli-docker-compose:<version>
 
 ENTRYPOINT ["./myapp.py"]
 WORKDIR /app
