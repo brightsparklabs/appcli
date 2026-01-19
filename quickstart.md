@@ -81,7 +81,7 @@ EOF
 
 ```bash
 cat <<EOF >Dockerfile
-FROM brightsparklabs/appcli:<version>
+FROM brightsparklabs/appcli-docker-compose:<version>
 
 ENTRYPOINT ["./myapp.py"]
 WORKDIR /app
