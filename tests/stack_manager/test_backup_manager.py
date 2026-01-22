@@ -20,7 +20,7 @@ import click
 import pytest
 
 # local libraries
-from appcli.backup_manager.backup_manager import BackupConfig, BackupManager
+from appcli.stack_manager.backup_manager import BackupConfig, BackupManager
 from appcli.models.cli_context import CliContext
 
 # ------------------------------------------------------------------------------
@@ -96,7 +96,7 @@ def patch_datetime_now(monkeypatch):
             return mock_time.getTime()
 
     monkeypatch.setattr(
-        "appcli.backup_manager.backup_manager.datetime.datetime", mydatetime
+        "appcli.stack_manager.backup_manager.datetime.datetime", mydatetime
     )
 
 

@@ -16,6 +16,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 - APPCLI-130: Use Devbox to manage developer environment.
 - APPCLI-137: Include code quality tooling.
+- TERA-1893: Add archiving to stack settings.
 
 ### Changed
 
