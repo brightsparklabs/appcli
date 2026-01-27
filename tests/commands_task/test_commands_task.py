@@ -27,7 +27,7 @@ from appcli.configuration_manager import ConfigurationManager
 from appcli.logger import enable_debug_logging, logger
 from appcli.models.cli_context import CliContext
 from appcli.models.configuration import Configuration
-from appcli.orchestrators import DockerComposeOrchestrator, NullOrchestrator
+from appcli.orchestrators import DockerComposeOrchestrator
 
 # ------------------------------------------------------------------------------
 # CONSTANTS
@@ -165,7 +165,7 @@ class Environment:
             app_name_slug=APP_NAME_SLUG,
             app_version="0.0.0",
             commands=ConfigureCli(config).commands,
-            orchestrator=NullOrchestrator(),
+            orchestrator=config.orchestrator,
         )
 
     def _create_config(self) -> Configuration:
