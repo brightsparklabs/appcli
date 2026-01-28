@@ -15,10 +15,12 @@ The changelog is applicable from version `1.0.0` onwards.
 ### Added
 
 - APPCLI-130: Use Devbox to manage developer environment.
+- APPCLI-137: Include code quality tooling.
 
 ### Changed
 
 - TERA-859: Expose orchestrator from the configuration to the CLI context.
+- NSWCC-752: Update Appcli image name in readme and quickstart.md.
 
 ### Deprecated
 
@@ -26,7 +28,11 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Fixed
 
+- RAD-225: Fix versioning string.
+
 ### Security
+
+- APPCLI-141: Patch `deepdiff` to `8.6.1` for CVE-2025-58367.
 
 ---
 

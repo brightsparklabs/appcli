@@ -102,7 +102,12 @@ def create_cli(configuration: Configuration, desired_environment: Dict[str, str]
     DEV_MODE_VARIABLES = {}
     if IS_DEV_MODE:
         with wrap_dev_mode():
-            install_dir_base = Path("/tmp/") / APP_NAME_SLUG.lower()
+            # It is recommended to introduce some randomness to temporary file paths.
+            # This prevents attackers knowing the directory, where they can perfrom attacks such as:
+            # Per-creating synlinks there, DoS and file overwrites, etc.
+            # See https://cwe.mitre.org/data/definitions/377.html
+            # NOTE: We are okay to take the risk here as this is local-dev only.
+            install_dir_base = Path("/tmp/") / APP_NAME_SLUG.lower()  # nosec B108
             environment = "local-dev"
             install_dir = install_dir_base / environment
             install_dir.mkdir(parents=True, exist_ok=True)
@@ -489,7 +494,8 @@ class ArgsGroup(click.Group):
 class NotRequiredOn(click.Option):
     def __init__(self, *args, **kwargs):
         self.not_required_on = kwargs.pop("not_required_on")
-        assert self.not_required_on, "'not_required_on' parameter required"
+        if not self.not_required_on:
+            raise AttributeError("'not_required_on' parameter required")
         kwargs["help"] = (
             kwargs.get("help", "")
             + f"  [required] unless subcommand is one of: {self.not_required_on}."

@@ -11,18 +11,24 @@ repos:
       - id: linter
         name: Linter
         description: https://github.com/charliermarsh/ruff
-        entry: .venv/bin/ruff
-        language: python
+        entry: make lint
+        language: system
         files: \.py$
-        # Ignore lambda functions in `appcli/models/configuration.py::Hooks`.
-        args: [check, --fix, --ignore, E731]
+        args: []
       - id: formatter
         name: Formatter
         description: https://github.com/charliermarsh/ruff
-        entry: .venv/bin/ruff
-        language: python
+        entry: make format
+        language: system
         files: \.py$
-        args: [format]
+        args: []
+      - id: docs
+        name: Docs
+        description: https://pdoc.dev/
+        entry: make docs
+        language: system
+        files: \.py$
+        args: []
       # NOTE: Disabling this for now as there is currently no way to exit gracefully when no test are run.
       # See https://github.com/pytest-dev/pytest/issues/2393
       # - id: pytest
