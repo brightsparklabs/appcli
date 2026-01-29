@@ -19,6 +19,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Changed
 
+- TERA-859: Expose orchestrator from the configuration to the CLI context.
 - NSWCC-752: Update Appcli image name in readme and quickstart.md.
 
 ### Deprecated
