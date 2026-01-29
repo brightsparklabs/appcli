@@ -81,7 +81,7 @@ my_app.server.http.port  ->  settings.my_app.server.http.port
 
 == Quick Start
 
-Refer to the link:quickstart.md[quick start guide] to get a basic application running.
+Refer to the link:QUICKSTART.md[quick start guide] to get a basic application running.
 
 Otherwise refer to the Installation section below to see all options.
 
