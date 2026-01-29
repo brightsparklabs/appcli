@@ -61,7 +61,7 @@ dev = [
     "pdoc==16.0.0",
     "pre-commit==4.5.1",
     "pytest==9.0.2",
-    "pytest-cov==6.2.1",
+    "pytest-cov==7.0.0",
     "ruff==0.14.10",
 ]
 build = [
