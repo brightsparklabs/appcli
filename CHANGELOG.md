@@ -10,7 +10,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ## [Unreleased] - YYYY-MM-DD
 
-[Unreleased]: https://github.com/brightsparklabs/appcli/compare/x.y.z...HEAD
+[Unreleased]: https://github.com/brightsparklabs/appcli/compare/3.4.0...HEAD
 
 ### Added
 
@@ -23,6 +23,34 @@ The changelog is applicable from version `1.0.0` onwards.
 ### Fixed
 
 ### Security
+
+---
+
+## [3.4.0] - 2026-01-29
+
+[3.4.0]: https://github.com/brightsparklabs/appcli/compare/3.3.0...3.4.0
+
+### Added
+
+- APPCLI-130: Use Devbox to manage developer environment.
+- APPCLI-137: Include code quality tooling.
+
+### Changed
+
+- TERA-859: Expose orchestrator from the configuration to the CLI context.
+- NSWCC-752: Update appcli image name in README.adoc and QUICKSTART.md.
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+- RAD-225: Fix versioning string.
+
+### Security
+
+- APPCLI-141: Patch `deepdiff` to `8.6.1` for CVE-2025-58367.
 
 ---
 
@@ -75,7 +103,6 @@ The changelog is applicable from version `1.0.0` onwards.
 ### Security
 
 - APPCLI-128: Patch [jinja2 attr vulnerability](https://github.com/pallets/jinja/security/advisories/GHSA-cpwx-vrp4-4pq7)
-
 
 ---
 

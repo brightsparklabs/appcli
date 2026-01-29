@@ -7,41 +7,33 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v3
         # fetch all history for all branches and tags, so that our `make` targets can get tags
         with:
           fetch-depth: 0
+      - name: Cache Devbox and UV.
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/devbox
+            ~/.cache/uv
+          key: ${{ runner.os }}-${{ hashFiles('devbox.json', 'pyproject.toml') }}
       - name: Fix tag
         # Workaround actions/checkout bug
         # https://github.com/actions/checkout/issues/290
         # https://github.com/actions/checkout/issues/882
         if: github.ref_type == 'tag'
         run: git fetch -fv origin tag "${GITHUB_REF_NAME}"
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12.3
-      - name: Install uv
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-      - name: Cache uv
-        uses: actions/cache@v3
-        with:
-          # This path is specific to Ubuntu
-          path: ~/.cache/uv
-          # Look to see if there is a cache hit for the corresponding pyproject file
-          key: ${{ runner.os }}-uv-${{ hashFiles('pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-uv-
-            ${{ runner.os }}-
+      - name: Install Devbox
+        uses: jetify-com/devbox-install-action@v0.11.0
       - name: Install depenencies
-        run: make venv 
+        run: devbox run -- make venv
       - name: Check python
-        run: make check
+        run: devbox run -- make check
       - name: Build wheel
-        run: make build-wheel
+        run: devbox run -- make build-wheel
       - name: Publish a Python distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:

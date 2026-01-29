@@ -16,6 +16,7 @@ import tarfile
 from pathlib import Path, PurePath
 
 # vendor libraries
+from appcli.orchestrators import NullOrchestrator
 import click
 import pytest
 
@@ -195,6 +196,7 @@ def create_click_ctx(conf_dir, data_dir, backup_dir) -> click.Context:
             is_dev_mode=False,
             app_version="1.0",
             commands=commands,
+            orchestrator=NullOrchestrator(),
         ),
         command=click.Command(
             name="backup", context_settings={"allow_extra_args": False}

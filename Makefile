@@ -16,11 +16,12 @@ MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 # Set the shell to `bash` to give better error messaging/handling.
 # See https://stackoverflow.com/questions/20615217/bash-bad-substitution
-SHELL := /bin/bash
+SHELL := bash
 
 PYTHON_VERSION=3.12.3
+APP_VERSION=$(shell git describe --always --dirty)
 # As this is a python project, we want this to be PEP440 compliant.
-APP_VERSION=$(shell git describe --always --dirty | sed -E 's/^v//; s/-([0-9]+)-g([0-9a-f]+)/.\1+\2/; s/-dirty/.dirty/')
+APP_VERSION_PYTHON=$(shell echo "${APP_VERSION}" | sed -E 's/^v//; s/-([0-9]+)-g([0-9a-f]+)/.\1+\2/; s/-dirty/.dirty/')
 # Format and linter rules to ignore.
 # See https://docs.astral.sh/ruff/rules/
 # Ignore lambda functions in `appcli/models/configuration.py::Hooks`.
@@ -45,29 +46,30 @@ help: ## Display this help section.
 .PHONY: venv
 venv: .venv/bin/activate ## Build the virtual environment.
 .venv/bin/activate: pyproject.toml .github/.pre-commit-config.yaml
-	APP_VERSION=${APP_VERSION} uv sync --group dev --group build
-	uv run pre-commit install --config .github/.pre-commit-config.yaml
+	APP_VERSION=${APP_VERSION_PYTHON} uv sync --group dev --group build
+	APP_VERSION=${APP_VERSION_PYTHON} uv run pre-commit install --config .github/.pre-commit-config.yaml
 	touch .venv/bin/activate
 
 .PHONY: test
 test: venv ## Run unit tests.
-	uv run pytest
+	APP_VERSION=${APP_VERSION_PYTHON} uv run pytest \
+		--cov-report term-missing:skip-covered --cov=appcli tests/
 
 .PHONY: lint
 lint: venv ## Lint the codebase.
-	uv run ruff check --fix --ignore ${RULES} .
+	APP_VERSION=${APP_VERSION_PYTHON} uv run ruff check --fix --ignore ${RULES} .
 
 .PHONY: lint-check
 lint-check: venv ## Lint the codebase (dryrun).
-	uv run ruff check --ignore ${RULES} .
+	APP_VERSION=${APP_VERSION_PYTHON} uv run ruff check --ignore ${RULES} .
 
 .PHONY: format
 format: venv ## Format the codebase.
-	uv run ruff format .
+	APP_VERSION=${APP_VERSION_PYTHON} uv run ruff format .
 
 .PHONY: format-check
 format-check: venv ## Format the codebase (dryrun).
-	uv run ruff format --check .
+	APP_VERSION=${APP_VERSION_PYTHON} uv run ruff format --check .
 
 .PHONY: clean
 clean: ## Remove the build artifacts.
@@ -75,16 +77,16 @@ clean: ## Remove the build artifacts.
 
 .PHONY: build-wheel
 build-wheel: venv clean ## Build the python package.
-	APP_VERSION=${APP_VERSION} uv build --sdist --wheel
+	APP_VERSION=${APP_VERSION_PYTHON} uv build --sdist --wheel
 
 .PHONY: publish-wheel
 publish-wheel: build-wheel ## Publish the python package.
-	APP_VERSION=${APP_VERSION} uv run hatch publish \
+	APP_VERSION=${APP_VERSION_PYTHON} uv run hatch publish \
 		--yes --user __token__ --auth ${PYPI_TOKEN} dist/*
 
 .PHONY: publish-wheel-test
 publish-wheel-test: build-wheel ## Test publish the python package.
-	APP_VERSION=${APP_VERSION} uv run hatch publish \
+	APP_VERSION=${APP_VERSION_PYTHON} uv run hatch publish \
 		--yes --user __token__ --auth ${PYPI_TOKEN} --repo https://test.pypi.org/legacy/ dist/*
 
 .PHONY: docker
@@ -118,4 +120,17 @@ check: format-check lint-check test ## Format (dryrun), lint (dryrun) and test t
 
 .PHONY: precommit
 precommit: venv ## Run pre commit hooks.
-	uv run pre-commit run -c .github/.pre-commit-config.yaml
+	APP_VERSION=${APP_VERSION_PYTHON} uv run pre-commit run -c .github/.pre-commit-config.yaml
+
+.PHONY: scan
+scan: venv ## Scan the code for vulnerabilities.
+	APP_VERSION=${APP_VERSION_PYTHON} uv run bandit -r --severity-level medium appcli/
+	@echo "Pulling dependencies to scan (this may take a while)..."
+    # NOTE: The security recommendation is to put randomness into any dirs/files generated in `/tmp/`.
+	@REQUIREMENTS_DIR=$(shell mktemp -d) \
+		&& APP_VERSION=${APP_VERSION_PYTHON} uv pip freeze > $$REQUIREMENTS_DIR/requirements.txt \
+		&& APP_VERSION=${APP_VERSION_PYTHON} uv run guarddog pypi verify --exit-non-zero-on-finding $$REQUIREMENTS_DIR/requirements.txt
+
+.PHONY: docs
+docs: venv ## Generate documentation from the code.
+	APP_VERSION=$(APP_VERSION_PYTHON) uv run pdoc -o ./build/docs appcli/

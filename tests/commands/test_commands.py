@@ -419,6 +419,7 @@ class Environment:
             app_name_slug=APP_NAME_SLUG,
             app_version="0.0.0",
             commands=ConfigureCli(config).commands,
+            orchestrator=config.orchestrator,
         )
 
     def _create_config(self) -> Configuration:
