@@ -44,14 +44,14 @@ class Orchestrator:
     """
 
     def start(
-        self, cli_context: CliContext, service_name: tuple[str, ...] = None
+        self, cli_context: CliContext, service_names: tuple[str, ...] = None
     ) -> CompletedProcess:
         """
         Starts Docker containers (services). Optionally accepts a tuple of service names to start.
 
         Args:
             cli_context (CliContext): The current CLI context.
-            service_names (tuple[str,...], optional): Names of the services to start. If not provided, starts all services.
+            service_names: Names of the services to start. If not provided, starts all services.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -59,14 +59,14 @@ class Orchestrator:
         raise NotImplementedError
 
     def shutdown(
-        self, cli_context: CliContext, service_name: tuple[str, ...] = None
+        self, cli_context: CliContext, service_names: tuple[str, ...] = None
     ) -> CompletedProcess:
         """
         Stops Docker containers (services). Optionally accepts a tuple of service names to shutdown.
 
         Args:
             cli_context (CliContext): The current CLI context.
-            service_names (tuple[str,...], optional): Names of the services to shutdown. If not provided, shuts down all services.
+            service_names: Names of the services to shutdown. If not provided, shuts down all services.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -76,7 +76,7 @@ class Orchestrator:
     def status(
         self,
         cli_context: CliContext,
-        service_name: tuple[str, ...] = None,
+        service_names: tuple[str, ...] = None,
         to_json: bool = False,
     ) -> CompletedProcess:
         """
@@ -674,13 +674,14 @@ class HelmOrchestrator(Orchestrator):
         self.helm_set_files_dir = helm_set_files_dir
 
     def start(
-        self, cli_context: CliContext, service_name: tuple[str, ...] = None
+        self, cli_context: CliContext, service_names: tuple[str, ...] = None
     ) -> CompletedProcess:
         """
         Installs (or upgrades) a helm chart inside the current kubernetes cluster.
 
         Args:
             cli_context (CliContext): The current CLI context.
+            service_names (tuple[str,...], optional): Names of the services to get the status of. If not provided, gets the status of all services.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -727,13 +728,14 @@ class HelmOrchestrator(Orchestrator):
         return self.__run_command(command)
 
     def shutdown(
-        self, cli_context: CliContext, service_name: tuple[str, ...] = None
+        self, cli_context: CliContext, service_names: tuple[str, ...] = None
     ) -> CompletedProcess:
         """
         Uninstalls a helm chart from current kubernetes cluster.
 
         Args:
             cli_context (CliContext): The current CLI context.
+            service_names (tuple[str,...], optional): Names of the services to get the status of. If not provided, gets the status of all services.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -753,7 +755,7 @@ class HelmOrchestrator(Orchestrator):
     def status(
         self,
         cli_context: CliContext,
-        service_name: tuple[str, ...] = None,
+        service_names: tuple[str, ...] = None,
         to_json: bool = False,
     ) -> CompletedProcess:
         """
@@ -761,6 +763,7 @@ class HelmOrchestrator(Orchestrator):
 
         Args:
             cli_context (CliContext): The current CLI context.
+            service_names: Names of the services to get the status of. If not provided, gets the status of all services.
             to_json: Flag for whether to return json object of status.
 
         Returns:
@@ -905,13 +908,13 @@ class NullOrchestrator(Orchestrator):
     """
 
     def start(
-        self, cli_context: CliContext, service_name: tuple[str, ...] = None
+        self, cli_context: CliContext, service_names: tuple[str, ...] = None
     ) -> CompletedProcess:
         logger.info("NullOrchestrator has no services to start.")
         return None
 
     def shutdown(
-        self, cli_context: CliContext, service_name: tuple[str, ...] = None
+        self, cli_context: CliContext, service_names: tuple[str, ...] = None
     ) -> CompletedProcess:
         logger.info("NullOrchestrator has no services to shutdown.")
         return None
@@ -919,7 +922,7 @@ class NullOrchestrator(Orchestrator):
     def status(
         self,
         cli_context: CliContext,
-        service_name: tuple[str, ...] = None,
+        service_names: tuple[str, ...] = None,
         to_json: bool = False,
     ) -> CompletedProcess:
         logger.info("NullOrchestrator has no services to get the status of.")
