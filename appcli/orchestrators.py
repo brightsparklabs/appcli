@@ -230,7 +230,7 @@ class DockerComposeOrchestrator(Orchestrator):
     def start(
         self, cli_context: CliContext, service_names: tuple[str, ...] = None
     ) -> CompletedProcess:
-        command = ("up", "-d")
+        command = ("up", "-d", "--wait")
         if service_names is not None and len(service_names) > 0:
             command += service_names
         return self.__compose_service(cli_context, command)
