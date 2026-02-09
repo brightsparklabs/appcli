@@ -20,7 +20,7 @@ import click
 from click.core import Context
 
 # local libraries
-from appcli.commands.appcli_command import AppcliCommand
+from appcli.commands.appcli_command import AppcliCommand, ArgumentEscapeSequences
 from appcli.functions import error_and_exit
 from appcli.logger import logger
 from appcli.models.cli_context import CliContext
@@ -176,7 +176,14 @@ class ServiceCli:
             )
             self._action_orchestrator(ctx, ServiceAction.SHUTDOWN, service_names)
 
-        @service.command(help="Gets the status of services.")
+        @service.command(
+            cls=ArgumentEscapeSequences,
+            help="Gets the status of services. Use '--' to pass additional arguments to the orchestrator.",
+            context_settings=dict(
+                ignore_unknown_options=False,
+                allow_extra_args=True,
+            ),
+        )
         @click.argument(
             "service_names",
             required=False,
@@ -190,7 +197,9 @@ class ServiceCli:
             cli_context.get_configuration_dir_state().verify_command_allowed(
                 AppcliCommand.SERVICE_STATUS
             )
-            self._action_orchestrator(ctx, ServiceAction.STATUS, service_names)
+            self._action_orchestrator(
+                ctx, ServiceAction.STATUS, service_names, tuple(ctx.args)
+            )
 
         # Add the 'logs' subcommand
         service.add_command(self.orchestrator.get_logs_command())
@@ -236,13 +245,15 @@ class ServiceCli:
         ctx: Context,
         action: ServiceAction,
         service_names: tuple[str, ...] = None,
+        extra_args: tuple[str, ...] = None,
     ):
         """Applies an action to service(s).
 
         Args:
-            ctx (Context): Click Context for current CLI.
-            action (ServiceAction): action to apply to service(s), ie start, stop ...
-            service_names (tuple[str, ...], optional): The name(s) of the service(s) to effect. If not provided the action applies to all services.
+            ctx: Click Context for current CLI.
+            action: action to apply to service(s), ie start, stop ...
+            service_names: The name(s) of the service(s) to effect. If not provided the action applies to all services.
+            extra_args: Additional arguments to be passed to the action_run_function.
         """
         hooks = self.cli_configuration.hooks
         if action == ServiceAction.START:
@@ -279,7 +290,21 @@ class ServiceCli:
             pre_hook(ctx)
 
         logger.info(pre_run_log_message)
-        result = action_run_function(ctx.obj, service_names)
+
+        # We explicitly check for ServiceAction.STATUS here because the underlying
+        # Orchestrator interface has not yet been unified. While 'status' now
+        # supports 'extra_args', other lifecycle methods (start, shutdown) currently
+        # only accept 'service_names'. To avoid signature mismatch errors, we
+        # branch the call based on the action type.
+        #
+        # TODO - APPCLI-147: Refactor the Orchestrator base class
+        #   and all concrete implementations
+        # to accept the 'extra_args' parameter. Once unified, this conditional block
+        # can be replaced with a single generic function call.
+        if action == ServiceAction.STATUS:
+            result = action_run_function(ctx.obj, service_names, extra_args)
+        else:
+            result = action_run_function(ctx.obj, service_names)
 
         if post_hook is not None:
             logger.debug(f"Running post-{action.name} hook")
