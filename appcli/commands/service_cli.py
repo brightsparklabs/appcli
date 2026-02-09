@@ -96,10 +96,10 @@ class ServiceCli:
             """Restarts service(s)
 
             Args:
-                ctx (Context): Click Context for current CLI.
-                force (bool, optional): If True, pass force to all subcommands. Defaults to False.
-                apply (bool, optional): If True, configure apply after service(s) are stopped. Defaults to False.
-                service_names (tuple[str, ...], optional): The name of the service(s) to restart. If not provided, will restart all
+                ctx: Click Context for current CLI.
+                force: If True, pass force to all subcommands. Defaults to False.
+                apply: If True, configure apply after service(s) are stopped. Defaults to False.
+                service_names: The name of the service(s) to restart. If not provided, will restart all
                     services.
             """
             cli_context: CliContext = ctx.obj
@@ -232,9 +232,9 @@ class ServiceCli:
         """Validates service names. Exits with error if any invalid service names are passed in.
 
         Args:
-            ctx (click.Context): Current CLI context.
-            param (click.Option): The option parameter to validate.
-            values (click.Tuple): The values passed to the option, could be multiple.
+            ctx: Current CLI context.
+            param: The option parameter to validate.
+            values: The values passed to the option, could be multiple.
         """
         if not self.orchestrator.verify_service_names(ctx.obj, values):
             error_and_exit("One or more service names were not found.")
