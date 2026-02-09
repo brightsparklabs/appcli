@@ -44,13 +44,15 @@ class Orchestrator:
     """
 
     def start(
-        self, cli_context: CliContext, service_names: tuple[str, ...] = None
+        self,
+        cli_context: CliContext,
+        service_names: tuple[str, ...] = None,
     ) -> CompletedProcess:
         """
         Starts Docker containers (services). Optionally accepts a tuple of service names to start.
 
         Args:
-            cli_context (CliContext): The current CLI context.
+            cli_context: The current CLI context.
             service_names: Names of the services to start. If not provided, starts all services.
 
         Returns:
@@ -59,13 +61,15 @@ class Orchestrator:
         raise NotImplementedError
 
     def shutdown(
-        self, cli_context: CliContext, service_names: tuple[str, ...] = None
+        self,
+        cli_context: CliContext,
+        service_names: tuple[str, ...] = None,
     ) -> CompletedProcess:
         """
         Stops Docker containers (services). Optionally accepts a tuple of service names to shutdown.
 
         Args:
-            cli_context (CliContext): The current CLI context.
+            cli_context: The current CLI context.
             service_names: Names of the services to shutdown. If not provided, shuts down all services.
 
         Returns:
@@ -104,10 +108,10 @@ class Orchestrator:
         upon completing a short-lived task.
 
         Args:
-            cli_context (CliContext): The current CLI context.
-            service_name (str): Name of the container to run.
-            extra_args (Iterable[str]): Extra arguments for running the container.
-            detached (bool): Optional - defaults to False. Whether the task should run in `--detached` mode or not.
+            cli_context: The current CLI context.
+            service_name: Name of the container to run.
+            extra_args: Extra arguments for running the container.
+            detached: Optional - defaults to False. Whether the task should run in `--detached` mode or not.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -126,11 +130,11 @@ class Orchestrator:
         Executes a command in a running container.
 
         Args:
-            cli_context (CliContext): The current CLI context.
-            service_name (str): Name of the container to be acted upon.
-            command (str): The command to be executed, along with any arguments.
-            stdin_input (str): Optional - defaults to None. String passed through to the stdin of the exec command.
-            capture_output (bool): Optional - defaults to False. True to capture stdout/stderr for the run command.
+            cli_context: The current CLI context.
+            service_name: Name of the container to be acted upon.
+            command: The command to be executed, along with any arguments.
+            stdin_input: Optional - defaults to None. String passed through to the stdin of the exec command.
+            capture_output: Optional - defaults to False. True to capture stdout/stderr for the run command.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -142,7 +146,7 @@ class Orchestrator:
         Returns a click command which streams logs for Docker containers.
 
         Args:
-            cli_context (CliContext): The current CLI context.
+            cli_context: The current CLI context.
 
         Returns:
             click.Command: Command for streaming logs.
@@ -174,8 +178,8 @@ class Orchestrator:
         Checks whether a list of named services exist. Returns True if all services exist, otherwise returns False.
 
         Args:
-            cli_context (CliContext): The current CLI context.
-            service_names (tuple[str,...]): Names of the services.
+            cli_context: The current CLI context.
+            service_names: Names of the services.
 
         Returns:
             bool: if the services exists.
@@ -213,14 +217,14 @@ class DockerComposeOrchestrator(Orchestrator):
         Creates a new instance of an orchestrator for docker-compose-based applications.
 
         Args:
-            docker_compose_file (Path): Path to a docker compose file containing long-running services. Path is relative
+            docker_compose_file: Path to a docker compose file containing long-running services. Path is relative
                 to the generated configuration directory.
-            docker_compose_override_directory (Path, optional): Path to a directory containing any additional
+            docker_compose_override_directory: Optional - Path to a directory containing any additional
                 docker-compose override files. Overrides are applied in alphanumeric order of filename. Path is relative
                 to the generated configuration directory.
-            docker_compose_task_file (Path): Path to a docker compose file containing services to be run as short-lived
+            docker_compose_task_file: Path to a docker compose file containing services to be run as short-lived
                 tasks. Path is relative to the generated configuration directory.
-            docker_compose_task_override_directory (Path): Path to a directory containing any additional
+            docker_compose_task_override_directory: Path to a directory containing any additional
                 docker-compose override files for services used as tasks. Path is relative to the generated
                 configuration directory.
         """
@@ -421,14 +425,14 @@ class DockerSwarmOrchestrator(Orchestrator):
         Creates a new instance of an orchestrator for docker swarm applications.
 
         Args:
-            docker_compose_file (Path): Path to a docker compose file containing long-running services. Path is relative
+            docker_compose_file: Path to a docker compose file containing long-running services. Path is relative
                 to the generated configuration directory.
-            docker_compose_override_directory (Path, optional): Path to a directory containing any additional
+            docker_compose_override_directory: Optional - Path to a directory containing any additional
                 docker-compose override files. Overrides are applied in alphanumeric order of filename. Path is relative
                 to the generated configuration directory.
-            docker_compose_task_file (Path): Path to a docker compose file containing services to be run as short-lived
+            docker_compose_task_file: Path to a docker compose file containing services to be run as short-lived
                 tasks. Path is relative to the generated configuration directory.
-            docker_compose_task_override_directory (Path): Path to a directory containing any additional
+            docker_compose_task_override_directory: Path to a directory containing any additional
                 docker-compose override files for services used as tasks. Path is relative to the generated
                 configuration directory.
         """
@@ -636,8 +640,8 @@ class HelmOrchestrator(Orchestrator):
         NOTE: All `Path` objects are relative to the configuration directory.
 
         Args:
-            chart_location (Path): Path to the helm chart file/directory to deploy.
-            helm_set_values_dir (Path): The directory containing all main `values.yaml` files.
+            chart_location: Path to the helm chart file/directory to deploy.
+            helm_set_values_dir: The directory containing all main `values.yaml` files.
                 Defaults to: `${GENERATED_CONFIGURATION_DIR}/cli/helm/set-values`
 
                 All files in this directory are applied with:
@@ -645,7 +649,7 @@ class HelmOrchestrator(Orchestrator):
 
                 See below for more details.
 
-            helm_set_files_dir (Path): The directory containing all key-specific files.
+            helm_set_files_dir: The directory containing all key-specific files.
                 Defaults to: `${GENERATED_CONFIGURATION_DIR}/cli/helm/set-files`
 
                 Take the following directory:
@@ -683,8 +687,8 @@ class HelmOrchestrator(Orchestrator):
         Installs (or upgrades) a helm chart inside the current kubernetes cluster.
 
         Args:
-            cli_context (CliContext): The current CLI context.
-            service_names (tuple[str,...], optional): Names of the services to get the status of. If not provided, gets the status of all services.
+            cli_context: The current CLI context.
+            service_names: Optional - Names of the services to get the status of. If not provided, gets the status of all services.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -737,8 +741,8 @@ class HelmOrchestrator(Orchestrator):
         Uninstalls a helm chart from current kubernetes cluster.
 
         Args:
-            cli_context (CliContext): The current CLI context.
-            service_names (tuple[str,...], optional): Names of the services to get the status of. If not provided, gets the status of all services.
+            cli_context: The current CLI context.
+            service_names: Optional - Names of the services to get the status of. If not provided, gets the status of all services.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -839,7 +843,7 @@ class HelmOrchestrator(Orchestrator):
         """Run the given command and return the CompletedProcess.
 
         Args:
-            command (list[str]): The command to execute.
+            command: The command to execute.
 
         Returns:
             CompletedProcess: The execution result.
@@ -865,7 +869,7 @@ class HelmOrchestrator(Orchestrator):
             ["--values", "values.yaml", "--set-file", "path.to.foo=path/to/foo.yaml"...
 
         Args:
-            generated_configuration_dir (Path): Generated configuration directory form the cli object, e.g:
+            generated_configuration_dir: Generated configuration directory form the cli object, e.g:
                 `cli_context.get_generated_configuration_dir()`
 
         Returns:
@@ -992,8 +996,8 @@ def service_name_verifier(
     """Verify all services exist.
 
     Args:
-        service_names (tuple[str, ...]): The list of service names to check.
-        valid_service_names [List[str]]: The list of valid service names.
+        service_names: The list of service names to check.
+        valid_service_names: The list of valid service names.
 
     """
     invalid_service_names = set(service_names) - set(valid_service_names)
@@ -1012,10 +1016,10 @@ def decrypt_docker_compose_files(
     """Decrypt docker-compose and docker-compose override files.
 
     Args:
-        cli_context (CliContext): The current CLI context.
-        docker_compose_file_relative_path (Path): The relative path to the docker-compose file. Path is relative to the
+        cli_context: The current CLI context.
+        docker_compose_file_relative_path: The relative path to the docker-compose file. Path is relative to the
             generated configuration directory.
-        docker_compose_override_directory_relative_path (Path): The relative path to a directory containing
+        docker_compose_override_directory_relative_path: The relative path to a directory containing
             docker-compose override files. Path is relative to the generated configuration directory.
 
     Returns:
@@ -1096,14 +1100,14 @@ def execute_compose(
     """Builds and executes a docker-compose command.
 
     Args:
-        cli_context (CliContext): The current CLI context.
-        command (Iterable[str]): The command to execute with docker-compose.
-        docker_compose_file_relative_path (Path): The relative path to the docker-compose file. Path is relative to the
+        cli_context: The current CLI context.
+        command: The command to execute with docker-compose.
+        docker_compose_file_relative_path: The relative path to the docker-compose file. Path is relative to the
             generated configuration directory.
-        docker_compose_override_directory_relative_path (Path): The relative path to a directory containing
+        docker_compose_override_directory_relative_path: The relative path to a directory containing
             docker-compose override files. Path is relative to the generated configuration directory.
-        stdin_input (str): Optional - defaults to None. String passed through to the subprocess via stdin.
-        capture_output (bool): Optional - defaults to False. True to capture stdout/stderr for the run command.
+        stdin_input: Optional - defaults to None. String passed through to the subprocess via stdin.
+        capture_output: Optional - defaults to False. True to capture stdout/stderr for the run command.
 
     Returns:
         CompletedProcess: The completed process and its exit code.
