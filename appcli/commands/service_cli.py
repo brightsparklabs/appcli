@@ -310,6 +310,7 @@ class ServiceCli:
             logger.debug(f"Running post-{action.name} hook")
             post_hook(ctx, result)
 
-        click.echo(result.stdout)
+        if result.stdout:
+            click.echo(result.stdout)
         logger.info(post_run_log_message, result.returncode)
         sys.exit(result.returncode)
