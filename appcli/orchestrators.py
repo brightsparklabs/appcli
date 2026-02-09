@@ -77,15 +77,15 @@ class Orchestrator:
         self,
         cli_context: CliContext,
         service_names: tuple[str, ...] = None,
-        to_json: bool = False,
+        extra_args: tuple[str, ...] = None,
     ) -> CompletedProcess:
         """
         Gets the status of Docker containers (services). Optionally accepts a tuple of service names to get the status of.
 
         Args:
-            cli_context (CliContext): The current CLI context.
-            service_names (tuple[str,...], optional): Names of the services to get the status of. If not provided, gets the status of all services.
-            to_json: Flag for whether to return json object of status.
+            cli_context: The current CLI context.
+            service_names: Names of the services to get the status of. If not provided, gets the status of all services.
+            extra_args: Additional arguments to be passed to the command.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
@@ -254,13 +254,16 @@ class DockerComposeOrchestrator(Orchestrator):
         self,
         cli_context: CliContext,
         service_names: tuple[str, ...] = None,
-        to_json: bool = False,
+        extra_args: tuple[str, ...] = None,
     ) -> CompletedProcess:
         command = ("ps", "-a")
         if service_names is not None and len(service_names) > 0:
             command += service_names
-        if to_json:
-            command += ("--format", "json")
+        if extra_args:
+            command += extra_args
+            logger.info(
+                f"Extra arguments provided to STATUS command: [{' '.join(extra_args)}]"
+            )
             return self.__compose_service(cli_context, command, capture_output=True)
         return self.__compose_service(cli_context, command)
 
@@ -480,9 +483,9 @@ class DockerSwarmOrchestrator(Orchestrator):
         self,
         cli_context: CliContext,
         service_names: tuple[str, ...] = None,
-        to_json: bool = False,
+        extra_args: tuple[str, ...] = None,
     ) -> CompletedProcess:
-        # NOTE: to_json not yet implemented for this orchestrator.
+        # NOTE: extra_args not yet implemented for this orchestrator.
         if service_names is not None and len(service_names) > 0:
             logger.error(
                 "Docker Swarm orchestrator cannot check the status of individual services. Attempted to get the status of [%s].",
@@ -756,20 +759,20 @@ class HelmOrchestrator(Orchestrator):
         self,
         cli_context: CliContext,
         service_names: tuple[str, ...] = None,
-        to_json: bool = False,
+        extra_args: tuple[str, ...] = None,
     ) -> CompletedProcess:
         """
         Get the status of the chart (through `helm status`).
 
         Args:
-            cli_context (CliContext): The current CLI context.
+            cli_context: The current CLI context.
             service_names: Names of the services to get the status of. If not provided, gets the status of all services.
-            to_json: Flag for whether to return json object of status.
+            extra_args: Additional arguments to be passed to the command.
 
         Returns:
             CompletedProcess: Result of the orchestrator command.
         """
-        # NOTE: to_json not yet implemented for this orchestrator.
+        # NOTE: extra_args not yet implemented for this orchestrator.
         # Generate the command string.
         command = [
             "helm",
@@ -923,7 +926,7 @@ class NullOrchestrator(Orchestrator):
         self,
         cli_context: CliContext,
         service_names: tuple[str, ...] = None,
-        to_json: bool = False,
+        extra_args: tuple[str, ...] = None,
     ) -> CompletedProcess:
         logger.info("NullOrchestrator has no services to get the status of.")
         return None
