@@ -14,6 +14,9 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Added
 
+- TERA-2322: Add mechanism for passing extra arguments to `service` commands.
+  Currently only `status` supported via docker compose orchestrator.
+
 ### Changed
 
 ### Deprecated
