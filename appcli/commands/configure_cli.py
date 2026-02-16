@@ -12,6 +12,7 @@ www.brightsparklabs.com
 # standard library
 import difflib
 import subprocess
+from typing import List
 
 # vendor libraries
 import click
@@ -59,8 +60,30 @@ class ConfigureCli:
             click.echo(ctx.get_help())
 
         @configure.command(help="Initialises the configuration directory.")
+        @click.option(
+            "--preset",
+            "-p",
+            help="The configuration preset to deploy.",
+            # NOTE: This value is set by `self.cli_configuration.presets.is_mandatory'.
+            # However that variable is not ready yet by the time this decorator is instantiated.
+            # Therefore we need as `False` and manually verify inside the function.
+            required=False,
+            type=click.Choice(self.cli_configuration.presets.get_options()),
+            default=self.cli_configuration.presets.default_preset,
+        )
         @click.pass_context
         def init(ctx, preset=None):
+            # Validate whether presets are required.
+            if self.cli_configuration.presets.is_mandatory and preset is None:
+                presets: List[str] = [
+                    preset.name
+                    for preset in self.cli_configuration.presets.templates_directory.iterdir()
+                    if preset.is_dir()
+                ]
+                msg: str = f"Missing option '--preset' / '-p'. Choose from: {presets}"
+                logger.error(msg)
+                raise click.ClickExcpetion(msg)
+
             print_header("CONFIGURE INIT")
 
             cli_context: CliContext = ctx.obj
@@ -86,16 +109,6 @@ class ConfigureCli:
             hooks.post_configure_init(ctx, preset)
 
             logger.info("Finished initialising configuration")
-
-        if self.cli_configuration.presets.is_mandatory:
-            init = click.option(
-                "--preset",
-                "-p",
-                help="The configuration preset to deploy.",
-                required=True,
-                type=click.Choice(self.cli_configuration.presets.get_options()),
-                default=self.cli_configuration.presets.default_preset,
-            )(init)
 
         @configure.command(help="Applies the settings from the configuration.")
         @click.option(

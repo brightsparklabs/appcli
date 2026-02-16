@@ -26,7 +26,7 @@ from appcli.commands.service_cli import ServiceCli
 from appcli.configuration_manager import ConfigurationManager
 from appcli.logger import enable_debug_logging, logger
 from appcli.models.cli_context import CliContext
-from appcli.models.configuration import Configuration
+from appcli.models.configuration import Configuration, PresetsConfiguration
 from appcli.orchestrators import DockerComposeOrchestrator
 
 # ------------------------------------------------------------------------------
@@ -430,6 +430,9 @@ class Environment:
             baseline_templates_dir=Path(BASE_DIR, "resources/templates/baseline"),
             configurable_templates_dir=Path(
                 BASE_DIR, "resources/templates/configurable"
+            ),
+            presets=PresetsConfiguration(
+                templates_directory=Path(BASE_DIR, "resources/templates/presets")
             ),
             orchestrator=DockerComposeOrchestrator(),
             stack_configuration_file=STACK_CONFIGURATION_FILE,
