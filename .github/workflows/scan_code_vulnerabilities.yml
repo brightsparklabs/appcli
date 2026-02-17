@@ -21,7 +21,7 @@ jobs:
             ~/.cache/uv
           key: ${{ runner.os }}-${{ hashFiles('devbox.json', 'pyproject.toml') }}
       - name: Install Devbox
-        uses: jetify-com/devbox-install-action@v0.11.0
+        uses: jetify-com/devbox-install-action@v0.14.0
       - name: Install depenencies
         run: devbox run -- make venv
       - name: Scan Code Vulnerabilities

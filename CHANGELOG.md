@@ -50,6 +50,7 @@ The changelog is applicable from version `1.0.0` onwards.
 ### Fixed
 
 - RAD-225: Fix versioning string.
+- APPCLI-148: Correct breaking changes from `click>8.1.8`.
 
 ### Security
 
