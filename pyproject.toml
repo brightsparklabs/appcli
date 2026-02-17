@@ -56,7 +56,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "bandit==1.9.2",
+    "bandit==1.9.3",
     "guarddog==2.7.0",
     "pdoc==16.0.0",
     "pre-commit==4.5.1",
