@@ -219,10 +219,10 @@ build = [
 dev = [
     { name = "bandit", specifier = "==1.9.2" },
     { name = "guarddog", specifier = "==2.7.0" },
-    { name = "pdoc", specifier = "==15.0.4" },
+    { name = "pdoc", specifier = "==16.0.0" },
     { name = "pre-commit", specifier = "==4.5.1" },
-    { name = "pytest", specifier = "==8.4.2" },
-    { name = "pytest-cov", specifier = "==6.2.1" },
+    { name = "pytest", specifier = "==9.0.2" },
+    { name = "pytest-cov", specifier = "==7.0.0" },
     { name = "ruff", specifier = "==0.14.10" },
 ]
 
@@ -1165,10 +1165,11 @@ wheels = [
 
 [[package]]
 name = "pdoc"
-version = "15.0.4"
+version = "16.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jinja2" },
+    { name = "markdown2" },
     { name = "markupsafe" },
     { name = "pygments" },
 ]
@@ -1452,7 +1453,7 @@ wheels = [
 
 [[package]]
 name = "pytest"
-version = "8.4.2"
+version = "9.0.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama", marker = "sys_platform == 'win32'" },
@@ -1468,7 +1469,7 @@ wheels = [
 
 [[package]]
 name = "pytest-cov"
-version = "6.2.1"
+version = "7.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "coverage" },

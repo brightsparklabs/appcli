@@ -10,7 +10,28 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ## [Unreleased] - YYYY-MM-DD
 
-[Unreleased]: https://github.com/brightsparklabs/appcli/compare/x.y.z...HEAD
+[Unreleased]: https://github.com/brightsparklabs/appcli/compare/3.4.0...HEAD
+
+### Added
+
+- TERA-2322: Add mechanism for passing extra arguments to `service` commands.
+  Currently only `status` supported via docker compose orchestrator.
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+---
+
+## [3.4.0] - 2026-01-29
+
+[3.4.0]: https://github.com/brightsparklabs/appcli/compare/3.3.0...3.4.0
 
 ### Added
 
@@ -20,7 +41,7 @@ The changelog is applicable from version `1.0.0` onwards.
 ### Changed
 
 - TERA-859: Expose orchestrator from the configuration to the CLI context.
-- NSWCC-752: Update Appcli image name in readme and quickstart.md.
+- NSWCC-752: Update appcli image name in README.adoc and QUICKSTART.md.
 
 ### Deprecated
 
