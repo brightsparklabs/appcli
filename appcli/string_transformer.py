@@ -48,10 +48,10 @@ class StringTransformer:
 
     # The supported transformation functions
     TRANSFORMATION_FUNCTIONS = {
-        STRING_TRANSFORMER_TYPE: lambda s: (str(s)),
-        "bool": lambda s: (bool(strtobool(s))),
-        "int": lambda s: (int(s)),
-        "float": lambda s: (float(s)),
+        STRING_TRANSFORMER_TYPE: lambda s: str(s),
+        "bool": lambda s: bool(strtobool(s)),
+        "int": lambda s: int(s),
+        "float": lambda s: float(s),
     }
 
     def get_string_transformer_type() -> str:
