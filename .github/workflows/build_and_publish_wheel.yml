@@ -27,7 +27,7 @@ jobs:
         if: github.ref_type == 'tag'
         run: git fetch -fv origin tag "${GITHUB_REF_NAME}"
       - name: Install Devbox
-        uses: jetify-com/devbox-install-action@v0.11.0
+        uses: jetify-com/devbox-install-action@v0.14.0
       - name: Install depenencies
         run: devbox run -- make venv
       - name: Check python
