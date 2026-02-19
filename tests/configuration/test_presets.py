@@ -19,7 +19,7 @@ from click.testing import CliRunner
 
 # Local imports.
 from appcli.commands.configure_cli import ConfigureCli
-from appcli.models.configuration import Configuration
+from appcli.models.configuration import Configuration, PresetsConfiguration
 from appcli.models.cli_context import CliContext
 
 
@@ -46,6 +46,7 @@ def default_configuration():
         stack_configuration_file=RESOURCES_DIR / "stack-settings.yml",
         baseline_templates_dir=TEMPLATES_DIR / "baseline",
         configurable_templates_dir=TEMPLATES_DIR / "configurable",
+        presets=PresetsConfiguration(templates_directory=TEMPLATES_DIR / "presets"),
         auto_configure_on_install=False,
     )
 
@@ -148,9 +149,9 @@ def test_preset_required(preset_configuration, default_cli_context):
     command = cli.commands["configure"].commands["init"]
     runner = CliRunner()
     result = runner.invoke(command, obj=default_cli_context)
-    result_text = result.stdout_bytes.decode("utf-8")
+    result_text = result.output
 
-    assert result.exit_code == 2
+    assert result.exit_code == 1
     assert "Missing option '--preset' / '-p'" in result_text
     # Also check expected profiles.
     assert "Choose from:" in result_text
@@ -164,7 +165,7 @@ def test_invalid_preset(preset_configuration, default_cli_context):
     command = cli.commands["configure"].commands["init"]
     runner = CliRunner()
     result = runner.invoke(command, ["--preset", "preset3"], obj=default_cli_context)
-    result_text = result.stdout_bytes.decode("utf-8")
+    result_text = result.output
 
     assert result.exit_code == 2
     assert "Invalid value for '--preset' / '-p'" in result_text

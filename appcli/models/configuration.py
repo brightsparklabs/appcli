@@ -114,8 +114,8 @@ class Hooks(NamedTuple):
         Arg[1] (CompletedProcess): The process result object from running `shutdown`.
     """
 
-    pre_configure_init: Callable[[click.Context, Optional[str]], None] = (
-        lambda x, y: None
+    pre_configure_init: Callable[[click.Context, Optional[str]], None] = lambda x, y: (
+        None
     )
     """
     [Optional] Hook function to run before running 'configure init'.
@@ -125,8 +125,8 @@ class Hooks(NamedTuple):
         Arg[1] (Optional[str]): The supplied `--preset` arg.
     """
 
-    post_configure_init: Callable[[click.Context, Optional[str]], None] = (
-        lambda x, y: None
+    post_configure_init: Callable[[click.Context, Optional[str]], None] = lambda x, y: (
+        None
     )
     """
     [Optional] Hook function to run after running 'configure init'.

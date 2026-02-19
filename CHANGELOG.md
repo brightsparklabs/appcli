@@ -10,7 +10,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ## [Unreleased] - YYYY-MM-DD
 
-[Unreleased]: https://github.com/brightsparklabs/appcli/compare/3.4.0...HEAD
+[Unreleased]: https://github.com/brightsparklabs/appcli/compare/3.5.0...HEAD
 
 ### Added
 
@@ -23,6 +23,17 @@ The changelog is applicable from version `1.0.0` onwards.
 ### Fixed
 
 ### Security
+
+---
+
+## [3.5.0] - 2026-02-19
+
+[3.5.0]: https://github.com/brightsparklabs/appcli/compare/3.4.0...3.5.0
+
+### Added
+
+- TERA-2322: Add mechanism for passing extra arguments to `service` commands.
+  Currently only `status` supported via docker compose orchestrator.
 
 ---
 
@@ -40,13 +51,10 @@ The changelog is applicable from version `1.0.0` onwards.
 - TERA-859: Expose orchestrator from the configuration to the CLI context.
 - NSWCC-752: Update appcli image name in README.adoc and QUICKSTART.md.
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - RAD-225: Fix versioning string.
+- APPCLI-148: Correct breaking changes from `click>8.1.8`.
 
 ### Security
 
@@ -68,14 +76,6 @@ The changelog is applicable from version `1.0.0` onwards.
 - APPCLI-123: Show failed file when templating.
 - APPCLI-135: Update git repository ownership fix for AppCLI Dockerfile. 
 
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
-
 ---
 
 ## [3.2.0] - 2025-03-37
@@ -91,10 +91,6 @@ The changelog is applicable from version `1.0.0` onwards.
 
 - TEL-55: Updated documentation and typing for `hooks`. Ensured DEV_MODE install goes to `/tmp/`.
 - APPCLI-3: Converted README to asciidoc.
-
-### Deprecated
-
-### Removed
 
 ### Fixed
 
