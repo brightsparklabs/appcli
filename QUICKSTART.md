@@ -8,14 +8,14 @@ This guide will help you get started with standing up a sample `appcli` applicat
 - docker
 - docker-compose
 
-### Setup the appcli enironment
+### Setup the appcli environment
 
 #### Create the required directory structure
 
 Run the following commands to create the required files and folders
 
 ```bash
-mkdir -p src/resources/templates/{baseline,configurable}
+mkdir -p src/resources/templates/{baseline,configurable,presets}
 touch src/resources/settings.yml
 touch src/resources/stack-settings.yml
 ```
@@ -133,7 +133,8 @@ Before we build our application please make sure your directory reflects the fol
 │   │   └── templates
 │   │           ├── baseline
 │   │           │       └── docker-compose.yml
-│   │           └── configurable
+│   │           ├── configurable
+│   │           └── presets
 │   └── myapp.py
 ├── requirements.txt
 └── Dockerfile
