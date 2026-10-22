@@ -14,15 +14,7 @@ The changelog is applicable from version `1.0.0` onwards.
 
 ### Added
 
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
+- RAD-268: Added preset folder to quickstart.md instructions.
 
 ---
 
